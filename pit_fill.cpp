@@ -203,6 +203,18 @@ This algorithm is essentially reproduced (but in poorer quality) by
   pages={214--219},
   year={2009}
 }
+
+This algorithm is first, but also poorly-described, though the pseudo-code appears to work
+@article{soille1994efficient,
+  title={An efficient algorithm for drainage network extraction on DEMs},
+  author={Soille, P. and Gratin, C.},
+  journal={Journal of Visual Communication and Image Representation},
+  volume={5},
+  number={2},
+  pages={181--189},
+  year={1994},
+  publisher={Elsevier}
+}
 */
 
 typedef struct grid_cell_type {
@@ -227,18 +239,6 @@ class grid_cell_compare{
 			else return (lhs->z>rhs->z);
 		}
 };
-
-void print_dem(float_2d &elevations, int mark_x=-1, int mark_y=-1){ //TODO
-	for(int x=0;x<elevations.size1();x++){
-		for(int y=0;y<elevations.size2();y++){
-			if(x==mark_x && y==mark_y) printf("\033[91m");
-			printf("%.0f ",elevations(x,y));
-			if(x==mark_x && y==mark_y) printf("\033[39m");
-		}
-		printf("\n");
-	}
-	printf("\n");
-}
 
 int pit_fill_wang(float_2d &elevations){
 	std::priority_queue<grid_cell*, std::vector<grid_cell*>, grid_cell_compare> open;

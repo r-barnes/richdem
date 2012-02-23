@@ -2,6 +2,7 @@
 #define _utility_included
 
 #include <string>
+#include "data_structures.h"
 //Neighbour directions
 //234
 //105
@@ -23,5 +24,8 @@
 //int dx[9]={0,-1,-1,0,1,1,1,0,-1};
 //int dy[9]={0,0,-1,-1,-1,0,1,1,1};
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
+
+void print_dem(float_2d &elevations, int mark_x, int mark_y);
+void print_flow(float_2d &flowdirs);
 
 #endif
