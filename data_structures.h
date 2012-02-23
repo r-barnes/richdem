@@ -5,5 +5,7 @@
 
 typedef boost::numeric::ublas::matrix<float> float_2d;
 typedef boost::numeric::ublas::matrix<char> char_2d;
+typedef boost::numeric::ublas::matrix<bool> bool_2d;
+typedef boost::numeric::ublas::matrix<unsigned int> uint_2d;
 
 #endif

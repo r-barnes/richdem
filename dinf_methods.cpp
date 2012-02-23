@@ -84,12 +84,9 @@ int dinf_flow_directions(float_2d elevations, float_2d flowdirs){
 	diagnostic("Calculating Dinf flow directions...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
-	for(long int x=0;x<elevations.size1();x++){
-		#pragma omp master
-		{
-		progress_bar(100*omp_get_num_threads()*x*elevations.size2()/(elevations.size1()*elevations.size2())); //Todo: Should I check to see if ftell fails here?
-		}
-		for(long int y=0;y<elevations.size2();y++){
+	for(int x=0;x<elevations.size1();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2())); //Todo: Should I check to see if ftell fails here?
+		for(int y=0;y<elevations.size2();y++){
 			if(EDGE_GRID(x,y,elevations.size1(),elevations.size2())){ //Edges of grid undefined
 				flowdirs(x,y)=0;
 				continue;

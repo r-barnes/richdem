@@ -55,7 +55,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	progress_bar(-1);
 	float temp;
 	for(int y=0;y<rows;y++){
-		progress_bar(100*ftell(fin)/file_size); //Todo: Should I check to see if ftell fails here?
+		progress_bar(ftell(fin)*100/file_size); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
 			if (fscanf(fin,"%f", &temp)!=1){
 				diagnostic("failed! (Couldn't read or convert a value!)\n");

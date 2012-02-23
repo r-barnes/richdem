@@ -2,11 +2,23 @@
 #include "utility.h"
 #include "d8_methods.h"
 #include "interface.h"
+#include <boost/numeric/ublas/matrix.hpp>
 #include <omp.h>
 
-int dx[9]={0,-1,-1,0,1,1,1,0,-1};
-int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+//D8 Directions
+static int const dx[9]={0,-1,-1,0,1,1,1,0,-1};
+static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
+static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
+
+typedef struct grid_cell_type {
+	int x;
+	int y;
+	grid_cell_type(int x0, int y0){
+		x=x0;
+		y=y0;
+	}
+} grid_cell;
 
 int d8_FlowDir(float_2d &elevations, int x, int y){
 	float minimum_elevation=elevations(x,y);
@@ -17,8 +29,8 @@ int d8_FlowDir(float_2d &elevations, int x, int y){
 	if (elevations(x,y)==elev_NO_DATA) return d8_NO_DATA; //Missing data
 
 	for(int n=1;n<=8;n++){
-		if(elevations(x+dx[n],y+dy[n])==elev_NO_DATA) continue;
 		if(!IN_GRID(x+dx[n],y+dy[n],elevations.size1(),elevations.size2())) continue;
+		if(elevations(x+dx[n],y+dy[n])==elev_NO_DATA) continue;
 //		if(elevations(x+dx[n],y+dy[n])!=elevations(x,y))
 //			has_different=true;
 //		else
@@ -55,12 +67,9 @@ int d8_flow_directions(float_2d elevations, char_2d flowdirs){
 	diagnostic("Calculating D8 flow directions...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
-	for(long int x=0;x<elevations.size1();x++){
-		#pragma omp master
-		{
-		progress_bar(100*omp_get_num_threads()*x*elevations.size2()/(elevations.size1()*elevations.size2())); //Todo: Should I check to see if ftell fails here?
-		}
-		for(long int y=0;y<elevations.size2();y++){
+	for(int x=0;x<elevations.size1();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.size2()/(elevations.size1()*elevations.size2()));
+		for(int y=0;y<elevations.size2();y++){
 			if(EDGE_GRID(x,y,elevations.size1(),elevations.size2())){ //Edges of grid undefined
 				flowdirs(x,y)=NO_FLOW;
 				continue;
@@ -72,3 +81,32 @@ int d8_flow_directions(float_2d elevations, char_2d flowdirs){
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
 }
+
+/*int d8_upslope_area(float_2d &elevations, char_2d &flowdirs){
+	char_2d dependents;
+	uint_2d area;
+	vector<grid_cell*> sources;
+
+	diagnostic_arg("Dependents count matrix and area matrix will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*(sizeof(char)+sizeof(unsigned int))/1024/1024);
+	diagnostic("Resizing count & area matricies...");
+	try{
+		dependents.resize(elevations.size1(),elevations.size2());
+		area.resize(elevations.size1(),elevations.size2());
+	} catch (std::exception &e){
+		diagnostic("failed!\n");
+		return -1;
+	}
+	diagnostic("succeeded.\n");	
+
+	diagnostic("Searching for area sources...");
+	for(int x=0;x<elevations.size1();x++)
+	for(int y=0;y<elevations.size2();y++){
+		int d=0;
+		for(int n=1;n<=8;n++)
+			if(inverse_flow[flowdirs(x+dx[n],y+dy[n])]==n)
+				d++;
+		dependents(x,y)=d;
+		if(d==0)
+			sources.push(
+	}
+}*/
