@@ -11,15 +11,6 @@ static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
 static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
-typedef struct grid_cell_type {
-	int x;
-	int y;
-	grid_cell_type(int x0, int y0){
-		x=x0;
-		y=y0;
-	}
-} grid_cell;
-
 int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	float minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;

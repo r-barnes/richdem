@@ -13,4 +13,5 @@ int main(int argc, char **argv){
 //	pit_fill_yonghe2009(elevations);
 //	pit_fill_wang(elevations);
 	dinf_flow_directions(elevations,flowdirs);
+	dinf_upslope_area(flowdirs);
 }

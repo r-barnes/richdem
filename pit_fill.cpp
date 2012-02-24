@@ -217,32 +217,21 @@ This algorithm is first, but also poorly-described, though the pseudo-code appea
 }
 */
 
-typedef struct grid_cell_type {
-	int x;
-	int y;
-	float z;
-	grid_cell_type(int x0, int y0, float z0){
-		x=x0;
-		y=y0;
-		z=z0;
-	}
-} grid_cell;
-
 class grid_cell_compare{
 	bool reverse;
 
 	public:
 		grid_cell_compare(const bool& revparam=false){reverse=revparam;}
 
-		bool operator() (const grid_cell *lhs, const grid_cell *rhs) const{
+		bool operator() (const grid_cellz *lhs, const grid_cellz *rhs) const{
 			if (reverse) return (lhs->z<rhs->z);
 			else return (lhs->z>rhs->z);
 		}
 };
 
 int pit_fill_wang(float_2d &elevations){
-	std::priority_queue<grid_cell*, std::vector<grid_cell*>, grid_cell_compare> open;
-	grid_cell *c;
+	std::priority_queue<grid_cellz*, std::vector<grid_cellz*>, grid_cell_compare> open;
+	grid_cellz *c;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
 
@@ -269,14 +258,14 @@ int pit_fill_wang(float_2d &elevations){
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.size1()*2+elevations.size2()*2)*sizeof(grid_cell)/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.size1();x++){
-		open.push(new grid_cell(x,0,elevations(x,0) ));
-		open.push(new grid_cell(x,elevations.size2()-1,elevations(x,elevations.size2()-1) ));
+		open.push(new grid_cellz(x,0,elevations(x,0) ));
+		open.push(new grid_cellz(x,elevations.size2()-1,elevations(x,elevations.size2()-1) ));
 		closed(x,0)=1;
 		closed(x,elevations.size2()-1)=1;
 	}
 	for(int y=1;y<elevations.size2()-1;y++){
-		open.push(new grid_cell(0,y,elevations(0,y)	));
-		open.push(new grid_cell(elevations.size1()-1,y,elevations(elevations.size1()-1,y) ));
+		open.push(new grid_cellz(0,y,elevations(0,y)	));
+		open.push(new grid_cellz(elevations.size1()-1,y,elevations(elevations.size1()-1,y) ));
 		closed(0,y)=1;
 		closed(elevations.size1()-1,y)=1;
 	}
@@ -295,7 +284,7 @@ int pit_fill_wang(float_2d &elevations){
 				continue;
 			else{
 				elevations(c->x+dx[n],c->y + dy[n])=MAX(elevations(c->x+dx[n],c->y+dy[n]),c->z);
-				open.push(new grid_cell(c->x+dx[n],c->y+dy[n],elevations(c->x+dx[n],c->y+dy[n]) ));
+				open.push(new grid_cellz(c->x+dx[n],c->y+dy[n],elevations(c->x+dx[n],c->y+dy[n]) ));
 				closed(c->x+dx[n],c->y+dy[n])=1;
 			}
 		}
