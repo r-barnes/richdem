@@ -1,0 +1,38 @@
+The 'collapse' directive on the parallel for loop thing may be useful
+Need to free memory when grid_cells are popped off of stacks
+
+
+
+
+
+
+
+
+
+Beyond these kinds of relationships and the ensuing impacts, the
+decisions made about unwanted depressions (i.e. spurious pits or
+sinks) will have a large impact on the subsequent analysis and
+interpretation of the results of geomorphometric analysis. Two
+approaches have found frequent use — one relies on progressively
+filling the sinks by increasing their elevation values until the elevation
+of their lowest outflow point is reached (e.g. Jenson and Domingue,
+1988; Martz and de Jong, 1988; Soille and Gratin, 1994; Planchon and
+Darboux, 2001; Wang and Liu, 2006), whereas the second method
+creates a descending path from the bottom of the sink by carving the
+terrain along this path until the nearest point is reached which has an
+elevation lower than the bottom of the sink (e.g. Morris and
+Heerdegen, 1988; Rieger, 1992; Martz and Garbrecht, 1999; Soille
+et al., 2003; Soille, 2004). However, Reuter et al. (2009) recently used
+both of these approaches along with one that combined sink filling
+and carving such that the sum of the differences in elevation between
+the input DEMs and the output DEMs that did not have sinks were
+minimized. This combined approach produced superior results for the
+Baranja Hill study catchment in Croatia [see Grimaldi et al. (2007)
+for an alternative physically-based approach]. Lindsay and Creed
+(2005a,b, 2006) have also combined elements of the aforementioned
+approaches and used them to distinguish artifact and real depressions
+in digital elevation data and to propose a minimum impact approach
+for removing the artifact depressions in relatively flat landscapes like
+those occurring on the Canadian Shield.
+
+The above is from "Digital terrain modeling" by John P. Wilson. Published in 2011.

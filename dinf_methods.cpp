@@ -6,6 +6,8 @@
 #include <cmath>
 #include <queue>
 
+#define NO_DINF_FLOW -1
+
 //D8 Directions
 static int const dx[9]={0,-1,-1,0,1,1,1,0,-1};
 static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
@@ -25,7 +27,7 @@ static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
 */
 
 
-//Table 1 of Tarboton TODO (i=y-coordinate, j=x-coordinate)
+//Table 1 of Tarboton
 int dy_e1[8]={0,-1,-1,0,0,1,1,0};
 int dx_e1[8]={1,0,0,-1,-1,0,0,1};
 int dy_e2[8]={-1,-1,-1,-1,1,1,1,1};
@@ -33,7 +35,7 @@ int dx_e2[8]={1,1,-1,-1,-1,-1,1,1};
 double ac[8]={0,1,1,2,2,3,3,4};
 double af[8]={1,-1,1,-1,1,-1,1,-1};
 
-float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
+float dinf_FlowDir(const float_2d &elevations, const int x, const int y, const float no_data){
 	double smax=0;
 	int nmax=-1;
 	double rmax=0;
@@ -41,7 +43,7 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 	double e0,e1,e2,d1,d2,s1,s2,r,s;
 
 	if (EDGE_GRID(x,y,elevations.size1(),elevations.size2())) return -1; //Edge cells do not have a defined flow direction
-	if (elevations(x,y)==elev_NO_DATA) return dinf_NO_DATA; //Missing data
+	if (elevations(x,y)==no_data) return dinf_NO_DATA; //Missing data
 
 	for(int n=0;n<8;n++){
 		if(!IN_GRID(x+dx_e1[n],y+dy_e1[n],elevations.size1(),elevations.size2())) continue;
@@ -72,14 +74,14 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 		}
 	}
 
-	double rg=-1;
+	double rg=NO_DINF_FLOW;
 	if(nmax!=-1)
-		rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);//*(180.0/M_PI); //TODO: Remove degree conversion
+		rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
 
 	return rg;
 }
 
-int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs){
+int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs, const float no_data){
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(float)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	try{
@@ -96,7 +98,7 @@ int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs){
 	for(int x=0;x<elevations.size1();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2()));
 		for(int y=0;y<elevations.size2();y++)
-			flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
+			flowdirs(x,y)=dinf_FlowDir(elevations,x,y,no_data);
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
@@ -123,38 +125,51 @@ Also:
   author={Wallace, RM and Tarboton, DG and Watson, DW and Schreuders, KAT and Tesfa, TK}
 }
 */
+
+
+/*
+We must convert the Dinf angle system to cells within the D8 system
+I use the following grid for the D8 system
 //234
 //105
 //876
-bool does_cell_flow_into_me(const int x, const int y, int n, const float_2d &flowdirs){ //TODO: Maybe should have some kind of tolerance value - there is a little leakage happening due to rounding when water should be flowing directly into a single cell
-	if(n==-1) return false; //TODO: This should not happen.
-	if(n==0) { //TODO
-		diagnostic("A terrible mistake has occurred in the procedure claling the 'does_cell_flow_into_me' procedure.\n");
-		return false;
-	}
+To convert Dinf to this, take
+(int)(flowdir/45)      D8
+      0                4,5
+      1                3,4
+      2                2,3
+      3                1,2
+      4                1,8
+      5                7,8
+      6                6,7
+      7                5,6
+*/
+//These arrays have a 9th element which repeats the 8th element because floating point rounding errors occassionally result in the 9th element being accessed.
+int dinf_to_d8_low[9]= {4,3,2,1,1,7,6,5,5};
+int dinf_to_d8_high[9]={5,4,3,2,8,8,7,6,6};
+
+bool does_cell_flow_into_me(float n_flowdir, int n){
+	if(n_flowdir==NO_DINF_FLOW || n_flowdir==dinf_NO_DATA) return false;
 	n=inverse_flow[n];
-	if(     n==1 && flowdirs(x,y)>3*M_PI/4 && flowdirs(x,y)<5*M_PI/4)
-		return true;
-	else if(n==2 && flowdirs(x,y)>2*M_PI/4 && flowdirs(x,y)<4*M_PI/4)
-		return true;
-	else if(n==3 && flowdirs(x,y)>1*M_PI/4 && flowdirs(x,y)<3*M_PI/4)
-		return true;
-	else if(n==4 && flowdirs(x,y)>0*M_PI/4 && flowdirs(x,y)<2*M_PI/4)
-		return true;
-	else if(n==5 && flowdirs(x,y)>7*M_PI/4 && flowdirs(x,y)<1*M_PI/4)
-		return true;
-	else if(n==6 && flowdirs(x,y)>6*M_PI/4 && flowdirs(x,y)<8*M_PI/4)
-		return true;
-	else if(n==7 && flowdirs(x,y)>5*M_PI/4 && flowdirs(x,y)<7*M_PI/4)
-		return true;
-	else if(n==8 && flowdirs(x,y)>4*M_PI/4 && flowdirs(x,y)<6*M_PI/4)
-		return true;
-	else
-		return false;
+	int flown=(int)(n_flowdir/(M_PI/4));
+	return (dinf_to_d8_low[flown]==n || dinf_to_d8_high[flown]==n);
 }
 
-int dinf_upslope_area(const float_2d &flowdirs){
+//This reacts correctly if the flow direction wedge number exceeds 7.
+float proportion_i_get(float flowdir, int n){
+//	if(!does_cell_flow_into_me(flowdir,n)) return 0;
+	int dinf_wedge=(int)(flowdir/(M_PI/4));
+	float normalized_angle=flowdir-(M_PI/4)*dinf_wedge;
+
+	if(n%2==dinf_wedge%2)
+		return normalized_angle/(M_PI/4);
+	else
+		return 1-normalized_angle/(M_PI/4);
+}
+
+int dinf_upslope_area(const float_2d &flowdirs, const int data_cells){
 	char_2d dependency;
+	float_2d area;
 	std::queue<grid_cell*> sources;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.size1()*flowdirs.size2()*sizeof(grid_cell)/1024/1024);
@@ -163,6 +178,16 @@ int dinf_upslope_area(const float_2d &flowdirs){
 	diagnostic("Resizing dependency matrix...");
 	try{
 		dependency.resize(flowdirs.size1(),flowdirs.size2(),false);
+	} catch (std::exception &e){
+		diagnostic("failed!\n");
+		return -1;
+	}
+	diagnostic("succeeded.\n");
+
+	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.size1()*flowdirs.size2()*sizeof(float)/1024/1024);
+	diagnostic("Resizing the area matrix...");
+	try{
+		area.resize(flowdirs.size1(),flowdirs.size2(),false);
 	} catch (std::exception &e){
 		diagnostic("failed!\n");
 		return -1;
@@ -178,7 +203,7 @@ int dinf_upslope_area(const float_2d &flowdirs){
 			dependency(x,y)=0;
 			for(int n=1;n<=8;n++){
 				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.size1(),flowdirs.size2())) continue;
-				if(does_cell_flow_into_me(x+dx[n],y+dy[n],n,flowdirs))
+				if(does_cell_flow_into_me(flowdirs(x+dx[n],y+dy[n]),n))
 					dependency(x,y)++;
 			}
 		}
@@ -191,8 +216,38 @@ int dinf_upslope_area(const float_2d &flowdirs){
 	for(int x=0;x<flowdirs.size1();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.size2()*100/(flowdirs.size1()*flowdirs.size2()));
 		for(int y=0;y<flowdirs.size2();y++)
-			if(dependency(x,y)==0)
+			if(flowdirs(x,y)!=dinf_NO_DATA && dependency(x,y)==0)
 				sources.push(new grid_cell(x,y));
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+
+	diagnostic("Calculating up-slope areas...\n");
+	progress_bar(-1);
+	long int ccount=0;
+	while(sources.size()>0){
+		grid_cell *c=sources.front();
+		sources.pop();
+
+		ccount++;
+		progress_bar(ccount*100/data_cells);
+
+		area(c->x,c->y)=1;
+		for(int n=1;n<=8;n++){
+			if(!IN_GRID(c->x+dx[n],c->y+dy[n],flowdirs.size1(),flowdirs.size2())) continue;
+			if(does_cell_flow_into_me(flowdirs(c->x+dx[n],c->y+dy[n]),n))
+				area(c->x,c->y)+=proportion_i_get(flowdirs(c->x+dx[n],c->y+dy[n]),n)*area(c->x+dx[n],c->y+dy[n]);
+		}
+		if(flowdirs(c->x,c->y)!=dinf_NO_DATA && flowdirs(c->x,c->y)!=NO_DINF_FLOW){
+			int n_low= dinf_to_d8_low [(int)(flowdirs(c->x,c->y)/(M_PI/4))];
+			int n_high=dinf_to_d8_high[(int)(flowdirs(c->x,c->y)/(M_PI/4))];
+			if( (--dependency(c->x+dx[n_low],c->y+dy[n_low]))==0)
+				sources.push(new grid_cell(c->x+dx[n_low],c->y+dy[n_low]));
+			if( (--dependency(c->x+dx[n_high],c->y+dy[n_high]))==0)
+				sources.push(new grid_cell(c->x+dx[n_high],c->y+dy[n_high]));
+		}
+
+		delete c;
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");

@@ -183,6 +183,7 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 
 
 /*
+31 citations. None appear to be improvements.
 @article{wang2006efficient,
   title={An efficient method for identifying and filling surface depressions in digital elevation models for hydrologic analysis and modelling},
   author={Wang, L. and Liu, H.},
@@ -195,6 +196,7 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 }
 
 This algorithm is essentially reproduced (but in poorer quality) by
+0 citations listed on Google Scholar.
 @article{liu2009another,
   title={Another fast and simple DEM depression-filling algo-rithm based on priority queue structure},
   author={LIU, Y.H. and ZHANG, W.C. and XU, J.W.},
@@ -205,6 +207,7 @@ This algorithm is essentially reproduced (but in poorer quality) by
 }
 
 This algorithm is first, but also poorly-described, though the pseudo-code appears to work
+44 citations. None appear to be improvements.
 @article{soille1994efficient,
   title={An efficient algorithm for drainage network extraction on DEMs},
   author={Soille, P. and Gratin, C.},

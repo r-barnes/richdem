@@ -22,7 +22,7 @@ void progress_bar(int percent){
 	static int old_percent=-2;
 	static timeval startTime;
 
-	if(omp_get_thread_num() != 0) return;
+	if(omp_get_thread_num()!=0) return;
 
 	if(percent==old_percent)
 		return;

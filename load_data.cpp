@@ -4,17 +4,18 @@
 #include "interface.h"
 #include "data_structures.h"
 
-int load_ascii_data(char filename[], float_2d &elevations){
+int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
 	FILE *fin;
 	long long file_size;
 	int rows,columns,cellsize;
-	double xllcorner,yllcorner,no_data;
+	double xllcorner,yllcorner;
+	int data_cells=0;
 
 	diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename);
 	fin=fopen(filename,"r");
 	if(fin==NULL){
 		diagnostic("failed!\n");
-		return -1;
+		throw -1;
 	}
 	diagnostic("succeeded.\n");
 
@@ -34,7 +35,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	diagnostic("succeeded.\n");
 
 	diagnostic("Reading DEM header...");
-	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %lf",&columns,&rows,&xllcorner,&yllcorner,&cellsize,&no_data)!=6){
+	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns,&rows,&xllcorner,&yllcorner,&cellsize,&no_data)!=6){
 		diagnostic("failed!\n");
 		return -1;
 	}
@@ -62,6 +63,8 @@ int load_ascii_data(char filename[], float_2d &elevations){
 				return -1;
 			}
 			elevations(x,y)=temp;
+			if(temp!=no_data)
+				data_cells++;
 		}
 	}
 	progress_bar(-1);
@@ -69,5 +72,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 
 	fclose(fin);
 
-    return 0;
+	diagnostic_arg("Read %ld cells, of which %d contained data (%ld%%).\n",(long int)columns*(long int)rows,data_cells,(long int)data_cells*100/(long int)columns/(long int)rows);
+
+    return data_cells;
 }
