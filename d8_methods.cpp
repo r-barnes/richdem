@@ -12,12 +12,12 @@ static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
 static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
-int d8_FlowDir(const float_2d &elevations, const int x, const int y, const float no_data){
+int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	float minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;
 
 	if (EDGE_GRID(x,y,elevations.size1(),elevations.size2())) return 0;
-	if (elevations(x,y)==no_data) return d8_NO_DATA; //No data for this cell
+	if (elevations(x,y)==elevations.no_data) return d8_NO_DATA; //No data for this cell
 
 	for(int n=1;n<=8;n++){
 		if(!IN_GRID(x+dx[n],y+dy[n],elevations.size1(),elevations.size2())) continue;
@@ -32,7 +32,7 @@ int d8_FlowDir(const float_2d &elevations, const int x, const int y, const float
 	return flowdir;
 }
 
-int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, const float no_data){
+int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs){
 	diagnostic_arg("The D8 flow directions will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(char)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	try{
@@ -49,7 +49,7 @@ int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, const floa
 	for(int x=0;x<elevations.size1();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2()));
 		for(int y=0;y<elevations.size2();y++)
-			flowdirs(x,y)=d8_FlowDir(elevations,x,y,no_data);
+			flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
@@ -69,7 +69,7 @@ bool does_cell_flow_into_me(const int x, const int y, int n, const char_2d &flow
 	return (flowdirs(x,y)!=d8_NO_DATA && n==inverse_flow[flowdirs(x,y)]);
 }
 
-int d8_upslope_area(const char_2d &flowdirs, const int data_cells){
+int d8_upslope_area(const char_2d &flowdirs){
 	char_2d dependency;
 	uint_2d area;
 	std::queue<grid_cell*> sources;
@@ -132,7 +132,7 @@ int d8_upslope_area(const char_2d &flowdirs, const int data_cells){
 		sources.pop();
 
 		ccount++;
-		progress_bar(ccount*100/data_cells);
+		progress_bar(ccount*100/flowdirs.data_cells);
 
 		area(c->x,c->y)=1;
 		for(int n=0;n<8;n++){

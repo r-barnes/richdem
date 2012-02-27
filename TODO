@@ -1,3 +1,4 @@
+array2d grids still need to receive meta data from their parent grids
 The 'collapse' directive on the parallel for loop thing may be useful
 Need to free memory when grid_cells are popped off of stacks
 

@@ -4,12 +4,10 @@
 #include "interface.h"
 #include "data_structures.h"
 
-int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
+int load_ascii_data(char filename[], float_2d &elevations){
 	FILE *fin;
 	long long file_size;
-	int rows,columns,cellsize;
-	double xllcorner,yllcorner;
-	int data_cells=0;
+	int rows,columns;
 
 	diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename);
 	fin=fopen(filename,"r");
@@ -35,7 +33,7 @@ int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
 	diagnostic("succeeded.\n");
 
 	diagnostic("Reading DEM header...");
-	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns,&rows,&xllcorner,&yllcorner,&cellsize,&no_data)!=6){
+	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns, &rows, &elevations.xllcorner, &elevations.yllcorner, &elevations.cellsize, &elevations.no_data)!=6){
 		diagnostic("failed!\n");
 		return -1;
 	}
@@ -55,6 +53,7 @@ int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
 	diagnostic("Reading elevation matrix...\n");
 	progress_bar(-1);
 	float temp;
+	elevations.data_cells=0;
 	for(int y=0;y<rows;y++){
 		progress_bar(ftell(fin)*100/file_size); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
@@ -63,8 +62,8 @@ int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
 				return -1;
 			}
 			elevations(x,y)=temp;
-			if(temp!=no_data)
-				data_cells++;
+			if(temp!=elevations.no_data)
+				elevations.data_cells++;
 		}
 	}
 	progress_bar(-1);
@@ -72,7 +71,7 @@ int load_ascii_data(char filename[], float_2d &elevations, float &no_data){
 
 	fclose(fin);
 
-	diagnostic_arg("Read %ld cells, of which %d contained data (%ld%%).\n",(long int)columns*(long int)rows,data_cells,(long int)data_cells*100/(long int)columns/(long int)rows);
+	diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
 
-    return data_cells;
+	return 0;
 }
