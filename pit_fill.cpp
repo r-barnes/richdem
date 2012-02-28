@@ -36,10 +36,10 @@ int pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float
 
 	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
 
-	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(float)/1024/1024);
+	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
 	try{
-		w.resize(elevations.size1(),elevations.size2());
+		w.resize(elevations.width(),elevations.height());
 	} catch (std::exception &e){
 		diagnostic("failed!\n");
 		return -1;
@@ -49,10 +49,10 @@ int pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float
 	diagnostic("Initializing intermediate elevation surface 'W'...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
-	for(int x=0;x<elevations.size1();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2()));
-		for(int y=0;y<elevations.size2();y++)
-			if(EDGE_GRID(x,y,elevations.size1(),elevations.size2()))
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++)
+			if(EDGE_GRID(x,y,elevations.width(),elevations.height()))
 				w(x,y)=elevations(x,y);
 			else
 				w(x,y)=std::numeric_limits<float>::infinity();
@@ -67,8 +67,8 @@ int pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float
 		something_done=false;
 
 		#pragma omp parallel for reduction(|:something_done)
-		for(int x=1;x<elevations.size1()-1;x++)
-		for(int y=1;y<elevations.size2()-1;y++)
+		for(int x=1;x<elevations.width()-1;x++)
+		for(int y=1;y<elevations.height()-1;y++)
 			if(w(x,y)>elevations(x,y))
 				for(int n=1;n<=8;n++){
 					if(elevations(x,y)>=w(x+dx[n],y+dy[n])+epsilon[n]){
@@ -109,7 +109,7 @@ int Dry_upward_cell(int x, int y, int recursive_depth, int max_recursive_depth, 
 	if(++recursive_depth>max_recursive_depth) return;
 
 	for(int n=1;n<=8;n++){
-		if(!IN_GRID(x+dx[n],y+dy[n],elevations.size1(),elevations.size2())) continue;
+		if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
 		if(elevations(x+dx[n],y+dy[n])!=std::numeric_limits<float>::infinity()) continue;
 		if(elevations(x+dx[n],y+dy[n])>=w(x,y)+epsilon[n]){
 			w(x+dx[n],y+dy[n])=elevations(x+dx[n],y+dy[n]);
@@ -123,10 +123,10 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 
 	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
 
-	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(float)/1024/1024);
+	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
 	try{
-		w.resize(elevations.size1(),elevations.size2());
+		w.resize(elevations.width(),elevations.height());
 	} catch (std::exception &e){
 		diagnostic("failed!\n");
 		return -1;
@@ -136,10 +136,10 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 	diagnostic("Initializing intermediate elevation surface 'W'...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
-	for(int x=0;x<elevations.size1();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2()));
-		for(int y=0;y<elevations.size2();y++)
-			if(EDGE_GRID(x,y,elevations.size1(),elevations.size2()))
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++)
+			if(EDGE_GRID(x,y,elevations.width(),elevations.height()))
 				w(x,y)=elevations(x,y);
 			else
 				w(x,y)=std::numeric_limits<float>::infinity();
@@ -154,8 +154,8 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 		something_done=false;
 
 		#pragma omp parallel for reduction(|:something_done)
-		for(int x=1;x<elevations.size1()-1;x++)
-		for(int y=1;y<elevations.size2()-1;y++)
+		for(int x=1;x<elevations.width()-1;x++)
+		for(int y=1;y<elevations.height()-1;y++)
 			if(w(x,y)>elevations(x,y))
 				for(int n=1;n<=8;n++){
 					if(elevations(x,y)>=w(x+dx[n],y+dy[n])+epsilon[n]){
@@ -238,10 +238,10 @@ int pit_fill_wang(float_2d &elevations){
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
 
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
 	try{
-		closed.resize(elevations.size1(),elevations.size2());
+		closed.resize(elevations.width(),elevations.height());
 	} catch (std::exception &e){
 		diagnostic("failed!\n");
 		return -1;
@@ -250,27 +250,27 @@ int pit_fill_wang(float_2d &elevations){
 	diagnostic("Initializing closed matrix...");
 	progress_bar(-1);
 	#pragma omp parallel for
-	for(int x=0;x<closed.size1();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.size2()*100/(elevations.size1()*elevations.size2()));
-		for(int y=0;y<closed.size2();y++)
+	for(int x=0;x<closed.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<closed.height();y++)
 			closed(x,y)=0;
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.size1()*2+elevations.size2()*2)*sizeof(grid_cell)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
-	for(int x=0;x<elevations.size1();x++){
+	for(int x=0;x<elevations.width();x++){
 		open.push(new grid_cellz(x,0,elevations(x,0) ));
-		open.push(new grid_cellz(x,elevations.size2()-1,elevations(x,elevations.size2()-1) ));
+		open.push(new grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
 		closed(x,0)=1;
-		closed(x,elevations.size2()-1)=1;
+		closed(x,elevations.height()-1)=1;
 	}
-	for(int y=1;y<elevations.size2()-1;y++){
+	for(int y=1;y<elevations.height()-1;y++){
 		open.push(new grid_cellz(0,y,elevations(0,y)	));
-		open.push(new grid_cellz(elevations.size1()-1,y,elevations(elevations.size1()-1,y) ));
+		open.push(new grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
 		closed(0,y)=1;
-		closed(elevations.size1()-1,y)=1;
+		closed(elevations.width()-1,y)=1;
 	}
 	diagnostic("succeeded.\n");
 
@@ -282,7 +282,7 @@ int pit_fill_wang(float_2d &elevations){
 		closed(c->x,c->y)=2;
 
 		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c->x+dx[n],c->y+dy[n],elevations.size1(),elevations.size2())) continue;
+			if(!IN_GRID(c->x+dx[n],c->y+dy[n],elevations.width(),elevations.height())) continue;
 			if(closed(c->x+dx[n],c->y+dy[n])>0)
 				continue;
 			else{
@@ -291,7 +291,7 @@ int pit_fill_wang(float_2d &elevations){
 				closed(c->x+dx[n],c->y+dy[n])=1;
 			}
 		}
-		progress_bar(processed_cells*100/(elevations.size1()*elevations.size2()));
+		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 		processed_cells++;
 	}
 	progress_bar(-1);

@@ -8,9 +8,9 @@
 
 int main(int argc, char **argv){
 	float_2d elevations;
-	float_2d flowdirs;
 	try{
 		load_ascii_data(argv[1],elevations);
+		float_2d flowdirs(elevations);
 
 	//	pit_fill_yonghe2009(elevations);
 	//	pit_fill_wang(elevations);
@@ -19,9 +19,10 @@ int main(int argc, char **argv){
 
 		dinf_flow_directions(elevations,flowdirs);
 
+		float_2d area(elevations);
 //		print_flow(flowdirs);
 
-		dinf_upslope_area(flowdirs);
+		dinf_upslope_area(flowdirs,area);
 		return 0;
 	} catch (int e) {
 		diagnostic("Unfortunately, I was unable to continue.\nClosing...\n");
