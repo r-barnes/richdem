@@ -293,6 +293,8 @@ int pit_fill_wang(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 		processed_cells++;
+
+		delete c;
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
