@@ -1,6 +1,6 @@
 #include "data_structures.h"
 #include "utility.h"
-#include "d8_methods.h"
+#include "dinf_methods.h"
 #include "interface.h"
 #include <omp.h>
 #include <cmath>

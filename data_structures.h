@@ -11,20 +11,20 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long data_cells;
 		T no_data;
 
-		long width();
-		long height();
+		long width() const;
+		long height() const ;
 		array2d ();
 		template<class U> 
 		array2d (array2d<U> &copyfrom);
 };
 
 template <class T>
-long array2d<T>::width(){
+long array2d<T>::width() const {
 	return boost::numeric::ublas::matrix<T>::size1();
 }
 
 template <class T>
-long array2d<T>::height(){
+long array2d<T>::height() const {
 	return boost::numeric::ublas::matrix<T>::size2();
 }
 
