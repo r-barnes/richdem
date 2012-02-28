@@ -1,5 +1,5 @@
-#ifndef _load_data_included
-#define _load_data_included
+#ifndef _data_io_included
+#define _data_io_included
 
 int load_ascii_data(char filename[], float_2d &elevations);
 
