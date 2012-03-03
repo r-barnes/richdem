@@ -25,28 +25,8 @@
 //int dy[9]={0,0,-1,-1,-1,0,1,1,1};
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
-void print_dem(float_2d &elevations, int mark_x, int mark_y);
-void print_flow(float_2d &flowdirs);
+void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
+void print_flow(const float_2d &flowdirs);
 void print_char_2d(const char_2d &arr);
-
-typedef struct grid_cell_typez {
-	int x;
-	int y;
-	float z;
-	grid_cell_typez(int x0, int y0, float z0){
-		x=x0;
-		y=y0;
-		z=z0;
-	}
-} grid_cellz;
-
-typedef struct grid_cell_type {
-	int x;
-	int y;
-	grid_cell_type(int x0, int y0){
-		x=x0;
-		y=y0;
-	}
-} grid_cell;
 
 #endif
