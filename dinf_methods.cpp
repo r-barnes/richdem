@@ -42,8 +42,8 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 
 	double e0,e1,e2,d1,d2,s1,s2,r,s;
 
-	if (EDGE_GRID(x,y,elevations.width(),elevations.height())) return -1; //Edge cells do not have a defined flow direction
 	if (elevations(x,y)==elevations.no_data) return dinf_NO_DATA; //Missing data
+	if (EDGE_GRID(x,y,elevations.width(),elevations.height())) return -1; //Edge cells do not have a defined flow direction
 
 	for(int n=0;n<8;n++){
 		if(!IN_GRID(x+dx_e1[n],y+dy_e1[n],elevations.width(),elevations.height())) continue;
@@ -90,6 +90,10 @@ int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs){
 		diagnostic("failed!\n");
 		return -1;
 	}
+	diagnostic("succeeded.\n");
+
+	diagnostic("Setting no_data value on flowdirs matrix...");
+	flowdirs.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating Dinf flow directions...\n");
@@ -167,9 +171,8 @@ float proportion_i_get(float flowdir, int n){
 		return 1-normalized_angle/(M_PI/4);
 }
 
-int dinf_upslope_area(const float_2d &flowdirs, float_2d &areas){
+int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
-	float_2d area;
 	std::queue<grid_cell*> sources;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
@@ -194,13 +197,21 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &areas){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating dependency matrix...\n");
+	diagnostic("Setting no_data value on area matrix...");
+	area.no_data=dinf_NO_DATA;
+	diagnostic("succeeded.\n");
+
+	diagnostic("Calculating dependency matrix & setting no_data cells...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
+			if(flowdirs(x,y)==dinf_NO_DATA){
+				area(x,y)=dinf_NO_DATA;
+				continue;
+			}
 			for(int n=1;n<=8;n++){
 				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height())) continue;
 				if(does_cell_flow_into_me(flowdirs(x+dx[n],y+dy[n]),n))
@@ -231,6 +242,12 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &areas){
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
+
+		if(flowdirs(c->x,c->y)==dinf_NO_DATA){ //TODO: May not be necessary due to code elsewhere
+			area(c->x,c->y)=dinf_NO_DATA;
+			delete c;
+			continue;
+		}
 
 		area(c->x,c->y)=1;
 		for(int n=1;n<=8;n++){
