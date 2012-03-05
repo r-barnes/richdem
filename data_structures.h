@@ -17,7 +17,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		array2d ();
 		template<class U> array2d (array2d<U> &copyfrom);
 		long estimated_output_size();
-		int print(int x, int y);
+		int print(FILE *fout, int x, int y);
 };
 
 template <class T>
@@ -49,17 +49,23 @@ array2d<T>::array2d(array2d<U> &copyfrom){
 	no_data=copyfrom.no_data;
 }
 
-/*template <> long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
-template <> long array2d<char>::estimated_output_size(){return 4*this->width()*this->height();}
-template <> long array2d<bool>::estimated_output_size(){return 2*this->width()*this->height();}
-template <> long array2d<unsigned int>::estimated_output_size(){return 9*this->width()*this->height();}
-*/
-/*
-template <> int array2d<float>::print(int x, int y){return fprintf("%f ",this(x,y));}
-template <> int array2d<char>::print(int x, int y){return fprintf("%d ",(int)this(x,y));}
-template <> int array2d<bool>::print(int x, int y){return fprintf("%d ",(int)this(x,y));}
-template <> int array2d<unsigned int>::print(int x, int y){return fprintf("%d ",this(x,y));}
-*/
+template <> inline long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
+template <> inline long array2d<char>::estimated_output_size(){return 4*this->width()*this->height();}
+template <> inline long array2d<bool>::estimated_output_size(){return 2*this->width()*this->height();}
+template <> inline long array2d<unsigned int>::estimated_output_size(){return 9*this->width()*this->height();}
+
+template <> inline int array2d<float>::print(FILE *fout, int x, int y){
+	return fprintf(fout, "%.3f ",boost::numeric::ublas::matrix<float>::operator()(x,y));
+}
+template <> inline int array2d<char>::print(FILE *fout, int x, int y){
+	return fprintf(fout, "%d ",boost::numeric::ublas::matrix<char>::operator()(x,y));
+}
+template <> inline int array2d<bool>::print(FILE *fout, int x, int y){
+	return fprintf(fout, "%d ",boost::numeric::ublas::matrix<bool>::operator()(x,y));
+}
+template <> inline int array2d<unsigned int>::print(FILE *fout, int x, int y){
+	return fprintf(fout, "%d ",boost::numeric::ublas::matrix<unsigned int>::operator()(x,y));
+}
 
 
 
