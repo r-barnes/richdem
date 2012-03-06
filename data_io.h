@@ -2,7 +2,7 @@
 #define _data_io_included
 
 #include "interface.h"
-//#include <fcntl.h>
+//#include <fcntl.h> //Used for posix_fallocate
 
 int load_ascii_data(char filename[], float_2d &elevations);
 
