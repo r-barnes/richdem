@@ -21,8 +21,17 @@
 #define NO_FLOW			-1
 
 #define MAX(A,B)	(((A)>(B))?(A):(B))
-//int dx[9]={0,-1,-1,0,1,1,1,0,-1};
-//int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+
+//D8 Directions
+const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
+const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
+//derived from the following neighbour directions
+//234
+//105
+//876
+
+
 //std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
 void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
