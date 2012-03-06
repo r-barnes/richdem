@@ -8,11 +8,6 @@
 
 #define NO_DINF_FLOW -1
 
-//D8 Directions
-static int const dx[9]={0,-1,-1,0,1,1,1,0,-1};
-static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
-static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
-
 /*
 814 citations
 @article{tarboton1997new,
@@ -173,7 +168,7 @@ float proportion_i_get(float flowdir, int n){
 
 int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
-	std::queue<grid_cell*> sources;
+	std::queue<grid_cell> sources;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
 
@@ -228,7 +223,7 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)!=dinf_NO_DATA && dependency(x,y)==0)
-				sources.push(new grid_cell(x,y));
+				sources.push(grid_cell(x,y));
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
@@ -237,15 +232,14 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	progress_bar(-1);
 	long int ccount=0;
 	while(sources.size()>0){
-		grid_cell *c=sources.front();
-		sources.pop();
+		grid_cell *c=&sources.front();
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
 		if(flowdirs(c->x,c->y)==dinf_NO_DATA){ //TODO: May not be necessary due to code elsewhere
 			area(c->x,c->y)=dinf_NO_DATA;
-			delete c;
+			sources.pop();
 			continue;
 		}
 
@@ -259,12 +253,12 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 			int n_low= dinf_to_d8_low [(int)(flowdirs(c->x,c->y)/(M_PI/4))];
 			int n_high=dinf_to_d8_high[(int)(flowdirs(c->x,c->y)/(M_PI/4))];
 			if( (--dependency(c->x+dx[n_low],c->y+dy[n_low]))==0)
-				sources.push(new grid_cell(c->x+dx[n_low],c->y+dy[n_low]));
+				sources.push(grid_cell(c->x+dx[n_low],c->y+dy[n_low]));
 			if( (--dependency(c->x+dx[n_high],c->y+dy[n_high]))==0)
-				sources.push(new grid_cell(c->x+dx[n_high],c->y+dy[n_high]));
+				sources.push(grid_cell(c->x+dx[n_high],c->y+dy[n_high]));
 		}
 
-		delete c;
+		sources.pop();
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
