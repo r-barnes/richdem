@@ -87,7 +87,8 @@ typedef struct grid_cell_typez {
 		x=x0;
 		y=y0;
 		z=z0;
-	}
+	};
+	grid_cell_typez(){}
 } grid_cellz;
 
 typedef struct grid_cell_type {
