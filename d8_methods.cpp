@@ -5,11 +5,7 @@
 #include <omp.h>
 #include <queue>
 
-//D8 Directions
-static int const dx[9]={0,-1,-1,0,1,1,1,0,-1};
-static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
-static int const inverse_flow[9]={0,5,6,7,8,1,2,3,4};
-//std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
+
 
 int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	float minimum_elevation=elevations(x,y);
@@ -70,7 +66,7 @@ bool does_cell_flow_into_me(const int x, const int y, int n, const char_2d &flow
 
 int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	char_2d dependency;
-	std::queue<grid_cell*> sources;
+	std::queue<grid_cell> sources;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
 
@@ -117,7 +113,7 @@ int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)!=d8_NO_DATA && dependency(x,y)==0)
-				sources.push(new grid_cell(x,y));
+				sources.push(grid_cell(x,y));
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
@@ -126,23 +122,22 @@ int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	progress_bar(-1);
 	long int ccount=0;
 	while(sources.size()>0){
-		grid_cell *c=sources.front();
-		sources.pop();
+		grid_cell c=sources.front();
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
-		area(c->x,c->y)=1;
+		area(c.x,c.y)=1;
 		for(int n=0;n<8;n++){
-			if(!IN_GRID(c->x+dx[n],c->y+dy[n],flowdirs.width(),flowdirs.height())) continue;
-			if(does_cell_flow_into_me(c->x+dx[n],c->y+dy[n],n,flowdirs))
-				area(c->x,c->y)+=area(c->x+dx[n],c->y+dy[n]);
+			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height())) continue;
+			if(does_cell_flow_into_me(c.x+dx[n],c.y+dy[n],n,flowdirs))
+				area(c.x,c.y)+=area(c.x+dx[n],c.y+dy[n]);
 		}
-		if(flowdirs(c->x,c->y)!=d8_NO_DATA && flowdirs(c->x,c->y)!=0)
-			if( (--dependency(c->x+dx[flowdirs(c->x,c->y)],c->y+dy[flowdirs(c->x,c->y)]))==0)
-				sources.push(new grid_cell(c->x+dx[flowdirs(c->x,c->y)],c->y+dy[flowdirs(c->x,c->y)]));
+		if(flowdirs(c.x,c.y)!=d8_NO_DATA && flowdirs(c.x,c.y)!=0)
+			if( (--dependency(c.x+dx[flowdirs(c.x,c.y)],c.y+dy[flowdirs(c.x,c.y)]))==0)
+				sources.push(grid_cell(c.x+dx[flowdirs(c.x,c.y)],c.y+dy[flowdirs(c.x,c.y)]));
 
-		delete c;
+		sources.pop();
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
