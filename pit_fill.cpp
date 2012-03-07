@@ -7,18 +7,6 @@
 #include <vector>
 #include <queue>
 
-//D8 Directions
-static int const dx[9]={0,-1,-1,0,1,1,1,0,-1};
-static int const dy[9]={0,0,-1,-1,-1,0,1,1,1};
-//Neighbour directions
-//234
-//105
-//876
-
-
-
-
-
 
 /*
 @article{planchon2002fast,
@@ -232,9 +220,24 @@ class grid_cell_compare{
 		}
 };
 
+class grid_cell_compare2{
+	bool reverse;
+
+	public:
+		grid_cell_compare2(const bool& revparam=false){reverse=revparam;}
+
+		bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
+			if (reverse) return (lhs.z<rhs.z);
+			else return (lhs.z>rhs.z);
+		}
+};
+
+
+
+
+
 int pit_fill_wang(float_2d &elevations){
-	std::priority_queue<grid_cellz*, std::vector<grid_cellz*>, grid_cell_compare> open;
-	grid_cellz *c;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
 
@@ -247,7 +250,7 @@ int pit_fill_wang(float_2d &elevations){
 		return -1;
 	}
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...");
+	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<closed.width();x++){
@@ -261,14 +264,14 @@ int pit_fill_wang(float_2d &elevations){
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
-		open.push(new grid_cellz(x,0,elevations(x,0) ));
-		open.push(new grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
 		closed(x,0)=1;
 		closed(x,elevations.height()-1)=1;
 	}
 	for(int y=1;y<elevations.height()-1;y++){
-		open.push(new grid_cellz(0,y,elevations(0,y)	));
-		open.push(new grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
 		closed(0,y)=1;
 		closed(elevations.width()-1,y)=1;
 	}
@@ -277,28 +280,27 @@ int pit_fill_wang(float_2d &elevations){
 	diagnostic("Performing the Wang fill...\n");
 	progress_bar(-1);
 	while(open.size()>0){
-		c=open.top();
-		open.pop();
-		closed(c->x,c->y)=2;
+		grid_cellz c=open.top();
+		closed(c.x,c.y)=2;
+		processed_cells++;
 
 		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c->x+dx[n],c->y+dy[n],elevations.width(),elevations.height())) continue;
-			if(closed(c->x+dx[n],c->y+dy[n])>0)
+			int nx=c.x+dx[n];
+			int ny=c.y+dy[n];
+			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(closed(nx,ny)>0)
 				continue;
 			else{
-				elevations(c->x+dx[n],c->y + dy[n])=MAX(elevations(c->x+dx[n],c->y+dy[n]),c->z);
-				open.push(new grid_cellz(c->x+dx[n],c->y+dy[n],elevations(c->x+dx[n],c->y+dy[n]) ));
-				closed(c->x+dx[n],c->y+dy[n])=1;
+				elevations(nx,ny)=MAX(elevations(nx,ny),c.z);
+				open.push(grid_cellz(nx,ny,elevations(nx,ny) ));
+				closed(nx,ny)=1;
 			}
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
-		processed_cells++;
-		delete c;
+		open.pop();
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
-
-//	print_dem(elevations);
+	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
 
@@ -309,57 +311,13 @@ int pit_fill_wang(float_2d &elevations){
 
 
 
+int pit_fill_barnes1(float_2d &elevations){
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::queue<grid_cell> meander;
+	char_2d closed;	//TODO: This could probably be made into a boolean
+	unsigned long processed_cells=0;
 
-
-
-
-
-
-
-
-
-
-void fill_pit(float_2d &elevations, int x, int y, int z, std::queue<grid_cell*> &climb, bool_2d &closed){
-	if(closed(x,y)) return;
-	closed(x,y)=true;
-
-	if(elevations(x,y)>z){
-		climb.push(new grid_cell(x,y));
-		return;
-	}
-
-	elevations(x,y)=z;
-
-	for(int n=1;n<=8;n++){
-		if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
-		if(closed(x+dx[n],y+dy[n])) continue;
-		fill_pit(elevations,x+dx[n],y+dy[n],z,climb,closed);
-	}
-}
-
-void climb_up(const float_2d &elevations, int x, int y, int z, std::priority_queue<grid_cellz*, std::vector<grid_cellz*>, grid_cell_compare> &potential_pit, bool_2d &closed){
-	if(closed(x,y)) return;
-
-	closed(x,y)=true;
-
-	if(elevations(x,y)<z){
-		potential_pit.push(new grid_cellz(x,y,elevations(x,y)));
-		return;
-	}
-
-	for(int n=1;n<=8;n++){
-		if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
-		if(closed(x+dx[n],y+dy[n])) continue;
-		climb_up(elevations,x+dx[n],y+dy[n],elevations(x,y),potential_pit,closed);
-	}
-}
-
-int pit_fill_barnes(float_2d &elevations){
-	std::priority_queue<grid_cellz*, std::vector<grid_cellz*>, grid_cell_compare> potential_pit;
-	std::queue<grid_cell*> climb;
-	bool_2d closed;
-
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(bool)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
 	try{
 		closed.resize(elevations.width(),elevations.height());
@@ -368,13 +326,13 @@ int pit_fill_barnes(float_2d &elevations){
 		return -1;
 	}
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...");
+	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<closed.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<closed.height();y++)
-			closed(x,y)=false;
+			closed(x,y)=0;
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
@@ -382,35 +340,349 @@ int pit_fill_barnes(float_2d &elevations){
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
-		potential_pit.push(new grid_cellz(x,0,elevations(x,0) ));
-		potential_pit.push(new grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
-		closed(x,0)=true;
-		closed(x,elevations.height()-1)=true;
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=1;
+		closed(x,elevations.height()-1)=1;
 	}
 	for(int y=1;y<elevations.height()-1;y++){
-		potential_pit.push(new grid_cellz(0,y,elevations(0,y)	));
-		potential_pit.push(new grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
-		closed(0,y)=true;
-		closed(elevations.width()-1,y)=true;
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=1;
+		closed(elevations.width()-1,y)=1;
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("Performing the Barnes fill...");
-	grid_cellz *p;
-	grid_cell *c;
-	while(potential_pit.size()>0){
-		p=potential_pit.top();
-		potential_pit.pop();
-		fill_pit(elevations,p->x,p->y,p->z,climb,closed);
-		delete p;
+	diagnostic("Performing the Barnes fill...\n");
+	progress_bar(-1);
+	while(open.size()>0 || meander.size()>0){
+		if(meander.size()>0){
+			grid_cell c=meander.front();
+			closed(c.x,c.y)=2;
+			processed_cells++;
 
-		while(climb.size()>0){
-			c=climb.front();
-			climb.pop();
-			climb_up(elevations,c->x,c->y,elevations(c->x,c->y),potential_pit,closed);
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)>0)
+					continue;
+				else if(elevations(nx,ny)<=elevations(c.x,c.y)){
+					elevations(nx,ny)=elevations(c.x,c.y);
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				} else {
+					open.push(grid_cellz(nx,ny,elevations(nx,ny)));
+					closed(nx,ny)=1;
+					continue;
+				}
+			}
+			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+			meander.pop();
+		} else {
+			grid_cellz c=open.top();
+			closed(c.x,c.y)=2;
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)>0)
+					continue;
+				else if(elevations(nx,ny)>elevations(c.x,c.y)){
+					open.push(grid_cellz(nx,ny,elevations(nx,ny)));
+					closed(nx,ny)=1;
+					continue;
+				} else if(elevations(nx,ny)<elevations(c.x,c.y))
+					elevations(nx,ny)=elevations(c.x,c.y);
+				meander.push(grid_cell(nx,ny));
+				closed(nx,ny)=1;
+			}
+			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+			open.pop();
 		}
 	}
+	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("%ld cells processed.\n",processed_cells);
+}
+
+
+
+
+
+
+
+
+
+int pit_fill_barnes2(float_2d &elevations){
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::queue<grid_cell> meander;
+	std::queue<grid_cell> climb;
+	char_2d closed;	//TODO: This could probably be made into a boolean
+	unsigned long processed_cells=0;
+
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic("Resizing boolean flood array matrix...");
+	try{
+		closed.resize(elevations.width(),elevations.height());
+	} catch (std::exception &e){
+		diagnostic("failed!\n");
+		return -1;
+	}
+	diagnostic("succeeded.\n");
+	diagnostic("Initializing closed matrix...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<closed.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<closed.height();y++)
+			closed(x,y)=0;
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
+	diagnostic("Adding cells to the open priority queue...");
+	for(int x=0;x<elevations.width();x++){
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=1;
+		closed(x,elevations.height()-1)=1;
+	}
+	for(int y=1;y<elevations.height()-1;y++){
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=1;
+		closed(elevations.width()-1,y)=1;
+	}
 	diagnostic("succeeded.\n");
 
-//	print_dem(elevations);
+	diagnostic("Performing the Barnes fill...\n");
+	progress_bar(-1);
+	while(open.size()>0 || meander.size()>0 || climb.size()>0){
+		if(meander.size()>0){
+			grid_cell c=meander.front();
+			closed(c.x,c.y)=2;
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)>0)
+					continue;
+				else if(elevations(nx,ny)<=elevations(c.x,c.y)){
+					elevations(nx,ny)=elevations(c.x,c.y);
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				} else {
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				}
+			}
+			meander.pop();
+		} else if (climb.size()>0){
+			grid_cell c=climb.front();
+			closed(c.x,c.y)=2;
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)>0)
+					continue;
+				else if(elevations(nx,ny)<elevations(c.x,c.y)){
+					open.push(grid_cellz(nx,ny,elevations(c.x,c.y)));
+					continue;
+				} else {
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				}
+			}
+			climb.pop();
+		} else {
+			grid_cellz c=open.top();
+
+			if(closed(c.x,c.y)==2){
+				open.pop();
+				continue;
+			}
+
+			closed(c.x,c.y)=2;
+			processed_cells++;
+
+			elevations(c.x,c.y)=c.z;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)>0)
+					continue;
+				else if(elevations(nx,ny)>elevations(c.x,c.y)){
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				} else if(elevations(nx,ny)<=elevations(c.x,c.y)){
+					elevations(nx,ny)=elevations(c.x,c.y);
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				}
+			}
+			open.pop();
+		}
+		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+	}
+	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("%ld cells processed.\n",processed_cells);
+}
+
+
+
+
+
+
+
+
+
+
+int pit_fill_barnes3(float_2d &elevations){
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::queue<grid_cell> meander;
+	std::queue<grid_cell> climb;
+	char_2d closed;	//TODO: This could probably be made into a boolean
+	float_2d info;
+	unsigned long processed_cells=0;
+	const int CLOSED=1, QUEUED=2, OPEN=3;
+
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic("Resizing boolean flood array matrix...");
+	try{
+		closed.resize(elevations.width(),elevations.height());
+		info.resize(elevations.width(),elevations.height());
+	} catch (std::exception &e){
+		diagnostic("failed!\n");
+		return -1;
+	}
+	diagnostic("succeeded.\n");
+	diagnostic("Initializing closed matrix...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<closed.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<closed.height();y++){
+			closed(x,y)=OPEN;
+			info(x,y)=999999;
+		}
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
+	diagnostic("Adding cells to the open priority queue...");
+	for(int x=0;x<elevations.width();x++){
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=QUEUED;
+		closed(x,elevations.height()-1)=QUEUED;
+	}
+	for(int y=1;y<elevations.height()-1;y++){
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=QUEUED;
+		closed(elevations.width()-1,y)=QUEUED;
+	}
+	diagnostic("succeeded.\n");
+
+	diagnostic("Performing the Barnes fill...\n");
+	progress_bar(-1);
+	while(open.size()>0 || meander.size()>0 || climb.size()>0){
+		if(meander.size()>0){
+			grid_cell c=meander.front();
+			closed(c.x,c.y)=CLOSED;
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)<=QUEUED)
+					continue;
+				else if(elevations(nx,ny)<=elevations(c.x,c.y)){
+					elevations(nx,ny)=elevations(c.x,c.y);
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=QUEUED;
+					continue;
+				} else {
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=QUEUED;
+					continue;
+				}
+			}
+			meander.pop();
+		} else if (climb.size()>0){
+			grid_cell c=climb.front();
+			closed(c.x,c.y)=CLOSED;
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)<=QUEUED || elevations(c.x,c.y)>=info(nx,ny))
+					continue;
+				else if(elevations(nx,ny)<elevations(c.x,c.y)){
+					open.push(grid_cellz(nx,ny,elevations(c.x,c.y)));
+					info(nx,ny)=elevations(c.x,c.y);
+					continue;
+				} else {
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=QUEUED;
+					continue;
+				}
+			}
+			climb.pop();
+		} else {
+			grid_cellz c=open.top();
+
+			if(closed(c.x,c.y)==CLOSED){
+				open.pop();
+				continue;
+			}
+
+			closed(c.x,c.y)=CLOSED;
+			processed_cells++;
+
+			elevations(c.x,c.y)=c.z;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)<=QUEUED)
+					continue;
+				else if(elevations(nx,ny)>elevations(c.x,c.y)){
+					climb.push(grid_cell(nx,ny));
+					closed(nx,ny)=QUEUED;
+					continue;
+				} else if(elevations(nx,ny)<=elevations(c.x,c.y)){
+					elevations(nx,ny)=elevations(c.x,c.y);
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=QUEUED;
+					continue;
+				}
+			}
+			open.pop();
+		}
+		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+	}
+	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
