@@ -26,13 +26,11 @@
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
 const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
+const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 //derived from the following neighbour directions
 //234
 //105
 //876
-
-
-//std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
 void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
 void print_flow(const float_2d &flowdirs);
