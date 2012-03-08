@@ -8,7 +8,8 @@ typedef struct segment_type{
 	segment_type(int y, int xl, int xr, int dy) : y(y+dy), xl(xl), xr(xr), dy(dy) {}
 } segment;
 
-#define push(y,xl,xr,dy) if(y+(dy)>=0 && y+(dy)<data.height()) segments.push(segment(y,xl,xr,dy))
+#define bucket_push(y,xl,xr,dy) if(y+(dy)>=0 && y+(dy)<data.height()) segments.push(segment(y,xl,xr,dy))
+#define bucket_push_hard(y,xl,xr,dy) segments.push(segment(y,xl,xr,dy))
 
 void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 	std::stack<segment> segments;
@@ -17,8 +18,8 @@ void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 
     ov = data(x, y);		//read pv at seed point
     if (ov==nv || x<0 || x>=data.width() || y<0 || y>=data.height()) return;
-    push(y, x, x, 1);			// needed in some cases
-    push(y+1, x, x, -1);		// seed segment (popped 1st)
+    bucket_push(y, x, x, 1);			// needed in some cases
+    bucket_push(y+1, x, x, -1);		// seed segment (popped 1st)
 
     while (segments.size()>0) {
 		//pop segment off stack and fill a neighboring scan line
@@ -35,35 +36,39 @@ void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 			data(x, y)=nv;
 		if (x>=x1){
 			if(x-1>=0)							//Diagonal leak?
-				push(y, x-1, x1-1, dy);
+				bucket_push(y, x-1, x1-1, dy);
 			goto skip;
 		}
 		l = x+1;
 		if (l<x1)								// leak on left?
-			push(y, l, x1-1, -dy);
+			bucket_push(y, l, x1-1, -dy);
 
 		//Diagonal Leaks?
 		if(l-1>=0){
-			push(y, l-1, l-1, dy);
-			push(y, l-1, l-1, -dy);
+			bucket_push(y, l-1, l-1, dy);
+			bucket_push(y, l-1, l-1, -dy);
 		}
 
 		x = x1+1;
 		do {
 			for (; x<data.width() && data(x, y)==ov; x++)
 				data(x, y)=nv;
-			push(y, l, x-1, dy);
+			bucket_push(y, l, x-1, dy);
 			if (x>x2+1)						// leak on right?
-				push(y, x2+1, x-1, -dy);
+				bucket_push(y, x2+1, x-1, -dy);
 
 			//Diagonal Leaks?
 			if(x<data.width()){
-				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov) push(y,x,x,dy);
-				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov) push(y,x,x,-dy);
+				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov)
+					bucket_push_hard(y,x,x,dy);
+				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov)
+					bucket_push_hard(y,x,x,-dy);
 			}
 			if(x-1==data.width()-1){
-				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov) push(y,x-2,x-2,dy);
-				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov) push(y,x-2,x-2,-dy);
+				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov)
+					bucket_push_hard(y,x-2,x-2,dy);
+				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov)
+					bucket_push_hard(y,x-2,x-2,-dy);
 			}
 
 skip:		for (x++; x<=x2 && data(x, y)!=ov; x++);
@@ -168,11 +173,11 @@ int random_array(int width, int height, char_2d &data){
 
 int main(){
 	char_2d data;
-	for(int i=0;i<5;i++){
-		random_array(30,30,data);
-		data(15,15)=0;
-		bucket_fill(15,15,0,3,data);
-		printdata(data);
+	for(int i=0;i<100;i++){
+		random_array(100,100,data);
+		data(50,50)=0;
+		bucket_fill(50,50,0,3,data);
+//		printdata(data);
 		printf("==================\n");
 	}
 }
