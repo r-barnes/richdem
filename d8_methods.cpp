@@ -27,16 +27,33 @@ int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	return flowdir;
 }
 
-int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs){
+int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, bool init){
 	diagnostic_arg("The D8 flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	try{
-		flowdirs.resize(elevations.width(),elevations.height(),false);
+		flowdirs.resize(elevations.width(),elevations.height(),!init);
 	} catch (std::exception &e){
 		diagnostic("failed!\n");
 		return -1;
 	}
 	diagnostic("succeeded.\n");
+
+	if(init){
+		diagnostic("Setting no_data value on flowdirs matrix...");
+		flowdirs.no_data=d8_NO_DATA;
+		diagnostic("succeeded.\n");
+
+		diagnostic("Initializing D8 flow directions...\n");
+		progress_bar(-1);
+		#pragma omp parallel for
+		for(int x=0;x<elevations.width();x++){
+			progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+			for(int y=0;y<elevations.height();y++)
+				flowdirs(x,y)=NO_FLOW;
+		}
+		progress_bar(-1);
+		diagnostic("\tsucceeded.\n");
+	}
 
 	diagnostic("Calculating D8 flow directions...\n");
 	progress_bar(-1);
@@ -44,7 +61,8 @@ int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs){
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++)
-			flowdirs(x,y)=d8_FlowDir(elevations,x,y);
+			if(flowdirs(x,y)==NO_FLOW)
+				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
