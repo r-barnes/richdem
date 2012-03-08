@@ -8,50 +8,154 @@ typedef struct segment_type{
 	segment_type(int y, int xl, int xr, int dy) : y(y+dy), xl(xl), xr(xr), dy(dy) {}
 } segment;
 
+#define push(y,xl,xr,dy) if(y+(dy)>=0 && y+(dy)<data.height()) segments.push(segment(y,xl,xr,dy))
+
 void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 	std::stack<segment> segments;
 	int l, x1, x2, dy;
-    int ov;	/* old pixel value */
+    int ov;	//old pixel value
 
-    ov = data(x, y);		/* read pv at seed point */
+    ov = data(x, y);		//read pv at seed point
     if (ov==nv || x<0 || x>=data.width() || y<0 || y>=data.height()) return;
-    segments.push(segment(y, x, x, 1));			/* needed in some cases */
-    segments.push(segment(y+1, x, x, -1));		/* seed segment (popped 1st) */
+    push(y, x, x, 1);			// needed in some cases
+    push(y+1, x, x, -1);		// seed segment (popped 1st)
 
     while (segments.size()>0) {
-	/* pop segment off stack and fill a neighboring scan line */
-	segment c=segments.top();
-	segments.pop();
-	y=c.y;
-	x1=c.xl;
-	x2=c.xr;
-	dy=c.dy;
-	/*
-	 * segment of scan line y-dy for x1<=x<=x2 was previously filled,
-	 * now explore adjacent pixels in scan line y
-	 */
-	for (x=x1; x>=0 && data(x, y)==ov; x--)
-	    data(x, y)=nv;
-	if (x>=x1) goto skip;
-	l = x+1;
-	if (l<x1) segments.push(segment(y, l, x1-1, -dy));		/* leak on left? */
-	x = x1+1;
-	do {
-	    for (; x<data.width() && data(x, y)==ov; x++)
-		data(x, y)=nv;
-	    segments.push(segment(y, l, x-1, dy));
-	    if (x>x2+1) segments.push(segment(y, x2+1, x-1, -dy));	/* leak on right? */
-skip:	    for (x++; x<=x2 && data(x, y)!=ov; x++);
-	    l = x;
-	} while (x<=x2);
+		//pop segment off stack and fill a neighboring scan line
+		segment c=segments.top();
+		segments.pop();
+		y=c.y;
+		x1=c.xl;
+		x2=c.xr;
+		dy=c.dy;
+		//segment of scan line y-dy for x1<=x<=x2 was previously filled,
+		//now explore adjacent pixels in scan line y
+	
+		for (x=x1; x>=0 && data(x, y)==ov; x--)
+			data(x, y)=nv;
+		if (x>=x1){
+			if(x-1>=0)							//Diagonal leak?
+				push(y, x-1, x1-1, dy);
+			goto skip;
+		}
+		l = x+1;
+		if (l<x1)								// leak on left?
+			push(y, l, x1-1, -dy);
+
+		//Diagonal Leaks?
+		if(l-1>=0){
+			push(y, l-1, l-1, dy);
+			push(y, l-1, l-1, -dy);
+		}
+
+		x = x1+1;
+		do {
+			for (; x<data.width() && data(x, y)==ov; x++)
+				data(x, y)=nv;
+			push(y, l, x-1, dy);
+			if (x>x2+1)						// leak on right?
+				push(y, x2+1, x-1, -dy);
+
+			//Diagonal Leaks?
+			if(x<data.width()){
+				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov) push(y,x,x,dy);
+				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov) push(y,x,x,-dy);
+			}
+			if(x-1==data.width()-1){
+				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov) push(y,x-2,x-2,dy);
+				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov) push(y,x-2,x-2,-dy);
+			}
+
+skip:		for (x++; x<=x2 && data(x, y)!=ov; x++);
+			l = x;
+		} while (x<=x2);
     }
 }
 
+typedef struct barnes_segment_type{
+	int y, xl, xr, dy, xo;
+	barnes_segment_type(int y, int xl, int xr, int dy, int xo) : y(y+dy), xl(xl), xr(xr), dy(dy), xo(xo) {}
+} barnes_segment;
+
+//#define push(y,xl,xr,dy,xo) if(y+(dy)>=0 && y+(dy)<data.height()) segments.push(barnes_segment(y,xl,xr,dy,xo))
+
+#define pushd(y,xl,xr,dy) if(IN_GRID(x,y+(dy),data.width(),data.height())) segements.push(segment(y,xl,xr,dy))
+/*
+void bucket_fill(int seed_x, int seed_y, int oldv, int newv, char_2d &data){
+	std::stack<segment> segments;
+	int l,x,r;
+
+    if (data(seed_x,seed_y)!=oldv) return;
+	if(!IN_GRID(seed_x,seed_y,data.width(),data.height())) return;
+    push(seed_y,seed_x,seed_x,1,seed_x);	// needed in some cases
+    push(seed_y+1,seed_x,seed_x,-1,seed_x);	// seed segment (popped 1st)
+
+    while (segments.size()>0) {
+		//pop segment off stack and fill a neighboring scan line
+		barnes_segment c=segments.top();
+		segments.pop();
+//		fprintf(stderr,"Popped a line %d beginning at %d. Next segments are in %d.\n",c.y,c.xo,c.y+c.dy);
+		//segment of scan line y-dy for x1<=x<=x2 was previously filled,
+		//now explore adjacent pixels in scan line y
+		register bool is_old,is_old_opp;
+		int added_to_stack=0;
+
+		x=c.xo;
+		for(;x>=0 && data(x,c.y)==oldv;x--){
+			if(c.y+c.dy>=0 && c.y+c.dy<data.height()){
+				if(is_old && data(x,c.y+c.dy)!=oldv){
+					push(c.y,c.xl,c.xr,c.dy,x+1);
+					added_to_stack++;
+					is_old=false;
+				} else if (!is_old && data(x,c.y+c.dy)==oldv)
+					is_old=true;
+			}
+			if(x==c.xl-1)
+				is_old_opp=(data(x,c.y-c.dy)==oldv);
+			if(x<c.xl && c.y-c.dy>=0 && c.y-c.dy<data.height()){
+				if(is_old_opp && data(x,c.y-c.dy)!=oldv){
+					push(c.y,c.xl,c.xr,-c.dy,x+1);
+					added_to_stack++;
+					is_old_opp=false;
+				} else if (!is_old_opp && data(x,c.y-c.dy)==oldv)
+					is_old_opp=true;
+			}
+			data(x,c.y)=newv;
+		}
+		l=x+1;
+		if(is_old && c.y+c.dy>=0 && c.y+c.dy<data.height())
+			if(data(l,c.y+c.dy)==oldv)
+				push(c.y,c.xl,c.xr,c.dy,l);
+		if(x<c.xl && is_old_opp && c.y-c.dy>=0 && c.y-c.dy<data.height())
+			if(data(l,c.y-c.dy)==oldv)
+				push(c.y,c.xl,c.xr,-c.dy,l);
+
+
+//		fprintf(stderr,"\tLine bounded by [%d,%d].\n",l,r);
+	}
+}*/
+
 int printdata(const char_2d &data){
+	printf(" \t");
+	for(int x=0;x<data.width();x++)
+		printf("%d",x%10);
+	printf("\n");
 	for(int y=0;y<data.height();y++){
-		for(int x=0;x<data.width();x++)
-			printf("%d ",data(x,y));
-		printf("\n");
+		printf("%d\t",y%10);
+		for(int x=0;x<data.width();x++){
+			if(data(x,y)==0)
+				printf("\033[31m");
+			else if (data(x,y)==1)
+				printf("\033[32m");
+			else if (data(x,y)==2)
+				printf("\033[33m");
+			else if (data(x,y)==3)
+				printf("\033[34m");
+			else if (data(x,y)==4)
+				printf("\033[35m");
+			printf("%d",data(x,y));
+		}
+		printf("\n\033[39m");
 	}
 }
 
@@ -64,9 +168,11 @@ int random_array(int width, int height, char_2d &data){
 
 int main(){
 	char_2d data;
-	random_array(30,30,data);
-	data(15,15)=0;
-	printdata(data);
-	bucket_fill(15,15,0,3,data);
-	printdata(data);
+	for(int i=0;i<5;i++){
+		random_array(30,30,data);
+		data(15,15)=0;
+		bucket_fill(15,15,0,3,data);
+		printdata(data);
+		printf("==================\n");
+	}
 }
