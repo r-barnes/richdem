@@ -15,7 +15,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long width() const;
 		long height() const ;
 		array2d ();
-		template<class U> array2d (array2d<U> &copyfrom);
+		template<class U> array2d (const array2d<U> &copyfrom, bool do_resize=false);
 		long estimated_output_size();
 		int print(FILE *fout, int x, int y);
 };
@@ -41,12 +41,14 @@ array2d<T>::array2d(){
 
 template <class T>
 template <class U>
-array2d<T>::array2d(array2d<U> &copyfrom){
+array2d<T>::array2d(const array2d<U> &copyfrom, bool do_resize){
 	cellsize=copyfrom.cellsize;
 	xllcorner=copyfrom.xllcorner;
 	yllcorner=copyfrom.yllcorner;
 	data_cells=copyfrom.data_cells;
 	no_data=copyfrom.no_data;
+	if(do_resize)
+		boost::numeric::ublas::matrix<T>::resize(copyfrom.width(),copyfrom.height());
 }
 
 template <> inline long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
