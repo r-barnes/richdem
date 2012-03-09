@@ -8,16 +8,18 @@ typedef struct segment_type{
 	segment_type(int y, int xl, int xr, int dy) : y(y+dy), xl(xl), xr(xr), dy(dy) {}
 } segment;
 
-#define bucket_push(y,xl,xr,dy) if(y+(dy)>=0 && y+(dy)<data.height()) segments.push(segment(y,xl,xr,dy))
+#define bucket_push(y,xl,xr,dy) if(y+(dy)>=0 && y+(dy)<height) segments.push(segment(y,xl,xr,dy))
 #define bucket_push_hard(y,xl,xr,dy) segments.push(segment(y,xl,xr,dy))
 
 void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 	std::stack<segment> segments;
 	int l, x1, x2, dy;
     int ov;	//old pixel value
+	const int width=data.width();
+	const int height=data.height();
 
     ov = data(x, y);		//read pv at seed point
-    if (ov==nv || x<0 || x>=data.width() || y<0 || y>=data.height()) return;
+    if (ov==nv || x<0 || x>=width || y<0 || y>=height) return;
     bucket_push(y, x, x, 1);			// needed in some cases
     bucket_push(y+1, x, x, -1);		// seed segment (popped 1st)
 
@@ -51,23 +53,23 @@ void bucket_fill(int x, int y, int oldv, int nv, char_2d &data){
 
 		x = x1+1;
 		do {
-			for (; x<data.width() && data(x, y)==ov; x++)
+			for (; x<width && data(x, y)==ov; x++)
 				data(x, y)=nv;
 			bucket_push(y, l, x-1, dy);
 			if (x>x2+1)						// leak on right?
 				bucket_push(y, x2+1, x-1, -dy);
 
 			//Diagonal Leaks?
-			if(x<data.width()){
-				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov)
+			if(x<width){
+				if(y+dy>=0 && y+dy<height && data(x-1,y+dy)!=ov)
 					bucket_push_hard(y,x,x,dy);
-				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov)
+				if(y-dy>=0 && y-dy<height && data(x-1,y-dy)!=ov)
 					bucket_push_hard(y,x,x,-dy);
 			}
-			if(x-1==data.width()-1){
-				if(y+dy>=0 && y+dy<data.height() && data(x-1,y+dy)!=ov)
+			if(x-1==width-1){
+				if(y+dy>=0 && y+dy<height && data(x-1,y+dy)!=ov)
 					bucket_push_hard(y,x-2,x-2,dy);
-				if(y-dy>=0 && y-dy<data.height() && data(x-1,y-dy)!=ov)
+				if(y-dy>=0 && y-dy<height && data(x-1,y-dy)!=ov)
 					bucket_push_hard(y,x-2,x-2,-dy);
 			}
 
@@ -174,10 +176,10 @@ int random_array(int width, int height, char_2d &data){
 int main(){
 	char_2d data;
 	for(int i=0;i<100;i++){
-		random_array(100,100,data);
+		random_array(1000,1000,data);
 		data(50,50)=0;
 		bucket_fill(50,50,0,3,data);
 //		printdata(data);
-		printf("==================\n");
+//		printf("==================\n");
 	}
 }
