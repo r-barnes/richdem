@@ -149,7 +149,7 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 				ny=y+dy[n];
 				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
 				if(flowdirs(nx,ny)==d8_NO_DATA) continue;
-				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y)){
+				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y) && INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
 					low_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
@@ -164,6 +164,25 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 	diagnostic("\tsucceeded.\n");
 
 	return group_number;
+}
+
+void printedges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges){
+	for(int y=0;y<elevations.height();y++){
+		for(int x=0;x<elevations.width();x++){
+			for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
+				if(x==i->x && y==i->y){
+					printf("\033[36m");
+					goto printedges_done;
+				}
+			for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
+				if(x==i->x && y==i->y){
+					printf("\033[31m");
+					goto printedges_done;
+				}
+			printedges_done: printf("%2.0f\033[39m ",elevations(x,y));
+		}
+		printf("\n");
+	}
 }
 
 //TODO: Would be nice if we could detect flats without an outlet!
@@ -188,21 +207,22 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 		groups(x,y)=-1;
 	diagnostic("succeeded.\n");
 
-	print2d("%2.0f ",elevations);
-	print2d("%2d ",flowdirs);
-
 	diagnostic("Entering find_flat_edges function...");
 	group_max=find_flat_edges(low_edges,high_edges,flowdirs,elevations,groups);
 
 	//TODO
-	printf("High edges:\n");
+/*	printf("High edges:\n");
 	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
 		printf("\t(%d,%d)\n",i->x,i->y);
 	printf("Low edges:\n");
 	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
-		printf("\t(%d,%d)\n",i->x,i->y);
+		printf("\t(%d,%d)\n",i->x,i->y);*/
+
+	printedges(elevations,low_edges,high_edges);
 
 	diagnostic_arg("Found %d unique flats.\n",group_max);
+	print2d("%2.0f ",elevations);
+	print2d("%2d ",flowdirs);
 	print2d("%2d ",groups);
 
 	if(group_max==0){
@@ -210,10 +230,41 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 		return 0;
 	}
 
-	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",group_max*sizeof(int)/1024/1024);
-	diagnostic("Creating flat height vector...");
-	std::vector<int> flat_height(group_max);
+	diagnostic_arg("The boolean outlets vector will require approximately %ldMB of RAM.\n",group_max*sizeof(bool)/1024/1024);
+	diagnostic("Creating boolean outlets vector...");
+	std::vector<int> has_outlet(group_max,false);
 	diagnostic("succeeded!\n");
+
+	diagnostic("Determining which flats have outlets...");
+	int outlet_count=0;
+	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++){
+		if(!has_outlet[groups(i->x,i->y)]){
+			has_outlet[groups(i->x,i->y)]=true;
+			outlet_count++;
+		}
+	}
+	diagnostic("succeeded!\n");
+	diagnostic_arg("%d out of %d flats had outlets.\n",outlet_count,group_max);
+	if(outlet_count!=group_max)	//TODO: Prompt user for intervention?
+		diagnostic("\033[91mNot all flats had outlets; the DEM contains sinks/pits/depressions!\033[39m\n");
+
+
+	diagnostic("Removing flats without outlets from the queue...");
+	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();)
+		if(!has_outlet[groups(i->x,i->y)])
+			i=low_edges.erase(i);
+		else
+			i++;
+	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();)
+		if(!has_outlet[groups(i->x,i->y)])
+			i=high_edges.erase(i);
+		else
+			i++;
+	diagnostic("succeeded.\n");
+
+	printedges(elevations,low_edges,high_edges);
+
+return 0;
 
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Creating incrementation matricies...");
@@ -232,12 +283,17 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	}
 	diagnostic("succeeded!\n");
 
-
+	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",group_max*sizeof(int)/1024/1024);
+	diagnostic("Creating flat height vector...");
+	std::vector<int> flat_height(group_max);
+	diagnostic("succeeded!\n");
 
 	diagnostic("Performing Barnes flat resolution...\n");
 	BarnesStep1(elevations,flowdirs,inc1,low_edges);
+	print2d("%d ", inc1);
 	BarnesStep2(elevations,flowdirs,inc2,high_edges,flat_height,groups);
-
+	print2d("%d ", inc2);
+return 0;
 	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-6);
 	print2d("%d ", inc2);
