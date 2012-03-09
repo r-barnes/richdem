@@ -13,21 +13,3 @@ void print_dem(const float_2d &elevations, int mark_x, int mark_y, int colour){
 	}
 	printf("\n");
 }
-
-void print_flow(const float_2d &flowdirs){
-	for(int y=0;y<flowdirs.height();y++){
-		for(int x=0;x<flowdirs.width();x++)
-			printf("%f ",flowdirs(x,y));
-		printf("\n");
-	}
-	printf("\n");
-}
-
-void print_char_2d(const char_2d &arr){
-	for(int y=0;y<arr.height();y++){
-		for(int x=0;x<arr.width();x++)
-			printf("%d ",(int)arr(x,y));
-		printf("\n");
-	}
-	printf("\n");
-}
