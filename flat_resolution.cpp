@@ -210,14 +210,6 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	diagnostic("Entering find_flat_edges function...");
 	group_max=find_flat_edges(low_edges,high_edges,flowdirs,elevations,groups);
 
-	//TODO
-/*	printf("High edges:\n");
-	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
-		printf("\t(%d,%d)\n",i->x,i->y);
-	printf("Low edges:\n");
-	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
-		printf("\t(%d,%d)\n",i->x,i->y);*/
-
 	printedges(elevations,low_edges,high_edges);
 
 	diagnostic_arg("Found %d unique flats.\n",group_max);
