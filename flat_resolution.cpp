@@ -114,9 +114,10 @@ int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<gri
 			if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue;
 			edge.push_back(grid_cell(nx,ny));
 		}
-//		elevations(x,y)+=epsilon*((inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)));
-		if(inc2(x,y)>0)
+		if(inc2(x,y)>0){
+			elevations(x,y)+=epsilon*((inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1));
 			inc2(x,y)=(inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1);
+		}
 		inc1(x,y)=-1;
 	}
 }
@@ -285,7 +286,7 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	print2d("%d ", inc2);
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
-	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-6);
+	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-1);
 	print2d("%d ", inc2);
 	diagnostic("succeeded!\n");
 }
