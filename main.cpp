@@ -5,28 +5,40 @@
 #include "dinf_methods.h"
 #include "pit_fill.h"
 #include "interface.h"
+#include "flat_resolution.h"
+#include <locale.h>
 
 int main(int argc, char **argv){
-	float_2d elevations,elevations2;
-	uint_2d area;
+	float_2d elevations;
+	setlocale(LC_ALL,""); //Permits printing of UTF-8 characters
 	try{
 		load_ascii_data(argv[1],elevations);
-		elevations2=elevations;
-		pit_fill_wang(elevations2);
-		pit_fill_barnes(elevations);
+//		pit_fill_barnes3(elevations);
+//		print2d("%2.0f ", elevations);
 
-//		char_2d flowdirs(elevations);
+		char_2d flowdirs(elevations);
+		d8_flow_directions(elevations,flowdirs);
+//		print2d("%2d ",flowdirs);
+		resolve_flats(elevations,flowdirs);
 
-	//	pit_fill_yonghe2009(elevations);
-	//	pit_fill_wang(elevations);
-//	dinf_flow_directions(elevations,flowdirs);
-	//	dinf_upslope_area(flowdirs);
+		d8_flow_directions(elevations,flowdirs);
 
-//		d8_flow_directions(elevations,flowdirs);
+		print2d("%4.2f ",elevations);
+		print2d("%2d ",flowdirs);
 
-//		uint_2d area(elevations);
-//		print_flow(flowdirs);
-//		d8_upslope_area(flowdirs,area);
+//		d8_flow_directions(elevations,flowdirs,false);
+
+//		float_2d flowdirs(elevations);
+//		pit_fill_wang(elevations);
+
+//		float_2d area(elevations);
+
+//		dinf_flow_directions(elevations,flowdirs);
+///		dinf_upslope_area(flowdirs, area);
+
+//		output_ascii_data("zout",area);
+
+
 		return 0;
 	} catch (int e) {
 		diagnostic("Unfortunately, I was unable to continue.\nClosing...\n");
