@@ -6,11 +6,9 @@
 #include "pit_fill.h"
 #include "interface.h"
 #include "flat_resolution.h"
-#include <locale.h>
 
 int main(int argc, char **argv){
 	float_2d elevations;
-	setlocale(LC_ALL,""); //Permits printing of UTF-8 characters
 	try{
 		load_ascii_data(argv[1],elevations);
 //		pit_fill_barnes3(elevations);
