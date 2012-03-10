@@ -116,7 +116,7 @@ int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<gri
 		}
 //		elevations(x,y)+=epsilon*((inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)));
 		if(inc2(x,y)>0)
-			inc2(x,y)=(flat_height[groups(x,y)]-inc2(x,y)+1);
+			inc2(x,y)=(inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1);
 		inc1(x,y)=-1;
 	}
 }
@@ -256,8 +256,6 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 
 	printedges(elevations,low_edges,high_edges);
 
-return 0;
-
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Creating incrementation matricies...");
 	int_2d inc1(elevations,true);
@@ -285,7 +283,7 @@ return 0;
 	print2d("%d ", inc1);
 	BarnesStep2(elevations,flowdirs,inc2,high_edges,flat_height,groups);
 	print2d("%d ", inc2);
-return 0;
+
 	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-6);
 	print2d("%d ", inc2);
