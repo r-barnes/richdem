@@ -115,7 +115,7 @@ int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<gri
 			edge.push_back(grid_cell(nx,ny));
 		}
 		if(inc2(x,y)>0){
-			elevations(x,y)+=epsilon*((inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1));
+			elevations(x,y)+=(epsilon+epsilon/2)*((inc1(x,y)-1))+epsilon*(flat_height[groups(x,y)]-inc2(x,y)+1);
 			inc2(x,y)=(inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1);
 		}
 		inc1(x,y)=-1;
