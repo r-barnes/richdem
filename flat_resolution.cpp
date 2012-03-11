@@ -7,7 +7,7 @@
 #include <stack>
 #include <vector>
 
-int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats){
+int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats){
 	int loops=1;
 	int x,y,nx,ny;
 	grid_cell iteration_marker(-1,-1);
@@ -44,14 +44,14 @@ int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &inc
 			for(int n=1;n<=8;n++){
 				nx=x+dx[n];	
 				ny=y+dy[n];
-				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue;
+				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue; //TODO: Make this as closely analogous to Step1 as possible
 				flats.push_back(grid_cell(nx,ny));
 			}
 		}
 	}
 }
 
-int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats, std::vector<int> &flat_height, const int_2d &groups){
+int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats, std::vector<int> &flat_height, const int_2d &groups){
 	int loops=1;
 	int x,y,nx,ny;
 	grid_cell iteration_marker(-1,-1);
@@ -89,7 +89,7 @@ int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &inc
 			for(int n=1;n<=8;n++){
 				nx=x+dx[n];	
 				ny=y+dy[n];
-				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y) && flowdirs(nx,ny)==NO_FLOW)) continue;
+				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y) && flowdirs(nx,ny)==NO_FLOW)) continue; //TODO: Shouldn't need to check if elevation is equal.
 				flats.push_back(grid_cell(nx,ny));
 			}
 		}
@@ -154,7 +154,7 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 					low_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
-				} else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny)){
+				} else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny) && INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
 					high_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
