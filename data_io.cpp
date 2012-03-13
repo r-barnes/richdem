@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <exception>
 #include "interface.h"
 #include "data_structures.h"
 
@@ -42,12 +41,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*sizeof(float)/1024/1024);
 
 	diagnostic("Resizing elevation matrix...");	//TODO: Consider abstracting this block
-	try{
-		elevations.resize(columns,rows);
-	} catch (std::exception &e) {
-		diagnostic("failed!\n");
-		return -1;
-	}
+	elevations.resize(columns,rows);
 	diagnostic("succeeded.\n");
 
 	diagnostic("Reading elevation matrix...\n");

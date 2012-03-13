@@ -26,12 +26,7 @@ int pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float
 
 	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
-	try{
-		w.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	w.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 
 	diagnostic("Initializing intermediate elevation surface 'W'...\n");
@@ -113,12 +108,7 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 
 	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
-	try{
-		w.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	w.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 
 	diagnostic("Initializing intermediate elevation surface 'W'...\n");
@@ -243,12 +233,7 @@ int pit_fill_wang(float_2d &elevations){
 
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
-	try{
-		closed.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
@@ -319,12 +304,7 @@ int pit_fill_barnes1(float_2d &elevations){
 
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
-	try{
-		closed.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
@@ -425,12 +405,7 @@ int pit_fill_barnes2(float_2d &elevations){
 
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
-	try{
-		closed.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
@@ -564,13 +539,8 @@ int pit_fill_barnes3(float_2d &elevations){
 
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
-	try{
-		closed.resize(elevations.width(),elevations.height());
-		info.resize(elevations.width(),elevations.height());
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	closed.resize(elevations.width(),elevations.height());
+	info.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
 	progress_bar(-1);
