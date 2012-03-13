@@ -7,50 +7,6 @@
 #include <stack>
 #include <vector>
 
-int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats){
-	int loops=1;
-	int x,y,nx,ny;
-	grid_cell iteration_marker(-1,-1);
-
-	//Incrementation
-	flats.push_back(iteration_marker);
-	while(flats.size()!=1){	//Only iteration marker is left in the end
-		x=flats.front().x;
-		y=flats.front().y;
-		flats.pop_front();
-
-		if(x==-1){	//I'm an iteration marker
-			loops++;
-			flats.push_back(iteration_marker);
-			continue;
-		}
-
-		if(incrementations(x,y)!=0) continue;	//I've already been incremented!
-
-		//Should I increment?
-		bool do_increment=false;
-		for(int n=1;n<=8;n++){
-			nx=x+dx[n];	
-			ny=y+dy[n];
-			if(	incrementations(nx,ny)>0 || elevations(nx,ny)<elevations(x,y) || flowdirs(nx,ny)){
-				do_increment=true;
-				break;
-			}
-		}
-
-		//If I incremented, maybe my neighbours should too
-		if(do_increment){
-			incrementations(x,y)=loops;
-			for(int n=1;n<=8;n++){
-				nx=x+dx[n];	
-				ny=y+dy[n];
-				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue; //TODO: Make this as closely analogous to Step1 as possible
-				flats.push_back(grid_cell(nx,ny));
-			}
-		}
-	}
-}
-
 int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats, std::vector<int> &flat_height, const int_2d &groups){
 	int loops=1;
 	int x,y,nx,ny;
@@ -96,6 +52,50 @@ int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &inc
 	}
 
 	return loops;
+}
+
+int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats){
+	int loops=1;
+	int x,y,nx,ny;
+	grid_cell iteration_marker(-1,-1);
+
+	//Incrementation
+	flats.push_back(iteration_marker);
+	while(flats.size()!=1){	//Only iteration marker is left in the end
+		x=flats.front().x;
+		y=flats.front().y;
+		flats.pop_front();
+
+		if(x==-1){	//I'm an iteration marker
+			loops++;
+			flats.push_back(iteration_marker);
+			continue;
+		}
+
+		if(incrementations(x,y)!=0) continue;	//I've already been incremented!
+
+		//Should I increment?
+		bool do_increment=false;
+		for(int n=1;n<=8;n++){
+			nx=x+dx[n];	
+			ny=y+dy[n];
+			if(	incrementations(nx,ny)>0 || elevations(nx,ny)<elevations(x,y) || flowdirs(nx,ny)){
+				do_increment=true;
+				break;
+			}
+		}
+
+		//If I incremented, maybe my neighbours should too
+		if(do_increment){
+			incrementations(x,y)=loops;
+			for(int n=1;n<=8;n++){
+				nx=x+dx[n];	
+				ny=y+dy[n];
+				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue; //TODO: Make this as closely analogous to Step1 as possible
+				flats.push_back(grid_cell(nx,ny));
+			}
+		}
+	}
 }
 
 int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups, float epsilon){
