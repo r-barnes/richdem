@@ -4,6 +4,8 @@
 #include "interface.h"
 #include <omp.h>
 #include <queue>
+#include <limits>
+#include <cmath>
 
 
 
@@ -62,10 +64,6 @@ int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, bool init)
 
 
 
-
-//234
-//105
-//876
 bool does_cell_flow_into_me(const int x, const int y, int n, const char_2d &flowdirs){
 	return (flowdirs(x,y)!=d8_NO_DATA && n==inverse_flow[flowdirs(x,y)]);
 }
@@ -134,6 +132,57 @@ int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 				sources.push(grid_cell(c.x+dx[flowdirs(c.x,c.y)],c.y+dy[flowdirs(c.x,c.y)]));
 
 		sources.pop();
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+}
+
+
+
+
+
+
+int d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
+	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic("Resizing slope matrix...");
+	slopes.resize(elevations.width(),elevations.height());
+	diagnostic("succeeded.\n");
+
+	diagnostic("Setting no_data value on slope matrix...");
+	slopes.no_data=-1;
+	diagnostic("succeeded.\n");
+
+	diagnostic("Calculating slopes...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++){
+			if(elevations(x,y)==elevations.no_data || EDGE_GRID(x,y,elevations.width(),elevations.height())){
+				slopes(x,y)=slopes.no_data;
+				continue;
+			}
+			float rise_over_run=0;
+			for(int n=1;n<=8;n++){
+				if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
+				float ror_temp=abs(elevations(x,y)-elevations(x+dx[n],y+dy[n]))/dr[n];
+				rise_over_run=MAX(rise_over_run,ror_temp);
+			}
+			switch(slope_type){
+				case SLOPE_RISERUN:
+					slopes(x,y)=rise_over_run;
+					break;
+				case SLOPE_PERCENT:
+					slopes(x,y)=rise_over_run*100;
+					break;
+				case SLOPE_RADIAN:
+					slopes(x,y)=atan(rise_over_run);
+					break;
+				case SLOPE_DEGREE:
+					slopes(x,y)=atan(rise_over_run)*180/M_PI;
+					break;
+			}
+		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
