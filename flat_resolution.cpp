@@ -7,36 +7,42 @@
 #include <stack>
 #include <vector>
 
-int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats, std::vector<int> &flat_height, const int_2d &groups){
+int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
 	int loops=1;
 	int x,y,nx,ny;
+	bool past_edge=false;
+	bool do_increment;
 	grid_cell iteration_marker(-1,-1);
 
 	//Incrementation
-	flats.push_back(iteration_marker);
-	while(flats.size()!=1){	//Only iteration marker is left in the end
-		x=flats.front().x;
-		y=flats.front().y;
-		flats.pop_front();
+	edges.push_back(iteration_marker);
+	while(edges.size()!=1){	//Only iteration marker is left in the end
+		x=edges.front().x;
+		y=edges.front().y;
+		edges.pop_front();
 
 		if(x==-1){	//I'm an iteration marker
 			loops++;
-			flats.push_back(iteration_marker);
+			edges.push_back(iteration_marker);
+			past_edge=true;
 			continue;
 		}
 
 		if(incrementations(x,y)!=0) continue;	//I've already been incremented!
 
 		//Should I increment?
-		bool do_increment=false;
-		for(int n=1;n<=8;n++){
-			nx=x+dx[n];
-			ny=y+dy[n];
-			if(incrementations(nx,ny)>0 || elevations(nx,ny)>elevations(x,y)){
-				do_increment=true;
-				break;
+		if(past_edge){
+			do_increment=false;
+			for(int n=1;n<=8;n++){
+				nx=x+dx[n];
+				ny=y+dy[n];
+				if(incrementations(nx,ny)>0 || elevations(nx,ny)>elevations(x,y)){
+					do_increment=true;
+					break;
+				}
 			}
-		}
+		} else
+			do_increment=true;
 
 		//If I incremented, maybe my neighbours should too
 		if(do_increment){
@@ -46,56 +52,12 @@ int BarnesStep1(const float_2d &elevations, const char_2d &flowdirs, int_2d &inc
 				nx=x+dx[n];	
 				ny=y+dy[n];
 				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y) && flowdirs(nx,ny)==NO_FLOW)) continue; //TODO: Shouldn't need to check if elevation is equal.
-				flats.push_back(grid_cell(nx,ny));
+				edges.push_back(grid_cell(nx,ny));
 			}
 		}
 	}
 
 	return loops;
-}
-
-int BarnesStep2(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> flats){
-	int loops=1;
-	int x,y,nx,ny;
-	grid_cell iteration_marker(-1,-1);
-
-	//Incrementation
-	flats.push_back(iteration_marker);
-	while(flats.size()!=1){	//Only iteration marker is left in the end
-		x=flats.front().x;
-		y=flats.front().y;
-		flats.pop_front();
-
-		if(x==-1){	//I'm an iteration marker
-			loops++;
-			flats.push_back(iteration_marker);
-			continue;
-		}
-
-		if(incrementations(x,y)!=0) continue;	//I've already been incremented!
-
-		//Should I increment?
-		bool do_increment=false;
-		for(int n=1;n<=8;n++){
-			nx=x+dx[n];	
-			ny=y+dy[n];
-			if(	incrementations(nx,ny)>0 || elevations(nx,ny)<elevations(x,y) || flowdirs(nx,ny)){
-				do_increment=true;
-				break;
-			}
-		}
-
-		//If I incremented, maybe my neighbours should too
-		if(do_increment){
-			incrementations(x,y)=loops;
-			for(int n=1;n<=8;n++){
-				nx=x+dx[n];	
-				ny=y+dy[n];
-				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue; //TODO: Make this as closely analogous to Step1 as possible
-				flats.push_back(grid_cell(nx,ny));
-			}
-		}
-	}
 }
 
 int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups, float epsilon){
@@ -154,7 +116,7 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 					low_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
-				} else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny) && INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
+				} else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny)){
 					high_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
@@ -209,7 +171,7 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	diagnostic("succeeded.\n");
 
 	diagnostic("Entering find_flat_edges function...");
-	group_max=find_flat_edges(low_edges,high_edges,flowdirs,elevations,groups);
+	group_max=find_flat_edges(low_edges, high_edges, flowdirs, elevations, groups);
 
 	printedges(elevations,low_edges,high_edges);
 
@@ -280,9 +242,9 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	diagnostic("succeeded!\n");
 
 	diagnostic("Performing Barnes flat resolution...\n");
-	BarnesStep1(elevations,flowdirs,inc1,low_edges);
+	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
 	print2d("%d ", inc1);
-	BarnesStep2(elevations,flowdirs,inc2,high_edges,flat_height,groups);
+	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
 	print2d("%d ", inc2);
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
