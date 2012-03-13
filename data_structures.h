@@ -18,6 +18,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		template<class U> array2d (const array2d<U> &copyfrom, bool do_resize=false);
 		long estimated_output_size();
 		int print(FILE *fout, int x, int y);
+		void init(T val);
 };
 
 template <class T>
@@ -49,6 +50,14 @@ array2d<T>::array2d(const array2d<U> &copyfrom, bool do_resize){
 	no_data=copyfrom.no_data;
 	if(do_resize)
 		boost::numeric::ublas::matrix<T>::resize(copyfrom.width(),copyfrom.height());
+}
+
+template <class T>
+void array2d<T>::init(T val){
+	#pragma omp parallel for
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		boost::numeric::ublas::matrix<T>::operator()(x,y)=val;
 }
 
 template <> inline long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
