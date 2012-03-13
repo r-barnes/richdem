@@ -20,12 +20,14 @@
 #define dinf_NO_DATA	-9999
 #define elev_NO_DATA	-9999
 #define NO_FLOW			-1
+#define SQRT2			1.414213562373095048801688724209698078569671875376948
 
 #define MAX(A,B)	(((A)>(B))?(A):(B))
 
 //D8 Directions
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+const int dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
 const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
 const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 //derived from the following neighbour directions
