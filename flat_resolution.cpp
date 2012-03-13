@@ -4,8 +4,26 @@
 #include <omp.h>
 #include <string>
 #include <deque>
-#include <stack>
 #include <vector>
+
+/*void print_edges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges){
+	for(int y=0;y<elevations.height();y++){
+		for(int x=0;x<elevations.width();x++){
+			for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
+				if(x==i->x && y==i->y){
+					printf("\033[36m");
+					goto printedges_done;
+				}
+			for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
+				if(x==i->x && y==i->y){
+					printf("\033[31m");
+					goto printedges_done;
+				}
+			printedges_done: printf("%2.0f\033[39m ",elevations(x,y));
+		}
+		printf("\n");
+	}
+}*/
 
 int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
 	int loops=1;
@@ -129,26 +147,6 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 	return group_number;
 }
 
-void printedges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges){
-	for(int y=0;y<elevations.height();y++){
-		for(int x=0;x<elevations.width();x++){
-			for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
-				if(x==i->x && y==i->y){
-					printf("\033[36m");
-					goto printedges_done;
-				}
-			for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
-				if(x==i->x && y==i->y){
-					printf("\033[31m");
-					goto printedges_done;
-				}
-			printedges_done: printf("%2.0f\033[39m ",elevations(x,y));
-		}
-		printf("\n");
-	}
-}
-
-//TODO: Would be nice if we could detect flats without an outlet!
 int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 	int_2d groups(flowdirs);
@@ -164,8 +162,6 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 
 	diagnostic("Entering find_flat_edges function...");
 	group_max=find_flat_edges(low_edges, high_edges, flowdirs, elevations, groups);
-
-//	printedges(elevations,low_edges,high_edges);	//TODO
 
 	diagnostic_arg("Found %d unique flats.\n",group_max);
 //	print2d("%2.0f ",elevations);	//TODO
@@ -197,12 +193,12 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 
 
 	diagnostic("Removing flats without outlets from the queue...");
-	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();)
+	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();)	//i++ in 'else'
 		if(!has_outlet[groups(i->x,i->y)])
 			i=low_edges.erase(i);
 		else
 			i++;
-	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();)
+	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();)	//i++ in 'else'
 		if(!has_outlet[groups(i->x,i->y)])
 			i=high_edges.erase(i);
 		else
@@ -230,9 +226,9 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	diagnostic("succeeded!\n");
 
 	diagnostic("Performing Barnes flat resolution...\n");
-	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
-//	print2d("%d ", inc1);	//TODO
+	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);		//Flat_height is used here, but the results will be overwritten by the next line
 	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
+//	print2d("%d ", inc1);	//TODO
 //	print2d("%d ", inc2);	//TODO
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
