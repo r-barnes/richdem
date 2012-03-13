@@ -156,12 +156,7 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 
 	diagnostic_arg("The groups matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Resizing groups matrix...");
-	try{
-		groups.resize(flowdirs.width(),flowdirs.height(),false);
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	groups.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing groups matrix...");
 	#pragma omp parallel for collapse(2)

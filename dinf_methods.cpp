@@ -79,12 +79,7 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs, bool init){
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
-	try{
-		flowdirs.resize(elevations.width(),elevations.height(),!init);
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	flowdirs.resize(elevations.width(),elevations.height(),!init);
 	diagnostic("succeeded.\n");
 
 	if(init){
@@ -188,22 +183,12 @@ int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 	diagnostic_arg("The dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing dependency matrix...");
-	try{
-		dependency.resize(flowdirs.width(),flowdirs.height(),false);
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	dependency.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing the area matrix...");
-	try{
-		area.resize(flowdirs.width(),flowdirs.height(),false);
-	} catch (std::exception &e){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	area.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 
 	diagnostic("Setting no_data value on area matrix...");
