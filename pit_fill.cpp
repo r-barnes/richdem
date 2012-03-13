@@ -236,14 +236,7 @@ int pit_fill_wang(float_2d &elevations){
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<closed.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<closed.height();y++)
-			closed(x,y)=0;
-	}
-	progress_bar(-1);
+	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
@@ -307,14 +300,7 @@ int pit_fill_barnes1(float_2d &elevations){
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<closed.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<closed.height();y++)
-			closed(x,y)=0;
-	}
-	progress_bar(-1);
+	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
@@ -408,14 +394,7 @@ int pit_fill_barnes2(float_2d &elevations){
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<closed.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<closed.height();y++)
-			closed(x,y)=0;
-	}
-	progress_bar(-1);
+	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
@@ -543,16 +522,8 @@ int pit_fill_barnes3(float_2d &elevations){
 	info.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing closed matrix...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<closed.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<closed.height();y++){
-			closed(x,y)=OPEN;
-			info(x,y)=999999;
-		}
-	}
-	progress_bar(-1);
+	closed.init(OPEN);
+	info.init(999999);
 	diagnostic("\tsucceeded.\n");
 
 	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);

@@ -88,14 +88,7 @@ int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs, bool in
 		diagnostic("succeeded.\n");
 
 		diagnostic("Initializing Dinf flow directions...\n");
-		progress_bar(-1);
-		#pragma omp parallel for
-		for(int x=0;x<elevations.width();x++){
-			progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-			for(int y=0;y<elevations.height();y++)
-				flowdirs(x,y)=NO_FLOW;
-		}
-		progress_bar(-1);
+		flowdirs.init(NO_FLOW);
 		diagnostic("\tsucceeded.\n");
 	}
 

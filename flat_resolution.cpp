@@ -159,21 +159,18 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	groups.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing groups matrix...");
-	#pragma omp parallel for collapse(2)
-	for(int x=0;x<groups.width();x++)
-	for(int y=0;y<groups.height();y++)
-		groups(x,y)=-1;
+	groups.init(-1);
 	diagnostic("succeeded.\n");
 
 	diagnostic("Entering find_flat_edges function...");
 	group_max=find_flat_edges(low_edges, high_edges, flowdirs, elevations, groups);
 
-	printedges(elevations,low_edges,high_edges);
+//	printedges(elevations,low_edges,high_edges);	//TODO
 
 	diagnostic_arg("Found %d unique flats.\n",group_max);
-	print2d("%2.0f ",elevations);
-	print2d("%2d ",flowdirs);
-	print2d("%2d ",groups);
+//	print2d("%2.0f ",elevations);	//TODO
+//	print2d("%2d ",flowdirs);
+//	print2d("%2d ",groups);
 
 	if(group_max==0){
 		diagnostic("No flats to resolve!\n");
@@ -212,7 +209,7 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 			i++;
 	diagnostic("succeeded.\n");
 
-	printedges(elevations,low_edges,high_edges);
+//	printedges(elevations,low_edges,high_edges);	//TODO
 
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Creating incrementation matricies...");
@@ -222,13 +219,9 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	diagnostic("succeeded!\n");
 
 	diagnostic("Initializing incrementation matricies...");
-	#pragma omp parallel for collapse(2)
-	for(int x=0;x<elevations.width();x++)
-	for(int y=0;y<elevations.height();y++){
-		inc1(x,y)=0;
-		inc2(x,y)=0;
-		inc3(x,y)=0;
-	}
+	inc1.init(0);
+	inc2.init(0);
+	inc3.init(0);
 	diagnostic("succeeded!\n");
 
 	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",group_max*sizeof(int)/1024/1024);
@@ -238,12 +231,12 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 
 	diagnostic("Performing Barnes flat resolution...\n");
 	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
-	print2d("%d ", inc1);
+//	print2d("%d ", inc1);	//TODO
 	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
-	print2d("%d ", inc2);
+//	print2d("%d ", inc2);	//TODO
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-1);
-	print2d("%d ", inc2);
+	//print2d("%d ", inc2);	//TODO
 	diagnostic("succeeded!\n");
 }
