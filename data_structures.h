@@ -82,7 +82,7 @@ template <> inline int array2d<unsigned int>::print(FILE *fout, int x, int y){
 
 
 typedef array2d<float> float_2d;
-typedef array2d<char> char_2d;
+typedef array2d<signed char> char_2d;
 typedef array2d<bool> bool_2d;
 typedef array2d<unsigned int> uint_2d;
 typedef array2d<int> int_2d;

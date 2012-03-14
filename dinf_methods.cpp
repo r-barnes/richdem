@@ -76,7 +76,7 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 	return rg;
 }
 
-int dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs, bool init){
+void dinf_flow_directions(const float_2d &elevations, float_2d &flowdirs, bool init){
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),!init);
@@ -168,7 +168,7 @@ float proportion_i_get(float flowdir, int n){
 		return 1-normalized_angle/(M_PI/4);
 }
 
-int dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
+void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 

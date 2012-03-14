@@ -29,7 +29,7 @@ int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	return flowdir;
 }
 
-int d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, bool init){
+void d8_flow_directions(const float_2d &elevations, char_2d &flowdirs, bool init){
 	diagnostic_arg("The D8 flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),!init);
@@ -68,7 +68,7 @@ bool does_cell_flow_into_me(const int x, const int y, int n, const char_2d &flow
 	return (flowdirs(x,y)!=d8_NO_DATA && n==inverse_flow[flowdirs(x,y)]);
 }
 
-int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
+void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 
@@ -142,7 +142,7 @@ int d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 
 
 
-int d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
+void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing slope matrix...");
 	slopes.resize(elevations.width(),elevations.height());
@@ -197,7 +197,7 @@ int d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 //TODO: ArcGIS calculates flow directions differently, so the procedure below is not valid
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=Determining_flow_direction
 //http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=flow_direction
-int d8_arcgis_convert(char_2d &flowdirs){
+void d8_arcgis_convert(char_2d &flowdirs){
 //234   32 64 128
 //105   16     1
 //876    8  4  2

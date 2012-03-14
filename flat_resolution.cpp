@@ -78,7 +78,7 @@ int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incr
 	return loops;
 }
 
-int BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups, float epsilon){
+void BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups, float epsilon){
 	int x,y,nx,ny;
 
 	while(edge.size()!=0){
@@ -237,4 +237,6 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	BarnesStep3(elevations, inc1, inc2, low_edges, flat_height, groups, 1e-1);
 	//print2d("%d ", inc2);	//TODO
 	diagnostic("succeeded!\n");
+
+	return 0;
 }
