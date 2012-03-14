@@ -128,8 +128,10 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 			for(int n=1;n<=8;n++){
 				nx=x+dx[n];
 				ny=y+dy[n];
+
 				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
 				if(flowdirs(nx,ny)==d8_NO_DATA) continue;
+
 				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y) && INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
 					low_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
