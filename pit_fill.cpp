@@ -19,7 +19,7 @@
   year={2002}
 }
 */
-int pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float epsilon_diagonal){
+void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float epsilon_diagonal){
 	float_2d w;
 
 	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
@@ -226,7 +226,7 @@ class grid_cell_compare2{
 
 
 
-int pit_fill_wang(float_2d &elevations){
+void pit_fill_wang(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
@@ -289,7 +289,7 @@ int pit_fill_wang(float_2d &elevations){
 
 
 
-int pit_fill_barnes1(float_2d &elevations){
+void pit_fill_barnes1(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
 	std::queue<grid_cell> meander;
 	char_2d closed;	//TODO: This could probably be made into a boolean
@@ -382,7 +382,7 @@ int pit_fill_barnes1(float_2d &elevations){
 
 
 
-int pit_fill_barnes2(float_2d &elevations){
+void pit_fill_barnes2(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
 	std::queue<grid_cell> meander;
 	std::queue<grid_cell> climb;
@@ -507,7 +507,7 @@ int pit_fill_barnes2(float_2d &elevations){
 
 
 
-int pit_fill_barnes3(float_2d &elevations){
+void pit_fill_barnes3(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
 	std::queue<grid_cell> meander;
 	std::queue<grid_cell> climb;

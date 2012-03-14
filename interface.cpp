@@ -8,7 +8,6 @@
 double timediff(const timeval &startTime){
 	timeval endTime;
 	long seconds, useconds;
-	double duration;
 
 	gettimeofday(&endTime, NULL);
 
@@ -30,7 +29,7 @@ double progress_bar(int percent){
 	if(percent==-1){
 		timediffs=timediff(startTime);
 		gettimeofday(&startTime, NULL);
-		fprintf(stderr,"\r\033[2K",0,PROGRESS_BAR); //The ANSI code used in this line clears the entire line
+		fprintf(stderr,"\r\033[2K"); //The ANSI code used in this line clears the entire line
 		old_percent=0;
 		return timediffs;
 	}
@@ -38,4 +37,6 @@ double progress_bar(int percent){
 		percent=100;
 	fprintf(stderr,"\r\033[2K[%-50.*s] (%d%% - %.1lfs left - %d thread)", percent/2, PROGRESS_BAR, percent, timediff(startTime)/percent*(100-percent),omp_get_num_threads()); //The ANSI code used in this line clears the entire line
 	old_percent=percent;
+
+	return 0;
 }
