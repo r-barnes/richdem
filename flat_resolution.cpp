@@ -5,27 +5,12 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <queue>
+#include "debug.h"
 
-/*void print_edges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges){
-	for(int y=0;y<elevations.height();y++){
-		for(int x=0;x<elevations.width();x++){
-			for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
-				if(x==i->x && y==i->y){
-					printf("\033[36m");
-					goto printedges_done;
-				}
-			for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
-				if(x==i->x && y==i->y){
-					printf("\033[31m");
-					goto printedges_done;
-				}
-			printedges_done: printf("%2.0f\033[39m ",elevations(x,y));
-		}
-		printf("\n");
-	}
-}*/
-
-int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
+int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, 
+				int_2d &incrementations, std::deque<grid_cell> edges, 
+				std::vector<int> &flat_height, const int_2d &groups){
 	int loops=1;
 	int x,y,nx,ny;
 	bool past_edge=false;
@@ -69,7 +54,9 @@ int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incr
 			for(int n=1;n<=8;n++){
 				nx=x+dx[n];	
 				ny=y+dy[n];
-				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y) && flowdirs(nx,ny)==NO_FLOW)) continue; //TODO: Shouldn't need to check if elevation is equal.
+				if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) 
+						&& elevations(nx,ny)==elevations(x,y) 
+						&& flowdirs(nx,ny)==NO_FLOW)) continue; //TODO: Shouldn't need to check if elevation is equal.
 				edges.push_back(grid_cell(nx,ny));
 			}
 		}
@@ -78,7 +65,10 @@ int BarnesStep(const float_2d &elevations, const char_2d &flowdirs, int_2d &incr
 	return loops;
 }
 
-void BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups, float epsilon){
+void BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, 
+					std::deque<grid_cell> &edge,
+					const std::vector<int> &flat_height, 
+					const int_2d &groups, float epsilon){
 	int x,y,nx,ny;
 
 	while(edge.size()!=0){
@@ -91,33 +81,41 @@ void BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2, std::deque<gr
 		for(int n=1;n<=8;n++){
 			nx=x+dx[n];
 			ny=y+dy[n];
-			if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))) continue;
+			if(!(IN_GRID(nx,ny,elevations.width(),elevations.height())
+					&& elevations(nx,ny)==elevations(x,y))) continue;
 			edge.push_back(grid_cell(nx,ny));
 		}
 		if(inc2(x,y)>0){
-			elevations(x,y)+=(epsilon+epsilon/2)*((inc1(x,y)-1))+epsilon*(flat_height[groups(x,y)]-inc2(x,y)+1);
+			elevations(x,y)+= 	(epsilon+epsilon/2)*((inc1(x,y)-1))
+								+epsilon*(flat_height[groups(x,y)]-inc2(x,y)+1);
 			inc2(x,y)=(inc1(x,y)-1)+(flat_height[groups(x,y)]-inc2(x,y)+1);
 		}
 		inc1(x,y)=-1;
 	}
 }
 
-int label_this(const int x, const int y, const float target_elevation, const int label, int_2d &groups, const float_2d &elevations){
-	if(!INTERIOR_GRID(x,y,elevations.width(),elevations.height())) return 0;
+int label_this(int x, int y, const float target_elevation,
+					const int label, int_2d &groups, const float_2d &elevations){
+	std::queue<grid_cell> to_fill; //TODO: Queue versus stack
 	if(elevations(x,y)!=target_elevation || groups(x,y)!=-1) return 0;
-	groups(x,y)=label;
-	label_this(x+1,y,target_elevation,label,groups,elevations);
-	label_this(x-1,y,target_elevation,label,groups,elevations);
-	label_this(x,y+1,target_elevation,label,groups,elevations);
-	label_this(x,y-1,target_elevation,label,groups,elevations);
-	label_this(x+1,y+1,target_elevation,label,groups,elevations);
-	label_this(x-1,y+1,target_elevation,label,groups,elevations);
-	label_this(x+1,y-1,target_elevation,label,groups,elevations);
-	label_this(x-1,y-1,target_elevation,label,groups,elevations);
+	to_fill.push(grid_cell(x,y));
+
+	while(to_fill.size()>0){
+		x=to_fill.front().x;
+		y=to_fill.front().y;
+		to_fill.pop();
+		if(elevations(x,y)!=target_elevation || groups(x,y)!=-1) continue;
+		groups(x,y)=label;
+		for(int n=1;n<=8;n++)
+			if(IN_GRID(x+dx[n],y+dy[n],groups.width(),groups.height()))
+				to_fill.push(grid_cell(x+dx[n],y+dy[n]));
+	}
+
 	return 1;
 }
 
-int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges, const char_2d &flowdirs, const float_2d &elevations, int_2d &groups){
+int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges, 
+						const char_2d &flowdirs, const float_2d &elevations, int_2d &groups){
 	int nx,ny;
 	int group_number=0;
 	diagnostic("\r\033[2KSearching for flats...\n");
@@ -130,9 +128,11 @@ int find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hig
 				ny=y+dy[n];
 
 				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
-				if(flowdirs(nx,ny)==d8_NO_DATA) continue;
+				if(flowdirs(nx,ny)==flowdirs.no_data) continue;
 
-				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y) && INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
+				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW
+							&& elevations(nx,ny)==elevations(x,y) 
+							&& INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
 					low_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;
@@ -154,7 +154,8 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	int_2d groups(flowdirs);
 	int group_max=-1;
 
-	diagnostic_arg("The groups matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+	diagnostic_arg("The groups matrix will require approximately %ldMB of RAM.\n",
+						flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Resizing groups matrix...");
 	groups.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
@@ -175,7 +176,8 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 		return 0;
 	}
 
-	diagnostic_arg("The boolean outlets vector will require approximately %ldMB of RAM.\n",group_max*sizeof(bool)/1024/1024);
+	diagnostic_arg("The boolean outlets vector will require approximately %ldMB of RAM.\n",
+							group_max*sizeof(bool)/1024/1024);
 	diagnostic("Creating boolean outlets vector...");
 	std::vector<int> has_outlet(group_max,false);
 	diagnostic("succeeded!\n");
@@ -207,9 +209,10 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 			i++;
 	diagnostic("succeeded.\n");
 
-//	printedges(elevations,low_edges,high_edges);	//TODO
+//	print_edges(elevations,low_edges,high_edges);	//TODO
 
-	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",
+							3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Creating incrementation matricies...");
 	int_2d inc1(elevations,true);
 	int_2d inc2(elevations,true);
@@ -222,13 +225,15 @@ int resolve_flats(float_2d &elevations, const char_2d &flowdirs){
 	inc3.init(0);
 	diagnostic("succeeded!\n");
 
-	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",group_max*sizeof(int)/1024/1024);
+	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",
+							group_max*sizeof(int)/1024/1024);
 	diagnostic("Creating flat height vector...");
 	std::vector<int> flat_height(group_max);
 	diagnostic("succeeded!\n");
 
 	diagnostic("Performing Barnes flat resolution...\n");
-	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);		//Flat_height is used here, but the results will be overwritten by the next line
+	//Flat_height is used with low_edges, but the results will be overwritten by high_edges
+	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
 	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
 //	print2d("%d ", inc1);	//TODO
 //	print2d("%d ", inc2);	//TODO
