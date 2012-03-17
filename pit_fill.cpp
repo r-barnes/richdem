@@ -277,7 +277,7 @@ void pit_fill_wang(float_2d &elevations){
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 		open.pop();
 	}
-	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -370,7 +370,7 @@ void pit_fill_barnes1(float_2d &elevations){
 			open.pop();
 		}
 	}
-	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -494,7 +494,7 @@ void pit_fill_barnes2(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -624,6 +624,6 @@ void pit_fill_barnes3(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\tsucceeded in %.2lfs.\n",progress_bar(-1));
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
