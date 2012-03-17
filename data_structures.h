@@ -108,6 +108,7 @@ typedef struct grid_cell_type {
 		x=x0;
 		y=y0;
 	}
+	grid_cell_type(){}
 } grid_cell;
 
 #endif
