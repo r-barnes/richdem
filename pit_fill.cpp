@@ -204,18 +204,6 @@ class grid_cell_compare{
 	public:
 		grid_cell_compare(const bool& revparam=false){reverse=revparam;}
 
-		bool operator() (const grid_cellz *lhs, const grid_cellz *rhs) const{
-			if (reverse) return (lhs->z<rhs->z);
-			else return (lhs->z>rhs->z);
-		}
-};
-
-class grid_cell_compare2{
-	bool reverse;
-
-	public:
-		grid_cell_compare2(const bool& revparam=false){reverse=revparam;}
-
 		bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
 			if (reverse) return (lhs.z<rhs.z);
 			else return (lhs.z>rhs.z);
@@ -227,7 +215,7 @@ class grid_cell_compare2{
 
 
 void pit_fill_wang(float_2d &elevations){
-	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
 
@@ -290,7 +278,7 @@ void pit_fill_wang(float_2d &elevations){
 
 
 void pit_fill_barnes1(float_2d &elevations){
-	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
@@ -383,7 +371,7 @@ void pit_fill_barnes1(float_2d &elevations){
 
 
 void pit_fill_barnes2(float_2d &elevations){
-	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
 	std::queue<grid_cell> climb;
 	char_2d closed;	//TODO: This could probably be made into a boolean
@@ -508,7 +496,7 @@ void pit_fill_barnes2(float_2d &elevations){
 
 
 void pit_fill_barnes3(float_2d &elevations){
-	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare2> open;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
 	std::queue<grid_cell> climb;
 	char_2d closed;	//TODO: This could probably be made into a boolean
