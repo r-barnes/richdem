@@ -229,7 +229,7 @@ void push_edges(const float_2d &elevations, std::priority_queue<grid_cellz, std:
 }
 
 
-
+//Wang runs everything through a priority queue. This the standard against which to test everything. We will make improvements by reducing the number of items going through the PQ.
 void pit_fill_wang(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	char_2d closed;	//TODO: This could probably be made into a boolean
@@ -277,7 +277,7 @@ void pit_fill_wang(float_2d &elevations){
 
 
 
-
+//Barnes1 explores depressions and flats by pushing them onto the meander queue. When meander encounters cells at <= elevation, it meanders over them. Otherwise, it pushes them onto the open queue.
 void pit_fill_barnes1(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
@@ -294,7 +294,7 @@ void pit_fill_barnes1(float_2d &elevations){
 
 	push_edges(elevations, open, closed);
 
-	diagnostic("Performing the Barnes fill...\n");
+	diagnostic("Performing the Barnes1 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		if(meander.size()>0){
@@ -335,10 +335,12 @@ void pit_fill_barnes1(float_2d &elevations){
 					open.push(grid_cellz(nx,ny,elevations(nx,ny)));
 					closed(nx,ny)=1;
 					continue;
-				} else if(elevations(nx,ny)<elevations(c.x,c.y))
+				} else if(elevations(nx,ny)<elevations(c.x,c.y)){
 					elevations(nx,ny)=elevations(c.x,c.y);
-				meander.push(grid_cell(nx,ny));
-				closed(nx,ny)=1;
+					meander.push(grid_cell(nx,ny));
+					closed(nx,ny)=1;
+					continue;
+				}
 			}
 			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 		}
@@ -354,7 +356,7 @@ void pit_fill_barnes1(float_2d &elevations){
 
 
 
-
+//Barnes2 uses a meander queue in the same way as in Barnes1, but introduces a climb queue. The climb queue can only ascend from cells which have a known outlet (i.e. those popped off the PQ or Meander queue). If a cell is lower than a cell popped off the climb queue, then that cell must be added to the PQ. This means that a cell may be placed onto the PQ multiple times.
 void pit_fill_barnes2(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
@@ -372,11 +374,11 @@ void pit_fill_barnes2(float_2d &elevations){
 
 	push_edges(elevations, open, closed);
 
-	diagnostic("Performing the Barnes fill...\n");
+	diagnostic("Performing the Barnes2 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
-			grid_cell c=meander.front();meander.pop();
+			grid_cell c=meander.front();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -397,8 +399,9 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
+			meander.pop();
 		} else if (climb.size()>0){
-			grid_cell c=climb.front();climb.pop();
+			grid_cell c=climb.front();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -417,8 +420,9 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
+			climb.pop();
 		} else {
-			grid_cellz c=open.top();open.pop();
+			grid_cellz c=open.top();
 
 			if(closed(c.x,c.y)==2){
 				open.pop();
@@ -447,6 +451,7 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
+			open.pop();
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
@@ -462,7 +467,7 @@ void pit_fill_barnes2(float_2d &elevations){
 
 
 
-
+//Barnes3 uses a meander queue in the same way as in Barnes1, but introduces a climb queue. The climb queue can only ascend from cells which have a known outlet (i.e. those popped off the PQ or Meander queue). If a cell is lower than a cell popped off the climb queue, then that cell must be added to the PQ. In Barnes2, this meant that a cell could be placed onto the PQ multiple times. In Barnes3, this is reduced through the use of the info array which has the minimum encountered elevation a cell can be. A popped climb cell will only place a cell into the PQ if its estimated elevation is lower than that already in the info array.
 void pit_fill_barnes3(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
 	std::queue<grid_cell> meander;
@@ -484,7 +489,7 @@ void pit_fill_barnes3(float_2d &elevations){
 
 	push_edges(elevations, open, closed, QUEUED);
 
-	diagnostic("Performing the Barnes fill...\n");
+	diagnostic("Performing the Barnes3 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
