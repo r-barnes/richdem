@@ -12,7 +12,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	fin=fopen(filename,"r");
 	if(fin==NULL){
 		diagnostic("failed!\n");
-		throw -1;
+		exit(-1);
 	}
 	diagnostic("succeeded.\n");
 
