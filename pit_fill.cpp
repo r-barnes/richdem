@@ -210,7 +210,23 @@ class grid_cell_compare{
 		}
 };
 
-
+void push_edges(const float_2d &elevations, std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> &open, char_2d &closed, int closed_val=1){
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic("Adding cells to the open priority queue...");
+	for(int x=0;x<elevations.width();x++){
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=closed_val;
+		closed(x,elevations.height()-1)=closed_val;
+	}
+	for(int y=1;y<elevations.height()-1;y++){
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=closed_val;
+		closed(elevations.width()-1,y)=closed_val;
+	}
+	diagnostic("succeeded.\n");
+}
 
 
 
@@ -227,26 +243,12 @@ void pit_fill_wang(float_2d &elevations){
 	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
-	diagnostic("Adding cells to the open priority queue...");
-	for(int x=0;x<elevations.width();x++){
-		open.push(grid_cellz(x,0,elevations(x,0) ));
-		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
-		closed(x,0)=1;
-		closed(x,elevations.height()-1)=1;
-	}
-	for(int y=1;y<elevations.height()-1;y++){
-		open.push(grid_cellz(0,y,elevations(0,y)	));
-		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
-		closed(0,y)=1;
-		closed(elevations.width()-1,y)=1;
-	}
-	diagnostic("succeeded.\n");
+	push_edges(elevations, open, closed);
 
 	diagnostic("Performing the Wang fill...\n");
 	progress_bar(-1);
 	while(open.size()>0){
-		grid_cellz c=open.top();
+		grid_cellz c=open.top();open.pop();
 		closed(c.x,c.y)=2;
 		processed_cells++;
 
@@ -263,7 +265,6 @@ void pit_fill_wang(float_2d &elevations){
 			}
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
-		open.pop();
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
@@ -291,27 +292,13 @@ void pit_fill_barnes1(float_2d &elevations){
 	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
-	diagnostic("Adding cells to the open priority queue...");
-	for(int x=0;x<elevations.width();x++){
-		open.push(grid_cellz(x,0,elevations(x,0) ));
-		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
-		closed(x,0)=1;
-		closed(x,elevations.height()-1)=1;
-	}
-	for(int y=1;y<elevations.height()-1;y++){
-		open.push(grid_cellz(0,y,elevations(0,y)	));
-		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
-		closed(0,y)=1;
-		closed(elevations.width()-1,y)=1;
-	}
-	diagnostic("succeeded.\n");
+	push_edges(elevations, open, closed);
 
 	diagnostic("Performing the Barnes fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		if(meander.size()>0){
-			grid_cell c=meander.front();
+			grid_cell c=meander.front();meander.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -333,9 +320,8 @@ void pit_fill_barnes1(float_2d &elevations){
 				}
 			}
 			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
-			meander.pop();
 		} else {
-			grid_cellz c=open.top();
+			grid_cellz c=open.top();open.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -355,7 +341,6 @@ void pit_fill_barnes1(float_2d &elevations){
 				closed(nx,ny)=1;
 			}
 			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
-			open.pop();
 		}
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
@@ -385,27 +370,13 @@ void pit_fill_barnes2(float_2d &elevations){
 	closed.init(0);
 	diagnostic("\tsucceeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
-	diagnostic("Adding cells to the open priority queue...");
-	for(int x=0;x<elevations.width();x++){
-		open.push(grid_cellz(x,0,elevations(x,0) ));
-		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
-		closed(x,0)=1;
-		closed(x,elevations.height()-1)=1;
-	}
-	for(int y=1;y<elevations.height()-1;y++){
-		open.push(grid_cellz(0,y,elevations(0,y)	));
-		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
-		closed(0,y)=1;
-		closed(elevations.width()-1,y)=1;
-	}
-	diagnostic("succeeded.\n");
+	push_edges(elevations, open, closed);
 
 	diagnostic("Performing the Barnes fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
-			grid_cell c=meander.front();
+			grid_cell c=meander.front();meander.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -426,9 +397,8 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
-			meander.pop();
 		} else if (climb.size()>0){
-			grid_cell c=climb.front();
+			grid_cell c=climb.front();climb.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -447,9 +417,8 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
-			climb.pop();
 		} else {
-			grid_cellz c=open.top();
+			grid_cellz c=open.top();open.pop();
 
 			if(closed(c.x,c.y)==2){
 				open.pop();
@@ -478,7 +447,6 @@ void pit_fill_barnes2(float_2d &elevations){
 					continue;
 				}
 			}
-			open.pop();
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
@@ -514,27 +482,13 @@ void pit_fill_barnes3(float_2d &elevations){
 	info.init(999999);
 	diagnostic("\tsucceeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cell)/1024/1024);
-	diagnostic("Adding cells to the open priority queue...");
-	for(int x=0;x<elevations.width();x++){
-		open.push(grid_cellz(x,0,elevations(x,0) ));
-		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
-		closed(x,0)=QUEUED;
-		closed(x,elevations.height()-1)=QUEUED;
-	}
-	for(int y=1;y<elevations.height()-1;y++){
-		open.push(grid_cellz(0,y,elevations(0,y)	));
-		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
-		closed(0,y)=QUEUED;
-		closed(elevations.width()-1,y)=QUEUED;
-	}
-	diagnostic("succeeded.\n");
+	push_edges(elevations, open, closed, QUEUED);
 
 	diagnostic("Performing the Barnes fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
-			grid_cell c=meander.front();
+			grid_cell c=meander.front();meander.pop();
 			closed(c.x,c.y)=CLOSED;
 			processed_cells++;
 
@@ -555,9 +509,8 @@ void pit_fill_barnes3(float_2d &elevations){
 					continue;
 				}
 			}
-			meander.pop();
 		} else if (climb.size()>0){
-			grid_cell c=climb.front();
+			grid_cell c=climb.front();climb.pop();
 			closed(c.x,c.y)=CLOSED;
 			processed_cells++;
 
@@ -577,9 +530,8 @@ void pit_fill_barnes3(float_2d &elevations){
 					continue;
 				}
 			}
-			climb.pop();
 		} else {
-			grid_cellz c=open.top();
+			grid_cellz c=open.top();open.pop();
 
 			if(closed(c.x,c.y)==CLOSED){
 				open.pop();
@@ -608,7 +560,6 @@ void pit_fill_barnes3(float_2d &elevations){
 					continue;
 				}
 			}
-			open.pop();
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
