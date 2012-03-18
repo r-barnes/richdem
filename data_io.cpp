@@ -19,22 +19,22 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	diagnostic("Calculating file size...");
 	if(fseek(fin,-1,SEEK_END)!=0){
 		diagnostic("failed! (Couldn't jump to end of file.)\n");
-		return -1;
+		exit(-1);
 	}
 	if((file_size=ftell(fin))==-1){
 		diagnostic("failed! (Couldn't determine file size.)\n");
-		return -1;
+		exit(-1);
 	}
 	if(fseek(fin,0,SEEK_SET)!=0){
 		diagnostic("failed! (Couldn't jump back to beginning of file.)\n");
-		return -1;
+		exit(-1);
 	}
 	diagnostic("succeeded.\n");
 
 	diagnostic("Reading DEM header...");
 	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns, &rows, &elevations.xllcorner, &elevations.yllcorner, &elevations.cellsize, &elevations.no_data)!=6){
 		diagnostic("failed!\n");
-		return -1;
+		exit(-1);
 	}
 	diagnostic("succeeded.\n");
 
