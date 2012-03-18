@@ -11,14 +11,7 @@
 
 int main(int argc, char **argv){
 	if(argc!=2){ //TODO
-		printf("RichDEM was built by Richard Barnes (rbarnes@umn.edu, http://finog.org)\n");
-		printf("It was designed to:\n");
-		printf("\t*Use the fastest available algorithms.\n");
-		printf("\t*Run in parallel whenever possible.\n");
-		printf("\t*Use straight-forward, easy-to-debug code.\n");
-		printf("\t*Advance the state-of-the-art of DEM processing.\n");
-		printf("\nIt is suggested you edit main.cpp to suit your needs.");
-		printf("\nSyntax: ./richdem <INPUT FILE>\n");
+		printf("RichDEM was built by Richard Barnes (rbarnes@umn.edu, http://finog.org)\nIt was designed to:\n\t*Use the fastest available algorithms.\n\t*Run in parallel whenever possible.\n\t*Use straight-forward, easy-to-debug code.\n\t*Advance the state-of-the-art of DEM processing.\n\nIt is suggested you edit main.cpp to suit your needs.\nSyntax: ./richdem <INPUT FILE>\n");
 		return -1;
 	}
 
