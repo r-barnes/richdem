@@ -9,9 +9,9 @@ int load_ascii_data(char filename[], float_2d &elevations);
 
 
 template <class T>
-int output_ascii_data(const char filename[], array2d<T> &output_grid){
+int output_ascii_data(const char filename[], const array2d<T> &output_grid){
 	FILE *fout;
-	long long file_size;
+//	long long file_size;
 
 	diagnostic_arg("Opening ASCII output file \"%s\"...",filename);
 	fout=fopen(filename,"w");
