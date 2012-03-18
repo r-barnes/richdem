@@ -2,44 +2,70 @@
 #include "data_structures.h"
 #include "data_io.h"
 #include "d8_methods.h"
-#include "dinf_methods.h"
+//#include "dinf_methods.h"
 #include "pit_fill.h"
 #include "interface.h"
 #include "flat_resolution.h"
+//#include "visualize.h"
+#include <sys/time.h>
 
 int main(int argc, char **argv){
-	float_2d elevations;
-	try{
-		load_ascii_data(argv[1],elevations);
-//		pit_fill_barnes3(elevations);
-//		print2d("%2.0f ", elevations);
-
-		char_2d flowdirs(elevations);
-		d8_flow_directions(elevations,flowdirs);
-//		print2d("%2d ",flowdirs);
-		resolve_flats(elevations,flowdirs);
-
-		d8_flow_directions(elevations,flowdirs);
-
-		print2d("%4.2f ",elevations);
-		print2d("%2d ",flowdirs);
-
-//		d8_flow_directions(elevations,flowdirs,false);
-
-//		float_2d flowdirs(elevations);
-//		pit_fill_wang(elevations);
-
-//		float_2d area(elevations);
-
-//		dinf_flow_directions(elevations,flowdirs);
-///		dinf_upslope_area(flowdirs, area);
-
-//		output_ascii_data("zout",area);
-
-
-		return 0;
-	} catch (int e) {
-		diagnostic("Unfortunately, I was unable to continue.\nClosing...\n");
+	if(argc!=2){ //TODO
+		printf("RichDEM was built by Richard Barnes (rbarnes@umn.edu, http://finog.org)\n");
+		printf("It was designed to:\n");
+		printf("\t*Use the fastest available algorithms.\n");
+		printf("\t*Run in parallel whenever possible.\n");
+		printf("\t*Use straight-forward, easy-to-debug code.\n");
+		printf("\t*Advance the state-of-the-art of DEM processing.\n");
+		printf("\nIt is suggested you edit main.cpp to suit your needs.");
+		printf("\nSyntax: ./richdem <INPUT FILE>\n");
 		return -1;
 	}
+
+	float_2d elevations;
+	load_ascii_data(argv[1],elevations);
+
+	print2d("%2d ",elevations);
+//	visualize(diff, false, 0);
+//	visualize(elevations, false, 0);
+
+//	pit_fill_wang(elevations);
+//	print2d("%2d ",elevations);
+
+//	visualize(elevations, false, 0);
+
+	char_2d flowdirs(elevations);
+	d8_flow_directions(elevations,flowdirs);
+
+	timeval startTime;
+	gettimeofday(&startTime, NULL);
+
+	resolve_flats(elevations,flowdirs);
+	printf("\033[96mResolve time: %lf\033[39m\n",timediff(startTime));
+
+	print2d("%2d ",elevations);
+
+//	print2d("%4.1f ",elevations);
+
+//	visualize(elevations,false,0);
+//	d8_flow_directions(elevations,flowdirs);
+//	visualize(flowdirs,true,NO_FLOW);
+
+//	print2d("%4.2f ",elevations);
+//	print2d("%2d ",flowdirs);
+
+//	d8_flow_directions(elevations,flowdirs,false);
+
+//	float_2d flowdirs(elevations);
+//	pit_fill_wang(elevations);
+
+//	float_2d area(elevations);
+
+//	dinf_flow_directions(elevations,flowdirs);
+///	dinf_upslope_area(flowdirs, area);
+
+//	output_ascii_data("zout",area);
+
+
+	return 0;
 }
