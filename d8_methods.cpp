@@ -9,12 +9,32 @@
 
 
 
+//234
+//105
+//876
 int d8_FlowDir(const float_2d &elevations, const int x, const int y){
 	float minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;
 
 	if (elevations(x,y)==elevations.no_data) return d8_NO_DATA; //No data for this cell
-	if (EDGE_GRID(x,y,elevations.width(),elevations.height())) return NO_FLOW;
+	if (EDGE_GRID(x,y,elevations.width(),elevations.height())){
+		if(x==0 && y==0)
+			return 2;
+		else if(x==0 && y==elevations.height()-1)
+			return 8;
+		else if(x==elevations.width()-1 && y==0)
+			return 4;
+		else if(x==elevations.width()-1 && y==elevations.height()-1)
+			return 6;
+		else if(x==0)
+			return 1;
+		else if(x==elevations.width()-1)
+			return 5;
+		else if(y==0)
+			return 3;
+		else if(y==elevations.height()-1)
+			return 7;
+	}
 
 	for(int n=1;n<=8;n++){
 		if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
