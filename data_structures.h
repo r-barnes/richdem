@@ -72,7 +72,10 @@ std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 	std::streamsize width=out.width();
 	for(int y=0;y<arr.height();y++){
 		for(int x=0;x<arr.width();x++)
-			out<<std::setw(width)<<arr(x,y)<<" ";
+			if(sizeof(T)==1)	//TODO: An ugly way of detecting chars
+				out<<std::setw(width)<<(int)arr(x,y)<<" ";
+			else
+				out<<std::setw(width)<<arr(x,y)<<" ";
 		out<<std::endl;
 	}
 	return out;
