@@ -1,6 +1,10 @@
 #ifndef _debug_included
 #define _debug_included
 
+#include <deque>
+
+#define PRINT(ARR,PREC,WIDTH) std::cout<<std::setprecision(PREC)<<std::setw(WIDTH)<<ARR<<std::endl;
+
 void print_edges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges);
 
 template <class T> //TODO: Needs error checking for dimensions, et cetera
