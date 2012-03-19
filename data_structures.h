@@ -69,9 +69,10 @@ template <> inline long array2d<unsigned int>::estimated_output_size(){return 9*
 
 template <class T>
 std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
+	std::streamsize width=out.width();
 	for(int y=0;y<arr.height();y++){
 		for(int x=0;x<arr.width();x++)
-			out<<arr(x,y)<<" ";
+			out<<std::setw(width)<<arr(x,y)<<" ";
 		out<<std::endl;
 	}
 	return out;
