@@ -37,17 +37,4 @@ const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
 void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
 
-template <class T>
-void print2d(const array2d<T> &arr,const char f[]=NULL){
-	for(int y=0;y<arr.height();y++){
-		for(int x=0;x<arr.width();x++)
-			if(f==NULL)
-				arr.print(stdout,x,y);
-			else
-				printf(f,arr(x,y));
-		printf("\n");
-	}
-	printf("\n");
-}
-
 #endif
