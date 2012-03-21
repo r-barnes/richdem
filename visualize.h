@@ -40,12 +40,14 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 				pout.draw_point(x,y,green);
 			else if(do_highlight && data(x,y)==highlight)
 				pout.draw_point(x,y,red);
-			else{
+			else{	diagnostic("succeeded.\n");
 				tc=(int)((data(x,y)-zmin)*255*3/(zmax-zmin));
 				pout.draw_point(x,y,&grayscale[tc]);
 			}
 		}
+	diagnostic("succeeded.\n");
 
+	diagnostic("Displaying image...");
 	CImgDisplay main_disp(1000,500,"RichDEM Visualization");
 	int factor = 400, x = factor, y = factor, mx=-1,my=0,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
 	bool redraw = true;
@@ -74,6 +76,7 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 			return;
 		main_disp.wait();
 	}
+	diagnostic("succeeded.\n");
 
 	return;
 }
