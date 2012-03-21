@@ -43,8 +43,8 @@ float dinf_FlowDir(const float_2d &elevations, const int x, const int y){
 	for(int n=0;n<8;n++){
 		if(!IN_GRID(x+dx_e1[n],y+dy_e1[n],elevations.width(),elevations.height())) continue;
 		if(!IN_GRID(x+dx_e2[n],y+dy_e2[n],elevations.width(),elevations.height())) continue;
-		if(elevations(x+dx_e1[n],y+dy_e1[n])==elev_NO_DATA) continue;
-		if(elevations(x+dx_e2[n],y+dy_e2[n])==elev_NO_DATA) continue;
+		if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
+		if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
 
 		e0=elevations(x,y);
 		e1=elevations(x+dx_e1[n],y+dy_e1[n]);
