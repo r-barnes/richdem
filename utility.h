@@ -18,7 +18,6 @@
 #define EDGE_GRID(x,y,x_max,y_max) (x==0 || y==0 || x==x_max-1 || y==y_max-1)
 #define d8_NO_DATA		-100
 #define dinf_NO_DATA	-9999
-#define elev_NO_DATA	-9999
 #define NO_FLOW			-1
 #define SQRT2			1.414213562373095048801688724209698078569671875376948
 
@@ -36,5 +35,13 @@ const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 //876
 
 void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
+
+//Used for checking input from files for structured tags
+struct must_be{
+	std::string val;
+    must_be(const std::string val):val(val){}
+};
+
+std::istream& operator>>(std::istream& inputstream, const must_be &a);
 
 #endif
