@@ -87,9 +87,6 @@ typedef array2d<bool> bool_2d;
 typedef array2d<unsigned int> uint_2d;
 typedef array2d<int> int_2d;
 
-
-
-
 typedef struct grid_cell_typez {
 	int x;
 	int y;
