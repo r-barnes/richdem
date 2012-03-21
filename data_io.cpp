@@ -1,41 +1,38 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 #include "interface.h"
 #include "data_structures.h"
+#include "utility.h"
+#include <string>
+#include <boost/lexical_cast.hpp>
 
 int load_ascii_data(char filename[], float_2d &elevations){
-	FILE *fin;
-	long long file_size;
+	std::ifstream fin;
+	long file_size;
 	int rows,columns;
 
 	diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename);
-	fin=fopen(filename,"r");
-	if(fin==NULL){
+	fin.open(filename);
+	if(!fin.is_open()){
 		diagnostic("failed!\n");
 		exit(-1);
 	}
 	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating file size...");
-	if(fseek(fin,-1,SEEK_END)!=0){
-		diagnostic("failed! (Couldn't jump to end of file.)\n");
-		exit(-1);
-	}
-	if((file_size=ftell(fin))==-1){
-		diagnostic("failed! (Couldn't determine file size.)\n");
-		exit(-1);
-	}
-	if(fseek(fin,0,SEEK_SET)!=0){
-		diagnostic("failed! (Couldn't jump back to beginning of file.)\n");
-		exit(-1);
-	}
+	file_size=fin.tellg();
+	fin.seekg(0,std::ios::end);
+	file_size=fin.tellg()-file_size;
+	fin.seekg(0,std::ios::beg);
 	diagnostic("succeeded.\n");
 
 	diagnostic("Reading DEM header...");
-	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns, &rows, &elevations.xllcorner, &elevations.yllcorner, &elevations.cellsize, &elevations.no_data)!=6){
-		diagnostic("failed!\n");
-		exit(-1);
-	}
+	fin>>must_be("ncols")>>columns;
+	fin>>must_be("nrows")>>rows;
+	fin>>must_be("xllcorner")>>elevations.xllcorner;
+	fin>>must_be("yllcorner")>>elevations.yllcorner;
+	fin>>must_be("cellsize")>>elevations.cellsize;
+	fin>>must_be("NODATA_value")>>elevations.no_data;
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*sizeof(float)/1024/1024);
@@ -46,26 +43,35 @@ int load_ascii_data(char filename[], float_2d &elevations){
 
 	diagnostic("Reading elevation matrix...\n");
 	progress_bar(-1);
-	float temp;
 	elevations.data_cells=0;
+	unsigned int precision_max=0;
+	unsigned int number_length=0;
 	for(int y=0;y<rows;y++){
-		progress_bar(ftell(fin)*100/file_size); //Todo: Should I check to see if ftell fails here?
+		progress_bar(fin.tellg()*100/file_size); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
-			if (fscanf(fin,"%f", &temp)!=1){
-				diagnostic("failed! (Couldn't read or convert a value!)\n");
-				return -1;
-			}
-			elevations(x,y)=temp;
-			if(temp!=elevations.no_data)
-				elevations.data_cells++;
+			std::string temp;
+			fin>>temp;
+			elevations(x,y)=boost::lexical_cast<float>(temp);
+
+			if(elevations(x,y)==elevations.no_data)
+				continue;
+
+			elevations.data_cells++;
+			unsigned int decimal_point_at=temp.find('.');
+			if(decimal_point_at!=std::string::npos && temp.length()-decimal_point_at-1>precision_max)
+				precision_max=temp.length()-decimal_point_at-1;
+			if(temp.length()>number_length)
+				number_length=temp.length();
 		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
 
-	fclose(fin);
+	fin.close();
 
 	diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
+	diagnostic_arg("The number of digits (including decimal points) in an elevation was %d.\n",number_length);
+	diagnostic_arg("The maximal precision in an elevation was %d decimal digits.\n",precision_max);
 
 	return 0;
 }
