@@ -5,7 +5,7 @@
 
 #define PRINT(ARR,PREC,WIDTH) std::cout<<std::setprecision(PREC)<<std::setw(WIDTH)<<ARR<<std::endl;
 
-void print_edges(float_2d &elevations, std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges);
+void print_edges(const float_2d &elevations, const std::deque<grid_cell> &low_edges, const std::deque<grid_cell> &high_edges);
 
 template <class T> //TODO: Needs error checking for dimensions, et cetera
 void array2ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
