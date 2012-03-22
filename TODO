@@ -1,7 +1,15 @@
 The 'collapse' directive on the parallel for loop thing may be useful
-How do I iterate over a const deque, as in "flat_resolution.cpp"'s "label_flats"
+Look into uBLAS "release mode" (http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm)
+"http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm"
 
+Useful for printing output
+out.width(width);
+out.precision(precision);
+out.setf(ios::fixed,ios::floatfield);
 
+ArcGIS has a more complicated method of determining D8 flow directions than I do
+http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=Determining_flow_direction
+http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=flow_direction
 
 Beyond these kinds of relationships and the ensuing impacts, the
 decisions made about unwanted depressions (i.e. spurious pits or
@@ -60,3 +68,34 @@ http://www.leptonica.com/filling.html
   pages={203--212},
   year={1985}
 }
+
+
+
+
+
+
+
+
+To get the correct results, don't set precision greater than available for this numeric type:
+
+#include <iostream>
+#include <limits>
+int main()
+{
+        double a = 0.3;
+        std::cout.precision(std::numeric_limits<double>::digits10);
+        std::cout << a << std::endl;
+        double b = 0;
+        for (char i = 1; i <= 50; i++) {
+                  b = b + a;
+        };
+        std::cout.precision(std::numeric_limits<double>::digits10);
+        std::cout << b << std::endl;
+}
+Although if that loop runs for 5000 iterations instead of 50, the accumulated error will show up even with this approach -- it's just how floating-point numbers work.
+
+
+
+//TODO: Useful only for debugging
+int getc(const char_2d &m, int x, int y) { return m(x,y); }
+int getf(const float_2d &m, int x, int y) {	return m(x,y); }
