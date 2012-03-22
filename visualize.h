@@ -40,7 +40,7 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 				pout.draw_point(x,y,green);
 			else if(do_highlight && data(x,y)==highlight)
 				pout.draw_point(x,y,red);
-			else{	diagnostic("succeeded.\n");
+			else{
 				tc=(int)((data(x,y)-zmin)*255*3/(zmax-zmin));
 				pout.draw_point(x,y,&grayscale[tc]);
 			}
