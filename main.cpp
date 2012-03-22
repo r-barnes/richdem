@@ -6,8 +6,11 @@
 #include "pit_fill.h"
 #include "interface.h"
 #include "flat_resolution.h"
-//#include "visualize.h"
+#include "visualize.h"
+#include "debug.h"
 #include <sys/time.h>
+#include <iostream>
+#include <iomanip>
 
 int main(int argc, char **argv){
 	if(argc!=2){ //TODO
@@ -18,7 +21,21 @@ int main(int argc, char **argv){
 	float_2d elevations;
 	load_ascii_data(argv[1],elevations);
 
-	print2d("%2d ",elevations);
+	char_2d flowdirs(elevations);
+	d8_flow_directions(elevations,flowdirs);
+
+	visualize(flowdirs,true,NO_FLOW);
+
+	int_2d flat_resolution_mask(elevations,true);
+	resolve_flats(elevations,flowdirs,flat_resolution_mask);
+
+	d8_flow_directions(flat_resolution_mask,flowdirs,false);
+
+	visualize(flowdirs,true,NO_FLOW);
+
+//	PRINT(flowdirs,0,3)
+
+//	PRINT(elevations,0,2);
 //	visualize(diff, false, 0);
 //	visualize(elevations, false, 0);
 
@@ -26,26 +43,27 @@ int main(int argc, char **argv){
 //	print2d("%2d ",elevations);
 
 //	visualize(elevations, false, 0);
+	return 0;
 
-	char_2d flowdirs(elevations);
-	d8_flow_directions(elevations,flowdirs);
+
+//	PRINT(flowdirs,0,2);
 
 	timeval startTime;
 	gettimeofday(&startTime, NULL);
 
-	resolve_flats(elevations,flowdirs);
+
 	printf("\033[96mResolve time: %lf\033[39m\n",timediff(startTime));
 
-	print2d("%2d ",elevations);
+//	PRINT(elevations,3,5);
 
 //	print2d("%4.1f ",elevations);
 
 //	visualize(elevations,false,0);
-//	d8_flow_directions(elevations,flowdirs);
+
 //	visualize(flowdirs,true,NO_FLOW);
 
 //	print2d("%4.2f ",elevations);
-//	print2d("%2d ",flowdirs);
+//	PRINT(flowdirs,0,2);
 
 //	d8_flow_directions(elevations,flowdirs,false);
 
