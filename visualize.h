@@ -49,7 +49,8 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 
 	diagnostic("Displaying image...");
 	CImgDisplay main_disp(1000,500,"RichDEM Visualization");
-	int factor = 400, x = factor, y = factor, mx=-1,my=0,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
+	int factor = 400, x = factor, y = factor,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
+//	int mx=-1,my=0;
 	bool redraw = true;
 	while (!main_disp.is_closed()) {
 		if (redraw) {
@@ -70,8 +71,8 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 		if (main_disp.is_keyARROWRIGHT()) { x+=factor*.1; redraw=true; }
 		if (main_disp.is_resized()) { main_disp.resize(); redraw = true; }
 		if (main_disp.button() && main_disp.mouse_x()>=0) {
-			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
-			my = main_disp.mouse_y()/((double)main_disp.height())*(y1-y0)+y0;
+//			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
+//			my = main_disp.mouse_y()/((double)main_disp.height())*(y1-y0)+y0;
 		} else if (main_disp.is_keyE()) //Exit program
 			break;
 		main_disp.wait();
