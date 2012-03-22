@@ -17,7 +17,7 @@
 #define INTERIOR_GRID(x,y,x_max,y_max) (x>=1 && y>=1 && x<x_max-1 && y<y_max-1)
 #define EDGE_GRID(x,y,x_max,y_max) (x==0 || y==0 || x==x_max-1 || y==y_max-1)
 #define d8_NO_DATA		-100
-#define dinf_NO_DATA	-9999
+#define dinf_NO_DATA	-100
 #define NO_FLOW			-1
 #define SQRT2			1.414213562373095048801688724209698078569671875376948
 
