@@ -21,7 +21,6 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	float minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;
 
-	if (elevations(x,y)==elevations.no_data) return d8_NO_DATA; //No data for this cell. TODO: Should abstract this macro-value to something contained by the flowdir array
 	if (EDGE_GRID(x,y,elevations.width(),elevations.height())){
 		if(x==0 && y==0)
 			return 2;
@@ -75,9 +74,12 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs, bool in
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
-			if(!init && elevations(x,y)==elevations.no_data)	//Masking
-				continue;
-			if(flowdirs(x,y)==NO_FLOW)
+			if(elevations(x,y)==elevations.no_data){
+				if(init)
+					flowdirs(x,y)=d8_NO_DATA;
+				else
+					continue;	//Masking
+			} else if(flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 		}
 	}
