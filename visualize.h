@@ -73,7 +73,7 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
 			my = main_disp.mouse_y()/((double)main_disp.height())*(y1-y0)+y0;
 		} else if (main_disp.is_keyE()) //Exit program
-			return;
+			break;
 		main_disp.wait();
 	}
 	diagnostic("succeeded.\n");
