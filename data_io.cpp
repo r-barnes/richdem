@@ -5,6 +5,7 @@
 #include "utility.h"
 #include <string>
 #include <boost/lexical_cast.hpp>
+#include <limits>
 
 int load_ascii_data(char filename[], float_2d &elevations){
 	std::ifstream fin;
@@ -46,6 +47,8 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	elevations.data_cells=0;
 	unsigned int precision_max=0;
 	unsigned int number_length=0;
+	float max=-std::numeric_limits<float>::infinity();
+	float min=std::numeric_limits<float>::infinity();
 	for(int y=0;y<rows;y++){
 		progress_bar(fin.tellg()*100/file_size); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
@@ -55,6 +58,11 @@ int load_ascii_data(char filename[], float_2d &elevations){
 
 			if(elevations(x,y)==elevations.no_data)
 				continue;
+
+			if(elevations(x,y)<min)
+				min=elevations(x,y);
+			if(elevations(x,y)>max)
+				max=elevations(x,y);
 
 			elevations.data_cells++;
 			unsigned int decimal_point_at=temp.find('.');
@@ -72,6 +80,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 	diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
 	diagnostic_arg("The number of digits (including decimal points) in an elevation was %d.\n",number_length);
 	diagnostic_arg("The maximal precision in an elevation was %d decimal digits.\n",precision_max);
+	diagnostic_arg("Elevations ranged from %f to %f.\n",min,max);
 
 	return 0;
 }
