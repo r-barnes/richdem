@@ -73,7 +73,7 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs, bool in
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++){
+		for(int y=0;y<elevations.height();y++)
 			if(elevations(x,y)==elevations.no_data){
 				if(init)
 					flowdirs(x,y)=d8_NO_DATA;
@@ -81,7 +81,6 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs, bool in
 					continue;	//Masking
 			} else if(flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
-		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
