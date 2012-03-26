@@ -3,6 +3,8 @@
 
 #include "CImg.h"
 #include "data_structures.h"
+#include <iostream>
+#include <string>
 using namespace cimg_library;
 
 template<class T, class U>
@@ -69,6 +71,13 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight, const cha
 		if (main_disp.is_keyARROWDOWN()) { y+=factor*.1; redraw=true; }
 		if (main_disp.is_keyARROWLEFT()) { x-=factor*.1; redraw=true; }
 		if (main_disp.is_keyARROWRIGHT()) { x+=factor*.1; redraw=true; }
+		if (main_disp.is_keyS()) {
+			std::string fname;
+			std::cout<<"Filename for saved image: ";
+			std::cin>>fname;
+			pout.save_png(fname.c_str());
+			std::cout<<"Saved image."<<std::endl;
+		}
 		if (main_disp.is_resized()) { main_disp.resize(); redraw = true; }
 		if (main_disp.button() && main_disp.mouse_x()>=0) {
 //			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
