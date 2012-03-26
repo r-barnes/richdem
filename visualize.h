@@ -6,7 +6,7 @@
 using namespace cimg_library;
 
 template<class T, class U>
-void visualize(const array2d<T> &data, bool do_highlight, U highlight){
+void visualize(const array2d<T> &data, bool do_highlight, U highlight, const char title[]){
 	CImg<unsigned char> pout(data.width(),data.height(), 1, 3, 0); //Image only uses top 1024 pixels. Text uses the rest.
 	const unsigned char white[]={255,255,255}, red[]={255,0,0}, green[]={0,255,0};
 	unsigned char grayscale[256*3];
@@ -48,7 +48,7 @@ void visualize(const array2d<T> &data, bool do_highlight, U highlight){
 	diagnostic("succeeded.\n");
 
 	diagnostic("Displaying image...");
-	CImgDisplay main_disp(1000,500,"RichDEM Visualization");
+	CImgDisplay main_disp(1000,500,title);
 	int factor = 400, x = factor, y = factor,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
 //	int mx=-1,my=0;
 	bool redraw = true;
