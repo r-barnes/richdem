@@ -20,6 +20,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		template<class U> array2d (const array2d<U> &copyfrom, bool do_resize=false);
 		long estimated_output_size();
 		void init(T val);
+		void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 };
 
@@ -81,6 +82,7 @@ std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 	return out;
 }
 
+typedef array2d<double> double_2d;
 typedef array2d<float> float_2d;
 typedef array2d<signed char> char_2d;
 typedef array2d<bool> bool_2d;
