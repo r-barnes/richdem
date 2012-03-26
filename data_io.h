@@ -2,6 +2,7 @@
 #define _data_io_included
 
 #include "interface.h"
+#include <fstream>
 //#include <fcntl.h> //Used for posix_fallocate
 
 int load_ascii_data(char filename[], float_2d &elevations);
@@ -10,14 +11,13 @@ int load_ascii_data(char filename[], float_2d &elevations);
 
 template <class T>
 int output_ascii_data(const char filename[], const array2d<T> &output_grid){
-	FILE *fout;
-//	long long file_size;
+	std::ofstream fout;
 
 	diagnostic_arg("Opening ASCII output file \"%s\"...",filename);
-	fout=fopen(filename,"w");
-	if(fout==NULL){
+	fout.open(filename);
+	if(!fout.is_open()){
 		diagnostic("failed!\n");
-		throw -1;
+		exit(-1);	//TODO: Need to make this safer! Don't just close after all that work!
 	}
 	diagnostic("succeeded.\n");
 
@@ -28,28 +28,21 @@ int output_ascii_data(const char filename[], const array2d<T> &output_grid){
 	}
 	diagnostic("succeeded.\n");
 */
+
 	diagnostic("Writing file header...");
-	if(fprintf(fout,"ncols\t\t%ld\nnrows\t\t%ld\nxllcorner\t%lf\nyllcorner\t%lf\ncellsize\t%d\nNODATA_value\t%f\n", output_grid.width(), output_grid.height(), output_grid.xllcorner, output_grid.yllcorner, output_grid.cellsize, output_grid.no_data)<0){
-		diagnostic("failed!\n");
-		return -1;
-	}
+	fout<<"ncols\t\t"<<output_grid.width()<<std::endl;
+	fout<<"nrows\t\t"<<output_grid.height()<<std::endl;
+	fout<<"xllcorner\t\t"<<output_grid.xllcorner<<std::endl;
+	fout<<"yllcorner\t\t"<<output_grid.yllcorner<<std::endl;
+	fout<<"cellsize\t\t"<<output_grid.cellsize<<std::endl;
+	fout<<"NODATA_value\t\t"<<output_grid.no_data<<std::endl;
 	diagnostic("succeeded.\n");
 
 	diagnostic("Writing file data...\n");
-	progress_bar(-1);
-	for(int y=0;y<output_grid.height();y++){
-//		progress_bar(ftell(out)*100/file_size); //Todo: Should I check to see if ftell fails here?
-		for(int x=0;x<output_grid.width();x++)
-			if (!output_grid.print(fout,x,y)){
-				diagnostic("failed! (Couldn't write a value!)\n");
-				return -1;
-			}
-		fprintf(fout,"\n");
-	}
-	progress_bar(-1);
+	fout<<std::setprecision(3)<<output_grid;
 	diagnostic("\tsucceeded.\n");
 
-	fclose(fout);
+	fout.close();
 
 	return 0;
 }
