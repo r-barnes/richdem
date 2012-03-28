@@ -93,21 +93,19 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 }
 
 template <class T>
-void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs, bool init=true){
+void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),!init);
 	diagnostic("succeeded.\n");
 
-	if(init){
-		diagnostic("Setting no_data value on flowdirs matrix...");
-		flowdirs.no_data=dinf_NO_DATA;
-		diagnostic("succeeded.\n");
+	diagnostic("Setting no_data value on flowdirs matrix...");
+	flowdirs.no_data=dinf_NO_DATA;
+	diagnostic("succeeded.\n");
 
-		diagnostic("Initializing Dinf flow directions...\n");
-		flowdirs.init(NO_FLOW);
-		diagnostic("\tsucceeded.\n");
-	}
+	diagnostic("Initializing Dinf flow directions...\n");
+	flowdirs.init(NO_FLOW);
+	diagnostic("\tsucceeded.\n");
 
 	diagnostic("Calculating Dinf flow directions...\n");
 	progress_bar(-1);
@@ -115,13 +113,10 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs, bool
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++)
-			if(elevations(x,y)==elevations.no_data){
-				if(init)
-					flowdirs(x,y)=dinf_NO_DATA;
-				else
-					continue;
-				} else if(flowdirs(x,y)==NO_FLOW)
-					flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
+			if(elevations(x,y)==elevations.no_data)
+				flowdirs(x,y)=dinf_NO_DATA;
+			else if(flowdirs(x,y)==NO_FLOW)
+				flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
