@@ -60,7 +60,7 @@ void visualize(const array2d<T> &data, bool do_highlight, T highlight, const cha
 				zmax=data(x,y);
 	diagnostic("succeeded.\n");
 
-	diagnostic("Displaying image...");
+	diagnostic("Displaying image...\n");
 	CImgDisplay main_disp(1000,500,title);
 	int factor = 400, x = factor, y = factor,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
 	float zmin_scale=1,zmax_scale=1;
