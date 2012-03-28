@@ -5,6 +5,7 @@
 #include <omp.h>
 #include <cmath>
 #include <queue>
+#include "visualize.h"
 
 /*
 @inproceedings{Wallis2009,
@@ -82,6 +83,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	diagnostic("succeeded.\n");
 
 	diagnostic("Setting no_data value on area matrix...");
+	area.init(-1);
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
@@ -92,13 +94,16 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
-			if(flowdirs(x,y)==dinf_NO_DATA){
-				area(x,y)=dinf_NO_DATA;
+			if(flowdirs(x,y)==flowdirs.no_data){
+				area(x,y)=area.no_data;
 				continue;
 			}
 			for(int n=1;n<=8;n++){
-				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height())) continue;
-				if(does_cell_flow_into_me(flowdirs(x+dx[n],y+dy[n]),n))
+				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height()))
+					continue;
+				else if (flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
+					continue;
+				else if(does_cell_flow_into_me(flowdirs(x+dx[n],y+dy[n]),n))
 					dependency(x,y)++;
 			}
 		}
@@ -111,7 +116,11 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
-			if(flowdirs(x,y)!=dinf_NO_DATA && dependency(x,y)==0)
+			if(flowdirs(x,y)==flowdirs.no_data)
+				continue;
+			else if(flowdirs(x,y)==NO_FLOW)
+				continue;
+			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
 	progress_bar(-1);
@@ -121,33 +130,29 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	progress_bar(-1);
 	long int ccount=0;
 	while(sources.size()>0){
-		grid_cell *c=&sources.front();
+		grid_cell c=sources.front();
+		sources.pop();
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
-		if(flowdirs(c->x,c->y)==dinf_NO_DATA){ //TODO: May not be necessary due to code elsewhere
-			area(c->x,c->y)=dinf_NO_DATA;
-			sources.pop();
-			continue;
-		}
-
-		area(c->x,c->y)=1;
+		area(c.x,c.y)=1;
 		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c->x+dx[n],c->y+dy[n],flowdirs.width(),flowdirs.height())) continue;
-			if(does_cell_flow_into_me(flowdirs(c->x+dx[n],c->y+dy[n]),n))
-				area(c->x,c->y)+=proportion_i_get(flowdirs(c->x+dx[n],c->y+dy[n]),n)*area(c->x+dx[n],c->y+dy[n]);
+			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height()))
+				continue;
+			if(does_cell_flow_into_me(flowdirs(c.x+dx[n],c.y+dy[n]),n))
+				area(c.x,c.y)+=proportion_i_get(flowdirs(c.x+dx[n],c.y+dy[n]),n)*area(c.x+dx[n],c.y+dy[n]);
 		}
-		if(flowdirs(c->x,c->y)!=dinf_NO_DATA && flowdirs(c->x,c->y)!=NO_FLOW){
-			int n_low= dinf_to_d8_low [(int)(flowdirs(c->x,c->y)/(M_PI/4))];
-			int n_high=dinf_to_d8_high[(int)(flowdirs(c->x,c->y)/(M_PI/4))];
-			if( (--dependency(c->x+dx[n_low],c->y+dy[n_low]))==0)
-				sources.push(grid_cell(c->x+dx[n_low],c->y+dy[n_low]));
-			if( (--dependency(c->x+dx[n_high],c->y+dy[n_high]))==0)
-				sources.push(grid_cell(c->x+dx[n_high],c->y+dy[n_high]));
+		if(flowdirs(c.x,c.y)!=flowdirs.no_data && flowdirs(c.x,c.y)!=NO_FLOW){
+			int n_low= dinf_to_d8_low [(int)(flowdirs(c.x,c.y)/(M_PI/4))];
+			int n_high=dinf_to_d8_high[(int)(flowdirs(c.x,c.y)/(M_PI/4))];
+			int nlx=c.x+dx[n_low],nly=c.y+dy[n_low];
+			int nhx=c.x+dx[n_high],nhy=c.y+dy[n_high];
+			if( IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && area(nlx,nly)!=area.no_data && (--dependency(nlx,nly))==0)
+				sources.push(grid_cell(nlx,nly));
+			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && area(nhx,nhy)!=area.no_data && (--dependency(nhx,nhy))==0)
+				sources.push(grid_cell(nhx,nhy));
 		}
-
-		sources.pop();
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
