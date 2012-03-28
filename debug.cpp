@@ -20,23 +20,3 @@ void print_edges(const float_2d &elevations, const std::deque<grid_cell> &low_ed
 		diagnostic("\n");
 	}
 }
-
-
-
-
-
-template <class T>
-void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, int maxy, int precision, std::streamsize swidth){
-	out.setf(std::ios::fixed,std::ios::floatfield);
-	out<<std::setprecision(precision);
-	for(int y=((miny>0)?miny:0);y<=maxy && y<height();y++){
-		for(int x=((minx>0)?minx:0);x<=maxx && x<width();x++)
-			if(boost::numeric::ublas::matrix<T>::operator()(x,y)==no_data)
-				out<<std::setw(swidth)<<"-"<<" ";
-			else if(sizeof(T)==1)	//TODO: An ugly way of detecting chars
-				out<<std::setw(swidth)<<(int)boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
-			else
-				out<<std::setw(swidth)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
-		out<<std::endl;
-	}
-}
