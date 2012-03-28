@@ -157,3 +157,70 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
 }
+
+
+
+
+
+
+
+
+float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
+	double smax=0;
+	int nmax=-1;
+	double rmax=0;
+
+	double e0,e1,e2,d1,d2,s1,s2,r,s;
+
+	//Yes, this should be 0-8, this is the Tarboton neighbour system
+	for(int n=0;n<8;n++){
+		if(groups(x+dx_e1[n],y+dy_e1[n])!=groups(x,y)) continue;
+		if(groups(x+dx_e2[n],y+dy_e2[n])!=groups(x,y)) continue;
+		//if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
+		//if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
+
+		e0=flat_resolution_mask(x,y);
+		e1=flat_resolution_mask(x+dx_e1[n],y+dy_e1[n]);
+		e2=flat_resolution_mask(x+dx_e2[n],y+dy_e2[n]);
+		d1=1;
+		d2=1;
+		s1=(e0-e1)/d1;
+		s2=(e1-e2)/d2;
+		r=atan2(s2,s1);
+		s=sqrt(s1*s1+s2*s2);
+		if(r<0){
+			r=0;
+			s=s1;
+		} else if(r>atan2(d2,d1)){
+			r=atan2(d2,d1);
+			s=(e0-e2)/sqrt(d1*d1+d2*d2);
+		}
+		if(s>smax){
+			smax=s;
+			nmax=n;
+			rmax=r;
+		}
+	}
+
+	double rg=NO_FLOW;
+	if(nmax!=-1)
+		rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
+
+	return rg;
+}
+
+void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs){
+	diagnostic("Calculating Dinf flow directions using flat mask...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=1;x<flat_resolution_mask.width()-1;x++){
+		progress_bar(x*omp_get_num_threads()*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		for(int y=1;y<flat_resolution_mask.height()-1;y++)
+			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
+				continue;
+			else if(flowdirs(x,y)==NO_FLOW)
+				flowdirs(x,y)=dinf_masked_FlowDir(flat_resolution_mask,groups,x,y);
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+}

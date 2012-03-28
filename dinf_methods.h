@@ -7,6 +7,7 @@
 #include "utility.h"
 
 void dinf_upslope_area(const float_2d &flowdirs, float_2d &area);
+void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs);
 
 /*
 814 citations
