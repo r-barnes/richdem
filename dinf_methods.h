@@ -114,8 +114,8 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++)
 			if(elevations(x,y)==elevations.no_data)
-				flowdirs(x,y)=dinf_NO_DATA;
-			else if(flowdirs(x,y)==NO_FLOW)
+				flowdirs(x,y)=flowdirs.no_data;
+			else
 				flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
 	}
 	progress_bar(-1);
