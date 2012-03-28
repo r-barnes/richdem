@@ -74,7 +74,7 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++)
 			if(elevations(x,y)==elevations.no_data)
-					flowdirs(x,y)=flowdirs.no_data;
+				flowdirs(x,y)=flowdirs.no_data;
 			else
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
