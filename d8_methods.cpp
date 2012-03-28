@@ -7,11 +7,7 @@
 #include <limits>
 #include <cmath>
 
-bool does_cell_flow_into_me(const int x, const int y, int n, const char_2d &flowdirs){
-	return (flowdirs(x,y)!=d8_NO_DATA && n==inverse_flow[flowdirs(x,y)]);
-}
-
-void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
+void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 
@@ -26,6 +22,10 @@ void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	diagnostic("Resizing the area matrix...");
 	area.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
+	diagnostic("Initializing the area matrix...");
+	area.init(-1);
+	area.no_data=d8_NO_DATA;
+	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating dependency matrix...\n");
 	progress_bar(-1);
@@ -34,11 +34,13 @@ void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
-			for(int n=1;n<=8;n++){
-				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height())) continue;
-				if(does_cell_flow_into_me(x+dx[n],y+dy[n],n,flowdirs))
+			for(int n=1;n<=8;n++)
+				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height()))
+					continue;
+				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
+					continue;
+				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
 					dependency(x,y)++;
-			}
 		}
 	}
 	progress_bar(-1);
@@ -49,7 +51,11 @@ void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
-			if(flowdirs(x,y)!=d8_NO_DATA && dependency(x,y)==0)
+			if(flowdirs(x,y)==flowdirs.no_data)
+				area(x,y)=area.no_data;
+			else if(flowdirs(x,y)==NO_FLOW)
+				continue;
+			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
 	progress_bar(-1);
@@ -60,21 +66,23 @@ void d8_upslope_area(const char_2d &flowdirs, uint_2d &area){
 	long int ccount=0;
 	while(sources.size()>0){
 		grid_cell c=sources.front();
+		sources.pop();
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
 		area(c.x,c.y)=1;
-		for(int n=0;n<8;n++){
+		for(int n=1;n<=8;n++){
 			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height())) continue;
-			if(does_cell_flow_into_me(c.x+dx[n],c.y+dy[n],n,flowdirs))
+			if(flowdirs(c.x+dx[n],c.y+dy[n])!=NO_FLOW && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])])
 				area(c.x,c.y)+=area(c.x+dx[n],c.y+dy[n]);
 		}
-		if(flowdirs(c.x,c.y)!=d8_NO_DATA && flowdirs(c.x,c.y)!=0)
-			if( (--dependency(c.x+dx[flowdirs(c.x,c.y)],c.y+dy[flowdirs(c.x,c.y)]))==0)
-				sources.push(grid_cell(c.x+dx[flowdirs(c.x,c.y)],c.y+dy[flowdirs(c.x,c.y)]));
-
-		sources.pop();
+		if(flowdirs(c.x,c.y)!=NO_FLOW){
+			int nx=c.x+dx[flowdirs(c.x,c.y)];
+			int ny=c.y+dy[flowdirs(c.x,c.y)];
+			if( IN_GRID(nx,ny,flowdirs.width(),flowdirs.height()) && area(nx,ny)!=area.no_data && (--dependency(nx,ny))==0)
+				sources.push(grid_cell(nx,ny));
+		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
