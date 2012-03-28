@@ -10,7 +10,7 @@
 #define SLOPE_RADIAN	3
 #define SLOPE_DEGREE	4
 
-void d8_upslope_area(const char_2d &flowdirs, uint_2d &area);
+void d8_upslope_area(const char_2d &flowdirs, int_2d &area);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=SLOPE_RISERUN);
 
 //234
