@@ -37,6 +37,8 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 		for(int y=1;y<flat_resolution_mask.height()-1;y++)
 			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
 				continue;
+			else if (flowdirs(x,y)!=NO_FLOW)
+				continue;
 			else
 				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
 	}
