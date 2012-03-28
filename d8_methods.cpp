@@ -7,6 +7,47 @@
 #include <limits>
 #include <cmath>
 
+
+
+//234
+//105
+//876
+int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
+	int minimum_elevation=flat_resolution_mask(x,y);
+	int flowdir=NO_FLOW;
+
+	for(int n=1;n<=8;n++){
+		int nx=x+dx[n];
+		int ny=y+dy[n];
+		if(	groups(nx,ny)==groups(x,y) && (flat_resolution_mask(nx,ny)<minimum_elevation || (flat_resolution_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
+			minimum_elevation=flat_resolution_mask(nx,ny);
+			flowdir=n;
+		}
+	}
+
+	return flowdir;
+}
+
+void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs){
+	diagnostic("Calculating D8 flow directions using flat mask...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=1;x<flat_resolution_mask.width()-1;x++){
+		progress_bar(x*omp_get_num_threads()*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		for(int y=1;y<flat_resolution_mask.height()-1;y++)
+			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
+				continue;
+			else
+				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
+	}
+	progress_bar(-1);
+	diagnostic("\tsucceeded.\n");
+}
+
+
+
+
+
 void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;

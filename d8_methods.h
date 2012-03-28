@@ -10,6 +10,7 @@
 #define SLOPE_RADIAN	3
 #define SLOPE_DEGREE	4
 
+void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs);
 void d8_upslope_area(const char_2d &flowdirs, int_2d &area);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=SLOPE_RISERUN);
 
@@ -18,7 +19,7 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=SLOPE
 //876
 template<class T>
 int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
-	float minimum_elevation=elevations(x,y);
+	T minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;
 
 	if (EDGE_GRID(x,y,elevations.width(),elevations.height())){
@@ -52,21 +53,19 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
 }
 
 template<class T>
-void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs, bool init=true){
+void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 	diagnostic_arg("The D8 flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
-	flowdirs.resize(elevations.width(),elevations.height(),!init);
+	flowdirs.resize(elevations.width(),elevations.height(),false);
 	diagnostic("succeeded.\n");
 
-	if(init){
-		diagnostic("Setting no_data value on flowdirs matrix...");
-		flowdirs.no_data=d8_NO_DATA;
-		diagnostic("succeeded.\n");
+	diagnostic("Setting no_data value on flowdirs matrix...");
+	flowdirs.no_data=d8_NO_DATA;
+	diagnostic("succeeded.\n");
 
-		diagnostic("Initializing D8 flow directions...\n");
-		flowdirs.init(NO_FLOW);
-		diagnostic("\tsucceeded.\n");
-	}
+	diagnostic("Initializing D8 flow directions...\n");
+	flowdirs.init(NO_FLOW);
+	diagnostic("\tsucceeded.\n");
 
 	diagnostic("Calculating D8 flow directions...\n");
 	progress_bar(-1);
@@ -74,12 +73,9 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs, bool in
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++)
-			if(elevations(x,y)==elevations.no_data){
-				if(init)
-					flowdirs(x,y)=d8_NO_DATA;
-				else
-					continue;	//Masking
-			} else if(flowdirs(x,y)==NO_FLOW)
+			if(elevations(x,y)==elevations.no_data)
+					flowdirs(x,y)=flowdirs.no_data;
+			else
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
 	progress_bar(-1);

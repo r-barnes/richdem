@@ -138,12 +138,12 @@ void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hi
 }
 
 template <class T, class U>
-int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &flat_resolution_mask){
+int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &flat_resolution_mask, int_2d &groups){
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 
 	diagnostic_arg("The groups matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Resizing groups matrix...");
-	int_2d groups(flowdirs,true);
+	groups.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing groups matrix...");
 	groups.init(-1);
