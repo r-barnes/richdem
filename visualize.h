@@ -18,9 +18,9 @@ void make_image(CImg<unsigned char> &pout, const array2d<T> &data, bool do_highl
 		for(int y=0;y<data.height();y++){
 //			std::cerr<<x<<" "<<y<<" "<<data(x,y)<<std::endl;
 			if(data(x,y)==data.no_data)
-				pout.draw_point(x,y,green);
-			else if(do_highlight && data(x,y)==highlight)
 				pout.draw_point(x,y,red);
+			else if(do_highlight && data(x,y)==highlight)
+				pout.draw_point(x,y,green);
 			else if (data(x,y)<zmin)
 				pout.draw_point(x,y,&grayscale[0]);
 			else if (data(x,y)>zmax)
