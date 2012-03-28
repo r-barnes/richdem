@@ -70,13 +70,17 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	area.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating dependency matrix...\n");
+	diagnostic("Calculating dependency matrix & setting no_data cells...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
+			if(flowdirs(x,y)==flowdirs.no_data){
+				area(x,y)=area.no_data;
+				continue;
+			}
 			for(int n=1;n<=8;n++)
 				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height()))
 					continue;
@@ -95,7 +99,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
-				area(x,y)=area.no_data;
+				continue;
 			else if(flowdirs(x,y)==NO_FLOW)
 				continue;
 			else if(dependency(x,y)==0)
@@ -116,7 +120,8 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 		area(c.x,c.y)=1;
 		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height())) continue;
+			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height()))
+				continue;
 			if(flowdirs(c.x+dx[n],c.y+dy[n])!=NO_FLOW && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])])
 				area(c.x,c.y)+=area(c.x+dx[n],c.y+dy[n]);
 		}
