@@ -58,6 +58,7 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	
 	//Since I am not on the edge of the grid if I've made it this far, may neighbours cannot be off the grid
 	//Very negative no_data's should be acceptable, and suck water of the grid.
+	//Yes, this should be 0-8, this is the Tarboton neighbour system
 	for(int n=0;n<8;n++){
 		//if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
 		//if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
