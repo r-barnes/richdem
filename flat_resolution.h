@@ -93,7 +93,7 @@ void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2
 }
 
 template<class T>
-void label_this(int x, int y, const float target_elevation, const int label, int_2d &groups, const array2d<T> &elevations){
+void label_this(int x, int y, const T target_elevation, const int label, int_2d &groups, const array2d<T> &elevations){
 	std::queue<grid_cell> to_fill; //TODO: Queue versus stack
 	to_fill.push(grid_cell(x,y));
 
@@ -149,6 +149,17 @@ int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_
 	groups.init(-1);
 	diagnostic("succeeded.\n");
 
+	diagnostic_arg("The flat resolution mask will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+	diagnostic("Resizing flat resolution mask...");
+	flat_resolution_mask.resize(flowdirs.width(),flowdirs.height(),false);
+	diagnostic("succeeded.\n");
+	diagnostic("Initializing flat resolution mask...");
+	flat_resolution_mask.init(2147483000);
+	diagnostic("succeeded.\n");
+	diagnostic("Setting flat resolution mask's no_data...");
+	flat_resolution_mask.no_data=2147483000;
+	diagnostic("succeeded!\n");
+
 	find_flat_edges(low_edges, high_edges, flowdirs, elevations);
 
 	if(low_edges.size()==0){
@@ -190,7 +201,6 @@ int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_
 	diagnostic("Initializing incrementation matricies...");
 	inc1.init(0);
 	inc2.init(0);
-	flat_resolution_mask.init(-1);
 	diagnostic("succeeded!\n");
 
 	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",group_number*sizeof(int)/1024/1024);
@@ -205,10 +215,6 @@ int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, groups);
-	diagnostic("succeeded!\n");
-
-	diagnostic("Setting flat resolution mask's no_data...\n");
-	flat_resolution_mask.no_data=-1;
 	diagnostic("succeeded!\n");
 
 	return 0;
