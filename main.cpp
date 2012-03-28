@@ -49,6 +49,8 @@ int main(int argc, char **argv){
 
 	d8_flow_flats(flat_resolution_mask,groups,flowdirs);
 
+	visualize(flowdirs,true,(signed char)NO_FLOW,"D8 Flow Directions With Flats Resolved");
+
 //	flowdirs.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,0,4);
 
 //	visualize(flowdirs,true,NO_FLOW,"D8 Flow Directions w/ Flat Resolution");
@@ -56,7 +58,7 @@ int main(int argc, char **argv){
 	d8_upslope_area(flowdirs, area);
 
 //	area.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,0,4);
-/*
+
 	for(int x=0;x<flowdirs.width();x++)
 	for(int y=0;y<flowdirs.height();y++)
 		if(area(x,y)==-1){
@@ -65,16 +67,18 @@ int main(int argc, char **argv){
 				if(flowdirs(x,y)!=NO_FLOW && flowdirs(x,y)!=flowdirs.no_data && n==inverse_flow[flowdirs(x,y)])
 					diagnostic_arg("%d ",n);
 			diagnostic("\n");
-			elevations.print_block(std::cerr,x-5,x+5,y-5,y+5,3,4);
+/*			elevations.print_block(std::cerr,x-5,x+5,y-5,y+5,3,4);
 			diagnostic("---\n");
 			flat_resolution_mask.print_block(std::cerr,x-5,x+5,y-5,y+5,0,4);
+			diagnostic("---\n");
+			groups.print_block(std::cerr,x-5,x+5,y-5,y+5,0,4);
 			diagnostic("---\n");
 			flowdirs.print_block(std::cerr,x-5,x+5,y-5,y+5,0,4);
 			diagnostic("---\n");
 			area.print_block(std::cerr,x-5,x+5,y-5,y+5,0,4);
-			diagnostic("==========\n==========\n");
+			diagnostic("==========\n==========\n");*/
 		}
-*/
+
 	visualize(area,true,-1,"D8 Upslope Area w/ Flats Resolved");
 
 //	output_ascii_data("zout",area);
