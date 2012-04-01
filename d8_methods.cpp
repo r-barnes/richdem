@@ -84,6 +84,8 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 					continue;
 				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
 					continue;
+				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
+					continue;
 				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
 					dependency(x,y)++;
 		}
