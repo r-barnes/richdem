@@ -22,7 +22,14 @@ template <class T>
 void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, int maxy, int precision, std::streamsize swidth){
 	out.setf(std::ios::fixed,std::ios::floatfield);
 	out<<std::setprecision(precision);
+
+	out<<std::setw(4)<<" "<<"\t";
+	for(int x=((minx>0)?minx:0);x<=maxx && x<width();x++)
+		out<<std::setw(swidth)<<x<<" ";
+	out<<std::endl;
+
 	for(int y=((miny>0)?miny:0);y<=maxy && y<height();y++){
+		out<<std::setw(4)<<y<<"\t";
 		for(int x=((minx>0)?minx:0);x<=maxx && x<width();x++)
 			if(boost::numeric::ublas::matrix<T>::operator()(x,y)==no_data)
 				out<<std::setw(swidth)<<"-"<<" ";
