@@ -2,6 +2,8 @@
 #include "utility.h"
 #include "dinf_methods.h"
 #include "interface.h"
+#include "visualize.h"
+#include "debug.h"
 #include <omp.h>
 #include <cmath>
 #include <queue>
@@ -47,6 +49,47 @@ To convert Dinf to this, take
 const int dinf_to_d8_low[9]= {4,3,2,1,1,7,6,5,5};
 const int dinf_to_d8_high[9]={5,4,3,2,8,8,7,6,6};
 
+//234
+//105
+//876
+void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
+	const double at2=atan2(1,1);
+	nlow=-1;
+
+	if(flowdir==(float)(af[0]*0+ac[0]*M_PI/2)){
+		nhigh=5;
+		return;
+	} else if(flowdir==(float)(af[1]*0+ac[1]*M_PI/2) || flowdir==(float)(af[2]*0+ac[2]*M_PI/2)){
+		nhigh=3;
+		return;
+	} else if(flowdir==(float)(af[3]*0+ac[3]*M_PI/2) || flowdir==(float)(af[4]*0+ac[4]*M_PI/2)){
+		nhigh=1;
+		return;
+	} else if(flowdir==(float)(af[5]*0+ac[5]*M_PI/2) || flowdir==(float)(af[6]*0+ac[6]*M_PI/2)){
+		nhigh=7;
+		return;
+	} else if(flowdir==(float)(af[7]*0+ac[7]*M_PI/2)){
+		nhigh=5;
+		return;
+	} else if(flowdir==(float)(af[0]*at2+ac[0]*M_PI/2) || flowdir==(float)(af[1]*at2+ac[1]*M_PI/2)){
+		nhigh=4;
+		return;
+	} else if(flowdir==(float)(af[2]*at2+ac[2]*M_PI/2) || flowdir==(float)(af[3]*at2+ac[3]*M_PI/2)){
+		nhigh=2;
+		return;
+	} else if(flowdir==(float)(af[4]*at2+ac[4]*M_PI/2) || flowdir==(float)(af[5]*at2+ac[5]*M_PI/2)){
+		nhigh=8;
+		return;
+	} else if(flowdir==(float)(af[6]*at2+ac[6]*M_PI/2) || flowdir==(float)(af[7]*at2+ac[7]*M_PI/2)){
+		nhigh=6;
+		return;
+	}
+
+	int flown=(int)(flowdir/(M_PI/4));
+	nlow=dinf_to_d8_low[flown];
+	nhigh=dinf_to_d8_high[flown];
+}
+
 bool does_cell_flow_into_me(float n_flowdir, int n){
 	if(n_flowdir==NO_FLOW || n_flowdir==dinf_NO_DATA) return false;
 	n=inverse_flow[n];
@@ -76,6 +119,9 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	diagnostic("Resizing dependency matrix...");
 	dependency.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
+	diagnostic("Initializing dependency matrix...");
+	dependency.init(0);
+	diagnostic("succeeded.\n");
 
 	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing the area matrix...");
@@ -93,23 +139,35 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
-			dependency(x,y)=0;
 			if(flowdirs(x,y)==flowdirs.no_data){
 				area(x,y)=area.no_data;
+				dependency(x,y)=9;	//TODO
 				continue;
 			}
-			for(int n=1;n<=8;n++){
-				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height()))
-					continue;
-				else if (flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
-					continue;
-				else if(does_cell_flow_into_me(flowdirs(x+dx[n],y+dy[n]),n))
-					dependency(x,y)++;
-			}
+			if(flowdirs(x,y)==NO_FLOW)
+				continue;
+			int n_high,n_low,nlx,nly,nhx,nhy;
+			where_do_i_flow(flowdirs(x,y),n_high,n_low);
+			nhx=x+dx[n_high],nhy=y+dy[n_high];
+			if(n_low!=-1)
+				nlx=x+dx[n_low],nly=y+dy[n_low];
+//			if(nlx==1197 && nly==1541) diagnostic_arg("Flow from (%d,%d).\n",x,y);
+//			if(nhx==1197 && nhy==1541) diagnostic_arg("Flow from (%d,%d).\n",x,y);
+			if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data )
+				dependency(nlx,nly)++;
+			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data )
+				dependency(nhx,nhy)++;
 		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
+
+	dependency.no_data=155;
+//	visualize(dependency,true,(signed char)0,"Dependencies");
+
+	int cx=1198,cy=1541;
+	dependency.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,3,5);
+	diagnostic("---\n");
 
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
@@ -144,26 +202,33 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				area(c.x,c.y)+=proportion_i_get(flowdirs(c.x+dx[n],c.y+dy[n]),n)*area(c.x+dx[n],c.y+dy[n]);
 		}
 		if(flowdirs(c.x,c.y)!=flowdirs.no_data && flowdirs(c.x,c.y)!=NO_FLOW){
-			int n_low= dinf_to_d8_low [(int)(flowdirs(c.x,c.y)/(M_PI/4))];
-			int n_high=dinf_to_d8_high[(int)(flowdirs(c.x,c.y)/(M_PI/4))];
-			int nlx=c.x+dx[n_low],nly=c.y+dy[n_low];
-			int nhx=c.x+dx[n_high],nhy=c.y+dy[n_high];
-			if( IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && area(nlx,nly)!=area.no_data && (--dependency(nlx,nly))==0)
+			int n_high,n_low,nlx,nly,nhx,nhy;
+			where_do_i_flow(flowdirs(c.x,c.y),n_high,n_low);
+			nhx=c.x+dx[n_high],nhy=c.y+dy[n_high];
+			if(n_low!=-1)
+				nlx=c.x+dx[n_low],nly=c.y+dy[n_low];
+//			if(nlx==1197 && nly==1541) diagnostic_arg("Flow from (%d,%d).\n",c.x,c.y);
+//			if(nhx==1197 && nhy==1541) diagnostic_arg("Flow from (%d,%d).\n",c.x,c.y);
+			if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
 				sources.push(grid_cell(nlx,nly));
-			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && area(nhx,nhy)!=area.no_data && (--dependency(nhx,nhy))==0)
+			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
 				sources.push(grid_cell(nhx,nhy));
 		}
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
+
+//	visualize(dependency,true,(signed char)0,"Dependencies After Areas Have Been Calculated");
+
+	dependency.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,3,5);
+	diagnostic("---\n");
+
 }
 
 
 
 
-
-
-
+static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
 
 float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
 	double smax=0;
@@ -205,6 +270,12 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 	double rg=NO_FLOW;
 	if(nmax!=-1)
 		rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
+	else
+		for(int n=1;n<=8;n++)	//TODO: I have a feeling this is potentially unsafe as it may create dependency loops. Does it?
+			if(groups(x+dx[n],y+dy[n])==groups(x,y) && flat_resolution_mask(x+dx[n],y+dy[n])<flat_resolution_mask(x,y)){
+				rg=d8_to_dinf[n];
+				break;
+			}
 
 	return rg;
 }
