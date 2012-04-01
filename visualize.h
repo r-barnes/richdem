@@ -3,6 +3,7 @@
 
 #include "CImg.h"
 #include "data_structures.h"
+#include "interface.h"
 #include <iostream>
 #include <string>
 #include <limits>
@@ -64,7 +65,7 @@ void visualize(const array2d<T> &data, bool do_highlight, T highlight, const cha
 	CImgDisplay main_disp(1000,500,title);
 	int factor = 400, x = factor, y = factor,x0=x-factor,y0=y-factor,x1=x+factor,y1=y+factor;
 	float zmin_scale=1,zmax_scale=1;
-//	int mx=-1,my=0;
+	int mx=-1,my=0;
 	bool redraw = true, zscale = true;
 	while (!main_disp.is_closed()) {
 		if (zscale){
@@ -124,8 +125,9 @@ void visualize(const array2d<T> &data, bool do_highlight, T highlight, const cha
 			std::cout<<"Saved image."<<std::endl;
 		} else if (main_disp.is_resized()) { main_disp.resize(); redraw = true; }
 		else if (main_disp.button() && main_disp.mouse_x()>=0) {
-//			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
-//			my = main_disp.mouse_y()/((double)main_disp.height())*(y1-y0)+y0;
+			mx = main_disp.mouse_x()/((double)main_disp.width())*(x1-x0)+x0;
+			my = main_disp.mouse_y()/((double)main_disp.height())*(y1-y0)+y0;
+			diagnostic_arg("Clicked (%d,%d).\n",mx,my);
 		} else if (main_disp.is_keyE()) //Exit program
 			break;
 		main_disp.wait();
