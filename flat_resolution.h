@@ -185,6 +185,8 @@ int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_
 	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)	//i++ in 'else'
 		if(groups(i->x,i->y)!=-1)
 			temp.push_back(*i);
+		else
+			flat_without_outlet=true;
 	high_edges=temp;
 	temp.clear();
 	diagnostic("succeeded.\n");
