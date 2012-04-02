@@ -5,12 +5,13 @@
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
+#include <string>
 
 template <class T>
 class array2d : public boost::numeric::ublas::matrix<T>{
 	public:
 		int cellsize;
-		double xllcorner,yllcorner;
+		std::string xllcorner,yllcorner;
 		long data_cells;
 		T no_data;
 
