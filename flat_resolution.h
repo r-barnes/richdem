@@ -181,12 +181,12 @@ int resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_
 
 	diagnostic("Removing flats without outlets from the queue...");
 	bool flat_without_outlet=false;
-	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();)	//i++ in 'else'
-		if(groups(i->x,i->y)==-1){
-			i=high_edges.erase(i);
-			flat_without_outlet=true;
-		} else
-			i++;
+	std::deque<grid_cell> temp;
+	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)	//i++ in 'else'
+		if(groups(i->x,i->y)!=-1)
+			temp.push_back(*i);
+	high_edges=temp;
+	temp.clear();
 	diagnostic("succeeded.\n");
 
 	if(flat_without_outlet)	//TODO: Prompt user for intervention?
