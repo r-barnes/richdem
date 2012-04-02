@@ -2,12 +2,10 @@
 #include "utility.h"
 #include "dinf_methods.h"
 #include "interface.h"
-#include "visualize.h"
 #include "debug.h"
 #include <omp.h>
 #include <cmath>
 #include <queue>
-#include "visualize.h"
 
 /*
 @inproceedings{Wallis2009,
@@ -126,10 +124,9 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing the area matrix...");
 	area.resize(flowdirs.width(),flowdirs.height(),false);
+	area.init(0);
 	diagnostic("succeeded.\n");
-
 	diagnostic("Setting no_data value on area matrix...");
-	area.init(-1);
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
@@ -162,12 +159,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
 
-	dependency.no_data=155;
-//	visualize(dependency,true,(signed char)0,"Dependencies");
-
-	int cx=1198,cy=1541;
-	dependency.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,3,5);
-	diagnostic("---\n");
+	dependency.no_data=155;	//TODO
 
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
@@ -194,7 +186,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
-		area(c.x,c.y)=1;
+		area(c.x,c.y)+=1;
 		for(int n=1;n<=8;n++){
 			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height()))
 				continue;
@@ -217,12 +209,6 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	}
 	progress_bar(-1);
 	diagnostic("\tsucceeded.\n");
-
-//	visualize(dependency,true,(signed char)0,"Dependencies After Areas Have Been Calculated");
-
-	dependency.print_block(std::cerr,cx-5,cx+5,cy-5,cy+5,3,5);
-	diagnostic("---\n");
-
 }
 
 
