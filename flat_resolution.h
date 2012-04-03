@@ -76,7 +76,7 @@ void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2
 		if(inc1(x,y)>0){
 			flat_resolution_mask(x,y)=2*(inc1(x,y)-1);
 			if(inc2(x,y)>0)
-			flat_resolution_mask(x,y)+=flat_height[groups(x,y)]-inc2(x,y)+1;
+				flat_resolution_mask(x,y)+=flat_height[groups(x,y)]-inc2(x,y)+1;
 		}
 			
 		inc1(x,y)=-1;
@@ -165,19 +165,16 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	diagnostic_arg("Found %d unique flats.\n",group_number);
 
 	diagnostic("Removing flats without outlets from the queue...");
-	bool flat_without_outlet=false;
 	std::deque<grid_cell> temp;
 	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
 		if(groups(i->x,i->y)!=-1)
 			temp.push_back(*i);
-		else
-			flat_without_outlet=true;
-	high_edges=temp;
-	temp.clear();
 	diagnostic("succeeded.\n");
 
-	if(flat_without_outlet)	//TODO: Prompt user for intervention?
+	if(temp.size()<high_edges.size())	//TODO: Prompt for intervention?
 		diagnostic("\033[91mNot all flats have outlets; the DEM contains sinks/pits/depressions!\033[39m\n");
+	high_edges=temp;
+	temp.clear();
 
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",3*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Setting up incrementation matricies...");
@@ -196,6 +193,7 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	//Flat_height is used with low_edges, but the results will be overwritten by high_edges
 	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
 	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
+	diagnostic("succeeded!\n");
 
 	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, groups);
