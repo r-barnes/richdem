@@ -16,7 +16,7 @@ void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d
 	int loops=1;
 	grid_cell iteration_marker(-1,-1);
 
-	diagnostic("Performing a Barnes flat resolution step...\n");
+	diagnostic("Performing a Barnes flat resolution step...");
 
 	//Incrementation
 	edges.push_back(iteration_marker);
@@ -62,7 +62,7 @@ template <class T>
 void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2d &flat_resolution_mask, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups){
 	int x,y,nx,ny;
 
-	diagnostic("Combining Barnes flat resolution steps...\n");
+	diagnostic("Combining Barnes flat resolution steps...");
 
 	while(edge.size()!=0){
 		x=edge.front().x;
