@@ -11,10 +11,12 @@
 #include "debug.h"
 
 template <class T, class U>
-int BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
+void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
 	int x,y,nx,ny;
 	int loops=1;
 	grid_cell iteration_marker(-1,-1);
+
+	diagnostic("Performing a Barnes flat resolution step...\n");
 
 	//Incrementation
 	edges.push_back(iteration_marker);
@@ -53,12 +55,14 @@ int BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d 
 		}
 	}
 
-	return loops;
+	diagnostic("succeeded!\n");
 }
 
 template <class T>
 void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2d &flat_resolution_mask, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups){
 	int x,y,nx,ny;
+
+	diagnostic("Combining Barnes flat resolution steps...\n");
 
 	while(edge.size()!=0){
 		x=edge.front().x;
@@ -81,6 +85,8 @@ void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2
 			
 		inc1(x,y)=-1;
 	}
+
+	diagnostic("succeeded!\n");
 }
 
 template<class T>
@@ -189,15 +195,10 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	std::vector<int> flat_height(group_number);
 	diagnostic("succeeded!\n");
 
-	diagnostic("Performing Barnes flat resolution...\n");
-	//Flat_height is used with low_edges, but the results will be overwritten by high_edges
 	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
-	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups);
-	diagnostic("succeeded!\n");
+	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups); //Flat_height overwritten here
 
-	diagnostic("Combining Barnes flat resolution steps...\n");
 	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, groups);
-	diagnostic("succeeded!\n");
 }
 
 #endif
