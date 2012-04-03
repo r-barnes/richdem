@@ -77,7 +77,7 @@ std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 			if(sizeof(T)==1)	//TODO: An ugly way of detecting chars
 				out<<std::setw(width)<<(int)arr(x,y)<<" ";
 			else
-				out<<std::setw(width)<<arr(x,y)<<" ";
+				out<<std::fixed<<std::setw(width)<<arr(x,y)<<" ";
 		out<<std::endl;
 	}
 	return out;

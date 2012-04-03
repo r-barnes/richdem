@@ -35,7 +35,7 @@ int output_ascii_data(const char filename[], const array2d<T> &output_grid){
 	fout<<"xllcorner\t"<<output_grid.xllcorner<<std::endl;
 	fout<<"yllcorner\t"<<output_grid.yllcorner<<std::endl;
 	fout<<"cellsize\t"<<output_grid.cellsize<<std::endl;
-	fout<<"NODATA_value\t"<<output_grid.no_data<<std::endl;
+	fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(3)<<output_grid.no_data<<std::endl;
 	diagnostic("succeeded.\n");
 
 	diagnostic("Writing file data...\n");
