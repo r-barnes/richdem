@@ -11,7 +11,7 @@
 #include "debug.h"
 
 template <class T, class U>
-void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &groups){
+void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &incrementations, std::deque<grid_cell> edges, std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
 	int loops=1;
 	grid_cell iteration_marker(-1,-1);
@@ -33,18 +33,9 @@ void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d
 
 		if(incrementations(x,y)>0) continue;	//I've already been incremented!
 
-		//Should I increment?
-		if(loops>1){
-			int n;
-			for(n=1;n<=8;n++)
-				if(incrementations(x+dx[n],y+dy[n])>0)
-					break;
-			if(n>8) continue;
-		}
-
 		//If I incremented, maybe my neighbours should too
 		incrementations(x,y)=loops;
-		flat_height[groups(x,y)]=loops;
+		flat_height[labels(x,y)]=loops;
 		for(int n=1;n<=8;n++){
 			nx=x+dx[n];	
 			ny=y+dy[n];
@@ -59,7 +50,7 @@ void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d
 }
 
 template <class T>
-void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2d &flat_resolution_mask, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &groups){
+void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2d &flat_resolution_mask, std::deque<grid_cell> &edge, const std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
 
 	diagnostic("Combining Barnes flat resolution steps...");
@@ -80,7 +71,7 @@ void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2
 		if(inc1(x,y)>0){
 			flat_resolution_mask(x,y)=2*(inc1(x,y)-1);
 			if(inc2(x,y)>0)
-				flat_resolution_mask(x,y)+=flat_height[groups(x,y)]-inc2(x,y)+1;
+				flat_resolution_mask(x,y)+=flat_height[labels(x,y)]-inc2(x,y)+1;
 		}
 			
 		inc1(x,y)=-1;
@@ -90,7 +81,7 @@ void BarnesStep3(const array2d<T> &elevations, int_2d &inc1, int_2d &inc2, int_2
 }
 
 template<class T>
-void label_this(int x, int y, const T target_elevation, const int label, int_2d &groups, const array2d<T> &elevations){
+void label_this(int x, int y, const T target_elevation, const int label, int_2d &labels, const array2d<T> &elevations){
 	std::queue<grid_cell> to_fill;
 	to_fill.push(grid_cell(x,y));
 
@@ -98,10 +89,10 @@ void label_this(int x, int y, const T target_elevation, const int label, int_2d 
 		x=to_fill.front().x;
 		y=to_fill.front().y;
 		to_fill.pop();
-		if(elevations(x,y)!=target_elevation || groups(x,y)>-1) continue;
-		groups(x,y)=label;
+		if(elevations(x,y)!=target_elevation || labels(x,y)>-1) continue;
+		labels(x,y)=label;
 		for(int n=1;n<=8;n++)
-			if(IN_GRID(x+dx[n],y+dy[n],groups.width(),groups.height()))
+			if(IN_GRID(x+dx[n],y+dy[n],labels.width(),labels.height()))
 				to_fill.push(grid_cell(x+dx[n],y+dy[n]));
 	}
 }
@@ -123,10 +114,13 @@ void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hi
 				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
 				if(flowdirs(nx,ny)==flowdirs.no_data) continue; //TODO: This isn't really necessary, but it is safe.
 
-				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y))
+				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y)){
 					low_edges.push_back(grid_cell(x,y));
-				else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny))
+					break;
+				} else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny)){
 					high_edges.push_back(grid_cell(x,y));
+					break;
+				}
 			}
 		}
 	}
@@ -135,13 +129,13 @@ void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hi
 }
 
 template <class T, class U>
-void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &flat_resolution_mask, int_2d &groups){
+void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int_2d &flat_resolution_mask, int_2d &labels){
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 
-	diagnostic_arg("The groups matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
-	diagnostic("Setting up groups matrix...");
-	groups.resize(flowdirs.width(),flowdirs.height(),false);
-	groups.init(-1);
+	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+	diagnostic("Setting up labels matrix...");
+	labels.resize(flowdirs.width(),flowdirs.height(),false);
+	labels.init(-1);
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("The flat resolution mask will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
@@ -164,8 +158,8 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	diagnostic("Labeling flats...");
 	int group_number=0;
 	for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
-		if(groups(i->x,i->y)==-1)
-			label_this(i->x, i->y, elevations(i->x,i->y), group_number++, groups, elevations);
+		if(labels(i->x,i->y)==-1)
+			label_this(i->x, i->y, elevations(i->x,i->y), group_number++, labels, elevations);
 	diagnostic("succeeded!\n");
 
 	diagnostic_arg("Found %d unique flats.\n",group_number);
@@ -173,7 +167,7 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	diagnostic("Removing flats without outlets from the queue...");
 	std::deque<grid_cell> temp;
 	for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
-		if(groups(i->x,i->y)!=-1)
+		if(labels(i->x,i->y)!=-1)
 			temp.push_back(*i);
 	diagnostic("succeeded.\n");
 
@@ -195,10 +189,14 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	std::vector<int> flat_height(group_number);
 	diagnostic("succeeded!\n");
 
-	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, groups);
-	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, groups); //Flat_height overwritten here
+	BarnesStep(elevations, flowdirs, inc1, low_edges, flat_height, labels);
+	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, labels); //Flat_height overwritten here
 
-	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, groups);
+	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, labels);
+
+	PRINT(inc1,0,2);
+	PRINT(inc2,0,2);
+	PRINT(flat_resolution_mask,0,2);
 }
 
 #endif
