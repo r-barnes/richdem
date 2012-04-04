@@ -193,10 +193,6 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs, int
 	BarnesStep(elevations, flowdirs, inc2, high_edges, flat_height, labels); //Flat_height overwritten here
 
 	BarnesStep3(elevations, inc1, inc2, flat_resolution_mask, low_edges, flat_height, labels);
-
-	PRINT(inc1,0,2);
-	PRINT(inc2,0,2);
-	PRINT(flat_resolution_mask,0,2);
 }
 
 #endif
