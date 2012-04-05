@@ -1,6 +1,8 @@
 #ifndef _data_structures_included
 #define _data_structures_included
 
+#define NDEBUG
+#define BOOST_UBLAS_NDEBUG	//TODO: Not sure if this does anything
 #include <boost/numeric/ublas/matrix.hpp>
 #include <cstdio>
 #include <iostream>
