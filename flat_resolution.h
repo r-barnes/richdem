@@ -15,7 +15,7 @@
 #include <queue>
 #include "debug.h"
 
-//Procedure:	BarnesStep
+//Procedure:	BuildGradient
 //Description:
 //		The queues of edge cells developed in "find_flat_edges()" are copied
 //		into the procedure. A breadth-first expansion labels cells by their
@@ -38,7 +38,7 @@
 //Returns:
 //		None
 template <class T, class U>
-void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs,
+void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
 			int_2d &incrementations, std::deque<grid_cell> edges, 
 			std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
@@ -80,25 +80,25 @@ void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs,
 
 //Procedure:	BarnesStep3
 //Description:
-//		The incrementation arrays developed in "BarnesStep()" are combined.
+//		The incrementation arrays developed in "BuildGradient()" are combined.
 //		The maximal D8 distances of the gradient away from higher terrain,
-//		which were stored in "flat_height" in "BarnesStep()" are used to
+//		which were stored in "flat_height" in "BuildGradient()" are used to
 //		invert the gradient away from higher terrain. The result is an
 //		elevation mask which has convergent flow characteristics and is
 //		guaranteed to drain the flat.
 //Inputs:
 //		elevations	A 2D array of cell elevations
 //		towards		A 2D array of incrementations towards lower terrain
-//					Developed in "BarnesStep()" from "low_edges"
+//					Developed in "BuildGradient()" from "low_edges"
 //		away		A 2D array of incrementations away from higher terrain
-//					Developed in "BarnesStep()" from "high_edges"
+//					Developed in "BuildGradient()" from "high_edges"
 //		flat_resolution_mask
 //					A 2D array which will hold the combined gradients
 //		edge		A FIFO queue which is used as a seed ("low_edges" should be passed)
 //		flat_height	A vector with length equal to the maximum number of labels
 //					It contains, for each flat, the maximal D8 distance
 //					of any cell in that flat from higher terrain
-//					Developed in "BarnesStep()"
+//					Developed in "BuildGradient()"
 //		labels		A 2D array which stores labels developed in "label_this()"
 //Requirements:
 //		flat_resolution_mask
@@ -112,7 +112,7 @@ void BarnesStep(const array2d<T> &elevations, const array2d<U> &flowdirs,
 //Returns:
 //		None
 template <class T>
-void BarnesStep3(const array2d<T> &elevations, int_2d &towards, int_2d &away,
+void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &away,
 			int_2d &flat_resolution_mask, std::deque<grid_cell> &edge,
 			const std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
@@ -230,7 +230,7 @@ void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hi
 }
 
 template <class T, class U>
-void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs,
+void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdirs,
 			int_2d &flat_resolution_mask, int_2d &labels){
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 
@@ -295,10 +295,10 @@ void resolve_flats(const array2d<T> &elevations, const array2d<U> &flowdirs,
 	std::vector<int> flat_height(group_number);
 	diagnostic("succeeded!\n");
 
-	BarnesStep(elevations, flowdirs, towards, low_edges, flat_height, labels);
-	BarnesStep(elevations, flowdirs, away, high_edges, flat_height, labels); //Flat_height overwritten here
+	BuildGradient(elevations, flowdirs, towards, low_edges, flat_height, labels);
+	BuildGradient(elevations, flowdirs, away, high_edges, flat_height, labels); //Flat_height overwritten here
 
-	BarnesStep3(elevations, towards, away, flat_resolution_mask, low_edges, flat_height, labels);
+	CombineGradients(elevations, towards, away, flat_resolution_mask, low_edges, flat_height, labels);
 }
 
 #endif
