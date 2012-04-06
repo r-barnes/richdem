@@ -72,8 +72,7 @@ int load_ascii_data(char filename[], float_2d &elevations){
 				number_length=temp.length();
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	fin.close();
 

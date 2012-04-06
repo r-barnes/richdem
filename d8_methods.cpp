@@ -40,8 +40,7 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 			else if (flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 
@@ -90,8 +89,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 					dependency(x,y)++;
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
@@ -105,8 +103,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	diagnostic("Calculating up-slope areas...\n");
 	progress_bar(-1);
@@ -132,8 +129,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 				sources.push(grid_cell(nx,ny));
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 
@@ -183,8 +179,7 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 			}
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 
@@ -211,6 +206,5 @@ void d8_arcgis_convert(char_2d &flowdirs){
 			flowdirs(x,y)=arcgis_flowdirs[flowdirs(x,y)];
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
