@@ -63,9 +63,9 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 	flowdirs.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Initializing D8 flow directions...\n");
+	diagnostic("Initializing D8 flow directions...");
 	flowdirs.init(NO_FLOW);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating D8 flow directions...\n");
 	progress_bar(-1);
@@ -78,8 +78,7 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 			else
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 #endif

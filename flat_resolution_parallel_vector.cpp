@@ -160,8 +160,7 @@ int find_flat_edges(std::vector<grid_cell> &low_edges, std::vector<grid_cell> &h
 		low_edges.push_back(plow_edges[i]);
 	for(unsigned int i=0;i<phigh_edges.size();i++)
 		high_edges.push_back(phigh_edges[i]);
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	return group_number;
 }
