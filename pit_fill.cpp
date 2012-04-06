@@ -40,8 +40,7 @@ void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, floa
 			else
 				w(x,y)=std::numeric_limits<float>::infinity();
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	diagnostic("Performing Planchon pit fill Stage 2, direct implementation...\n");
 	progress_bar(-1);
@@ -63,8 +62,7 @@ void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, floa
 					}
 				}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 
@@ -122,8 +120,7 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 			else
 				w(x,y)=std::numeric_limits<float>::infinity();
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	diagnostic("Performing Planchon pit fill Stage 2, direct implementation...\n");
 	progress_bar(-1);
@@ -145,8 +142,7 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 					}
 				}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 */
 
@@ -239,9 +235,9 @@ void pit_fill_wang(float_2d &elevations){
 	diagnostic("Resizing boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...\n");
+	diagnostic("Initializing closed matrix...");
 	closed.init(0);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	push_edges(elevations, open, closed);
 
@@ -288,9 +284,9 @@ void pit_fill_barnes1(float_2d &elevations){
 	diagnostic("Resizing boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...\n");
+	diagnostic("Initializing closed matrix...");
 	closed.init(0);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	push_edges(elevations, open, closed);
 
@@ -368,9 +364,9 @@ void pit_fill_barnes2(float_2d &elevations){
 	diagnostic("Resizing boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...\n");
+	diagnostic("Initializing closed matrix...");
 	closed.init(0);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	push_edges(elevations, open, closed);
 
@@ -482,10 +478,10 @@ void pit_fill_barnes3(float_2d &elevations){
 	closed.resize(elevations.width(),elevations.height());
 	info.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
-	diagnostic("Initializing closed matrix...\n");
+	diagnostic("Initializing closed matrix...");
 	closed.init(OPEN);
 	info.init(999999);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	push_edges(elevations, open, closed, QUEUED);
 
