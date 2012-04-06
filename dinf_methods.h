@@ -105,9 +105,9 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 	flowdirs.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Initializing Dinf flow directions...\n");
+	diagnostic("Initializing Dinf flow directions...");
 	flowdirs.init(NO_FLOW);
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating Dinf flow directions...\n");
 	progress_bar(-1);
@@ -120,8 +120,7 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 			else
 				flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 #endif

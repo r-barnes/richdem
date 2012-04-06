@@ -38,9 +38,9 @@ int output_ascii_data(const char filename[], const array2d<T> &output_grid){
 	fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(3)<<output_grid.no_data<<std::endl;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Writing file data...\n");
+	diagnostic("Writing file data...");
 	fout<<std::setprecision(3)<<output_grid;
-	diagnostic("\tsucceeded.\n");
+	diagnostic("succeeded.\n");
 
 	fout.close();
 

@@ -156,8 +156,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				dependency(nhx,nhy)++;
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	dependency.no_data=155;	//TODO
 
@@ -173,8 +172,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
 	diagnostic("Calculating up-slope areas...\n");
 	progress_bar(-1);
@@ -207,8 +205,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				sources.push(grid_cell(nhx,nhy));
 		}
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
 
 
@@ -278,6 +275,5 @@ void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, f
 			else if(flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=dinf_masked_FlowDir(flat_resolution_mask,groups,x,y);
 	}
-	progress_bar(-1);
-	diagnostic("\tsucceeded.\n");
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
