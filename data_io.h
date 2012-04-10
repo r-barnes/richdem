@@ -5,7 +5,7 @@
 #include <fstream>
 //#include <fcntl.h> //Used for posix_fallocate
 
-int load_ascii_data(char filename[], float_2d &elevations);
+int load_ascii_data(const char filename[], float_2d &elevations);
 
 
 
