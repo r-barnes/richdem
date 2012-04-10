@@ -510,8 +510,8 @@ void pit_fill_barnes1b(float_2d &elevations){
 //Barnes2 uses a meander queue in the same way as in Barnes1, but introduces a climb queue. The climb queue can only ascend from cells which have a known outlet (i.e. those popped off the PQ or Meander queue). If a cell is lower than a cell popped off the climb queue, then that cell must be added to the PQ. This means that a cell may be placed onto the PQ multiple times.
 void pit_fill_barnes2(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
-	std::queue<grid_cell> meander;
-	std::queue<grid_cell> climb;
+	std::queue<grid_cellz> meander;
+	std::queue<grid_cellz> climb;
 	char_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
 
@@ -528,7 +528,7 @@ void pit_fill_barnes2(float_2d &elevations){
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
-			grid_cell c=meander.front();
+			grid_cellz c=meander.front();meander.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -536,22 +536,17 @@ void pit_fill_barnes2(float_2d &elevations){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
 				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
-				if(closed(nx,ny)>0)
-					continue;
-				else if(elevations(nx,ny)<=elevations(c.x,c.y)){
-					elevations(nx,ny)=elevations(c.x,c.y);
-					meander.push(grid_cell(nx,ny));
-					closed(nx,ny)=1;
-					continue;
-				} else {
-					climb.push(grid_cell(nx,ny));
-					closed(nx,ny)=1;
-					continue;
-				}
+				if(closed(nx,ny)>0) continue;
+
+				closed(nx,ny)=1;
+				if(elevations(nx,ny)<=c.z){
+					elevations(nx,ny)=c.z;
+					meander.push(grid_cellz(nx,ny,c.z));
+				} else
+					climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
 			}
-			meander.pop();
 		} else if (climb.size()>0){
-			grid_cell c=climb.front();
+			grid_cellz c=climb.front();climb.pop();
 			closed(c.x,c.y)=2;
 			processed_cells++;
 
@@ -559,25 +554,19 @@ void pit_fill_barnes2(float_2d &elevations){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
 				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
-				if(closed(nx,ny)>0)
-					continue;
-				else if(elevations(nx,ny)<elevations(c.x,c.y)){
-					open.push(grid_cellz(nx,ny,elevations(c.x,c.y)));
-					continue;
-				} else {
-					climb.push(grid_cell(nx,ny));
+				if(closed(nx,ny)>0) continue;
+
+				if(elevations(nx,ny)<c.z)
+					open.push(grid_cellz(nx,ny,c.z));
+				else {
+					climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
 					closed(nx,ny)=1;
-					continue;
 				}
 			}
-			climb.pop();
 		} else {
-			grid_cellz c=open.top();
+			grid_cellz c=open.top();open.pop();
 
-			if(closed(c.x,c.y)==2){
-				open.pop();
-				continue;
-			}
+			if(closed(c.x,c.y)==2) continue;
 
 			closed(c.x,c.y)=2;
 			processed_cells++;
@@ -588,20 +577,15 @@ void pit_fill_barnes2(float_2d &elevations){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
 				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
-				if(closed(nx,ny)>0)
-					continue;
-				else if(elevations(nx,ny)>elevations(c.x,c.y)){
-					climb.push(grid_cell(nx,ny));
-					closed(nx,ny)=1;
-					continue;
-				} else if(elevations(nx,ny)<=elevations(c.x,c.y)){
-					elevations(nx,ny)=elevations(c.x,c.y);
-					meander.push(grid_cell(nx,ny));
-					closed(nx,ny)=1;
-					continue;
+				if(closed(nx,ny)>0) continue;
+				closed(nx,ny)=1;
+				if(elevations(nx,ny)>elevations(c.x,c.y))
+					climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
+				else {
+					elevations(nx,ny)=c.z;
+					meander.push(grid_cellz(nx,ny,c.z));
 				}
 			}
-			open.pop();
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
