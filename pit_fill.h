@@ -9,3 +9,4 @@ void pit_fill_barnes1b(float_2d &elevations);
 
 void pit_fill_barnes2(float_2d &elevations);
 void pit_fill_barnes3(float_2d &elevations);
+void pit_fill_barnes4(float_2d &elevations);
