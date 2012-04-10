@@ -87,7 +87,7 @@ void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, floa
   year={2002}
 }
 */
-/*
+
 const int dR[8]={0,0,1,-1,0,0,1,-1};
 const int dC[8]={1,-1,0,0,-1,1,0,0};
 bool Next_Cell(int &C, int &R,int i,const float_2d &e){
@@ -104,40 +104,33 @@ bool Next_Cell(int &C, int &R,int i,const float_2d &e){
 	return true;
 }
 
-void PlanchonStage1(float_2d &w, float_2d &elevations){
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++)
-	for(int y=0;y<elevations.height();y++)
-		if(EDGE_GRID(x,y,elevations.width(),elevations.height())
-			w(x,y)=elevations(x,y);
-		else
-			w(x,y)=std::numeric_limits<float>::infinity();
-}
-
-
-int Dry_upward_cell(int x, int y, const float_2d &elevations, float_2d &w, float epsilon){
+void Dry_upward_cell(int x, int y, const float_2d &elevations, float_2d &w, float epsilon){
 	std::queue<grid_cell> to_dry;
 	to_dry.push(grid_cell(x,y));
 
 	while(to_dry.size()>0){
 		grid_cell c=to_dry.front();to_dry.pop();
 		for(int n=1;n<=8;n++){
-			int nx=x+dx[n];
-			int ny=y+dy[n];
+			int nx=c.x+dx[n];
+			int ny=c.y+dy[n];
 			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
 			if(elevations(nx,ny)!=std::numeric_limits<float>::infinity()) continue;
-			if(elevations(nx,ny)>=w(x,y)+epsilon[n]){
+			if(elevations(nx,ny)>=w(c.x,c.y)+epsilon){
 				w(nx,ny)=elevations(nx,ny);
 				Dry_upward_cell(nx,ny,elevations,w,epsilon);
 			}
 		}
 	}
 }
-/*
-int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, float epsilon_diagonal){
+
+void pit_fill_planchon_optimized(float_2d &elevations, float epsilon){
 	float_2d w;
 
-	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
+	const int R0[8]={0,elevations.height()-1,0,elevations.height()-1,0,elevations.height()-1,0,elevations.height()-1};
+	const int C0[8]={0,elevations.width()-1,elevations.width()-1,0,elevations.width()-1,0,0,elevations.width()-1};
+
+//	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
+	float epsilon=0;
 
 	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
@@ -157,29 +150,50 @@ int pit_fill_planchon_optimized(float_2d &elevations, float epsilon_straight, fl
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
-	diagnostic("Performing Planchon pit fill Stage 2, direct implementation...\n");
-	progress_bar(-1);
-	bool something_done=true;
-	while(something_done){
-		something_done=false;
+	diagnostic("Performing Planchon pit fill Stage 2, Section 1 (optimized)...\n");
+	for(int x=0;x<elevations.width();x++){
+		Dry_upward_cell(x,0,elevations,w,epsilon);
+		Dry_upward_cell(x,elevations.height()-1,elevations,w,epsilon);
+	}
+	for(int y=1;y<elevations.height()-2;y++){
+		Dry_upward_cell(0,y,elevations,w,epsilon);
+		Dry_upward_cell(elevations.width()-1,y,elevations,w,epsilon);
+	}
 
-		#pragma omp parallel for reduction(|:something_done)
-		for(int x=1;x<elevations.width()-1;x++)
-		for(int y=1;y<elevations.height()-1;y++)
-			if(w(x,y)>elevations(x,y))
-				for(int n=1;n<=8;n++){
-					if(elevations(x,y)>=w(x+dx[n],y+dy[n])+epsilon[n]){
-						w(x,y)=elevations(x,y);
-						something_done=true;
-					} else if(w(x,y)>w(x+dx[n],y+dy[n])+epsilon[n]){
-						w(x,y)=w(x+dx[n],y+dy[n])+epsilon[n];
-						something_done=true;
+	diagnostic("Performing Planchon pit fill Stage 2, Section 2 (optimized)...\n");
+	while(true){
+		for(int scans=0;scans<8;scans++){
+			int r=R0[scans];
+			int c=C0[scans];
+			bool something_done=false;
+			do{
+				if(w(c,r)>elevations(c,r)){
+					for(int n=1;n<=8;n++){
+						int nc=c+dx[n];
+						int nr=r+dy[n];
+						if(!IN_GRID(nc,nr,elevations.width(),elevations.height())) continue;
+						if(elevations(c,r)>=w(nc,nr)+epsilon){
+							w(c,r)=elevations(c,r);
+							something_done=true;
+							Dry_upward_cell(c,r,elevations,w,epsilon);
+							goto nextcell;
+						}
+						if(w(c,r)>w(nc,nr)+epsilon){
+							w(c,r)=w(nc,nr)+epsilon;
+							something_done=true;
+						}
 					}
 				}
+nextcell:
+				1;
+			} while (Next_Cell(c,r,scans,elevations));
+			if(!something_done)
+				break;
+		}
 	}
+
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
-*/
 
 
 
@@ -841,6 +855,7 @@ void pit_fill_barnes5(float_2d &elevations){
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
 			grid_cellz c=meander.front();meander.pop();
+			if(closed(c.x,c.y)==CLOSED) continue;
 			closed(c.x,c.y)=CLOSED;
 			processed_cells++;
 
@@ -859,6 +874,7 @@ void pit_fill_barnes5(float_2d &elevations){
 			}
 		} else if (climb.size()>0){
 			grid_cellz c=climb.front();climb.pop();
+			if(closed(c.x,c.y)==CLOSED) continue;
 			closed(c.x,c.y)=CLOSED;
 			processed_cells++;
 
