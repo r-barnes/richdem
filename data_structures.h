@@ -13,7 +13,8 @@ template <class T>
 class array2d : public boost::numeric::ublas::matrix<T>{
 	public:
 		int cellsize;
-		std::string xllcorner,yllcorner;
+//		std::string xllcorner,yllcorner;	//TODO: Should be string
+		double xllcorner,yllcorner;
 		long data_cells;
 		T no_data;
 
@@ -24,6 +25,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long estimated_output_size();
 		void init(T val);
 		void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
+		bool operator==(const array2d<T> &other) const;
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 };
 
@@ -85,6 +87,17 @@ std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 	return out;
 }
 
+template <class T>
+bool array2d<T>::operator==(const array2d<T> &other) const {
+	if(width()!=other.width() || height()!=other.height())
+		return false; 
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		if(boost::numeric::ublas::matrix<T>::operator()(x,y)!=other(x,y))
+			return false;
+	return true;
+}
+
 typedef array2d<double> double_2d;
 typedef array2d<float> float_2d;
 typedef array2d<signed char> char_2d;
@@ -101,6 +114,7 @@ typedef struct grid_cell_typez {
 		y=y0;
 		z=z0;
 	}
+	grid_cell_typez(){}
 } grid_cellz;
 
 typedef struct grid_cell_type {
