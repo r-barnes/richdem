@@ -1,6 +1,7 @@
 The 'collapse' directive on the parallel for loop thing may be useful
 Look into uBLAS "release mode" (http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm)
 "http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm"
+mmap or boost::mapped_file
 
 Useful for printing output
 out.width(width);
