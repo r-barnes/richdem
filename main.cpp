@@ -13,19 +13,25 @@
 #include <iomanip>
 
 int main(int argc, char **argv){
-	if(argc!=3){ //TODO
+	if(argc!=2){ //TODO
 		printf("RichDEM was built by Richard Barnes (rbarnes@umn.edu, http://finog.org)\nIt was designed to:\n\t*Use the fastest available algorithms.\n\t*Run in parallel whenever possible.\n\t*Use straight-forward, easy-to-debug code.\n\t*Advance the state-of-the-art of DEM processing.\n\nIt is suggested you edit main.cpp to suit your needs.\nSyntax: ./richdem <INPUT FILE> <OUTPUT FILE>\n");
 		return -1;
 	}
 
 	timeval startTime;
 
-	float_2d elevations,elevND,elevbar1,elevbar2,elevbar3;
+	float_2d elevations,elevND,elevbar1,elevbar2,elevbar3,elevbar4,elevbar5, elevbar6,elevplan;
 	load_ascii_data(argv[1],elevations);
-	elevND=elevations;
 	elevbar1=elevations;
+/*	elevND=elevations;
+	elevplan=elevations;
 	elevbar2=elevations;
 	elevbar3=elevations;
+	elevbar4=elevations;
+	elevbar5=elevations;
+	elevbar6=elevations;
+*/
+	printf("Working with file \"%s\"\n",argv[1]);
 
 	gettimeofday(&startTime, NULL);
 	pit_fill_wang(elevations);
@@ -35,11 +41,19 @@ int main(int argc, char **argv){
 	pit_fill_wangND(elevND);
 	printf("\033[96mWangND pit fill time: %lf\033[39m\n",timediff(startTime));
 */
+/*
+	gettimeofday(&startTime, NULL);
+	pit_fill_planchon_optimized(elevplan, 0);
+	printf("\033[96mPlanchon optimized pit fill time: %lf\033[39m\n",timediff(startTime));
+*/
+
 	gettimeofday(&startTime, NULL);
 	pit_fill_barnes1(elevbar1);
 	printf("\033[96mBarnes v1 pit fill time: %lf\033[39m\n",timediff(startTime));
 	printf("Good? %d\n",elevations==elevbar1);
 
+//	visualize(elevbar1,false,(float)0,"Barnes 1");
+/*
 	gettimeofday(&startTime, NULL);
 	pit_fill_barnes2(elevbar2);
 	printf("\033[96mBarnes v2 pit fill time: %lf\033[39m\n",timediff(startTime));
@@ -49,6 +63,23 @@ int main(int argc, char **argv){
 	pit_fill_barnes3(elevbar3);
 	printf("\033[96mBarnes v3 pit fill time: %lf\033[39m\n",timediff(startTime));
 	printf("Good? %d\n",elevations==elevbar3);
+
+	gettimeofday(&startTime, NULL);
+	pit_fill_barnes4(elevbar4);
+	printf("\033[96mBarnes v4 pit fill time: %lf\033[39m\n",timediff(startTime));
+	printf("Good? %d\n",elevations==elevbar4);
+
+	gettimeofday(&startTime, NULL);
+	pit_fill_barnes5(elevbar5);
+	printf("\033[96mBarnes v5 pit fill time: %lf\033[39m\n",timediff(startTime));
+	printf("Good? %d\n",elevations==elevbar5);
+
+	gettimeofday(&startTime, NULL);
+	pit_fill_barnes6(elevbar6);
+	printf("\033[96mBarnes v6 pit fill time: %lf\033[39m\n",timediff(startTime));
+	printf("Good? %d\n",elevations==elevbar6);
+
+//	visualize(elevbar6,false,(float)0,"Barnes 6");
 
 //	gettimeofday(&startTime, NULL);
 //	float_2d flowdirs(elevations);
@@ -75,6 +106,6 @@ int main(int argc, char **argv){
 //	visualize(area,true,(float)0,"D8 Upslope Area w/ Flats Resolved");
 
 //	output_ascii_data(argv[2],area);
-
+*/
 	return 0;
 }
