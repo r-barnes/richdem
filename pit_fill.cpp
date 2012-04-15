@@ -7,6 +7,7 @@
 #include <vector>
 #include <queue>
 #include <limits>
+#include <stack>
 
 
 /*
@@ -25,6 +26,7 @@ void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, floa
 
 	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
 
+	diagnostic("\n###Planchon (2002) Optimized Pit Fill\n");
 	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
 	w.resize(elevations.width(),elevations.height());
@@ -130,7 +132,6 @@ void pit_fill_planchon_optimized(float_2d &elevations, float epsilon){
 	const int C0[8]={0,elevations.width()-1,elevations.width()-1,0,elevations.width()-1,0,0,elevations.width()-1};
 
 //	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
-	float epsilon=0;
 
 	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing intermediate elevation surface 'W'...");
@@ -317,7 +318,7 @@ void pit_fill_wang(float_2d &elevations){
 
 
 
-
+/*
 //WangND explores the possibility that the majority of the speed gains the Barnes variants make over Wang stem from efficient processing of the NoData cells. Therefore, it runs the NoData cells through a standard queue and everything else through a PQ.
 void pit_fill_wangND(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
@@ -382,7 +383,7 @@ void pit_fill_wangND(float_2d &elevations){
 	diagnostic_arg("%ld cells processed.\n",processed_cells);	//TODO
 }
 
-
+*/
 
 
 
@@ -392,41 +393,58 @@ void pit_fill_wangND(float_2d &elevations){
 //Barnes1 explores depressions and flats by pushing them onto the meander queue. When meander encounters cells at <= elevation, it meanders over them. Otherwise, it pushes them onto the open queue.
 void pit_fill_barnes1(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
-	std::queue<grid_cellz> meander;
-	char_2d closed;	//TODO: This could probably be made into a boolean
+//	std::queue<grid_cellz> meander;
+	std::stack<grid_cellz, std::vector<grid_cellz> > meander;
+	bool_2d closed;	//TODO: This could probably be made into a boolean
 	unsigned long processed_cells=0;
+	unsigned long pitc=0,openc=0;
 
 	diagnostic("\n###Barnes Pit Fill v1\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
-	closed.init(0);
+	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	push_edges(elevations, open, closed);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic("Adding cells to the open priority queue...");
+	for(int x=0;x<elevations.width();x++){
+		open.push(grid_cellz(x,0,elevations(x,0) ));
+		open.push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=true;
+		closed(x,elevations.height()-1)=true;
+	}
+	for(int y=1;y<elevations.height()-1;y++){
+		open.push(grid_cellz(0,y,elevations(0,y)	));
+		open.push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=true;
+		closed(elevations.width()-1,y)=true;
+	}
+	diagnostic("succeeded.\n");
 
 	diagnostic("Performing the Barnes1 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;
 		if(meander.size()>0){
-			c=meander.front();
+			c=meander.top();
 			meander.pop();
+			pitc++;
 		} else {
 			c=open.top();
 			open.pop();
+			openc++;
 		}
-		closed(c.x,c.y)=2;
 		processed_cells++;
 
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
 			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
-			if(closed(nx,ny)>0) 
+			if(closed(nx,ny)) 
 				continue;
 
-			closed(nx,ny)=1;
+			closed(nx,ny)=true;
 			if(elevations(nx,ny)<=c.z){
 				elevations(nx,ny)=c.z;
 				meander.push(grid_cellz(nx,ny,c.z));
@@ -437,12 +455,13 @@ void pit_fill_barnes1(float_2d &elevations){
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
+	printf("Pit=%ld, Open=%ld\n",pitc,openc);
 }
 
 
 
 
-
+/*
 
 
 //Barnes1b works in the same way as Barnes1, but does a flood fill over cells which are <= the elevation at which a pit was entered. Barnes1 does a flood fill as well, but with slightly different checks.
@@ -923,3 +942,129 @@ void pit_fill_barnes5(float_2d &elevations){
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Barnes6 works the same way as Barnes3, but doesn't immediately added cells found in climbing to the Open queue.
+void pit_fill_barnes6(float_2d &elevations){
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
+	std::queue<grid_cellz> meander;
+	std::queue<grid_cellz> climb;
+	std::vector<grid_cellz> potential_open;
+	char_2d closed;	//TODO: This could probably be made into a boolean
+	float_2d info;
+	unsigned long processed_cells=0;
+	const int CLOSED=1, QUEUED=2, OPEN=3;
+	unsigned long pitc=0,openc=0,climbc=0,climbpc=0;
+
+	diagnostic("\n###Barnes Pit Fill v6\n");
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic("Setting up boolean flood array matrix...");
+	closed.resize(elevations.width(),elevations.height());
+	closed.init(OPEN);
+	diagnostic("succeeded.\n");
+	info.resize(elevations.width(),elevations.height());
+	info.init(9e12);
+
+	push_edges(elevations, open, closed, QUEUED);
+
+	diagnostic("Performing the Barnes6 fill...\n");
+	progress_bar(-1);
+	do{
+		while(open.size()>0 || meander.size()>0 || climb.size()>0){
+			if(meander.size()>0){
+				grid_cellz c=meander.front();meander.pop();
+				closed(c.x,c.y)=CLOSED;
+				processed_cells++;
+				pitc++;
+
+				for(int n=1;n<=8;n++){
+					int nx=c.x+dx[n];
+					int ny=c.y+dy[n];
+					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(closed(nx,ny)!=OPEN) continue;
+
+					closed(nx,ny)=QUEUED;
+					if(elevations(nx,ny)<=c.z){
+						elevations(nx,ny)=c.z;
+						meander.push(grid_cellz(nx,ny,c.z));
+					} else
+						climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
+				}
+			} else if (climb.size()>0){
+				grid_cellz c=climb.front();climb.pop();
+				closed(c.x,c.y)=CLOSED;
+				processed_cells++;
+				climbc++;
+
+				for(int n=1;n<=8;n++){
+					int nx=c.x+dx[n];
+					int ny=c.y+dy[n];
+					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(closed(nx,ny)!=OPEN || c.z>=info(nx,ny))
+						continue;
+					else if(elevations(nx,ny)<c.z){
+						potential_open.push_back(grid_cellz(nx,ny,c.z));
+						info(nx,ny)=elevations(c.x,c.y);
+						climbpc++;
+					} else {
+						climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
+						closed(nx,ny)=QUEUED;
+					}
+				}
+			} else {
+				for(std::vector<grid_cellz>::iterator i=potential_open.begin();i!=potential_open.end();i++)
+					if(closed(i->x,i->y)!=2)
+						open.push(*i);
+				potential_open.clear();
+
+				grid_cellz c=open.top();open.pop();
+
+				if(closed(c.x,c.y)==CLOSED) continue;
+
+				openc++;
+
+				closed(c.x,c.y)=CLOSED;
+				processed_cells++;
+
+				elevations(c.x,c.y)=c.z; //TODO?
+
+				for(int n=1;n<=8;n++){
+					int nx=c.x+dx[n];
+					int ny=c.y+dy[n];
+					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(closed(nx,ny)!=OPEN) continue;
+
+					closed(nx,ny)=QUEUED;
+					if(elevations(nx,ny)>c.z)
+						climb.push(grid_cellz(nx,ny,elevations(nx,ny)));
+					else if(elevations(nx,ny)<=c.z){
+						elevations(nx,ny)=c.z;
+						meander.push(grid_cellz(nx,ny,c.z));
+					}
+				}
+			}
+			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+		}
+	} while (open.size()>0);
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg("%ld cells processed.\n",processed_cells);
+	diagnostic_arg("Pit=%ld, Climb=%ld, Open=%ld, Climb Push=%ld\n",pitc,climbc,openc,climbpc);
+}*/
