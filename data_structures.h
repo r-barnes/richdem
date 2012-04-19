@@ -27,6 +27,9 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
 		bool operator==(const array2d<T> &other) const;
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
+		T max() const;
+		T min() const;
+//		double avg() const; //This should use the Kaham summation algorithm with a running-average code, or something like that.
 };
 
 template <class T>
@@ -96,6 +99,46 @@ bool array2d<T>::operator==(const array2d<T> &other) const {
 		if(boost::numeric::ublas::matrix<T>::operator()(x,y)!=other(x,y))
 			return false;
 	return true;
+}
+
+template <class T>
+T array2d<T>::max() const {
+	bool init=false;
+	T maxval=no_data;
+	T temp;
+	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++){
+		temp=boost::numeric::ublas::matrix<T>::operator()(x,y);
+		if(temp==no_data) continue;
+		if(init && temp>maxval)
+			maxval=temp;
+		else if (!init){
+			maxval=temp;
+			init=true;
+		}
+	}
+	return maxval;
+}
+
+template <class T>
+T array2d<T>::min() const {
+	bool init=false;
+	T minval=no_data;
+	T temp;
+	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++){
+		temp=boost::numeric::ublas::matrix<T>::operator()(x,y);
+		if(temp==no_data) continue;
+		if(init && temp<minval)
+			minval=temp;
+		else if (!init){
+			minval=temp;
+			init=true;
+		}
+	}
+	return minval;
 }
 
 typedef array2d<double> double_2d;
