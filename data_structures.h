@@ -12,7 +12,7 @@
 template <class T>
 class array2d : public boost::numeric::ublas::matrix<T>{
 	public:
-		int cellsize;
+		double cellsize;
 //		std::string xllcorner,yllcorner;	//TODO: Should be string
 		double xllcorner,yllcorner;
 		long data_cells;
