@@ -35,7 +35,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 //	posix_fadvise(fileno(fin),0,0,POSIX_FADV_SEQUENTIAL);
 
 	diagnostic("Reading DEM header...");
-	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %d NODATA_value %f",&columns, &rows, &elevations.xllcorner, &elevations.yllcorner, &elevations.cellsize, &elevations.no_data)!=6){
+	if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %lf NODATA_value %f",&columns, &rows, &elevations.xllcorner, &elevations.yllcorner, &elevations.cellsize, &elevations.no_data)!=6){
 		diagnostic("failed!\n");
 		exit(-1);
 	}
