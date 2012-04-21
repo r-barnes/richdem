@@ -10,7 +10,7 @@ int load_ascii_data(const char filename[], float_2d &elevations);
 
 
 template <class T>
-int output_ascii_data(const char filename[], const array2d<T> &output_grid){
+int output_ascii_data(const char filename[], const array2d<T> &output_grid, int precision=3){
 	std::ofstream fout;
 
 	diagnostic_arg("Opening ASCII output file \"%s\"...",filename);
@@ -35,11 +35,11 @@ int output_ascii_data(const char filename[], const array2d<T> &output_grid){
 	fout<<"xllcorner\t"<<output_grid.xllcorner<<std::endl;
 	fout<<"yllcorner\t"<<output_grid.yllcorner<<std::endl;
 	fout<<"cellsize\t"<<output_grid.cellsize<<std::endl;
-	fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(3)<<output_grid.no_data<<std::endl;
+	fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(precision)<<output_grid.no_data<<std::endl;
 	diagnostic("succeeded.\n");
 
 	diagnostic("Writing file data...");
-	fout<<std::setprecision(3)<<output_grid;
+	fout<<std::setprecision(precision)<<output_grid;
 	diagnostic("succeeded.\n");
 
 	fout.close();
