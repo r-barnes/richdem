@@ -3,10 +3,8 @@
 #include "interface.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <omp.h>
-#include <limits>
 #include <vector>
 #include <queue>
-#include <limits>
 #include <stack>
 
 class grid_cell_compare{
@@ -19,7 +17,7 @@ class grid_cell_compare{
 		}
 };
 
-//Barnes1 explores depressions and flats by pushing them onto the meander queue. When meander encounters cells at <= elevation, it meanders over them. Otherwise, it pushes them onto the open queue.
+//BarnesFlood explores depressions and flats by pushing them onto the meander queue. When meander encounters cells at <= elevation, it meanders over them. Otherwise, it pushes them onto the open queue.
 //Procedure:	BarnesFlood
 //Description:
 //		The BarnesFlood starts on the edges of the DEM and then works its way
