@@ -21,6 +21,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long width() const;
 		long height() const ;
 		array2d ();
+		template<class U> void copyprops (const array2d<U> &copyfrom);
 		template<class U> array2d (const array2d<U> &copyfrom, bool do_resize=false);
 		long estimated_output_size();
 		void init(T val);
@@ -51,8 +52,19 @@ array2d<T>::array2d(){
 	no_data=-1;
 }
 
+template<class T>
+template<class U>
+void array2d<T>::copyprops (const array2d<U> &copyfrom){
+	cellsize=copyfrom.cellsize;
+	xllcorner=copyfrom.xllcorner;
+	yllcorner=copyfrom.yllcorner;
+	data_cells=copyfrom.data_cells;
+	no_data=copyfrom.no_data;
+	boost::numeric::ublas::matrix<T>::resize(copyfrom.width(),copyfrom.height());
+}
+
 template <class T>
-template <class U>
+template <class U>	//TODO: Merge this function with copyprops, above
 array2d<T>::array2d(const array2d<U> &copyfrom, bool do_resize){
 	cellsize=copyfrom.cellsize;
 	xllcorner=copyfrom.xllcorner;
