@@ -1,3 +1,4 @@
+#include "pit_fill.h"
 #include "utility.h"
 #include "data_structures.h"
 #include "interface.h"
@@ -384,6 +385,74 @@ void pit_fill_wangND(float_2d &elevations){
 }
 
 */
+
+
+
+
+
+
+void pit_fill_barneslehman(float_2d &elevations){
+	float max,min;
+	bool_2d closed;
+	max=elevations.max();
+	min=elevations.min();
+
+	std::vector<std::vector<grid_cellz> > open((int)(10*max)-(int)(10*min), std::vector<grid_cellz>());
+	std::queue<grid_cellz> pit;
+	int lvl=((int)(10*min));
+
+	diagnostic("\n###Barnes-Lehman Pit Fill v1\n");
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic("Setting up boolean flood array matrix...");
+	closed.resize(elevations.width(),elevations.height());
+	closed.init(false);
+	diagnostic("succeeded.\n");
+
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic("Adding cells to the open priority queue...");
+	for(int x=0;x<elevations.width();x++){
+		if(elevations(x,0)==elevations.no_data)
+			pit.push(grid_cellz(x,0,elevations.no_data));
+		else
+			open[(int)(elevations(x,0)*10)].push_back(grid_cellz(x,0,elevations(x,0) ));
+		if(elevations(x,elevations.height()-1)==elevations.no_data)
+			pit.push(grid_cellz(x,elevations.height()-1,elevations.no-data));
+		else
+			open[(int)(elevations(x,elevations.height()-1)*10)].push_back(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		closed(x,0)=true;
+		closed(x,elevations.height()-1)=true;
+	}
+	for(int y=1;y<elevations.height()-1;y++){
+		if(elevations(0,y)==elevations.no_data)
+			pit.push(grid_cellz(0,y,elevations.no_data));
+		else
+			open[(int)(elevations(0,y)*10)].push_back(grid_cellz(0,y,elevations(0,y) ));
+		if(elevations(elevations.width()-1,y)==elevations.no_data)
+			pit.push(grid_cellz(elevations.width()-1,y,elevations.no_data));
+		else
+			open[(int)(elevations(elevations.width()-1,y)*10)].push_back(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		closed(0,y)=true;
+		closed(elevations.width()-1,y)=true;
+	}
+	diagnostic("succeeded.\n");
+
+/*	diagnostic("Performing the Barnes1 fill...\n");
+	progress_bar(-1);
+	while(pit.size()>0){
+		grid_cellz c;
+		if(pit.size()>0){
+			c=pit.front();
+			pit.pop();
+		} else {
+			c=open.top();
+			open.pop();
+			openc++;
+		}*/
+}
+
+
+
+
 
 
 
