@@ -300,4 +300,35 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	CombineGradients(elevations, towards, away, flat_resolution_mask, low_edges, flat_height, labels);
 }
 
+
+
+
+
+//Procedure:	flat_mask
+//Description:
+//		Searches through a flowdirs array to find cells with undefined flow
+//		directions. These are marked as such in a boolean array
+//Inputs:
+//		flowdirs	A 2D array of flow directions (char or float acceptable)
+//Requirements:
+//		None
+//Effects:
+//		The 2D array fmask is modified such that the value 3 represents
+//		cells with a NO_DATA value in flowdirs, 1 represents cells without
+//		a defined flow direction, and 0 represents cells with a defined
+//		flow direction.
+//Returns:
+//		None
+template <class T>
+void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
+	fmask.copyprops(flowdirs);
+	fmask.init(0);
+	fmask.no_data=3;
+	for(int x=0;x<flowdirs.width();x++)
+	for(int y=0;y<flowdirs.height();y++)
+		if(flowdirs(x,y)==flowdirs.no_data)
+			fmask(x,y)=3;
+		else
+			fmask(x,y)=(flowdirs(x,y)==NO_FLOW);
+}
 #endif
