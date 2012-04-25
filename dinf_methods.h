@@ -27,8 +27,8 @@ static const int dy_e1[8]={0,-1,-1,0,0,1,1,0};
 static const int dx_e1[8]={1,0,0,-1,-1,0,0,1};
 static const int dy_e2[8]={-1,-1,-1,-1,1,1,1,1};
 static const int dx_e2[8]={1,1,-1,-1,-1,-1,1,1};
-static const double ac[8]={0,1,1,2,2,3,3,4};
-static const double af[8]={1,-1,1,-1,1,-1,1,-1};
+static const double ac[8]={0.,1.,1.,2.,2.,3.,3.,4.};
+static const double af[8]={1.,-1.,1.,-1.,1.,-1.,1.,-1.};
 
 template <class T>
 float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
@@ -58,11 +58,13 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	}
 	
 	//Since I am not on the edge of the grid if I've made it this far, may neighbours cannot be off the grid
-	//Very negative no_data's should be acceptable, and suck water of the grid.
 	//Yes, this should be 0-8, this is the Tarboton neighbour system
 	for(int n=0;n<8;n++){
+		//Very negative no_data's should be acceptable, and suck water of the grid.
 		//if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
 		//if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
+		//Therefore, these lines are not really necessary.
+		//I leave them here to make it very clear that they are not necessary.
 
 		e0=elevations(x,y);
 		e1=elevations(x+dx_e1[n],y+dy_e1[n]);
@@ -72,14 +74,14 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 		s1=(e0-e1)/d1;
 		s2=(e1-e2)/d2;
 		r=atan2(s2,s1);
-		s=sqrt(s1*s1+s2*s2);
 		if(r<0){
 			r=0;
 			s=s1;
 		} else if(r>atan2(d2,d1)){
 			r=atan2(d2,d1);
 			s=(e0-e2)/sqrt(d1*d1+d2*d2);
-		}
+		} else
+			s=sqrt(s1*s1+s2*s2);
 		if(s>smax){
 			smax=s;
 			nmax=n;
