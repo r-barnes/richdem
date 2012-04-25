@@ -9,197 +9,7 @@
 #include <queue>
 #include <limits>
 #include <stack>
-
-
-/*
-@article{planchon2002fast,
-  title={A fast, simple and versatile algorithm to fill the depressions of digital elevation models},
-  author={Planchon, O. and Darboux, F.},
-  journal={Catena},
-  volume={46},
-  number={2-3},
-  pages={159--176},
-  year={2002}
-}
-*/
-void pit_fill_planchon_direct(float_2d &elevations, float epsilon_straight, float epsilon_diagonal){
-	float_2d w;
-
-	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
-
-	diagnostic("\n###Planchon (2002) Optimized Pit Fill\n");
-	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
-	diagnostic("Resizing intermediate elevation surface 'W'...");
-	w.resize(elevations.width(),elevations.height());
-	diagnostic("succeeded.\n");
-
-	diagnostic("Initializing intermediate elevation surface 'W'...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++)
-			if(EDGE_GRID(x,y,elevations.width(),elevations.height()))
-				w(x,y)=elevations(x,y);
-			else
-				w(x,y)=std::numeric_limits<float>::infinity();
-	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
-
-	diagnostic("Performing Planchon pit fill Stage 2, direct implementation...\n");
-	progress_bar(-1);
-	bool something_done=true;
-	while(something_done){
-		something_done=false;
-
-		#pragma omp parallel for reduction(|:something_done)
-		for(int x=1;x<elevations.width()-1;x++)
-		for(int y=1;y<elevations.height()-1;y++)
-			if(w(x,y)>elevations(x,y))
-				for(int n=1;n<=8;n++){
-					if(elevations(x,y)>=w(x+dx[n],y+dy[n])+epsilon[n]){
-						w(x,y)=elevations(x,y);
-						something_done=true;
-					} else if(w(x,y)>w(x+dx[n],y+dy[n])+epsilon[n]){
-						w(x,y)=w(x+dx[n],y+dy[n])+epsilon[n];
-						something_done=true;
-					}
-				}
-	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
-}
-
-
-
-
-
-
-
-
-
-
-
-/*
-@article{planchon2002fast,
-  title={A fast, simple and versatile algorithm to fill the depressions of digital elevation models},
-  author={Planchon, O. and Darboux, F.},
-  journal={Catena},
-  volume={46},
-  number={2-3},
-  pages={159--176},
-  year={2002}
-}
-*/
-
-const int dR[8]={0,0,1,-1,0,0,1,-1};
-const int dC[8]={1,-1,0,0,-1,1,0,0};
-bool Next_Cell(int &C, int &R,int i,const float_2d &e){
-	const int fR[8]={1,-1,-e.height()+1,e.height()-1,1,-1,-e.height()+1,e.height()-1};
-	const int fC[8]={-e.width()+1,e.width()-1,-1,1,e.width()-1,-e.width()+1,1,-1};
-	R+=dr[i];
-	C+=dC[i];
-	if(R<0 || C<0 || R>=e.height() || C>=e.width()){
-		R+=fR[i];
-		C+=fC[i];
-		if(R<0 || C<0 || R>=e.height() || C>=e.width())
-			return false;
-	}
-	return true;
-}
-
-void Dry_upward_cell(int x, int y, const float_2d &elevations, float_2d &w, float epsilon){
-	std::queue<grid_cell> to_dry;
-	to_dry.push(grid_cell(x,y));
-
-	while(to_dry.size()>0){
-		grid_cell c=to_dry.front();to_dry.pop();
-		for(int n=1;n<=8;n++){
-			int nx=c.x+dx[n];
-			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
-			if(elevations(nx,ny)!=std::numeric_limits<float>::infinity()) continue;
-			if(elevations(nx,ny)>=w(c.x,c.y)+epsilon){
-				w(nx,ny)=elevations(nx,ny);
-				Dry_upward_cell(nx,ny,elevations,w,epsilon);
-			}
-		}
-	}
-}
-
-void pit_fill_planchon_optimized(float_2d &elevations, float epsilon){
-	float_2d w;
-
-	const int R0[8]={0,elevations.height()-1,0,elevations.height()-1,0,elevations.height()-1,0,elevations.height()-1};
-	const int C0[8]={0,elevations.width()-1,elevations.width()-1,0,elevations.width()-1,0,0,elevations.width()-1};
-
-//	float epsilon[9]={0,epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_diagonal, epsilon_straight, epsilon_straight, epsilon_diagonal, epsilon_straight};
-
-	diagnostic_arg("The intermediate elevation surface 'W' will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
-	diagnostic("Resizing intermediate elevation surface 'W'...");
-	w.resize(elevations.width(),elevations.height());
-	diagnostic("succeeded.\n");
-
-	diagnostic("Initializing intermediate elevation surface 'W'...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++)
-			if(EDGE_GRID(x,y,elevations.width(),elevations.height()))
-				w(x,y)=elevations(x,y);
-			else
-				w(x,y)=std::numeric_limits<float>::infinity();
-	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
-
-	diagnostic("Performing Planchon pit fill Stage 2, Section 1 (optimized)...\n");
-	for(int x=0;x<elevations.width();x++){
-		Dry_upward_cell(x,0,elevations,w,epsilon);
-		Dry_upward_cell(x,elevations.height()-1,elevations,w,epsilon);
-	}
-	for(int y=1;y<elevations.height()-2;y++){
-		Dry_upward_cell(0,y,elevations,w,epsilon);
-		Dry_upward_cell(elevations.width()-1,y,elevations,w,epsilon);
-	}
-
-	diagnostic("Performing Planchon pit fill Stage 2, Section 2 (optimized)...\n");
-	while(true){
-		for(int scans=0;scans<8;scans++){
-			int r=R0[scans];
-			int c=C0[scans];
-			bool something_done=false;
-			do{
-				if(w(c,r)>elevations(c,r)){
-					for(int n=1;n<=8;n++){
-						int nc=c+dx[n];
-						int nr=r+dy[n];
-						if(!IN_GRID(nc,nr,elevations.width(),elevations.height())) continue;
-						if(elevations(c,r)>=w(nc,nr)+epsilon){
-							w(c,r)=elevations(c,r);
-							something_done=true;
-							Dry_upward_cell(c,r,elevations,w,epsilon);
-							goto nextcell;
-						}
-						if(w(c,r)>w(nc,nr)+epsilon){
-							w(c,r)=w(nc,nr)+epsilon;
-							something_done=true;
-						}
-					}
-				}
-nextcell:
-				1;
-			} while (Next_Cell(c,r,scans,elevations));
-			if(!something_done)
-				break;
-		}
-	}
-
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
-}
-
-
-
-
+#include <algorithm>
 
 
 
@@ -389,7 +199,7 @@ void pit_fill_wangND(float_2d &elevations){
 
 
 
-
+bool sort_cells (const grid_cellz &lhs,const grid_cellz &rhs) { return (lhs.z>rhs.z); }
 
 void pit_fill_barneslehman(float_2d &elevations){
 	float max,min;
@@ -397,9 +207,11 @@ void pit_fill_barneslehman(float_2d &elevations){
 	max=elevations.max();
 	min=elevations.min();
 
-	std::vector<std::vector<grid_cellz> > open((int)(10*max)-(int)(10*min), std::vector<grid_cellz>());
+	std::vector<std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> > open((int)(10*max), std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare>() );
 	std::queue<grid_cellz> pit;
 	int lvl=((int)(10*min));
+	int processed_cells=0;
+	const int tcells=elevations.width()*elevations.height();
 
 	diagnostic("\n###Barnes-Lehman Pit Fill v1\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
@@ -413,41 +225,77 @@ void pit_fill_barneslehman(float_2d &elevations){
 	for(int x=0;x<elevations.width();x++){
 		if(elevations(x,0)==elevations.no_data)
 			pit.push(grid_cellz(x,0,elevations.no_data));
-		else
-			open[(int)(elevations(x,0)*10)].push_back(grid_cellz(x,0,elevations(x,0) ));
+		else{
+			open[(int)(elevations(x,0)*10)].push(grid_cellz(x,0,elevations(x,0) ));
+		}
 		if(elevations(x,elevations.height()-1)==elevations.no_data)
-			pit.push(grid_cellz(x,elevations.height()-1,elevations.no-data));
-		else
-			open[(int)(elevations(x,elevations.height()-1)*10)].push_back(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+			pit.push(grid_cellz(x,elevations.height()-1,elevations.no_data));
+		else{
+			open[(int)(elevations(x,elevations.height()-1)*10)].push(grid_cellz(x,elevations.height()-1,elevations(x,elevations.height()-1) ));
+		}
 		closed(x,0)=true;
 		closed(x,elevations.height()-1)=true;
 	}
 	for(int y=1;y<elevations.height()-1;y++){
 		if(elevations(0,y)==elevations.no_data)
 			pit.push(grid_cellz(0,y,elevations.no_data));
-		else
-			open[(int)(elevations(0,y)*10)].push_back(grid_cellz(0,y,elevations(0,y) ));
+		else{
+			open[(int)(elevations(0,y)*10)].push(grid_cellz(0,y,elevations(0,y) ));
+		}
 		if(elevations(elevations.width()-1,y)==elevations.no_data)
 			pit.push(grid_cellz(elevations.width()-1,y,elevations.no_data));
-		else
-			open[(int)(elevations(elevations.width()-1,y)*10)].push_back(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		else{
+			open[(int)(elevations(elevations.width()-1,y)*10)].push(grid_cellz(elevations.width()-1,y,elevations(elevations.width()-1,y) ));
+		}
 		closed(0,y)=true;
 		closed(elevations.width()-1,y)=true;
 	}
 	diagnostic("succeeded.\n");
 
-/*	diagnostic("Performing the Barnes1 fill...\n");
+	diagnostic("Performing the Barnes1 fill...\n");
 	progress_bar(-1);
-	while(pit.size()>0){
-		grid_cellz c;
+	while(pit.size()>0 || processed_cells<tcells){
 		if(pit.size()>0){
-			c=pit.front();
+			grid_cellz c=pit.front();
 			pit.pop();
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)) continue;
+				closed(nx,ny)=true;
+				if(elevations(nx,ny)<=c.z){
+					elevations(nx,ny)=c.z;
+					pit.push(grid_cellz(nx,ny,c.z));
+				} else
+					open[(int)(10*elevations(nx,ny))].push(grid_cellz(nx,ny,elevations(nx,ny)));
+			}
 		} else {
-			c=open.top();
-			open.pop();
-			openc++;
-		}*/
+			while(open[lvl].size()==0)	//Find next bin
+				lvl++;
+
+			grid_cellz c=open[lvl].top();
+			open[lvl].pop();
+			processed_cells++;
+
+			for(int n=1;n<=8;n++){
+				int nx=c.x+dx[n];
+				int ny=c.y+dy[n];
+				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(closed(nx,ny)) continue;
+				closed(nx,ny)=true;
+				if(elevations(nx,ny)<=c.z){
+					elevations(nx,ny)=c.z;
+					pit.push(grid_cellz(nx,ny,c.z));
+				} else
+					open[(int)(10*elevations(nx,ny))].push(grid_cellz(nx,ny,elevations(nx,ny)));
+			}
+		}
+		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+	}
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
 }
 
 
