@@ -3,12 +3,14 @@
 
 #include <deque>
 #include <cmath>
+#include "utility.h"
 
 #define PRINT(ARR,PREC,WIDTH) std::cout<<std::setprecision(PREC)<<std::setw(WIDTH)<<ARR<<std::endl;
 
 void print_edges(const float_2d &elevations, const std::deque<grid_cell> &low_edges, const std::deque<grid_cell> &high_edges);
+void dinf_pit_flows(const float_2d &elevations, float_2d &flowdirs);
 
-template <class T> //TODO: Needs error checking for dimensions, et cetera
+template <class T>
 void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 	diagnostic("Differencing the two arrays...\n");
 	if(arr1.width()!=arr2.width() || arr1.height()!=arr2.height())
@@ -25,7 +27,7 @@ void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 	diagnostic("success!\n");
 }
 
-template <class T> //TODO: Needs error checking for dimensions, et cetera
+template <class T>
 void dadiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 	diagnostic("Differencing the two arrays...\n");
 	if(arr1.width()!=arr2.width() || arr1.height()!=arr2.height())
@@ -71,6 +73,23 @@ void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, in
 				out<<std::setw(swidth)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
 		out<<std::endl;
 	}
+}
+
+
+
+template <class T>
+void array2d<T>::surroundings(int x0, int y0, int precision){
+	std::cerr.setf(std::ios::fixed,std::ios::floatfield);
+	std::cerr<<std::setprecision(precision);
+	std::cerr<<std::endl;
+
+	std::cerr<<"Surroundings of ("<<x0<<","<<y0<<")"<<std::endl;
+	for(int x=MAX(x0-1,0);x<=MIN(x0+1,width()-1);x++){
+		for(int y=MAX(y0-1,0);y<=MIN(y0+1,height()-1);y++)
+			std::cerr<<std::setw(4)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
+		std::cerr<<std::endl;
+	}
+	std::cerr<<std::endl;
 }
 
 #endif
