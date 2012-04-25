@@ -26,6 +26,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long estimated_output_size();
 		void init(T val);
 		void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
+		void surroundings(int x0, int y0, int precision=3); //TODO
 		bool operator==(const array2d<T> &other) const;
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 		T max() const;
