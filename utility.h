@@ -21,7 +21,9 @@
 #define NO_FLOW			-1
 #define SQRT2			1.414213562373095048801688724209698078569671875376948
 
-#define MAX(A,B)	(((A)>(B))?(A):(B))
+#define MIN(A,B) 	(((A)<(B))?(A):(B))
+#define MAX(A,B) 	(((A)>(B))?(A):(B))
+#define DEG(A)		((A)*180.0/M_PI)
 
 //D8 Directions
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
