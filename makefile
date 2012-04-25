@@ -2,10 +2,10 @@ CC=g++
 ODIR=obj
 #PRE_FLAGS=-lgcov -g -fprofile-arcs -ftest-coverage
 PRE_FLAGS=-O3
-CFLAGS=-Wall -fopenmp #-lX11 -pthread #-ltbb
+CFLAGS=-Wall -fopenmp -lX11 -pthread #-ltbb
 DEPS = d8_methods.h  data_structures.h  dinf_methods.h  interface.h  data_io.h pit_fill.h  utility.h  flat_resolution.h  debug.h visualize.h
 
-_OBJ = d8_methods.o data_structures.o dinf_methods.o interface.o data_io.o main.o pit_fill.o utility.o flat_resolution.o debug.o visualize.o
+_OBJ = d8_methods.o data_structures.o dinf_methods.o interface.o data_io.o main.o pit_fill.o utility.o flat_resolution.o debug.o visualize.o pit_fill_test.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.cpp $(DEPS)
