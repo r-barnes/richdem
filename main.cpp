@@ -11,101 +11,64 @@
 #include <sys/time.h>
 #include <iostream>
 #include <iomanip>
+#include <map>
 
 int main(int argc, char **argv){
-	if(argc!=2){ //TODO
+/*	if(argc!=4){ //TODO
 		printf("RichDEM was built by Richard Barnes (rbarnes@umn.edu, http://finog.org)\nIt was designed to:\n\t*Use the fastest available algorithms.\n\t*Run in parallel whenever possible.\n\t*Use straight-forward, easy-to-debug code.\n\t*Advance the state-of-the-art of DEM processing.\n\nIt is suggested you edit main.cpp to suit your needs.\nSyntax: ./richdem <INPUT FILE> <OUTPUT FILE>\n");
 		return -1;
-	}
+	}*/
 
-	timeval startTime;
-
-	float_2d elevations,elevND,elevbar1,elevbar2,elevbar3,elevbar4,elevbar5, elevbar6,elevplan;
+	float_2d elevations,angle_diff,flowdirs;
 	load_ascii_data(argv[1],elevations);
-	elevbar1=elevations;
-/*	elevND=elevations;
-	elevplan=elevations;
-	elevbar2=elevations;
-	elevbar3=elevations;
-	elevbar4=elevations;
-	elevbar5=elevations;
-	elevbar6=elevations;
-*/
-	printf("Working with file \"%s\"\n",argv[1]);
+	load_ascii_data(argv[2],angle_diff);
 
-	gettimeofday(&startTime, NULL);
-	pit_fill_wang(elevations);
-	printf("\033[96mWang pit fill time: %lf\033[39m\n",timediff(startTime));
+	barnes_flood(elevations);
+	dinf_flow_directions(elevations,flowdirs);
+
+	uint_2d pitloc(elevations);
+	flat_mask(flowdirs,pitloc);
+
+	uint_2d odd_flows(elevations,true);
+	odd_flows.no_data=3;
+
+	for(int x=0;x<angle_diff.width();x++)
+	for(int y=0;y<angle_diff.height();y++)
+		if(pitloc(x,y)==pitloc.no_data)
+			odd_flows(x,y)=odd_flows.no_data;
+		else if(angle_diff(x,y)>10.0*M_PI/180.0 && pitloc(x,y)!=1)
+			odd_flows(x,y)=1;
+		else
+			odd_flows(x,y)=0;
+
+	output_ascii_data(argv[3],odd_flows,0);
+
+/*	barnes_flood(elevations);
+//	pit_fill_barneslehman(elevations);
+
+	float_2d flowdirs(elevations);
+	dinf_flow_directions(elevations,flowdirs);
+
+	int_2d flat_resolution_mask(elevations), groups;
+	resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
+
+	dinf_flow_flats(flat_resolution_mask,groups,flowdirs);
+
+//	float_2d area(elevations);
+//	dinf_upslope_area(flowdirs, area);
+
+	output_ascii_data(argv[2],flowdirs,8);
+
 /*
-	gettimeofday(&startTime, NULL);
-	pit_fill_wangND(elevND);
-	printf("\033[96mWangND pit fill time: %lf\033[39m\n",timediff(startTime));
-*/
-/*
-	gettimeofday(&startTime, NULL);
-	pit_fill_planchon_optimized(elevplan, 0);
-	printf("\033[96mPlanchon optimized pit fill time: %lf\033[39m\n",timediff(startTime));
-*/
-
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes1(elevbar1);
-	printf("\033[96mBarnes v1 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar1);
-
-//	visualize(elevbar1,false,(float)0,"Barnes 1");
-/*
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes2(elevbar2);
-	printf("\033[96mBarnes v2 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar2);
-
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes3(elevbar3);
-	printf("\033[96mBarnes v3 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar3);
-
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes4(elevbar4);
-	printf("\033[96mBarnes v4 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar4);
-
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes5(elevbar5);
-	printf("\033[96mBarnes v5 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar5);
-
-	gettimeofday(&startTime, NULL);
-	pit_fill_barnes6(elevbar6);
-	printf("\033[96mBarnes v6 pit fill time: %lf\033[39m\n",timediff(startTime));
-	printf("Good? %d\n",elevations==elevbar6);
-
-//	visualize(elevbar6,false,(float)0,"Barnes 6");
-
-//	gettimeofday(&startTime, NULL);
-//	float_2d flowdirs(elevations);
-//	dinf_flow_directions(elevations,flowdirs);
-//	printf("\033[96Flow dirs time: %lf\033[39m\n",timediff(startTime));
-
-//	gettimeofday(&startTime, NULL);
-//	int_2d flat_resolution_mask(elevations), groups;
-//	resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
-//	printf("\033[96mResolve time: %lf\033[39m\n",timediff(startTime));
-
-//	gettimeofday(&startTime, NULL);
-//	dinf_flow_flats(flat_resolution_mask,groups,flowdirs);
-//	printf("\033[96Flow flats time: %lf\033[39m\n",timediff(startTime));
-
 //	PRINT(flat_resolution_mask,0,2);
 //	PRINT(flowdirs,0,2);
 
-//	gettimeofday(&startTime, NULL);
-//	float_2d area(elevations);
-//	dinf_upslope_area(flowdirs, area);
-//	printf("\033[96Upslope area time: %lf\033[39m\n",timediff(startTime));
+	gettimeofday(&startTime, NULL);
+	float_2d area(elevations);
+	dinf_upslope_area(flowdirs, area);
+	printf("\033[96mUpslope area time: %lf\033[39m\n",timediff(startTime));
 
 //	visualize(area,true,(float)0,"D8 Upslope Area w/ Flats Resolved");
-
-//	output_ascii_data(argv[2],area);
 */
 	return 0;
 }
