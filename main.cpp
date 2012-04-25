@@ -19,9 +19,11 @@ int main(int argc, char **argv){
 		return -1;
 	}*/
 
-	float_2d elevations,angle_diff,flowdirs;
+	float_2d elevations,angbar,angtau,angle_diff,flowdirs;
 	load_ascii_data(argv[1],elevations);
-	load_ascii_data(argv[2],angle_diff);
+	load_ascii_data(argv[2],angbar);
+	load_ascii_data(argv[3],angtau);
+	load_ascii_data(argv[4],angle_diff);
 
 	barnes_flood(elevations);
 	dinf_flow_directions(elevations,flowdirs);
@@ -35,13 +37,15 @@ int main(int argc, char **argv){
 	for(int x=0;x<angle_diff.width();x++)
 	for(int y=0;y<angle_diff.height();y++)
 		if(pitloc(x,y)==pitloc.no_data)
-			odd_flows(x,y)=odd_flows.no_data;
-		else if(angle_diff(x,y)>10.0*M_PI/180.0 && pitloc(x,y)!=1)
-			odd_flows(x,y)=1;
-		else
-			odd_flows(x,y)=0;
+			continue;//odd_flows(x,y)=odd_flows.no_data;
+		else if(angle_diff(x,y)>10.0*M_PI/180.0 && pitloc(x,y)!=1){
+			diagnostic_arg("(%d,%d)\tBarnes: %f, Tau: %f, Diff: %f\n",x,y,DEG(angbar(x,y)),DEG(angtau(x,y)),DEG(angle_diff(x,y)));
+			elevations.surroundings(x,y);
+		}
+//		else
+//			odd_flows(x,y)=0;
 
-	output_ascii_data(argv[3],odd_flows,0);
+//	output_ascii_data(argv[3],odd_flows,0);
 
 /*	barnes_flood(elevations);
 //	pit_fill_barneslehman(elevations);
