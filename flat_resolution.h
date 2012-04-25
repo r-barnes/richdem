@@ -321,6 +321,7 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 //		None
 template <class T>
 void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
+	diagnostic("Locating pits based on undefined flow directions...");
 	fmask.copyprops(flowdirs);
 	fmask.init(0);
 	fmask.no_data=3;
@@ -330,5 +331,6 @@ void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
 			fmask(x,y)=3;
 		else
 			fmask(x,y)=(flowdirs(x,y)==NO_FLOW);
+	diagnostic("succeeded!\n");
 }
 #endif
