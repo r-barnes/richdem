@@ -79,17 +79,17 @@ void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, in
 
 template <class T>
 void array2d<T>::surroundings(int x0, int y0, int precision){
-	std::cerr.setf(std::ios::fixed,std::ios::floatfield);
-	std::cerr<<std::setprecision(precision);
-	std::cerr<<std::endl;
+	std::cout.setf(std::ios::fixed,std::ios::floatfield);
+	std::cout<<std::setprecision(precision);
+	std::cout<<std::endl;
 
-	std::cerr<<"Surroundings of ("<<x0<<","<<y0<<")"<<std::endl;
-	for(int x=MAX(x0-1,0);x<=MIN(x0+1,width()-1);x++){
-		for(int y=MAX(y0-1,0);y<=MIN(y0+1,height()-1);y++)
-			std::cerr<<std::setw(4)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
-		std::cerr<<std::endl;
+	std::cout<<"Surroundings of ("<<x0<<","<<y0<<")"<<std::endl;
+	for(int y=MAX(y0-1,0);y<=MIN(y0+1,height()-1);y++){
+		for(int x=MAX(x0-1,0);x<=MIN(x0+1,width()-1);x++)
+			std::cout<<std::setw(4)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
+		std::cout<<std::endl;
 	}
-	std::cerr<<std::endl;
+	std::cout<<std::endl;
 }
 
 #endif
