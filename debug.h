@@ -78,7 +78,7 @@ void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, in
 
 
 template <class T>
-void array2d<T>::surroundings(int x0, int y0, int precision){
+void array2d<T>::surroundings(int x0, int y0, int precision) const{
 	std::cout.setf(std::ios::fixed,std::ios::floatfield);
 	std::cout<<std::setprecision(precision);
 	std::cout<<std::endl;

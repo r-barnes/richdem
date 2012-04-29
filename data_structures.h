@@ -26,7 +26,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long estimated_output_size();
 		void init(T val);
 		void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
-		void surroundings(int x0, int y0, int precision=3); //TODO
+		void surroundings(int x0, int y0, int precision=3) const; //TODO
 		bool operator==(const array2d<T> &other) const;
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 		T max() const;
@@ -67,6 +67,7 @@ void array2d<T>::copyprops (const array2d<U> &copyfrom){
 template <class T>
 template <class U>	//TODO: Merge this function with copyprops, above
 array2d<T>::array2d(const array2d<U> &copyfrom, bool do_resize){
+	array2d();
 	cellsize=copyfrom.cellsize;
 	xllcorner=copyfrom.xllcorner;
 	yllcorner=copyfrom.yllcorner;
@@ -89,6 +90,7 @@ template <> inline long array2d<char>::estimated_output_size(){return 4*this->wi
 template <> inline long array2d<bool>::estimated_output_size(){return 2*this->width()*this->height();}
 template <> inline long array2d<unsigned int>::estimated_output_size(){return 9*this->width()*this->height();}
 
+//TODO: This is probably only useful for testing, since the file_io thing uses its own output
 template <class T>
 std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 	std::streamsize width=out.width();
