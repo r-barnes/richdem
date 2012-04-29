@@ -17,7 +17,6 @@ class grid_cell_compare{
 		}
 };
 
-//BarnesFlood explores depressions and flats by pushing them onto the meander queue. When meander encounters cells at <= elevation, it meanders over them. Otherwise, it pushes them onto the open queue.
 //Procedure:	BarnesFlood
 //Description:
 //		The BarnesFlood starts on the edges of the DEM and then works its way
