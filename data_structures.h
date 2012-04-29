@@ -181,4 +181,14 @@ typedef struct grid_cell_type {
 	grid_cell_type(){}
 } grid_cell;
 
+class grid_cellz_compare{
+	bool reverse;
+	public:
+		grid_cellz_compare(const bool& revparam=false){reverse=revparam;}
+		bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
+			if (reverse) return (lhs.z<rhs.z);
+			else return (lhs.z>rhs.z);
+		}
+};
+
 #endif

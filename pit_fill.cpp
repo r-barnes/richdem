@@ -7,16 +7,6 @@
 #include <queue>
 #include <stack>
 
-class grid_cell_compare{
-	bool reverse;
-	public:
-		grid_cell_compare(const bool& revparam=false){reverse=revparam;}
-		bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
-			if (reverse) return (lhs.z<rhs.z);
-			else return (lhs.z>rhs.z);
-		}
-};
-
 //Procedure:	BarnesFlood
 //Description:
 //		The BarnesFlood starts on the edges of the DEM and then works its way
@@ -35,7 +25,7 @@ class grid_cell_compare{
 //Returns:
 //		None
 void barnes_flood(float_2d &elevations){
-	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> open;
+	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
 //	std::queue<grid_cellz> meander;
 	std::stack<grid_cellz, std::vector<grid_cellz> > meander;
 	bool_2d closed;
