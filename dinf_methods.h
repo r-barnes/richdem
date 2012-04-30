@@ -30,6 +30,14 @@ static const int dx_e2[8]={1,1,-1,-1,-1,-1,1,1};
 static const double ac[8]={0.,1.,1.,2.,2.,3.,3.,4.};
 static const double af[8]={1.,-1.,1.,-1.,1.,-1.,1.,-1.};
 
+//Use this D8 method //TODO
+//321
+//4 0
+//567
+const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
+const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
+const int dinf_d8_inverse[9]={4,5,6,7,0,1,2,3,4};
+
 template <class T>
 float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	double smax=0;
