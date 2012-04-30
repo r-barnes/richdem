@@ -18,8 +18,8 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		long data_cells;
 		T no_data;
 
-		long width() const;
-		long height() const ;
+		long width() const {return boost::numeric::ublas::matrix<T>::size1();}
+		long height() const {return boost::numeric::ublas::matrix<T>::size2();}
 		array2d ();
 		template<class U> void copyprops (const array2d<U> &copyfrom);
 		template<class U> array2d (const array2d<U> &copyfrom, bool do_resize=false);
@@ -31,18 +31,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 		T max() const;
 		T min() const;
-//		double avg() const; //This should use the Kaham summation algorithm with a running-average code, or something like that.
 };
-
-template <class T>
-long array2d<T>::width() const {
-	return boost::numeric::ublas::matrix<T>::size1();
-}
-
-template <class T>
-long array2d<T>::height() const {
-	return boost::numeric::ublas::matrix<T>::size2();
-}
 
 template <class T>
 array2d<T>::array2d(){
