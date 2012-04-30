@@ -44,68 +44,60 @@ To convert Dinf to this, take
       7                5,6
 */
 //These arrays have a 9th element which repeats the 8th element because floating point rounding errors occassionally result in the 9th element being accessed.
-const int dinf_to_d8_low[9]= {4,3,2,1,1,7,6,5,5};
-const int dinf_to_d8_high[9]={5,4,3,2,8,8,7,6,6};
 
-//234
-//105
-//876
+//321
+//4 0
+//567
 void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
-	const double at2=atan2(1,1);
-	nlow=-1;
+	//If it is very close to being directed into just one cell
+	//then we direct it into just one cell. If we mistakenly direct
+	//it into 2 cells, then we may create unresolvable loops in the
+	//flow accumulation algorithm, whereas nothing is lost if we
+	//leave out one of the two cells (provided a negligible amount
+	//of flow is directed to the one we leave out).
+	assert(flowdir>=0 && flowdir<=2*M_PI+1e-6);
 
-	if(flowdir==(float)(af[0]*0+ac[0]*M_PI/2)){
-		nhigh=5;
-		return;
-	} else if(flowdir==(float)(af[1]*0+ac[1]*M_PI/2) || flowdir==(float)(af[2]*0+ac[2]*M_PI/2)){
-		nhigh=3;
-		return;
-	} else if(flowdir==(float)(af[3]*0+ac[3]*M_PI/2) || flowdir==(float)(af[4]*0+ac[4]*M_PI/2)){
-		nhigh=1;
-		return;
-	} else if(flowdir==(float)(af[5]*0+ac[5]*M_PI/2) || flowdir==(float)(af[6]*0+ac[6]*M_PI/2)){
-		nhigh=7;
-		return;
-	} else if(flowdir==(float)(af[7]*0+ac[7]*M_PI/2)){
-		nhigh=5;
-		return;
-	} else if(flowdir==(float)(af[0]*at2+ac[0]*M_PI/2) || flowdir==(float)(af[1]*at2+ac[1]*M_PI/2)){
-		nhigh=4;
-		return;
-	} else if(flowdir==(float)(af[2]*at2+ac[2]*M_PI/2) || flowdir==(float)(af[3]*at2+ac[3]*M_PI/2)){
-		nhigh=2;
-		return;
-	} else if(flowdir==(float)(af[4]*at2+ac[4]*M_PI/2) || flowdir==(float)(af[5]*at2+ac[5]*M_PI/2)){
-		nhigh=8;
-		return;
-	} else if(flowdir==(float)(af[6]*at2+ac[6]*M_PI/2) || flowdir==(float)(af[7]*at2+ac[7]*M_PI/2)){
-		nhigh=6;
-		return;
+	float temp=flowdir/(M_PI/4.);
+
+	if(fabs(temp-(int)temp)<1e-6){
+		nlow=-1;
+		nhigh=(int)ROUND(temp);
+	} else {
+		nlow=(int)temp;
+		nhigh=nlow+1;
 	}
 
-	int flown=(int)(flowdir/(M_PI/4));
-	nlow=dinf_to_d8_low[flown];
-	nhigh=dinf_to_d8_high[flown];
-}
-
-bool does_cell_flow_into_me(float n_flowdir, int n){
-	if(n_flowdir==NO_FLOW || n_flowdir==dinf_NO_DATA) return false;
-	n=inverse_flow[n];
-	int flown=(int)(n_flowdir/(M_PI/4));
-	return (dinf_to_d8_low[flown]==n || dinf_to_d8_high[flown]==n);
+	//8 is not technically a direction, but, since things move in a circle,
+	//it overlaps with 0. It should _never_ be greater than 8.
+	assert(nhigh>=0 && nhigh<=8);
 }
 
 //This reacts correctly if the flow direction wedge number exceeds 7.
-float proportion_i_get(float flowdir, int n){
-//	if(!does_cell_flow_into_me(flowdir,n)) return 0;
-	int dinf_wedge=(int)(flowdir/(M_PI/4));
-	float normalized_angle=flowdir-(M_PI/4)*dinf_wedge;
+void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, float &plow){
+	if(nlow==-1){
+		phigh=1;
+		plow=0;
+	} else {
+		phigh=(nhigh*(M_PI/4.0)-flowdir)/(M_PI/4.0);
+		plow=1-phigh;
+	}
 
-	if(n%2==dinf_wedge%2)
-		return normalized_angle/(M_PI/4);
-	else
-		return 1-normalized_angle/(M_PI/4);
+	assert(phigh+plow==1);	//TODO: This isn't necessarily so in floating-point... or is it?
 }
+
+/*//TODO: Debugging code used for checking for loops. Since loops should not occur in the output of the production code, this is not needed.
+bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
+	int nh,nl;
+	if(!IN_GRID(c2x, c2y, flowdirs.width(), flowdirs.height()) || flowdirs(c2x,c2y)==flowdirs.no_data || flowdirs(c2x,c2y)==NO_FLOW)
+		return false;
+	where_do_i_flow(flowdirs(c2x,c2y),nh,nl);
+	if(n==dinf_d8_inverse[nh] || (nl!=-1 && n==dinf_d8_inverse[nl])){
+		printf("Beware dir %d (%d and %d).\n",n,nh,nl);
+		flowdirs.surroundings(x,y,8);
+		return true;
+	}
+	return false;
+}*/
 
 void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
@@ -113,20 +105,16 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
 
-	diagnostic_arg("The dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("Setting up the dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(char)/1024/1024);
 	diagnostic("Resizing dependency matrix...");
 	dependency.resize(flowdirs.width(),flowdirs.height(),false);
-	diagnostic("succeeded.\n");
-	diagnostic("Initializing dependency matrix...");
 	dependency.init(0);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("Setting up the area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing the area matrix...");
 	area.resize(flowdirs.width(),flowdirs.height(),false);
 	area.init(0);
-	diagnostic("succeeded.\n");
-	diagnostic("Setting no_data value on area matrix...");
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
@@ -138,18 +126,19 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data){
 				area(x,y)=area.no_data;
-				dependency(x,y)=9;	//TODO
+				dependency(x,y)=9;	//Note: This is an unnecessary safety precaution
 				continue;
 			}
 			if(flowdirs(x,y)==NO_FLOW)
 				continue;
-			int n_high,n_low,nlx,nly,nhx,nhy;
+			int n_high,n_low;
+			int nhx,nhy,nlx,nly;
 			where_do_i_flow(flowdirs(x,y),n_high,n_low);
-			nhx=x+dx[n_high],nhy=y+dy[n_high];
-			if(n_low!=-1)
-				nlx=x+dx[n_low],nly=y+dy[n_low];
-//			if(nlx==1197 && nly==1541) diagnostic_arg("Flow from (%d,%d).\n",x,y);
-//			if(nhx==1197 && nhy==1541) diagnostic_arg("Flow from (%d,%d).\n",x,y);
+			nhx=x+dinf_dx[n_high],nhy=y+dinf_dy[n_high];
+			if(n_low!=-1){
+				nlx=x+dinf_dx[n_low];
+				nly=y+dinf_dy[n_low];
+			}
 			if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data )
 				dependency(nlx,nly)++;
 			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data )
@@ -157,8 +146,6 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		}
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
-
-	dependency.no_data=155;	//TODO
 
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
@@ -183,27 +170,31 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
-
 		area(c.x,c.y)+=1;
-		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height()))
-				continue;
-			if(does_cell_flow_into_me(flowdirs(c.x+dx[n],c.y+dy[n]),n))
-				area(c.x,c.y)+=proportion_i_get(flowdirs(c.x+dx[n],c.y+dy[n]),n)*area(c.x+dx[n],c.y+dy[n]);
+
+		if(flowdirs(c.x,c.y)==flowdirs.no_data || flowdirs(c.x,c.y)==NO_FLOW)
+			continue;
+
+		int n_high,n_low,nlx,nly,nhx,nhy;
+		where_do_i_flow(flowdirs(c.x,c.y),n_high,n_low);
+		nhx=c.x+dinf_dx[n_high],nhy=c.y+dinf_dy[n_high];
+		if(n_low!=-1){
+			nlx=c.x+dinf_dx[n_low];
+			nly=c.y+dinf_dy[n_low];
 		}
-		if(flowdirs(c.x,c.y)!=flowdirs.no_data && flowdirs(c.x,c.y)!=NO_FLOW){
-			int n_high,n_low,nlx,nly,nhx,nhy;
-			where_do_i_flow(flowdirs(c.x,c.y),n_high,n_low);
-			nhx=c.x+dx[n_high],nhy=c.y+dy[n_high];
-			if(n_low!=-1)
-				nlx=c.x+dx[n_low],nly=c.y+dy[n_low];
-//			if(nlx==1197 && nly==1541) diagnostic_arg("Flow from (%d,%d).\n",c.x,c.y);
-//			if(nhx==1197 && nhy==1541) diagnostic_arg("Flow from (%d,%d).\n",c.x,c.y);
-			if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
-				sources.push(grid_cell(nlx,nly));
-			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
-				sources.push(grid_cell(nhx,nhy));
-		}
+
+		float phigh,plow;
+		area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
+		if(IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()))
+			area(nhx,nhy)+=area(c.x,c.y)*phigh;
+		if(n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()))
+			area(nlx,nly)+=area(c.x,c.y)*plow;
+
+		if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
+			sources.push(grid_cell(nlx,nly));
+
+		if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
+			sources.push(grid_cell(nhx,nhy));
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 }
@@ -222,10 +213,9 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 
 	//Yes, this should be 0-8, this is the Tarboton neighbour system
 	for(int n=0;n<8;n++){
+		//TODO: Can these ever give !IN_GRID errors?
 		if(groups(x+dx_e1[n],y+dy_e1[n])!=groups(x,y)) continue;
 		if(groups(x+dx_e2[n],y+dy_e2[n])!=groups(x,y)) continue;
-		//if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
-		//if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
 
 		e0=flat_resolution_mask(x,y);
 		e1=flat_resolution_mask(x+dx_e1[n],y+dy_e1[n]);
