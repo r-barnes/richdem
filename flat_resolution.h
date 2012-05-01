@@ -68,7 +68,7 @@ void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
 		for(int n=1;n<=8;n++){
 			nx=x+dx[n];	
 			ny=y+dy[n];
-			if(IN_GRID(nx,ny,elevations.width(),elevations.height()) 
+			if(elevations.in_grid(nx,ny) 
 					&& elevations(nx,ny)==elevations(x,y) 
 					&& flowdirs(nx,ny)==NO_FLOW)
 				edges.push_back(grid_cell(nx,ny));
@@ -129,7 +129,7 @@ void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &awa
 		for(int n=1;n<=8;n++){
 			nx=x+dx[n];
 			ny=y+dy[n];
-			if(IN_GRID(nx,ny,elevations.width(),elevations.height()) && elevations(nx,ny)==elevations(x,y))
+			if(elevations.in_grid(nx,ny) && elevations(nx,ny)==elevations(x,y))
 				edge.push_back(grid_cell(nx,ny));
 		}
 		if(towards(x,y)>0){
@@ -176,7 +176,7 @@ void label_this(int x, int y, const int label, int_2d &labels, const array2d<T> 
 		if(elevations(x,y)!=target_elevation || labels(x,y)>-1) continue;
 		labels(x,y)=label;
 		for(int n=1;n<=8;n++)
-			if(IN_GRID(x+dx[n],y+dy[n],labels.width(),labels.height()))
+			if(labels.in_grid(x+dx[n],y+dy[n]))
 				to_fill.push(grid_cell(x+dx[n],y+dy[n]));
 	}
 }
@@ -212,7 +212,7 @@ void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &hi
 				nx=x+dx[n];
 				ny=y+dy[n];
 
-				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
+				if(!flowdirs.in_grid(nx,ny)) continue;
 				if(flowdirs(nx,ny)==flowdirs.no_data) continue;
 
 				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y)){

@@ -31,6 +31,9 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 		T max() const;
 		T min() const;
+		inline bool in_grid(int x, int y) const {return (x>=0 && y>=0 && x<width() && y<height());}
+		inline bool interior_grid(int x, int y) const {return (x>=1 && y>=1 && x<width()-1 && y<height()-1);}
+		inline bool edge_grid(int x, int y) const {return (x==0 || y==0 || x==width()-1 || y==height()-1);}
 };
 
 template <class T>

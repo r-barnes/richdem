@@ -54,7 +54,7 @@ int BarnesStep(const float_2d &elevations, const char_2d &flowdirs,
 				for(int n=1;n<=8;n++){
 					nx=x+dx[n];	
 					ny=y+dy[n];
-					if(!(IN_GRID(nx,ny,elevations.width(),elevations.height()) 
+					if(!(elevations.in_grid(nx,ny) 
 							&& elevations(nx,ny)==elevations(x,y) 
 							&& flowdirs(nx,ny)==NO_FLOW)) continue; //TODO: Shouldn't need to check if elevation is equal.
 					new_edges[omp_get_thread_num()].push_back(grid_cell(nx,ny));
@@ -89,7 +89,7 @@ void BarnesStep3(float_2d &elevations, int_2d &inc1, int_2d &inc2,
 		for(int n=1;n<=8;n++){
 			nx=x+dx[n];
 			ny=y+dy[n];
-			if(!(IN_GRID(nx,ny,elevations.width(),elevations.height())
+			if(!(elevations.in_grid(nx,ny)
 					&& elevations(nx,ny)==elevations(x,y))) continue;
 			edge.push(grid_cell(nx,ny));
 		}
@@ -116,7 +116,7 @@ int label_this(int x, int y, const float target_elevation,
 		if(elevations(x,y)!=target_elevation || groups(x,y)!=-1) continue;
 		groups(x,y)=label;
 		for(int n=1;n<=8;n++)
-			if(IN_GRID(x+dx[n],y+dy[n],groups.width(),groups.height()))
+			if(groups.in_grid(x+dx[n],y+dy[n]))
 				to_fill.push(grid_cell(x+dx[n],y+dy[n]));
 	}
 
@@ -140,12 +140,12 @@ int find_flat_edges(std::vector<grid_cell> &low_edges, std::vector<grid_cell> &h
 				nx=x+dx[n];
 				ny=y+dy[n];
 
-				if(!IN_GRID(nx,ny,flowdirs.width(),flowdirs.height())) continue;
+				if(!flowdirs.in_grid(nx,ny)) continue;
 				if(flowdirs(nx,ny)==flowdirs.no_data) continue;
 
 				if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW
 							&& elevations(nx,ny)==elevations(x,y) 
-							&& INTERIOR_GRID(nx,ny,flowdirs.width(),flowdirs.height())){
+							&& flowdirs.interior_grid(nx,ny)){
 					plow_edges.push_back(grid_cell(x,y));
 					group_number+=label_this(x, y, elevations(x,y), group_number, groups, elevations);
 					break;

@@ -81,7 +81,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(!elevations.in_grid(nx,ny)) continue;
 			if(closed(nx,ny)) 
 				continue;
 

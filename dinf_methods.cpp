@@ -88,7 +88,7 @@ void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, float &pl
 /*//TODO: Debugging code used for checking for loops. Since loops should not occur in the output of the production code, this is not needed.
 bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
 	int nh,nl;
-	if(!IN_GRID(c2x, c2y, flowdirs.width(), flowdirs.height()) || flowdirs(c2x,c2y)==flowdirs.no_data || flowdirs(c2x,c2y)==NO_FLOW)
+	if(! flowdirs.in_grid(c2x, c2y) || flowdirs(c2x,c2y)==flowdirs.no_data || flowdirs(c2x,c2y)==NO_FLOW)
 		return false;
 	where_do_i_flow(flowdirs(c2x,c2y),nh,nl);
 	if(n==dinf_d8_inverse[nh] || (nl!=-1 && n==dinf_d8_inverse[nl])){
@@ -139,9 +139,9 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				nlx=x+dinf_dx[n_low];
 				nly=y+dinf_dy[n_low];
 			}
-			if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data )
+			if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data )
 				dependency(nlx,nly)++;
-			if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data )
+			if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data )
 				dependency(nhx,nhy)++;
 		}
 	}
@@ -185,15 +185,15 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 		float phigh,plow;
 		area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
-		if(IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()))
+		if(flowdirs.in_grid(nhx,nhy))
 			area(nhx,nhy)+=area(c.x,c.y)*phigh;
-		if(n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()))
+		if(n_low!=-1 && flowdirs.in_grid(nlx,nly))
 			area(nlx,nly)+=area(c.x,c.y)*plow;
 
-		if( n_low!=-1 && IN_GRID(nlx,nly,flowdirs.width(),flowdirs.height()) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
+		if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
 			sources.push(grid_cell(nlx,nly));
 
-		if( IN_GRID(nhx,nhy,flowdirs.width(),flowdirs.height()) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
+		if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
 			sources.push(grid_cell(nhx,nhy));
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));

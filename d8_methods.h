@@ -22,7 +22,7 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	T minimum_elevation=elevations(x,y);
 	int flowdir=NO_FLOW;
 
-	if (EDGE_GRID(x,y,elevations.width(),elevations.height())){
+	if (elevations.edge_grid(x,y)){
 		if(x==0 && y==0)
 			return 2;
 		else if(x==0 && y==elevations.height()-1)

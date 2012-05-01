@@ -13,9 +13,6 @@
 //501
 //432
 
-#define IN_GRID(x,y,x_max,y_max) (x>=0 && y>=0 && x<x_max && y<y_max)
-#define INTERIOR_GRID(x,y,x_max,y_max) (x>=1 && y>=1 && x<x_max-1 && y<y_max-1)
-#define EDGE_GRID(x,y,x_max,y_max) (x==0 || y==0 || x==x_max-1 || y==y_max-1)
 #define d8_NO_DATA		-100
 #define dinf_NO_DATA	-100
 #define NO_FLOW			-1

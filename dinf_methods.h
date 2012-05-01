@@ -46,7 +46,7 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 
 	double e0,e1,e2,d1,d2,s1,s2,r,s;
 
-	if (EDGE_GRID(x,y,elevations.width(),elevations.height())){
+	if (elevations.edge_grid(x,y)){
 		if(x==0 && y==0)
 			return 3*M_PI/4;	//D8: 2
 		else if(x==0 && y==elevations.height()-1)
