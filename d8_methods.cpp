@@ -138,12 +138,16 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, float &slope, float &aspect){
+inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, float &slope, float &aspect, float &curvature){
 //Slope derived from ArcGIS help at:
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
 //Cells are identified as
 //Aspect derived from AcrGIS help at:
 //http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
+//Curvature dervied from ArcGIS help at:
+//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#//00q90000000t000000
+//http://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/
+
 //a b c
 //d e f
 //g h i
@@ -170,6 +174,8 @@ inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, floa
 	float dzdx=( (c+2*f+i) - (a+2*d+g)) / 8; //(8*x_cell_size);
 	float dzdy=( (g+2*h+i) - (a+2*b+c)) / 8; //(8*y_cell_size);
 	slope=sqrt(dzdx*dzdx+dzdy*dzdy);
+
+
 	aspect=180.0/M_PI*atan2(dzdy,-dzdx);
 	if(aspect<0)
 		aspect=90-aspect;
@@ -179,6 +185,13 @@ inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, floa
 		aspect=90.0-aspect;
 	if(slope==0)
 		aspect=-1;	//Special value denoting a flat
+
+//Z1 Z2 Z3
+//Z4 Z5 Z6
+//Z7 Z8 Z9
+	float D=( (d+f)/2 - e) / elevations.cellsize;	//D = [(Z4 + Z6) /2 - Z5] / L2
+	float E=( (b+h)/2 - e) / elevations.cellsize;	//E = [(Z2 + Z8) /2 - Z5] / L2
+	curvature=-2*(D+E)*100;
 }
 
 
@@ -199,8 +212,8 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 				slopes(x,y)=slopes.no_data;
 				continue;
 			}
-			float rise_over_run,aspect;
-			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect);
+			float rise_over_run,aspect,curvature;
+			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
 			switch(slope_type){
 				case SLOPE_RISERUN:
 					slopes(x,y)=rise_over_run;
@@ -239,9 +252,38 @@ void d8_aspect(const float_2d &elevations, float_2d &aspects){
 				aspects(x,y)=aspects.no_data;
 				continue;
 			}
-			float rise_over_run,aspect;
-			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect);
+			float rise_over_run,aspect,curvature;
+			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
 			aspects(x,y)=aspect;
+		}
+	}
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+}
+
+
+
+
+
+void d8_curvature(const float_2d &elevations, float_2d &curvatures){
+	diagnostic_arg("The curvatures matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic("Setting up the curvatures matrix...");
+	curvatures.resize(elevations.width(),elevations.height());
+	curvatures.no_data=-2;
+	diagnostic("succeeded.\n");
+
+	diagnostic("Calculating curvatures...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++){
+			if(elevations(x,y)==elevations.no_data){
+				curvatures(x,y)=curvatures.no_data;
+				continue;
+			}
+			float rise_over_run,aspect,curvature;
+			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
+			curvatures(x,y)=curvature;
 		}
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
