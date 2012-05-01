@@ -14,6 +14,7 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 void d8_upslope_area(const char_2d &flowdirs, int_2d &area);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=SLOPE_RISERUN);
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
+void d8_curvature(const float_2d &elevations, float_2d &curvatures);
 
 //234
 //105
