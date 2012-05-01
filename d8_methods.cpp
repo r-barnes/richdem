@@ -138,10 +138,12 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-inline float d8_slope_helper(const float_2d &elevations, int x0, int y0){
-//Derived from ArcGIS help at:
+inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, float &slope, float &aspect){
+//Slope derived from ArcGIS help at:
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
 //Cells are identified as
+//Aspect derived from AcrGIS help at:
+//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
 //a b c
 //d e f
 //g h i
@@ -167,17 +169,21 @@ inline float d8_slope_helper(const float_2d &elevations, int x0, int y0){
 	//TODO: Could use actual cell sizes below
 	float dzdx=( (c+2*f+i) - (a+2*d+g)) / 8; //(8*x_cell_size);
 	float dzdy=( (g+2*h+i) - (a+2*b+c)) / 8; //(8*y_cell_size);
-	return sqrt(dzdx*dzdx+dzdy*dzdy);
+	slope=sqrt(dzdx*dzdx+dzdy*dzdy);
+	aspect=180.0/M_PI*atan2(dzdy,-dzdx);
+	if(aspect<0)
+		aspect=90-aspect;
+	else if(aspect>90.0)
+		aspect=360.0-aspect+90.0;
+	else
+		aspect=90.0-aspect;
 }
 
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
-	diagnostic("Resizing slope matrix...");
+	diagnostic("Setting up the slope matrix...");
 	slopes.resize(elevations.width(),elevations.height());
-	diagnostic("succeeded.\n");
-
-	diagnostic("Setting no_data value on slope matrix...");
 	slopes.no_data=-1;
 	diagnostic("succeeded.\n");
 
@@ -191,7 +197,8 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 				slopes(x,y)=slopes.no_data;
 				continue;
 			}
-			float rise_over_run=d8_slope_helper(elevations,x,y);
+			float rise_over_run,aspect;
+			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect);
 			switch(slope_type){
 				case SLOPE_RISERUN:
 					slopes(x,y)=rise_over_run;
@@ -206,6 +213,33 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 					slopes(x,y)=atan(rise_over_run)*180/M_PI;
 					break;
 			}
+		}
+	}
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+}
+
+
+
+void d8_aspect(const float_2d &elevations, float_2d &aspects){
+	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic("Setting up the aspects matrix...");
+	aspects.resize(elevations.width(),elevations.height());
+	aspects.no_data=-1;
+	diagnostic("succeeded.\n");
+
+	diagnostic("Calculating aspects...\n");
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++){
+			if(elevations(x,y)==elevations.no_data){
+				aspects(x,y)=aspects.no_data;
+				continue;
+			}
+			float rise_over_run,aspect;
+			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect);
+			aspects(x,y)=aspect;
 		}
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
