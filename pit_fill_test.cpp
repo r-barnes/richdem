@@ -113,7 +113,7 @@ void pit_fill_wang(float_2d &elevations){
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(!elevations.in_grid(nx,ny)) continue;
 			if( !(closed(nx,ny)>0) ){
 				elevations(nx,ny)=MAX(elevations(nx,ny),c.z);
 				open.push(grid_cellz(nx,ny,elevations(nx,ny) ));
@@ -158,7 +158,7 @@ void pit_fill_wangND(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if( !(closed(nx,ny)>0) ){
 					if(elevations(nx,ny)==elevations.no_data)
 						nd_cells.push(grid_cell(nx,ny));
@@ -176,7 +176,7 @@ void pit_fill_wangND(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if( !(closed(nx,ny)>0) ){
 					if(elevations(nx,ny)==elevations.no_data)
 						nd_cells.push(grid_cell(nx,ny));
@@ -263,7 +263,7 @@ void pit_fill_barneslehman(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)) continue;
 				closed(nx,ny)=true;
 				if(elevations(nx,ny)<=c.z){
@@ -283,7 +283,7 @@ void pit_fill_barneslehman(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)) continue;
 				closed(nx,ny)=true;
 				if(elevations(nx,ny)<=c.z){
@@ -357,7 +357,7 @@ void pit_fill_barnes1(float_2d &elevations){
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(!elevations.in_grid(nx,ny)) continue;
 			if(closed(nx,ny)) 
 				continue;
 
@@ -395,7 +395,7 @@ void flood_barnes1b(int x, int y, const float_2d &elevations, char_2d &closed, s
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(!elevations.in_grid(nx,ny)) continue;
 			if(closed(nx,ny)>0) continue;
 
 			closed(nx,ny)=1;
@@ -433,7 +433,7 @@ void pit_fill_barnes1b(float_2d &elevations){
 		for(int n=1;n<=8;n++){
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
-			if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+			if(!elevations.in_grid(nx,ny)) continue;
 			if(closed(nx,ny)>0)
 				continue;
 			else if(elevations(nx,ny)>elevations(c.x,c.y)){
@@ -485,7 +485,7 @@ void pit_fill_barnes2(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)>0) continue;
 
 				closed(nx,ny)=1;
@@ -503,7 +503,7 @@ void pit_fill_barnes2(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)>0) continue;
 
 				if(elevations(nx,ny)<c.z)
@@ -526,7 +526,7 @@ void pit_fill_barnes2(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)>0) continue;
 				closed(nx,ny)=1;
 				if(elevations(nx,ny)>elevations(c.x,c.y))
@@ -583,7 +583,7 @@ void pit_fill_barnes3(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)!=OPEN) continue;
 
 				closed(nx,ny)=QUEUED;
@@ -601,7 +601,7 @@ void pit_fill_barnes3(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)!=OPEN || c.z>=info(nx,ny))
 					continue;
 				else if(elevations(nx,ny)<c.z){
@@ -625,7 +625,7 @@ void pit_fill_barnes3(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)!=OPEN) continue;
 
 				closed(nx,ny)=QUEUED;
@@ -691,7 +691,7 @@ void pit_fill_barnes4(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)<PITQUEUED) continue;
 
 				if(elevations(nx,ny)<=c.z){
@@ -712,7 +712,7 @@ void pit_fill_barnes4(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)<CLIMBQUEUED || c.z>=info(nx,ny))
 					continue;
 				else if(elevations(nx,ny)<c.z){
@@ -737,7 +737,7 @@ void pit_fill_barnes4(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)<OPENQUEUED) continue;
 
 				if(elevations(nx,ny)>c.z){
@@ -798,7 +798,7 @@ void pit_fill_barnes5(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)!=OPEN) continue;
 
 				closed(nx,ny)=QUEUED;
@@ -817,7 +817,7 @@ void pit_fill_barnes5(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)==CLOSED) continue;
 				if(closed(nx,ny)==QUEUED && c.z<=info(nx,ny)) continue;
 
@@ -842,7 +842,7 @@ void pit_fill_barnes5(float_2d &elevations){
 			for(int n=1;n<=8;n++){
 				int nx=c.x+dx[n];
 				int ny=c.y+dy[n];
-				if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(nx,ny)) continue;
 				if(closed(nx,ny)!=OPEN) continue;
 
 				closed(nx,ny)=QUEUED;
@@ -915,7 +915,7 @@ void pit_fill_barnes6(float_2d &elevations){
 				for(int n=1;n<=8;n++){
 					int nx=c.x+dx[n];
 					int ny=c.y+dy[n];
-					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(!elevations.in_grid(nx,ny)) continue;
 					if(closed(nx,ny)!=OPEN) continue;
 
 					closed(nx,ny)=QUEUED;
@@ -934,7 +934,7 @@ void pit_fill_barnes6(float_2d &elevations){
 				for(int n=1;n<=8;n++){
 					int nx=c.x+dx[n];
 					int ny=c.y+dy[n];
-					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(!elevations.in_grid(nx,ny)) continue;
 					if(closed(nx,ny)!=OPEN || c.z>=info(nx,ny))
 						continue;
 					else if(elevations(nx,ny)<c.z){
@@ -966,7 +966,7 @@ void pit_fill_barnes6(float_2d &elevations){
 				for(int n=1;n<=8;n++){
 					int nx=c.x+dx[n];
 					int ny=c.y+dy[n];
-					if(!IN_GRID(nx,ny,elevations.width(),elevations.height())) continue;
+					if(!elevations.in_grid(nx,ny)) continue;
 					if(closed(nx,ny)!=OPEN) continue;
 
 					closed(nx,ny)=QUEUED;

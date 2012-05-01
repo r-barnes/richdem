@@ -79,7 +79,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 				continue;
 			}
 			for(int n=1;n<=8;n++)
-				if(!IN_GRID(x+dx[n],y+dy[n],flowdirs.width(),flowdirs.height()))
+				if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
 					continue;
 				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
 					continue;
@@ -117,7 +117,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 		area(c.x,c.y)=1;
 		for(int n=1;n<=8;n++){
-			if(!IN_GRID(c.x+dx[n],c.y+dy[n],flowdirs.width(),flowdirs.height()))
+			if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
 				continue;
 			if(flowdirs(c.x+dx[n],c.y+dy[n])!=NO_FLOW && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])])
 				area(c.x,c.y)+=area(c.x+dx[n],c.y+dy[n]);
@@ -125,7 +125,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 		if(flowdirs(c.x,c.y)!=NO_FLOW){
 			int nx=c.x+dx[flowdirs(c.x,c.y)];
 			int ny=c.y+dy[flowdirs(c.x,c.y)];
-			if( IN_GRID(nx,ny,flowdirs.width(),flowdirs.height()) && area(nx,ny)!=area.no_data && (--dependency(nx,ny))==0)
+			if( flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data && (--dependency(nx,ny))==0)
 				sources.push(grid_cell(nx,ny));
 		}
 	}
@@ -153,13 +153,13 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
-			if(elevations(x,y)==elevations.no_data || EDGE_GRID(x,y,elevations.width(),elevations.height())){
+			if(elevations(x,y)==elevations.no_data || elevations.edge_grid(x,y)){
 				slopes(x,y)=slopes.no_data;
 				continue;
 			}
 			float rise_over_run=0;
 			for(int n=1;n<=8;n++){
-				if(!IN_GRID(x+dx[n],y+dy[n],elevations.width(),elevations.height())) continue;
+				if(!elevations.in_grid(x+dx[n],y+dy[n])) continue;
 				float ror_temp=abs(elevations(x,y)-elevations(x+dx[n],y+dy[n]))/dr[n];
 				rise_over_run=MAX(rise_over_run,ror_temp);
 			}
