@@ -177,6 +177,8 @@ inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, floa
 		aspect=360.0-aspect+90.0;
 	else
 		aspect=90.0-aspect;
+	if(slope==0)
+		aspect=-1;	//Special value denoting a flat
 }
 
 
@@ -224,7 +226,7 @@ void d8_aspect(const float_2d &elevations, float_2d &aspects){
 	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Setting up the aspects matrix...");
 	aspects.resize(elevations.width(),elevations.height());
-	aspects.no_data=-1;
+	aspects.no_data=-2;
 	diagnostic("succeeded.\n");
 
 	diagnostic("Calculating aspects...\n");
