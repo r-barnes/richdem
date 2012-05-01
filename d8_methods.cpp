@@ -137,6 +137,40 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
+
+inline float d8_slope_helper(const float_2d &elevations, int x0, int y0){
+//Derived from ArcGIS help at:
+//http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
+//Cells are identified as
+//a b c
+//d e f
+//g h i
+	float a,b,c,d,e,f,g,h,i;
+	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
+	if(x0-1>0 && y0-1>0)                                    a=elevations(x0-1,y0-1);
+	if(x0-1>0)                                              d=elevations(x0-1,y0);
+	if(x0-1>0 && y0+1<elevations.height())                  g=elevations(x0-1,y0+1);
+	if(y0-1>0)                                              b=elevations(x0,y0-1);
+	if(y0+1<elevations.height())                            h=elevations(x0,y0+1);
+	if(x0+1<elevations.width() && y0-1>0)                   c=elevations(x0+1,y0-1);
+	if(x0+1<elevations.width())                             f=elevations(x0+1,y0);
+	if(x0+1<elevations.width() && y0+1<elevations.height()) i=elevations(x0+1,y0+1);
+	if(a==elevations.no_data) a=e;
+	if(b==elevations.no_data) b=e;
+	if(c==elevations.no_data) c=e;
+	if(d==elevations.no_data) d=e;
+	if(f==elevations.no_data) f=e;
+	if(g==elevations.no_data) g=e;
+	if(h==elevations.no_data) h=e;
+	if(i==elevations.no_data) i=e;
+
+	//TODO: Could use actual cell sizes below
+	float dzdx=( (c+2*f+i) - (a+2*d+g)) / 8; //(8*x_cell_size);
+	float dzdy=( (g+2*h+i) - (a+2*b+c)) / 8; //(8*y_cell_size);
+	return sqrt(dzdx*dzdx+dzdy*dzdy);
+}
+
+
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
 	diagnostic("Resizing slope matrix...");
@@ -153,16 +187,11 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	for(int x=0;x<elevations.width();x++){
 		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
-			if(elevations(x,y)==elevations.no_data || elevations.edge_grid(x,y)){
+			if(elevations(x,y)==elevations.no_data){
 				slopes(x,y)=slopes.no_data;
 				continue;
 			}
-			float rise_over_run=0;
-			for(int n=1;n<=8;n++){
-				if(!elevations.in_grid(x+dx[n],y+dy[n])) continue;
-				float ror_temp=abs(elevations(x,y)-elevations(x+dx[n],y+dy[n]))/dr[n];
-				rise_over_run=MAX(rise_over_run,ror_temp);
-			}
+			float rise_over_run=d8_slope_helper(elevations,x,y);
 			switch(slope_type){
 				case SLOPE_RISERUN:
 					slopes(x,y)=rise_over_run;
