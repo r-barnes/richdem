@@ -13,7 +13,7 @@ int load_ascii_data(const char filename[], float_2d &elevations);
 
 
 template <class T>
-int output_ascii_data(const std::string filename, const array2d<T> &output_grid, int precision=3){
+int output_ascii_data(const std::string filename, const array2d<T> &output_grid, int precision=8){
 	std::ofstream fout;
 	std::string outputsep=" ";
 	int output_type=OUTPUT_DEM;
