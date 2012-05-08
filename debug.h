@@ -65,12 +65,12 @@ void array2d<T>::print_block(std::ostream& out, int minx, int maxx, int miny, in
 	for(int y=((miny>0)?miny:0);y<=maxy && y<height();y++){
 		out<<std::setw(4)<<y<<"\t";
 		for(int x=((minx>0)?minx:0);x<=maxx && x<width();x++)
-			if(boost::numeric::ublas::matrix<T>::operator()(x,y)==no_data)
+			if(operator()(x,y)==no_data)
 				out<<std::setw(swidth)<<"-"<<" ";
 			else if(sizeof(T)==1)	//TODO: An ugly way of detecting chars
-				out<<std::setw(swidth)<<(int)boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
+				out<<std::setw(swidth)<<(int)operator()(x,y)<<" ";
 			else
-				out<<std::setw(swidth)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
+				out<<std::setw(swidth)<<operator()(x,y)<<" ";
 		out<<std::endl;
 	}
 }
@@ -86,7 +86,7 @@ void array2d<T>::surroundings(int x0, int y0, int precision) const{
 	std::cout<<"Surroundings of ("<<x0<<","<<y0<<")"<<std::endl;
 	for(int y=MAX(y0-1,0);y<=MIN(y0+1,height()-1);y++){
 		for(int x=MAX(x0-1,0);x<=MIN(x0+1,width()-1);x++)
-			std::cout<<std::setw(4)<<boost::numeric::ublas::matrix<T>::operator()(x,y)<<" ";
+			std::cout<<std::setw(4)<<operator()(x,y)<<" ";
 		std::cout<<std::endl;
 	}
 	std::cout<<std::endl;

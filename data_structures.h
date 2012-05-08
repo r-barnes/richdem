@@ -34,6 +34,9 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		inline bool in_grid(int x, int y) const {return (x>=0 && y>=0 && x<width() && y<height());}
 		inline bool interior_grid(int x, int y) const {return (x>=1 && y>=1 && x<width()-1 && y<height()-1);}
 		inline bool edge_grid(int x, int y) const {return (x==0 || y==0 || x==width()-1 || y==height()-1);}
+		T& operator()(int x, int y) {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+		const T& operator()(int x, int y) const {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+		void resize(int width, int height, bool preserve=false) {boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
 };
 
 template <class T>
@@ -53,7 +56,7 @@ void array2d<T>::copyprops (const array2d<U> &copyfrom){
 	yllcorner=copyfrom.yllcorner;
 	data_cells=copyfrom.data_cells;
 	no_data=copyfrom.no_data;
-	boost::numeric::ublas::matrix<T>::resize(copyfrom.width(),copyfrom.height());
+	resize(copyfrom.width(),copyfrom.height());
 }
 
 template <class T>
@@ -66,7 +69,7 @@ array2d<T>::array2d(const array2d<U> &copyfrom, bool do_resize){
 	data_cells=copyfrom.data_cells;
 	no_data=copyfrom.no_data;
 	if(do_resize)
-		boost::numeric::ublas::matrix<T>::resize(copyfrom.width(),copyfrom.height());
+		resize(copyfrom.width(),copyfrom.height());
 }
 
 template <class T>
@@ -74,7 +77,7 @@ void array2d<T>::init(T val){
 	#pragma omp parallel for
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++)
-		boost::numeric::ublas::matrix<T>::operator()(x,y)=val;
+		operator()(x,y)=val;
 }
 
 template <> inline long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
@@ -103,7 +106,7 @@ bool array2d<T>::operator==(const array2d<T> &other) const {
 		return false; 
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++)
-		if(boost::numeric::ublas::matrix<T>::operator()(x,y)!=other(x,y))
+		if(operator()(x,y)!=other(x,y))
 			return false;
 	return true;
 }
@@ -116,7 +119,7 @@ T array2d<T>::max() const {
 	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		temp=boost::numeric::ublas::matrix<T>::operator()(x,y);
+		temp=operator()(x,y);
 		if(temp==no_data) continue;
 		if(init && temp>maxval)
 			maxval=temp;
@@ -136,7 +139,7 @@ T array2d<T>::min() const {
 	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		temp=boost::numeric::ublas::matrix<T>::operator()(x,y);
+		temp=operator()(x,y);
 		if(temp==no_data) continue;
 		if(init && temp<minval)
 			minval=temp;
