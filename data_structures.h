@@ -60,15 +60,10 @@ void array2d<T>::copyprops (const array2d<U> &copyfrom){
 }
 
 template <class T>
-template <class U>	//TODO: Merge this function with copyprops, above
+template <class U>
 array2d<T>::array2d(const array2d<U> &copyfrom){
 	array2d();
-	cellsize=copyfrom.cellsize;
-	xllcorner=copyfrom.xllcorner;
-	yllcorner=copyfrom.yllcorner;
-	data_cells=copyfrom.data_cells;
-	no_data=copyfrom.no_data;
-	resize(copyfrom.width(),copyfrom.height());
+	copyprops(copyfrom);
 }
 
 template <class T>
