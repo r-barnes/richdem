@@ -282,8 +282,8 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",
 				2*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
 	diagnostic("Setting up incrementation matricies...");
-	int_2d towards(elevations,true);
-	int_2d away(elevations,true);
+	int_2d towards(elevations);
+	int_2d away(elevations);
 	towards.init(0);
 	away.init(0);
 	diagnostic("succeeded!\n");
