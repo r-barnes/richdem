@@ -38,7 +38,7 @@
 //Returns:
 //		None
 template <class T, class U>
-void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
+static void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
 			int_2d &incrementations, std::deque<grid_cell> edges, 
 			std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
@@ -112,7 +112,7 @@ void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
 //Returns:
 //		None
 template <class T>
-void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &away,
+static void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &away,
 			int_2d &flat_resolution_mask, std::deque<grid_cell> &edge,
 			const std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
@@ -164,7 +164,7 @@ void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &awa
 //Returns:
 //		None
 template<class T>
-void label_this(int x, int y, const int label, int_2d &labels, const array2d<T> &elevations){
+static void label_this(int x, int y, const int label, int_2d &labels, const array2d<T> &elevations){
 	std::queue<grid_cell> to_fill;
 	to_fill.push(grid_cell(x,y));
 	const T target_elevation=elevations(x,y);
@@ -198,7 +198,7 @@ void label_this(int x, int y, const int label, int_2d &labels, const array2d<T> 
 //Returns:
 //		None
 template <class T, class U>
-void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges,
+static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges,
 			const array2d<U> &flowdirs, const array2d<T> &elevations){
 	int nx,ny;
 	diagnostic("\r\033[2KSearching for flats...\n");
@@ -307,7 +307,8 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 //Procedure:	flat_mask
 //Description:
 //		Searches through a flowdirs array to find cells with undefined flow
-//		directions. These are marked as such in a boolean array
+//		directions. These are marked as such in a boolean array.
+//		Primarily for use in debugging (TODO).
 //Inputs:
 //		flowdirs	A 2D array of flow directions (char or float acceptable)
 //Requirements:
