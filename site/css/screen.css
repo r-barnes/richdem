@@ -1,0 +1,281 @@
+/* UNIVERSITY OF MINNESOTA WEB TEMPLATE RESET STYLESHEET */
+/* AUGUST 2010 : UNIVERSITY RELATIONS */
+/* v5 050319  */
+
+/* RESET */
+html {background-color:#FFFFFF;color:#000000;}
+body,div,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,p,th,td {margin:0;padding:0;}
+table {border-collapse:collapse;border-spacing:0;}
+fieldset,img {border:0;}
+sup {vertical-align:text-top;}
+sub {vertical-align:text-bottom;}
+
+/* FONTS */
+body {font:13px/1.231 arial,helvetica,clean,sans-serif;color:#000000;line-height:18px; position: relative;}
+table {font-size:inherit;font:100%;}
+th {font-style:normal;font-weight:normal;text-align:left;}
+code {font-family:monospace;line-height:100%;}
+input, textarea, select, option {font-family:arial,helvetica,clean,sans-serif;font-size:inherit;font-weight:inherit;}
+h1,h2,h3,h4,h5,h6 {font-size:100%;font-weight:normal;}
+em {font-style:italic;font-weight:normal;}
+strong {font-style:normal;font-weight:bold;}
+address,caption,cite,code,dfn,th,var {font-style:normal;font-weight:normal;}
+
+/* FLOATS */
+.left {float:left;}
+.right {float:right;}
+.clearabove {line-height:0;height:0;font-size:0;clear:both;} /* Use on a clearing element following a float */
+
+/* HIDE */
+.none {display:none;}
+.hidden {visibility:hidden;overflow:hidden;width:0;height:0;}
+
+/* END RESET */
+
+
+
+/* TEXT */
+
+/* Yahoo User Interface (YUI) FONT SIZING CHART: 10px=77% 11px=85% 12px=93% 13px=100% 14px=108% 15px=116% 16px=123.1% 17px=131% 18px=138.5% 19px=146.5% 20px=153.9% 21px=161.6% 22px=167% 23px=174% 24px=182% 25px=189% 26px=197% 
+Find out more about YUI at http://developer.yahoo.com/yui/ */
+
+/* CENTER CONTAINER -- Centers the page in the browser */
+body.center {margin-left:auto;margin-right:auto;width:960px;}
+
+/* LINKS */
+a {color:#7a0019;}
+a:link {color:#7a0019;}
+a:visited {color:#7a0019;}
+a:hover {color:#666699;}
+a:active {color:#7a0019;}
+
+
+/* HEADINGS *//* Basic Headline Set -- Adjust font sizes based on YUI chart above to maintain consistency. */
+h1 { font-size:161%; color:#7a0019; margin: 10px 0 10px 0; line-height: 26px;}
+h2 {font-size:138.5%;color:#7a0019; margin: 12px 0 10px 0; line-height: 22px;}
+h3 { font-size:108%; color:#000000; margin: 12px 0 10px 0; line-height: 22px; font-style: italic; font-weight: bold; }
+h4 {font-size:100%;color:#900021;text-transform:uppercase;}
+h5 {font-size:93%;}
+h6 {font-size:77%;}
+
+/* Basic Text Set */
+p,ol, ul {font-size:97%;margin:0 0 .5em 0;}
+
+/* List styles - edit as needed */
+ul {list-style-type: disc; margin:0 10px 0 10px;}
+ol {list-style-type:decimal;margin:0 10px 0 10px;}
+
+/* END TEXT */
+
+/* TEMPLATE */
+
+/*** HEADER, CAMPUS LINKS, UOFM HEADER, SEARCH BUTTONS, AND SEARCH BOX CSS ALL THANKS TO KIM DOBERSTEIN. THE STYLES DON'T USE THE GRID SYSTEM, BUT THE SEARCH BUTTON ALIGNMENT WORKS AND THE CSS NOW VALIDATES ***/
+
+/************************** HEADER ***********************************/
+
+#header{line-height:18px;color:#000000;background:#ffffff;}
+#header ul, #header li, #header p, #header div{font-size:11px;}
+
+
+/******* Hide skip links *******************/
+#skipLinks{ position:absolute; left:-9999px }
+
+/*************************** CAMPUS LINKS ****************************/
+#campus_links{text-align:right; background-color:#ffffff; padding-right:18px; line-height:22px;}
+
+#campus_links a{color:#7a0019; /*Standard Maroon*/}
+#campus_links a:hover{color:#666666; /*Gray*/}
+
+#campus_links ul, #campus_links li, #campus_links p{display:inline;}
+#campus_links ul{margin:0;padding:0}
+#campus_links li{margin-left:10px;}
+
+
+/*************************** UOFM HEADER (MAROON BAR) ******************/
+
+#headerUofM{position:relative;background:#7a0019 url(../imgs/umn_theme/bg_header.gif) repeat-x;height:63px;}
+
+#logo_uofm{background:url(../imgs/umn_theme/logo_uofm_D2D.gif) no-repeat;height:62px;width:320px;}
+
+#logo_uofm a,#logo_uofm a:hover{/*this should leave the link - but push the words into the hidden overflow */
+display:block;height:62px; /*Must be same height as #logo_uofm*/width:0;padding-left:320px;/*Must be same as #logo_uofm width */overflow:hidden;}
+
+
+/************************ SEARCH BUTTONS (MYU AND ONE STOP) *****************/
+#search_area{position:absolute;right:0;top:0;text-align:right;}
+
+#search_nav{position:absolute;right:10px;text-align:right;top:5px;}
+
+#search_nav a{display:block;float:right;width:0px;height:25px;padding-left:73px;overflow:hidden;margin-left:5px;}
+
+#btn_myu{background:url(../imgs/umn_theme/btn_myu.gif);}
+
+#btn_onestop{background:url(../imgs/umn_theme/btn_onestop.gif);}
+
+
+/******************* SEARCH BOX ************************************/
+
+#gsearch{background: url(../imgs/umn_theme/search_field.gif) no-repeat; height:22px ;width:269px;position:relative;top:35px;}
+
+#gsearch label{position:absolute; left:-9999px}
+
+#search_field{border:0;color:#666666;width:200px;position:absolute;top:3px;left:15px;font-size:11px;color:#333;}
+
+
+/* For the print style sheet */
+.leftprint, .rightprint { display:none;}
+
+
+/* 960 GRID
+--------------------------------------------------------------------------------*/
+/* Change the background image to create various column separations on the page*/
+
+.container_12 { height: 100%; clear: both; border-bottom: 3px solid #e4e4e4; margin-left: auto; margin-right: auto; float: left; width: 100%; }
+
+#bg264 { background-color: #FFFFFF; background-repeat: repeat-y; float: left; background-image: url(../imgs/umn_theme/bg_2.6.4.gif); }
+#bg273 { background-color: #FFFFFF; background-image: url(../imgs/umn_theme/bg_2.7.3.gif); background-repeat: repeat-y; float: left; }
+#bg354 { background-color: #FFFFFF; background-image: url(../imgs/umn_theme/bg_3.5.4.gif); background-repeat: repeat-y; float: left; }
+
+
+.grid_1,.grid_2,.grid_3,.grid_4,.grid_5,.grid_6,.grid_7,.grid_8,.grid_9,.grid_10,.grid_11,.grid_12 {display: inline;float: left;}
+
+.container_12 .grid_1 {width: 80px;}
+.container_12 .grid_2 {width: 160px;}
+.container_12 .grid_3 {width: 240px;}
+.container_12 .grid_4 {width: 320px;}
+.container_12 .grid_5 {width: 400px;}
+.container_12 .grid_6 {width: 480px;}
+.container_12 .grid_7 {width: 560px;}
+.container_12 .grid_8 {width: 640px;}
+.container_12 .grid_9 {width: 720px;}
+.container_12 .grid_10 {width: 800px;}
+.container_12 .grid_11 {width: 880px;}
+.container_12 .grid_12 {width: 960px;}
+
+
+.alpha {margin-left: 0;}
+.omega {margin-right: 0;}
+	
+/* Removes the space around the header graphic */
+#nospace {margin: 0;}
+.nopadding { padding: 0; }
+
+
+/* BODY CONTENT
+--------------------------------------------------------------------------------*/
+
+/* Adds padding to text in columns so that text doesn't span the full width of the grid column*/
+p,h1,h2,h3 {padding-left:10px; padding-right:10px;} 
+p {padding-bottom: 6px}
+
+/* Styles headings on the home page to be the same size as those on secondary pages. */
+h2.home {font-size:161%;}
+h3.home { font-size:138.5%; color:#7a0019; font-style: normal; font-weight: normal; }
+
+
+/* Styles for left navigation */
+#main_nav_2 {line-height: 25px; width: 160px;margin: 0;}
+#main_nav_3 { margin: 10px 20px 0 0; line-height: 25px; width: 220px; }
+ul.main_nav li {display:block; margin:2px 0 0 -30px;list-style:none;}
+ul.main_nav li a {color:#7a0019; text-decoration:none;}
+ul.main_nav li a:link {text-decoration:none; color:#7a0019;}
+ul.main_nav li a:visited {color:#900021;}
+ul.main_nav li a:hover { color:#362f2d; border-bottom: 1px solid #998675;}
+ul.main_nav li a:active {color:#362f2d;}
+
+.relatedlinks { font-size: 116%; font-weight: bold; margin-left: 0; margin-right:1px; padding-top:16px;}
+
+/* BREADCRUMBS */
+/* Use with template 2.6.4 */
+.breadcrumbs { padding-top: 2px; padding-bottom: 4px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #bbb7b0; }
+/* Use with template 2.7.3 */
+.crumb { padding-top: 4px; border: none 0; border-bottom: 3px solid #e4e4e4;border-right: 3px solid #e4e4e4; border-left: 3px solid #e4e4e4; background: #FFFFFF; }
+
+
+/* Removes link lines and other unsightly blemishes */
+.noline {text-decoration: none;}
+
+/*FOOTER*/
+
+#footer_inner { padding:5px 0 0 0; font-size: 90%; width:500px; background: #FFFFFF; }
+.copyright { float:left; margin-left: -30px; list-style:none;}
+
+#footer_right{ font-size: 90%; padding:5px 0 0 0; float: right; width: 460px; text-align: right; background: #FFFFFF; }
+ul.footer_links {float:right;padding-right: 10px; list-style:none;}
+ul.footer_links li { display:inline; padding-left: 10px; }
+ul.footer_links li a {color:#7a0019; text-decoration:none; border-bottom:1px solid #c2a9ae;}
+ul.footer_links li a:link {color:#7a0019;}
+ul.footer_links li a:visited {color:#900021;}
+ul.footer_links li a:hover { color:#666666; border-bottom: 1px solid #666666; }
+ul.footer_links li a:active {color:#666666;}
+
+
+/* =CLEAR FLOATED ELEMENTS
+--------------------------------------------------------------------------------*/
+
+/* http://sonspring.com/journal/clearing-floats */
+
+html body * span.clear,
+html body * div.clear,
+html body * li.clear,
+html body * dd.clear
+{background: none;border: 0;clear: both;display: block;float: none;font-size: 0;list-style: none;margin: 0;padding: 0;overflow: hidden;visibility: hidden;width: 0;height: 0;}
+
+/* http://www.positioniseverything.net/easyclearing.html: See print out of this article. This fix should not be needed with overflow:auto added to the outer div */
+
+.clearfix:after {clear: both;content: '.';display: block;visibility: hidden;height: 0;}
+.clearfix {display: inline-block;}
+* html .clearfix {height: 1%;}
+
+.clearfix {display: block;}
+
+/* END TEMPLATE */
+
+/*OPTIONAL HORIZONTAL NAVIGATION*/
+#header_sub {behavior:url("../lib/htc/csshover2.htc");} /*Fix for IE's lack of support for :hover*/
+#header_sub {height:100%;line-height:30px;font-size:90%;color:#FFFFFF;text-align:right;background:#7A0019 url(../imgs/umn_theme/bg_header_sub.gif) top left repeat-x;border-top:1px solid #5b0013;border-bottom: 1px solid #5b0013;}
+#header_sub ul#header_sub_nav {margin:0 12px 0 0;display:inline;float:right; list-style:none;}
+#header_sub ul#header_sub_nav li.tl_menu {display:inline;float:left;position:relative;}
+#header_sub ul#header_sub_nav li.tl_menu a {display:block;color:#FFFFFF;font-weight:bold;padding:0 5px;text-decoration: none;}
+#header_sub ul#header_sub_nav li.tl_menu a:hover {color:#FFB71E;}
+
+
+/* DROP DOWN MENU FOR OPTIONAL HORIZONTAL NAVIGATION*/
+div.dd_menu_top { background:transparent url(../imgs/umn_theme/dd_menu_bottom.gif) bottom left no-repeat; width:144px;}
+ul.dd_menu {background:transparent url(../imgs/umn_theme/dd_menu_top.gif) top left no-repeat;text-align:center;line-height:15px;padding:10px 1px 0;margin-bottom:10px;margin-left:0px; margin-right:0; list-style:none;}
+.dd_last ul.dd_menu {background-image:url(../imgs/umn_theme/dd_menu_top_end.gif);}
+#header_sub ul#header_sub_nav li.tl_menu ul.dd_menu li {border-bottom:1px solid #fdd67b;}
+#header_sub ul#header_sub_nav li.tl_menu ul.dd_menu li a {width:142px;margin:0;padding:2px 0;color:#333333;font-weight:normal;}
+#header_sub ul#header_sub_nav li.tl_menu ul.dd_menu li a:hover {background-color:#E3E3E3;color:#333333;}
+#header_sub ul#header_sub_nav li.tl_menu div.dd_menu_top {position:absolute;left:-999em;top:25px;z-index:999;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div.dd_menu_top {visibility:visible;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div#nav_cat1 {left:-45px;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div#nav_cat2 {left:-18px;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div#nav_cat3 {left:-23px;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div#nav_cat4 {left:-30px;}
+#header_sub ul#header_sub_nav li.tl_menu:hover div#nav_cat5 {left:-55px;}
+
+
+
+/*UNIT NAME FOR OPTIONAL HORIZONTAL NAVIGATION*/
+.unit { display:inline; float:left; color:#FFDE7A; margin-left:10px; font-size:90%; }
+.unit a {color:#FFDE7A;text-decoration:none;}
+.unit a:hover {color:#FFFFFF;text-decoration:none;}
+.unit a:visited {color:#FFDE7A;text-decoration:none;}
+
+
+/*OPTIONAL UNIT FOOTER*/
+#unit_footer {font-size:90%;;border-bottom: 3px solid #e4e4e4;padding: 5px 0 0 0;line-height: 20px;width: 960px;}
+#unit_footer1 {font-size:90%;;border-bottom: 3px solid #e4e4e4;padding:5px 0 0 0;background-color: #e4e4e4;line-height: 20px;width: 960px;}
+#unit_footer2 {font-size:90%;;border-bottom: 3px solid #e4e4e4;padding:5px 0 0 0;background-color: #d4cfc7;line-height: 20px;width: 960px;}
+
+/* set the float to left for left-aligned links, or right for right-aligned links*/
+ul.unit_footer_links { float:right; padding-left: 10px; padding-right: 10px; }
+ul.unit_footer_links li { display:inline; padding: 5px; }
+ul.unit_footer_links li a {color:#7a0019;text-decoration: none;border-bottom: 1px solid #c2a9ae;}
+ul.unit_footer_links li a:link {color:#7a0019;}
+ul.unit_footer_links li a:visited {color:#900021;}
+ul.unit_footer_links li a:hover {color:#666666;}
+ul.unit_footer_links li a:active {color:#666666;}
+
+.acronym_border { border-bottom-style: none; }

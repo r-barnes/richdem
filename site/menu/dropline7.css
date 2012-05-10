@@ -1,0 +1,40 @@
+/* ================================================================ 
+This copyright notice must be untouched at all times.
+
+The original version of this stylesheet and the associated (x)html
+is available at http://www.cssplay.co.uk/pro_dropline7.html
+Copyright (c) 2005-2008 Stu Nicholls. All rights reserved.
+This stylesheet and the associated (x)html may be modified in any 
+way to fit your requirements.
+=================================================================== */
+
+#dropline {position:relative; height:36px;}
+
+#dropline a {font-family:"Arial", sans-serif;text-decoration:none; font-weight:bold; font-size:13px; color:#fff;}
+
+#dropline, #dropline ul {padding:0; margin:0; list-style:none; width:100%;}
+
+#dropline li {float:left; height:36px; margin-right:1px;line-height:36px;}
+#dropline li a {float:left; display:block; height:36px; padding:0 20px 0 10px;}
+#dropline li a.down {background:url('down.gif') no-repeat right center;}
+
+#dropline li a:hover {white-space:nowrap; color:#444;}
+#dropline li a.down:hover {white-space:nowrap; color:#444; background:url('down-over.gif') no-repeat right center;}
+
+#dropline li:hover > a {color:#CCCC30;}
+#dropline li:hover > a.down {color:#CCCC30; background:url('down-over.gif') no-repeat right center;}
+
+#dropline li ul {position:absolute; top:36px; left:-9999px; z-index:10; background:url('sub-back.png') left top;}
+#dropline li ul.floatRight li {float:right;}
+
+#dropline :hover ul,
+#dropline :hover ul :hover ul,
+#dropline :hover ul :hover ul :hover ul,
+#dropline :hover ul :hover ul :hover ul :hover ul,
+#dropline :hover ul :hover ul :hover ul :hover ul :hover ul {left:0; background:url('sub-back.png') left bottom;}
+
+#dropline :hover ul ul,
+#dropline :hover ul :hover ul ul,
+#dropline :hover ul :hover ul :hover ul ul,
+#dropline :hover ul :hover ul :hover ul :hover ul ul {left:-9999px; top:36px; background:transparent;}
+

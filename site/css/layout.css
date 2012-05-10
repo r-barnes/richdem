@@ -1,0 +1,31 @@
+/* CSS Document */
+body			{margin-top:0;}
+#metacontents	{width:960px;margin:0 auto 0 auto;background-color:#7A0019;}
+#header		{width:960px;height:85px;padding-top:5px;margin:0 auto 0 auto;/*background-color:white;opacity:0.7;*/}
+#menu		{width:960px;
+			background: background:url('menu/back.gif');
+			background: -moz-linear-gradient(top, #7A7A7A,black);
+			background: -webkit-gradient(linear, left top, left bottom, from(#7A7A7A), to(black));
+}
+#headimage	{height:200px;margin:0 auto 0 auto;width:100%}
+#contents	{width:950px;background-color:white;overflow:auto;margin-left:5px;}
+
+#leftbar	{float:left;width:190px;height:100%;padding:5px 0 15px 5px;text-align:center;}
+#rightbar   {float:right;width:164px;padding:5px 5px 15px 0;font-size:0.9em;text-align:center;}
+#main		{padding:5px 5px 15px 5px;overflow:auto;font-size:12pt;}
+
+#footer		{background:url('menu/back.gif');height:36px;padding:0 5px 0 5px;width:950px;
+			background: -moz-linear-gradient(top, #7A7A7A,black);
+			background: -webkit-gradient(linear, left top, left bottom, from(#7A7A7A), to(black));
+}
+
+/*Box Design*/
+.box		{margin-top:10px;-moz-border-radius:15px;-webkit-border-radius:15px;border-radius:15px}
+.box .header	{padding:0 15px 0 15px;overflow:auto;position:relative;-moz-border-radius:15px 15px 0 0;-webkit-border-radius:15px 15px 0 0;border-radius:15px 15px 0 0;overflow:visible;}
+.box .content	{padding:5px;overflow:auto;-moz-border-radius:0 0 15px 15px;-webkit-border-radius:0 0 15px 15px;border-radius:0 0 15px 15px;}
+
+/*Image Stuff*/
+.fci {margin:0 auto 0 auto;text-align:center;font-size:10pt;font-style:italic;padding:5px;}
+.fri {margin:0 auto 0 auto;text-align:center;font-size:10pt;float:right;font-style:italic;padding:5px;}
+.fli {margin:0 auto 0 auto;text-align:center;font-size:10pt;float:left;font-style:italic;padding:5px;}
+.fci table {margin:0 auto 0 auto;}

@@ -1,0 +1,60 @@
+/* UNIVERSITY OF MINNESOTA WEB TEMPLATE RESET STYLESHEET */
+/* AUGUST 2010 : UNIVERSITY RELATIONS */
+/* v5  */
+
+/* DO NOT MODIFY */
+/* RESET */
+html {background-color:#FFFFFF;color:#000000;}
+body,div,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,p,th,td {margin:0;padding:0;}
+table {border-collapse:collapse;border-spacing:0;}
+fieldset,img {border:0;}
+sup {vertical-align:text-top;}
+sub {vertical-align:text-bottom;}
+
+/* FONTS */
+body {font:13px/1.231 arial,helvetica,clean,sans-serif;}
+table {font-size:100%;}
+th {font-style:normal;font-weight:normal;text-align:left;}
+code {font-family:monospace;line-height:100%;}
+input, textarea, select, option {font-family:arial,helvetica,clean,sans-serif;font-size:inherit;font-weight:inherit;}
+h1,h2,h3,h4,h5,h6 {font-size:100%;font-weight:normal;}
+em {font-style:italic;font-weight:normal;}
+strong {font-style:normal;font-weight:bold;}
+address,caption,cite,code,dfn,th,var {font-style:normal;font-weight:normal;}
+
+/* FLOATS */
+.left {float:left;}
+.right {float:right;}
+.clearabove {line-height:0;height:0;font-size:0;clear:both;} /* Use on a clearing element following a float */
+
+/* HIDE */
+.none {display:none;}
+.hidden {visibility:hidden;overflow:hidden;width:0;height:0;}
+
+/* Yahoo User Interface (YUI) FONT SIZING CHART: 10px=77% 11px=85% 12px=93% 13px=100% 14px=108% 15px=116% 16px=123.1% 17px=131% 18px=138.5% 19px=146.5% 20px=153.9% 21px=161.6% 22px=167% 23px=174% 24px=182% 25px=189% 26px=197% 
+Find out more about YUI at http://developer.yahoo.com/yui/ */
+
+body { color:#000000; font-family: Arial, Helvetica, sans-serif; line-height:18px; position: relative; }
+
+
+/* LINKS */
+a {color:#7a0019;}
+a:link {color:#7a0019;}
+a:hover {color:#362f2d;}
+a:active {color:#362f2d;}
+a:visited {color:#900021;}
+
+/* HEADINGS *//* Basic Headline Set -- Adjust font sizes based on YUI chart above to maintain consistency. */
+h1 { font-size:161%; line-height: 26px; color:#7a0019; margin-bottom: 10px; margin-top: 10px; }
+h2 {font-size:138.5%;color:#7a0019;margin-bottom: 10px;line-height: 22px;margin-top: 12px;}
+h3 { font-size:108%; color:#000000; margin-bottom: 10px; line-height: 22px; margin-top: 12px; font-style: italic; font-weight: bold; }
+h4 {font-size:100%;color:#900021;text-transform:uppercase;}
+h5 {font-size:93%;}
+h6 {font-size:77%;}
+
+/* TEXT *//* Basic Text Set */
+p,ol, ul {font-size:97%;margin:0 0 .5em 0;}
+
+/* List styles - edit as needed */
+ul {list-style-type: disc; margin:0 5px 0px 5px;padding-bottom:10px;}
+ol {list-style-type:decimal;margin:0 5px 0px 5px;padding-bottom:10px;}
