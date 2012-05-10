@@ -1,3 +1,5 @@
+sizeof returns a result of type size_t, which varies from system to system. Using the iostream operators for output would likely eliminate warnings thrown by this. Otherwise, find some way to make things work with printf/fprintf
+
 The 'collapse' directive on the parallel for loop thing may be useful
 Look into uBLAS "release mode" (http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm)
 "http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm"
@@ -100,3 +102,16 @@ Although if that loop runs for 5000 iterations instead of 50, the accumulated er
 //TODO: Useful only for debugging
 int getc(const char_2d &m, int x, int y) { return m(x,y); }
 int getf(const float_2d &m, int x, int y) {	return m(x,y); }
+
+
+
+
+
+Consider Kahan in flow accumulation:
+I. Babuˇka. Numerical stability in mathematical analysis. Information Processing, 68:11–23, 1969.
+
+W. Kahan. Further remarks on reducing trunctation errors. Comm. ACM, 8:40, 1965.
+
+A. Neumaier. Rundungsfehleranalyse einiger Verfahren zur Summation endlicher Summen. Z. angew. Math. Mechanik, 54:39–51, 1974.
+
+T. Ogita, S. M. Rump, and S. Oishi. Accurate sum and dot products. SIAM, 2005. to appear.
