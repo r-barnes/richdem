@@ -71,16 +71,30 @@ def main():
 	#                                        [--] [--version] [-h] <Input DEM>
 
 	cmd = PROGPATH
+
 	if fill_depressions=='true':
 		cmd+=' -p'
+		if output_depression_filled_dem:
+			cmd+=' -l ' + output_depression_filled_dem
+
 	if use_dinf!='true':
 		cmd+=' -8 '
+
+	if output_flowdirs_before_flat_resolution:
+		cmd+=' -u ' + output_flowdirs_before_flat_resolution
+
+	if output_flowdirs_after_flat_resolution:
+		cmd+=' -f ' + output_flowdirs_after_flat_resolution
+
+	if output_flow_acculm:
+		cmd+=' -a ' + output_flow_acculm
+
 	arcpy.AddMessage("\nCommand Line: "+cmd)
-	#os.system(cmd)
-	#process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	os.system(cmd)
+	process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 	arcpy.AddMessage('\nProcess started:\n')
-	#for line in process.stdout.readlines():
-	#    arcpy.AddMessage(line)
+	for line in process.stdout.readlines():
+	    arcpy.AddMessage(line)
 
 	#  Calculate statistics so that grids display with correct bounds
 	#arcpy.AddMessage('Executing: Calculate Statistics\n')
