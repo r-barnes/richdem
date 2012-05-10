@@ -9,7 +9,7 @@
 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 
 <xsl:variable name="BackgroundColor">buttonface</xsl:variable>
-<xsl:variable name="BackgroundImage">url(<xsl:value-of select="MdElementDialogInfo/CommonPath"/>/esri.gif)</xsl:variable>
+<xsl:variable name="BackgroundImage">url(richdem_logo1.png)</xsl:variable>
 <xsl:variable name="BackgroundPosition">bottom right</xsl:variable>
 <xsl:variable name="BackgroundRepeat">no-repeat</xsl:variable>
 
@@ -193,9 +193,60 @@ function UpdatePropertyIcon(img, msg)
 
   e.src = imgSource;
 }
-function displaymessage(icon_clicked) {	if (!icon_clicked.firstChild.errText)		return;	var elm = document.getElementById("message_window");	elm.style.visibility = "hidden";	//var txt = icon_clicked.firstChild.errText;	var props = icon_clicked.firstChild;	document.getElementById('errText').innerHTML = props.errText;	document.getElementById('errName').innerHTML = props.errName;	document.getElementById('errCode').innerHTML = props.errCode;	// gets the top and left coordinates we need to position the widdow	if (icon_clicked.offsetParent)  {    curleft = icon_clicked.offsetLeft;    curtop = icon_clicked.offsetTop;    while (icon_clicked = icon_clicked.offsetParent)    {          curleft += icon_clicked.offsetLeft;          curtop += icon_clicked.offsetTop;    }  }    var theframe = document.getElementById("iframe");	theframe.style.top = (curtop+15);  theframe.style.left = (curleft+40);  theframe.style.width = elm.offsetWidth;  theframe.style.height = elm.offsetHeight;  theframe.style.zIndex = 1;  theframe.style.display = "block";  	//elm.innerHTML = "<b>" + txt + "</b>";	elm.style.top = (curtop+15);	elm.style.left = (curleft+40);	elm.style.visibility = "visible";}		// HIDES THE MESSAGE WINDOWfunction hidemessage(e){  e.parentNode.style.visibility = "hidden"  var theframe = document.getElementById("iframe");  theframe.style.display = "none"}
 
-// HIDES THE BANNER MESSAGE WINDOWfunction hideBannerMessage(){  var e = document.getElementById("bannerMessage");  e.style.display = "none";  e.style.visibility = "hidden";}
+function displaymessage(icon_clicked) 
+{
+	if (!icon_clicked.firstChild.errText)
+		return;
+	var elm = document.getElementById("message_window");
+	elm.style.visibility = "hidden";
+	//var txt = icon_clicked.firstChild.errText;
+	var props = icon_clicked.firstChild;
+	document.getElementById('errText').innerHTML = props.errText;
+	document.getElementById('errName').innerHTML = props.errName;
+	document.getElementById('errCode').innerHTML = props.errCode;
+	// gets the top and left coordinates we need to position the widdow
+	if (icon_clicked.offsetParent)
+  {
+    curleft = icon_clicked.offsetLeft;
+    curtop = icon_clicked.offsetTop;
+
+    while (icon_clicked = icon_clicked.offsetParent)
+    {
+          curleft += icon_clicked.offsetLeft;
+          curtop += icon_clicked.offsetTop;
+    }
+  }
+  
+  var theframe = document.getElementById("iframe");
+	theframe.style.top = (curtop+15);
+  theframe.style.left = (curleft+40);
+  theframe.style.width = elm.offsetWidth;
+  theframe.style.height = elm.offsetHeight;
+  theframe.style.zIndex = 1;
+  theframe.style.display = "block";
+  
+	//elm.innerHTML = "<b>" + txt + "</b>";
+	elm.style.top = (curtop+15);
+	elm.style.left = (curleft+40);
+	elm.style.visibility = "visible";
+}
+		
+// HIDES THE MESSAGE WINDOW
+function hidemessage(e)
+{
+  e.parentNode.style.visibility = "hidden"
+  var theframe = document.getElementById("iframe");
+  theframe.style.display = "none"
+}
+
+// HIDES THE BANNER MESSAGE WINDOW
+function hideBannerMessage()
+{
+  var e = document.getElementById("bannerMessage");
+  e.style.display = "none";
+  e.style.visibility = "hidden";
+}
 
 function UpdatePropertyIcons()
 {
@@ -297,9 +348,39 @@ function clicker(a,b)
 <BODY style="margin: 0; padding:0" width="100%" onload="InitForm()" TEXT="windowtext" onresize="Window_onresize()" onclick="ShowCurrentHelpTopic();"><xsl:text>&#10;</xsl:text>
 <SCRIPT language="Javascript" src="{CommonPath}/disableclick.js"></SCRIPT><xsl:text>&#10;</xsl:text>
 <IFRAME id="iframe" style="DISPLAY: none; LEFT:0px; POSITION: absolute;TOP:0px;" src="javascript:false;" frameBorder="0" scrolling="no"></IFRAME>
-  <div id="message_window" 	  style="visibility: hidden; 	          border: 1px solid #999; 	          border-bottom: 2px solid #666;	          border-right: 2px solid #666;	          background: #FFFFCC; 	          padding: 10px 10px 10px 20px; 	          width: 250px; 	          position: absolute; 	          top: 100px; 	          left: 100px;	          font:  12px/16px arial;	          z-index: 2;	          ">    <a href="#" onclick="hidemessage(this);hideBannerMessage();" style="float: right;">      <img src="{CommonPath}/hidehelp.gif" alt="close window" title="Click to close this window" border="0"/>    </a>           <strong><span id='errName'></span>&#32;<a id='errCode' onclick="hidemessage(this.parentNode);hideBannerMessage();ShowErrorHelp(this)" href="#"></a> </strong>    <div id='errText'></div>  </div>
+  <div id="message_window" 
+	  style="visibility: hidden; 
+	          border: 1px solid #999; 
+	          border-bottom: 2px solid #666;
+	          border-right: 2px solid #666;
+	          background: #FFFFCC; 
+	          padding: 10px 10px 10px 20px; 
+	          width: 250px; 
+	          position: absolute; 
+	          top: 100px; 
+	          left: 100px;
+	          font:  12px/16px arial;
+	          z-index: 2;
+	          ">
+    <a href="#" onclick="hidemessage(this);hideBannerMessage();" style="float: right;">
+      <img src="{CommonPath}/hidehelp.gif" alt="close window" title="Click to close this window" border="0"/>
+    </a>  
+     
+    <strong><span id='errName'></span>&#32;<a id='errCode' onclick="hidemessage(this.parentNode);hideBannerMessage();ShowErrorHelp(this)" href="#"></a> </strong>
+    <div id='errText'></div>
+
+  </div>
+
 <DIV STYLE="margin: 0; ">
-  <div id="bannerMessage" width="100%" style="display:'none'; visibility:'hidden'">	  <table width="100%" style="border-bottom:1px solid black">       <tr style="background:#FFFFCC">      <td style="font-size:70%;font-family:tahoma; padding-left:17px">Click error and warning icons for more information</td>      <td width="10px" align="right"> <a href="#" onclick="document.getElementById('bannerMessage').style.visibility = 'hidden';document.getElementById('bannerMessage').style.display = 'none';">        <img src="{CommonPath}/hidehelp.gif" alt="close window" title="Click to close this window" border="0"/></a></td>      </tr>    </table>  </div>    
+  <div id="bannerMessage" width="100%" style="display:'none'; visibility:'hidden'">
+	  <table width="100%" style="border-bottom:1px solid black"> 
+      <tr style="background:#FFFFCC">
+      <td style="font-size:70%;font-family:tahoma; padding-left:17px">Click error and warning icons for more information</td>
+      <td width="10px" align="right"> <a href="#" onclick="document.getElementById('bannerMessage').style.visibility = 'hidden';document.getElementById('bannerMessage').style.display = 'none';">
+        <img src="{CommonPath}/hidehelp.gif" alt="close window" title="Click to close this window" border="0"/></a></td>
+      </tr>
+    </table>
+  </div>    
   <div style="padding-top:5px">
 <xsl:apply-templates select="Intro" />
 <xsl:for-each select="Properties">
