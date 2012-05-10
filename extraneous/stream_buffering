@@ -1,0 +1,101 @@
+// set character buffer (pubsetbuf)
+#include <fstream>
+using namespace std;
+
+int main () {
+
+  char mybuffer [512];
+  fstream filestr;
+  filestr.rdbuf()->pubsetbuf(mybuffer,512);
+
+  // operations with file stream here.
+
+  return 0;
+}
+
+
+
+
+
+
+
+
+You can use ios::rdbuf() to get a pointer to a streambuf object. This object represents the internal buffer for the stream.
+
+You can call streambuf::pubsetbuf(char * s, streamsize n) to set a new internal buffer with a given size.
+
+See this link for more details.
+
+edit: Here is how it would look in your case:
+
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+int main(int argCount, char ** argList[])
+{
+    ifstream inStream(argList[1]);
+
+    char myBuffer [512];
+    inStream.rdbuf()->pubsetbuf(myBuffer, sizeof(myBuffer));
+
+    char ch;
+    while(inStream.read(&ch, 1))
+    {
+        cout << ch;
+    }
+}
+edit: as pointed out by litb, the actual behavior of streambuf::pubsetbuf is "implementation-defined".
+
+If you really want to play around with the buffers, you may have to roll your own buffering class that inherits from streambuf.
+
+
+
+
+
+
+
+
+
+
+// is_open () example
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+int main () {
+
+  ifstream is;
+  filebuf * fb;
+
+  fb = is.rdbuf();
+  fb->open ("test.txt",ios::in);
+
+  if ( fb->is_open() )
+    cout << "file is open.\n";
+  else
+    cout << "file is not open.\n";
+
+  fb->close();
+
+  return 0;
+}
+
+
+
+
+// set character buffer (pubsetbuf)
+#include <fstream>
+using namespace std;
+
+int main () {
+
+  char mybuffer [512];
+  fstream filestr;
+  filestr.rdbuf()->pubsetbuf(mybuffer,512);
+
+  // operations with file stream here.
+
+  return 0;
+}
