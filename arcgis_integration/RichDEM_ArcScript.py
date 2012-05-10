@@ -4,11 +4,12 @@
 # Date:        5/10/2012
 
 import arcpy
-import os
 import sys
 import subprocess
+import os
+import tempfile
 
-PROGPATH="richdem"
+PROGPATH="richdem.exe"
 
 def expand_layer_info(layerobj):
 	arcpy.AddMessage("\n")
@@ -25,8 +26,15 @@ def expand_layer_info(layerobj):
 	arcpy.AddMessage("User-assigned element name: " + layerobj.name)
 	arcpy.AddMessage("File path: " + layerobj.path)
 
+def make_temp_file():
+	temp_file_object=tempfile.NamedTemporaryFile(delete=False)
+	temp_file_name=temp_file_object.name
+	temp_file_object.close()
+	arcpy.AddMessage("Created temporary file: " + temp_file_name)
+	return temp_file_name
 
 def main():
+	global PROGPATH
 	inputDEM = arcpy.GetParameterAsText(0)
 	desc = arcpy.Describe(inputDEM)
 
@@ -34,66 +42,76 @@ def main():
 	#inZfile=str(desc.catalogPath)
 	arcpy.AddMessage("\nInput Elevation file: "+inputDEM)
 
-	convert_dem_to_raster=arcpy.GetParameterAsText(1)
-	arcpy.AddMessage("Convert DEM to Raster? " + convert_dem_to_raster)
+	inputDEM_asc=make_temp_file()
+	arcpy.RasterToASCII_conversion(inputDEM, inputDEM_asc)
 
-	#import arcpy
-	#from arcpy import env
-	#env.workspace = "c:/data"
-	#arcpy.RasterToASCII_conversion("elevation", "c:/output/sa500.asc")
-
-	fill_depressions=arcpy.GetParameterAsText(2)
+	fill_depressions=arcpy.GetParameterAsText(1)
 	arcpy.AddMessage("Fill depressions? " + fill_depressions)
 
-	output_depression_filled_dem=arcpy.GetParameterAsText(3)
+	output_depression_filled_dem=arcpy.GetParameterAsText(2)
 	arcpy.AddMessage("Output depression filled DEM? " + output_depression_filled_dem)
 
-	use_dinf=arcpy.GetParameterAsText(4)
+	use_dinf=arcpy.GetParameterAsText(3)
 	arcpy.AddMessage("Use D-infinite flow metric? " + use_dinf)
 
-	output_flowdirs_before_flat_resolution=arcpy.GetParameterAsText(5)
-	arcpy.AddMessage("Output flowdirs before flat resolution? " + output_flowdirs_before_flat_resolution)
-
-	output_flowdirs_after_flat_resolution=arcpy.GetParameterAsText(6)
-	arcpy.AddMessage("Output flowdirs after flat resolution? " + output_flowdirs_after_flat_resolution)
-
-	output_flow_acculm=arcpy.GetParameterAsText(7)
+	output_flow_acculm=arcpy.GetParameterAsText(4)
 	arcpy.AddMessage("Output flow accumulation? " + output_flow_acculm)
 
-	# Construct the taudem command line.  Put quotes around file names in case there are spaces
 
-	#Z:\home\rick\projects\watershed\richdem\richdem  [-a <file>] [-f <file>]
-	#                                        [-u <file>] [-l <file>] [-p] [-8]
-	#                                        [--] [--version] [-h] <Input DEM>
 
-	cmd = PROGPATH
+	PROGPATH=os.path.join(sys.path[0],PROGPATH)
+	cmd = [PROGPATH]
 
+	output_depression_filled_dem_temp=""
 	if fill_depressions=='true':
-		cmd+=' -p'
+		cmd.append('-p')
 		if output_depression_filled_dem:
-			cmd+=' -l ' + output_depression_filled_dem
+			cmd.append('-l')
+			output_depression_filled_dem_temp=make_temp_file()
+			cmd.append(output_depression_filled_dem_temp)
 
 	if use_dinf!='true':
-		cmd+=' -8 '
+		cmd.append('-8')
 
-	if output_flowdirs_before_flat_resolution:
-		cmd+=' -u ' + output_flowdirs_before_flat_resolution
+	output_flow_acculm_temp=""
+	if output_flow_acculm:
+		cmd.append('-a')
+		output_flow_acculm_temp=make_temp_file()
+		cmd.append(output_flow_acculm_temp)
 
-	if output_flowdirs_after_flat_resolution:
-		cmd+=' -f ' + output_flowdirs_after_flat_resolution
+	cmd.append(inputDEM)
+
+	arcpy.AddMessage("Command Line: "+str(cmd))
+	try:
+		process=subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+	except:
+		arcpy.AddMessage("Failed to run process!")
+		sys.exit()
+	arcpy.AddMessage('\nProcess started:\n')
+	
+	while True:
+		line=process.stdout.readline()
+		process.poll()
+		if not process.returncode!=None: break
+		arcpy.AddMessage(line)
+
+	process.poll()
+	arcpy.AddMessage("\nProcess return code: " + str(process.returncode))
+	if process.returncode!=0:
+		arcpy.AddMessage("Process failed to run!")
+		sys.exit()
+
+	if fill_depressions=='true' and output_depression_filled_dem:
+		arcpy.AddMessage('Converting Depression Filled DEM to Raster')
+		arcpy.ASCIIToRaster_conversion(output_depression_filled_dem_temp, output_depression_filled_dem, "FLOAT")
+		os.remove(output_depression_filled_dem_temp)
 
 	if output_flow_acculm:
-		cmd+=' -a ' + output_flow_acculm
-
-	arcpy.AddMessage("\nCommand Line: "+cmd)
-	os.system(cmd)
-	process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-	arcpy.AddMessage('\nProcess started:\n')
-	for line in process.stdout.readlines():
-	    arcpy.AddMessage(line)
-
-	#  Calculate statistics so that grids display with correct bounds
-	#arcpy.AddMessage('Executing: Calculate Statistics\n')
-	#arcpy.CalculateStatistics_management(outFile)
+		arcpy.AddMessage('Converting Flow Accumulation DEM to Raster')
+		arcpy.ASCIIToRaster_conversion(output_flow_acculm_temp, output_flow_acculm, "FLOAT")
+		os.remove(output_flow_acculm_temp)
 
 main()
+
+#Note:
+#A useful function is "arcpy.CalculateStatistics_management(FILE_NAME)"
