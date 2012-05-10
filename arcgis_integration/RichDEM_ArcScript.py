@@ -1,15 +1,11 @@
-# Script Name: Remove Pits
+# Script Name: RichDEM_ArcScript
 # 
-# Created By:  David Tarboton
-# Date:        9/21/11
+# Created By:  Richard Barnes
+# Date:        5/10/2012
 
-# Import ArcPy site-package and os modules
-#
 import arcpy
 import os
 import sys
-import time
-import string
 import subprocess
 
 PROGPATH="richdem"
