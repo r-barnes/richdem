@@ -14,6 +14,10 @@
 #include "tclap/CmdLine.h"
 
 int main(int argc, char **argv){
+	setbuf ( stderr , NULL );
+#ifdef ARCGIS
+	setbuf ( stdout , NULL );
+#endif
 	TCLAP::CmdLine cmd("RichDEM is a suite of DEM analysis functions for determining hydrologic properties. It has been developed by Richard Barnes (rbarnes@umn.edu). Find RichDEM on the web at \"http://www.richdem.com\".", ' ', RICHDEM_VERSION);
 	TCLAP::SwitchArg cl_d8("8","d8","Use the D8 flow metric (Dinf is default)", cmd, false);
 	TCLAP::SwitchArg cl_fill_pits("p","pits","Perform pit-filling prior to other operations", cmd, false);
