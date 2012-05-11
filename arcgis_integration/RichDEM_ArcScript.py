@@ -8,6 +8,7 @@ import sys
 import subprocess
 import os
 import tempfile
+import uuid
 
 PROGPATH="richdem.exe"
 
@@ -27,9 +28,10 @@ def expand_layer_info(layerobj):
 	arcpy.AddMessage("File path: " + layerobj.path)
 
 def make_temp_file():
-	temp_file_object=tempfile.NamedTemporaryFile(delete=False)
-	temp_file_name=temp_file_object.name
-	temp_file_object.close()
+	#temp_file_object=tempfile.NamedTemporaryFile(delete=False, suffix=".asc")
+	#temp_file_name=temp_file_object.name
+	#temp_file_object.close()
+	temp_file_name=os.path.join(tempfile.gettempdir(),"rd"+str(uuid.uuid1())+".asc")
 	arcpy.AddMessage("Created temporary file: " + temp_file_name)
 	return temp_file_name
 
@@ -39,6 +41,7 @@ def main():
 	desc = arcpy.Describe(inputDEM)
 
 	expand_layer_info(desc)
+	arcpy.env.workspace=desc.path
 	#inZfile=str(desc.catalogPath)
 	arcpy.AddMessage("\nInput Elevation file: "+inputDEM)
 
@@ -79,7 +82,7 @@ def main():
 		output_flow_acculm_temp=make_temp_file()
 		cmd.append(output_flow_acculm_temp)
 
-	cmd.append(inputDEM)
+	cmd.append(inputDEM_asc)
 
 	arcpy.AddMessage("Command Line: "+str(cmd))
 	try:
@@ -92,7 +95,7 @@ def main():
 	while True:
 		line=process.stdout.readline()
 		process.poll()
-		if not process.returncode!=None: break
+		if process.returncode!=None: break
 		arcpy.AddMessage(line)
 
 	process.poll()
