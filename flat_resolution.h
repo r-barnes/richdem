@@ -204,7 +204,7 @@ static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_ce
 	diagnostic("\r\033[2KSearching for flats...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;

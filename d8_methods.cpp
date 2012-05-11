@@ -33,7 +33,7 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress_bar(x*omp_get_num_threads()*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		progress_bar(x*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
 		for(int y=1;y<flat_resolution_mask.height()-1;y++)
 			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
 				continue;
@@ -71,7 +71,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
 			if(flowdirs(x,y)==flowdirs.no_data){
@@ -94,7 +94,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
@@ -206,7 +206,7 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
 			if(elevations(x,y)==elevations.no_data){
 				slopes(x,y)=slopes.no_data;
@@ -246,7 +246,7 @@ void d8_aspect(const float_2d &elevations, float_2d &aspects){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
 			if(elevations(x,y)==elevations.no_data){
 				aspects(x,y)=aspects.no_data;
@@ -275,7 +275,7 @@ void d8_curvature(const float_2d &elevations, float_2d &curvatures){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*omp_get_num_threads()*elevations.height()*100/(elevations.width()*elevations.height()));
+		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
 		for(int y=0;y<elevations.height();y++){
 			if(elevations(x,y)==elevations.no_data){
 				curvatures(x,y)=curvatures.no_data;
@@ -307,7 +307,7 @@ void d8_arcgis_convert(char_2d &flowdirs){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data) continue;
 			flowdirs(x,y)=arcgis_flowdirs[flowdirs(x,y)];
