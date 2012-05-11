@@ -33,6 +33,7 @@ double progress_bar(int percent){
 		old_percent=0;
 		return timediffs;
 	}
+	percent*=omp_get_num_threads();
 	if(percent>100)
 		percent=100;
 	fprintf(stderr,"\r\033[2K[%-50.*s] (%d%% - %.1lfs left - %d thread)", percent/2, PROGRESS_BAR, percent, timediff(startTime)/percent*(100-percent),omp_get_num_threads()); //The ANSI code used in this line clears the entire line

@@ -122,7 +122,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data){
 				area(x,y)=area.no_data;
@@ -150,7 +150,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	diagnostic("Locating source cells...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*omp_get_num_threads()*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
@@ -258,7 +258,7 @@ void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, f
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress_bar(x*omp_get_num_threads()*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		progress_bar(x*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
 		for(int y=1;y<flat_resolution_mask.height()-1;y++)
 			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
 				continue;
