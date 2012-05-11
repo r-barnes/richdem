@@ -9,7 +9,6 @@
 #include "utility.h"
 #include "interface.h"
 #include "data_structures.h"
-#include <omp.h>
 #include <deque>
 #include <vector>
 #include <queue>
