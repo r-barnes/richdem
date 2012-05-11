@@ -177,23 +177,25 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		if(flowdirs(c.x,c.y)==flowdirs.no_data || flowdirs(c.x,c.y)==NO_FLOW)
 			continue;
 
-		int n_high,n_low,nlx,nly,nhx,nhy;
+		int n_high,n_low,nhx,nhy,nlx,nly;
 		where_do_i_flow(flowdirs(c.x,c.y),n_high,n_low);
 		nhx=c.x+dinf_dx[n_high],nhy=c.y+dinf_dy[n_high];
-		if(n_low!=-1){
-			nlx=c.x+dinf_dx[n_low];
-			nly=c.y+dinf_dy[n_low];
-		}
 
 		float phigh,plow;
 		area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
 		if(flowdirs.in_grid(nhx,nhy))
 			area(nhx,nhy)+=area(c.x,c.y)*phigh;
-		if(n_low!=-1 && flowdirs.in_grid(nlx,nly))
-			area(nlx,nly)+=area(c.x,c.y)*plow;
 
-		if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0)
-			sources.push(grid_cell(nlx,nly));
+		if(n_low!=-1){
+			nlx=c.x+dinf_dx[n_low];
+			nly=c.y+dinf_dy[n_low];
+			if(flowdirs.in_grid(nlx,nly)){
+				area(nlx,nly)+=area(c.x,c.y)*plow;
+				if(flowdirs(nlx,nly)!=flowdirs.no_data && (--dependency(nlx,nly))==0){
+					sources.push(grid_cell(nlx,nly));
+				}
+			}
+		}
 
 		if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
 			sources.push(grid_cell(nhx,nhy));
