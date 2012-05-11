@@ -54,7 +54,6 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	float temp;
 	elevations.data_cells=0;
 	for(int y=0;y<rows;y++){
-		printf("FPos: %ld, Fsize: %lld\n",ftell(fin),file_size);
 		progress_bar(((long long)ftell(fin))*((long long)100)/file_size); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
 			if (fscanf(fin,"%f", &temp)!=1){
