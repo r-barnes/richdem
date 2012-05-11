@@ -3,16 +3,18 @@
 #include "interface.h"
 #include "data_structures.h"
 #include <fcntl.h>
+#include <errno.h>
 
 int load_ascii_data(const char filename[], float_2d &elevations){
 	FILE *fin;
 	long long file_size;
 	int rows,columns;
 
+	errno=0;
 	diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename);
 	fin=fopen(filename,"r");
 	if(fin==NULL){
-		diagnostic("failed!\n");
+		diagnostic_arg("failed with error %d: \"%s\"!\n",errno,strerror(errno));
 		exit(-1);
 	}
 	diagnostic("succeeded.\n");
