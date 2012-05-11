@@ -3,9 +3,11 @@
 #include "dinf_methods.h"
 #include "interface.h"
 #include "debug.h"
-#include <omp.h>
 #include <cmath>
 #include <queue>
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 
 /*
 @inproceedings{Wallis2009,

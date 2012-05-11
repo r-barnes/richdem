@@ -2,10 +2,12 @@
 #include "utility.h"
 #include "d8_methods.h"
 #include "interface.h"
-#include <omp.h>
 #include <queue>
 #include <limits>
 #include <cmath>
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 
 
 

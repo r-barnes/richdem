@@ -3,7 +3,9 @@
 
 #include "data_structures.h"
 #include "interface.h"
-#include <omp.h>
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 
 #define SLOPE_RISERUN	1
 #define SLOPE_PERCENT	2
