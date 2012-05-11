@@ -65,7 +65,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 				elevations.data_cells++;
 		}
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 
 	fclose(fin);
 
