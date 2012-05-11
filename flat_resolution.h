@@ -227,7 +227,7 @@ static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_ce
 			}
 		}
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 }
 
 template <class T, class U>
