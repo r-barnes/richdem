@@ -30,7 +30,7 @@ int main(int argc, char **argv){
 		std::cerr << "Command line argument (" << e.argId() << ") error: " << e.error() << std::endl;
 	}
 
-	printf("Running RichDEMv%s.\n",RICHDEM_VERSION);
+	diagnostic_arg("Running RichDEMv%s.\n",RICHDEM_VERSION);
 
 	float_2d elevations;
 	load_ascii_data(cl_inputDEM.getValue().c_str(),elevations);
