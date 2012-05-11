@@ -82,7 +82,7 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 			else
 				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 }
 
 #endif
