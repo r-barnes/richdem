@@ -86,21 +86,26 @@ def main():
 
 	arcpy.AddMessage("Command Line: "+str(cmd))
 	try:
-		process=subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+		startupinfo=subprocess.STARTUPINFO()
+		startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+		process=subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, startupinfo=startupinfo)
 	except:
 		arcpy.AddMessage("Failed to run process!")
 		sys.exit()
 	arcpy.AddMessage('\nProcess started:\n')
 
 	while True:
-		line=process.stdout.readline()
 		process.poll()
 		if process.returncode!=None:
 			break
+		line=process.stdout.readline().rstrip()
+		if line=='':
+			continue
 
 		if line[0]=='%':
 			arcpy.ResetProgressor()
 			arcpy.SetProgressor("step", line[1:])
+			arcpy.AddMessage(line[1:])
 		elif line[0:3]=='P%c':
 			arcpy.SetProgressorPosition(0)
 		elif line[0:2]=='P%':
