@@ -32,13 +32,13 @@ void barnes_flood(float_2d &elevations){
 	unsigned long pitc=0,openc=0;
 
 	diagnostic("\n###Barnes Flood\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(bool)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz))/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
 		open.push(grid_cellz(x,0,elevations(x,0) ));

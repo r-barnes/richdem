@@ -108,7 +108,7 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 
 template <class T>
 void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
-	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),false);
 	diagnostic("succeeded.\n");

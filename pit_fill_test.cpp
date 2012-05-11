@@ -67,7 +67,7 @@ class grid_cell_compare{
 };
 
 void push_edges(const float_2d &elevations, std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cell_compare> &open, char_2d &closed, int closed_val=1){
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz))/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
 		open.push(grid_cellz(x,0,elevations(x,0) ));
@@ -92,7 +92,7 @@ void pit_fill_wang(float_2d &elevations){
 	unsigned long processed_cells=0;
 
 	diagnostic("\n###Wang (2006) Pit Fill\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	diagnostic("succeeded.\n");
@@ -136,7 +136,7 @@ void pit_fill_wangND(float_2d &elevations){
 	unsigned long processed_cells=0;
 
 	diagnostic("\n###Wang (2006) Pit Fill (Richard's ND version)\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(0);
@@ -213,13 +213,13 @@ void pit_fill_barneslehman(float_2d &elevations){
 	const int tcells=elevations.width()*elevations.height();
 
 	diagnostic("\n###Barnes-Lehman Pit Fill v1\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz))/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
 		if(elevations(x,0)==elevations.no_data)
@@ -316,13 +316,13 @@ void pit_fill_barnes1(float_2d &elevations){
 	unsigned long pitc=0,openc=0;
 
 	diagnostic("\n###Barnes Pit Fill v1\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz))/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
 		open.push(grid_cellz(x,0,elevations(x,0) ));
@@ -413,7 +413,7 @@ void pit_fill_barnes1b(float_2d &elevations){
 	unsigned long processed_cells=0;
 
 	diagnostic("\n###Barnes Pit Fill v1b\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(0);
@@ -465,7 +465,7 @@ void pit_fill_barnes2(float_2d &elevations){
 	unsigned long processed_cells=0;
 
 	diagnostic("\n###Barnes Pit Fill v2\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(0);
@@ -561,7 +561,7 @@ void pit_fill_barnes3(float_2d &elevations){
 	const int CLOSED=1, QUEUED=2, OPEN=3;
 
 	diagnostic("\n###Barnes Pit Fill v3\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(OPEN);
@@ -668,7 +668,7 @@ void pit_fill_barnes4(float_2d &elevations){
 	const int CLOSED=1, PITQUEUED=2, CLIMBQUEUED=3, OPENQUEUED=4, OPEN=5;
 
 	diagnostic("\n###Barnes Pit Fill v4\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(OPEN);
@@ -775,7 +775,7 @@ void pit_fill_barnes5(float_2d &elevations){
 	const int CLOSED=1, QUEUED=2, OPEN=3;
 
 	diagnostic("\n###Barnes Pit Fill v5\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(OPEN);
@@ -891,7 +891,7 @@ void pit_fill_barnes6(float_2d &elevations){
 	unsigned long pitc=0,openc=0,climbc=0,climbpc=0;
 
 	diagnostic("\n###Barnes Pit Fill v6\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(OPEN);

@@ -31,20 +31,20 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 	int clabel=1;	//TODO: Thought this was more clear than zero in the results.
 
 	diagnostic("\n###Barnes Flood\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(bool)/1024/1024);
+	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(bool)/1024/1024);
+	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	labels.copyprops(elevations);
 	labels.no_data=-1;
 	labels.init(labels.no_data);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*sizeof(grid_cellz)/1024/1024);
+	diagnostic_arg("The open priority queue will require approximately %ldMB of RAM.\n",(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz))/1024/1024);
 	diagnostic("Adding cells to the open priority queue...");
 	for(int x=0;x<elevations.width();x++){
 		open.push(grid_cellz(x,0,elevations(x,0) ));

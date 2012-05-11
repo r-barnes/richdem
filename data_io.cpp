@@ -41,7 +41,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*sizeof(float)/1024/1024);
+	diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
 
 	diagnostic("Resizing elevation matrix...");	//TODO: Consider abstracting this block
 	elevations.resize(columns,rows);

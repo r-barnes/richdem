@@ -236,14 +236,14 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 
 	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",
-				flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up labels matrix...");
 	labels.resize(flowdirs.width(),flowdirs.height(),false);
 	labels.init(-1);
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("The flat resolution mask will require approximately %ldMB of RAM.\n",
-				flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up flat resolution mask...");
 	flat_resolution_mask.resize(flowdirs.width(),flowdirs.height(),false);
 	flat_resolution_mask.init(-1);
@@ -282,7 +282,7 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	temp.clear();
 
 	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",
-				2*flowdirs.width()*flowdirs.height()*sizeof(int)/1024/1024);
+				2*flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up incrementation matricies...");
 	int_2d towards(elevations);
 	int_2d away(elevations);
@@ -291,7 +291,7 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	diagnostic("succeeded!\n");
 
 	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",
-				group_number*sizeof(int)/1024/1024);
+				group_number*((long)sizeof(int))/1024/1024);
 	diagnostic("Creating flat height vector...");
 	std::vector<int> flat_height(group_number);
 	diagnostic("succeeded!\n");

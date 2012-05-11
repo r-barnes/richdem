@@ -37,7 +37,7 @@ int pit_fill_yonghe2009(float_2d &elevations){
 	grid_cell *temp;
 	bool_2d marks;
 
-	diagnostic_arg("The boolean flood array will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*sizeof(bool)/1024/1024);
+	diagnostic_arg("The boolean flood array will require approximately %ldMB of RAM.\n",elevations.size1()*elevations.size2()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Resizing boolean flood array matrix...");
 	try{
 		marks.resize(elevations.size1(),elevations.size2());
@@ -53,7 +53,7 @@ int pit_fill_yonghe2009(float_2d &elevations){
 		marks(x,y)=1;
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The flood queue will require approximately %ldMB of RAM.\n",(elevations.size1()*2+elevations.size2()*2)*sizeof(grid_cell)/1024/1024);
+	diagnostic_arg("The flood queue will require approximately %ldMB of RAM.\n",(elevations.size1()*2+elevations.size2()*2)*((long)sizeof(grid_cell))/1024/1024);
 	diagnostic("Adding cells to flood queue...");
 	for(int x=0;x<elevations.size1();x++){
 		pq.push(new grid_cell( x,0,elevations(x,0) ));

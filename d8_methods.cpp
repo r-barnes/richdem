@@ -53,14 +53,14 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 
-	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
+	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
-	diagnostic_arg("The dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("The dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Resizing dependency matrix...");
 	dependency.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(unsigned int)/1024/1024);
+	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(unsigned int))/1024/1024);
 	diagnostic("Resizing the area matrix...");
 	area.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
@@ -198,7 +198,7 @@ inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, floa
 
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
-	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the slope matrix...");
 	slopes.resize(elevations.width(),elevations.height());
 	slopes.no_data=-1;
@@ -238,7 +238,7 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 
 
 void d8_aspect(const float_2d &elevations, float_2d &aspects){
-	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the aspects matrix...");
 	aspects.resize(elevations.width(),elevations.height());
 	aspects.no_data=-2;
@@ -267,7 +267,7 @@ void d8_aspect(const float_2d &elevations, float_2d &aspects){
 
 
 void d8_curvature(const float_2d &elevations, float_2d &curvatures){
-	diagnostic_arg("The curvatures matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("The curvatures matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the curvatures matrix...");
 	curvatures.resize(elevations.width(),elevations.height());
 	curvatures.no_data=-2;
