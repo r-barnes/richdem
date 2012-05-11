@@ -85,6 +85,6 @@ void barnes_flood(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed. %ld in pits, %ld not in pits.\n",processed_cells,pitc,openc);
 }

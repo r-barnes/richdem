@@ -121,7 +121,7 @@ void pit_fill_wang(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);	//TODO
 }
 
@@ -189,7 +189,7 @@ void pit_fill_wangND(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);	//TODO
 }
 
@@ -538,7 +538,7 @@ void pit_fill_barnes2(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -638,7 +638,7 @@ void pit_fill_barnes3(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -751,7 +751,7 @@ void pit_fill_barnes4(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -855,7 +855,7 @@ void pit_fill_barnes5(float_2d &elevations){
 		}
 		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }
 
@@ -980,7 +980,7 @@ void pit_fill_barnes6(float_2d &elevations){
 			progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
 		}
 	} while (open.size()>0);
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 	diagnostic_arg("Pit=%ld, Climb=%ld, Open=%ld, Climb Push=%ld\n",pitc,climbc,openc,climbpc);
 }*/
