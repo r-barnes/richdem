@@ -248,7 +248,7 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 	if(nmax!=-1)
 		rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
 	else
-		for(int n=1;n<=8;n++)	//TODO: I have a feeling this is potentially unsafe as it may create dependency loops. Does it?
+		for(int n=1;n<=8;n++)	//TODO: I have a feeling this is potentially unsafe as it may create dependency loops. Does it? TODO: Switch this to dinf_dx
 			if(groups(x+dx[n],y+dy[n])==groups(x,y) && flat_resolution_mask(x+dx[n],y+dy[n])<flat_resolution_mask(x,y)){
 				rg=d8_to_dinf[n];
 				break;
