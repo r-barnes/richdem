@@ -9,11 +9,13 @@
 #include "utility.h"
 #include "interface.h"
 #include "data_structures.h"
-#include <omp.h>
 #include <deque>
 #include <vector>
 #include <queue>
 #include "debug.h"
+#ifdef _OPENMP
+	#include <omp.h>
+#endif
 
 //Procedure:	BuildGradient
 //Description:
@@ -326,6 +328,7 @@ void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
 	fmask.copyprops(flowdirs);
 	fmask.init(0);
 	fmask.no_data=3;
+	#pragma omp parallel for collapse(2)
 	for(int x=0;x<flowdirs.width();x++)
 	for(int y=0;y<flowdirs.height();y++)
 		if(flowdirs(x,y)==flowdirs.no_data)
