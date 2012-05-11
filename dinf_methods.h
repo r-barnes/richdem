@@ -132,7 +132,7 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 			else
 				flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 }
 
 #endif
