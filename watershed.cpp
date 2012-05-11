@@ -60,7 +60,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("Performing the Barnes Flood...\n");
+	diagnostic("%%Performing the Barnes Flood...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;

@@ -102,7 +102,7 @@ void pit_fill_wang(float_2d &elevations){
 
 	push_edges(elevations, open, closed);
 
-	diagnostic("Performing the Wang fill...\n");
+	diagnostic("%%Performing the Wang fill...\n");
 	progress_bar(-1);
 	while(open.size()>0){
 		grid_cellz c=open.top();open.pop();
@@ -146,7 +146,7 @@ void pit_fill_wangND(float_2d &elevations){
 
 	std::queue<grid_cell> nd_cells;
 
-	diagnostic("Performing the WangND fill...\n");
+	diagnostic("%%Performing the WangND fill...\n");
 	progress_bar(-1);
 	while(nd_cells.size()>0 || open.size()>0){
 		if(nd_cells.size()>0){
@@ -251,7 +251,7 @@ void pit_fill_barneslehman(float_2d &elevations){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("Performing the Barnes1 fill...\n");
+	diagnostic("%%Performing the Barnes1 fill...\n");
 	progress_bar(-1);
 	while(pit.size()>0 || processed_cells<tcells){
 		if(pit.size()>0){
@@ -338,7 +338,7 @@ void pit_fill_barnes1(float_2d &elevations){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("Performing the Barnes1 fill...\n");
+	diagnostic("%%Performing the Barnes1 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;
@@ -421,7 +421,7 @@ void pit_fill_barnes1b(float_2d &elevations){
 
 	push_edges(elevations, open, closed);
 
-	diagnostic("Performing the Barnes1b fill...\n");
+	diagnostic("%%Performing the Barnes1b fill...\n");
 	progress_bar(-1);
 	while(open.size()>0){
 		grid_cellz c=open.top();open.pop();
@@ -473,7 +473,7 @@ void pit_fill_barnes2(float_2d &elevations){
 
 	push_edges(elevations, open, closed);
 
-	diagnostic("Performing the Barnes2 fill...\n");
+	diagnostic("%%Performing the Barnes2 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
@@ -571,7 +571,7 @@ void pit_fill_barnes3(float_2d &elevations){
 
 	push_edges(elevations, open, closed, QUEUED);
 
-	diagnostic("Performing the Barnes3 fill...\n");
+	diagnostic("%%Performing the Barnes3 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
@@ -678,7 +678,7 @@ void pit_fill_barnes4(float_2d &elevations){
 
 	push_edges(elevations, open, closed, OPENQUEUED);
 
-	diagnostic("Performing the Barnes4 fill...\n");
+	diagnostic("%%Performing the Barnes4 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
@@ -785,7 +785,7 @@ void pit_fill_barnes5(float_2d &elevations){
 
 	push_edges(elevations, open, closed, QUEUED);
 
-	diagnostic("Performing the Barnes5 fill...\n");
+	diagnostic("%%Performing the Barnes5 fill...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0 || climb.size()>0){
 		if(meander.size()>0){
@@ -901,7 +901,7 @@ void pit_fill_barnes6(float_2d &elevations){
 
 	push_edges(elevations, open, closed, QUEUED);
 
-	diagnostic("Performing the Barnes6 fill...\n");
+	diagnostic("%%Performing the Barnes6 fill...\n");
 	progress_bar(-1);
 	do{
 		while(open.size()>0 || meander.size()>0 || climb.size()>0){

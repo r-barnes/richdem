@@ -12,7 +12,7 @@ void dinf_pit_flows(const float_2d &elevations, float_2d &flowdirs);
 
 template <class T>
 void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
-	diagnostic("Differencing the two arrays...\n");
+	diagnostic("Differencing the two arrays...");
 	if(arr1.width()!=arr2.width() || arr1.height()!=arr2.height())
 		diagnostic("failed! The arrays do not have the same dimensions!\n");
 	result.copyprops(arr1);
@@ -29,7 +29,7 @@ void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 
 template <class T>
 void dadiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
-	diagnostic("Differencing the two arrays...\n");
+	diagnostic("Differencing the two arrays...");
 	if(arr1.width()!=arr2.width() || arr1.height()!=arr2.height())
 		diagnostic("failed! The arrays do not have the same dimensions!\n");
 	result.copyprops(arr1);
