@@ -2,7 +2,6 @@
 #include "data_structures.h"
 #include "interface.h"
 #include <boost/numeric/ublas/matrix.hpp>
-#include <omp.h>
 #include <vector>
 #include <queue>
 #include <stack>
