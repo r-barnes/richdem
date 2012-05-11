@@ -63,7 +63,10 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 	}
 	diagnostic("succeeded.\n");
 
+	diagnostic("%%Writing ArcGrid ASCII file data...\n");
+	progress_bar(-1);
 	for(int y=0;y<output_grid.height();y++){
+		progress_bar(y*output_grid.width()*100/(output_grid.width()*output_grid.height()));
 		if(output_type==OUTPUT_OMG)
 			fout<<"|";
 		for(int x=0;x<output_grid.width();x++)
@@ -73,6 +76,7 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 				fout<<std::fixed<<std::setprecision(precision)<<output_grid(x,y)<<outputsep;
 		fout<<std::endl;
 	}
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
 
 //	diagnostic("Writing file data...");
 //	fout<<std::setprecision(precision)<<output_grid;
