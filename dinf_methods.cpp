@@ -105,15 +105,15 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 
-	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(grid_cell)/1024/1024);
+	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
-	diagnostic_arg("Setting up the dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(char)/1024/1024);
+	diagnostic_arg("Setting up the dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Resizing dependency matrix...");
 	dependency.resize(flowdirs.width(),flowdirs.height(),false);
 	dependency.init(0);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("Setting up the area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*sizeof(float)/1024/1024);
+	diagnostic_arg("Setting up the area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Resizing the area matrix...");
 	area.resize(flowdirs.width(),flowdirs.height(),false);
 	area.init(0);
