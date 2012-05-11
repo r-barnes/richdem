@@ -49,7 +49,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	elevations.resize(columns,rows);
 	diagnostic("succeeded.\n");
 
-	diagnostic("Reading elevation matrix...\n");
+	diagnostic("%%Reading elevation matrix...\n");
 	progress_bar(-1);
 	float temp;
 	elevations.data_cells=0;

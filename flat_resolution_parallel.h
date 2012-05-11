@@ -202,7 +202,7 @@ template <class T, class U>
 void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges,
 			const array2d<U> &flowdirs, const array2d<T> &elevations){
 	int nx,ny;
-	diagnostic("\r\033[2KSearching for flats...\n");
+	diagnostic("%%Searching for flats...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));

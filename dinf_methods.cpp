@@ -120,7 +120,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating dependency matrix & setting no_data cells...\n");
+	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
@@ -149,7 +149,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
-	diagnostic("Locating source cells...\n");
+	diagnostic("%%Locating source cells...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
@@ -163,7 +163,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
-	diagnostic("Calculating up-slope areas...\n");
+	diagnostic("%%Calculating up-slope areas...\n");
 	progress_bar(-1);
 	long int ccount=0;
 	while(sources.size()>0){
@@ -258,7 +258,7 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 }
 
 void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs){
-	diagnostic("Calculating Dinf flow directions using flat mask...\n");
+	diagnostic("%%Calculating Dinf flow directions using flat mask...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){

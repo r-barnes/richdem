@@ -121,7 +121,7 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 	flowdirs.init(NO_FLOW);
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating Dinf flow directions...\n");
+	diagnostic("%%Calculating Dinf flow directions...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){

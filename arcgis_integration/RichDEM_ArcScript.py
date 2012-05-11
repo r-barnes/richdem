@@ -91,12 +91,22 @@ def main():
 		arcpy.AddMessage("Failed to run process!")
 		sys.exit()
 	arcpy.AddMessage('\nProcess started:\n')
-	
+
 	while True:
 		line=process.stdout.readline()
 		process.poll()
-		if process.returncode!=None: break
-		arcpy.AddMessage(line)
+		if process.returncode!=None:
+			break
+
+		if line[0]=='%':
+			arcpy.ResetProgressor()
+			arcpy.SetProgressor("step", line[1:])
+		elif line[0:3]=='P%c':
+			arcpy.SetProgressorPosition(0)
+		elif line[0:2]=='P%':
+			arcpy.SetProgressorPosition(int(line[2:]))
+		else:
+			arcpy.AddMessage(line)
 
 	process.poll()
 	arcpy.AddMessage("\nProcess return code: " + str(process.returncode))

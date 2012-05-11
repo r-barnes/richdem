@@ -31,7 +31,7 @@ int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, 
 }
 
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs){
-	diagnostic("Calculating D8 flow directions using flat mask...\n");
+	diagnostic("%%Calculating D8 flow directions using flat mask...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){
@@ -69,7 +69,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	area.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating dependency matrix & setting no_data cells...\n");
+	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
@@ -93,7 +93,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
-	diagnostic("Locating source cells...\n");
+	diagnostic("%%Locating source cells...\n");
 	progress_bar(-1);
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
@@ -107,7 +107,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	}
 	diagnostic_arg("\t\033[96msucceeded in %.2lfs.\033[39m\n",progress_bar(-1));
 
-	diagnostic("Calculating up-slope areas...\n");
+	diagnostic("%%Calculating up-slope areas...\n");
 	progress_bar(-1);
 	long int ccount=0;
 	while(sources.size()>0){
@@ -204,7 +204,7 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	slopes.no_data=-1;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating slopes...\n");
+	diagnostic("%%Calculating slopes...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
@@ -244,7 +244,7 @@ void d8_aspect(const float_2d &elevations, float_2d &aspects){
 	aspects.no_data=-2;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating aspects...\n");
+	diagnostic("%%Calculating aspects...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
@@ -273,7 +273,7 @@ void d8_curvature(const float_2d &elevations, float_2d &curvatures){
 	curvatures.no_data=-2;
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating curvatures...\n");
+	diagnostic("%%Calculating curvatures...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
@@ -305,7 +305,7 @@ void d8_arcgis_convert(char_2d &flowdirs){
 //105   16     1
 //876    8  4  2
 	const char arcgis_flowdirs[9]={0,16,32,64,128,1,2,4,8};
-	diagnostic("Converting flow directions to ArcGIS format...\n");
+	diagnostic("%%Converting flow directions to ArcGIS format...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
