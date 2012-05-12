@@ -20,8 +20,10 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 
 		array2d ();
 		template<class U> array2d (const array2d<U> &copyfrom);
-		long width() const {return boost::numeric::ublas::matrix<T>::size1();}
-		long height() const {return boost::numeric::ublas::matrix<T>::size2();}
+		long width() const
+			{return boost::numeric::ublas::matrix<T>::size1();}
+		long height() const
+			{return boost::numeric::ublas::matrix<T>::size2();}
 		template<class U> void copyprops (const array2d<U> &copyfrom);
 		long estimated_output_size();
 		void init(T val);
@@ -31,12 +33,18 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
 		T max() const;
 		T min() const;
-		inline bool in_grid(int x, int y) const {return (x>=0 && y>=0 && x<width() && y<height());}
-		inline bool interior_grid(int x, int y) const {return (x>=1 && y>=1 && x<width()-1 && y<height()-1);}
-		inline bool edge_grid(int x, int y) const {return (x==0 || y==0 || x==width()-1 || y==height()-1);}
-		T& operator()(int x, int y) {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
-		const T& operator()(int x, int y) const {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
-		void resize(int width, int height, bool preserve=false) {boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
+		inline bool in_grid(int x, int y) const
+			{return (x>=0 && y>=0 && x<width() && y<height());}
+		inline bool interior_grid(int x, int y) const
+			{return (x>=1 && y>=1 && x<width()-1 && y<height()-1);}
+		inline bool edge_grid(int x, int y) const
+			{return (x==0 || y==0 || x==width()-1 || y==height()-1);}
+		T& operator()(int x, int y)
+			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+		const T& operator()(int x, int y) const
+			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+		void resize(int width, int height, bool preserve=false)
+			{boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
 };
 
 template <class T>
