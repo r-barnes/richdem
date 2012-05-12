@@ -171,10 +171,7 @@ typedef struct grid_cell_typez {
 typedef struct grid_cell_type {
 	int x;
 	int y;
-	grid_cell_type(int x0, int y0){
-		x=x0;
-		y=y0;
-	}
+	grid_cell_type(int x0, int y0):x(x0),y(y0){}
 	grid_cell_type(){}
 } grid_cell;
 
