@@ -328,11 +328,11 @@ void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
 	fmask.copyprops(flowdirs);
 	fmask.init(0);
 	fmask.no_data=3;
-	#pragma omp parallel for collapse(2)
+	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++)
 	for(int y=0;y<flowdirs.height();y++)
 		if(flowdirs(x,y)==flowdirs.no_data)
-			fmask(x,y)=3;
+			fmask(x,y)=fmask.no_data;
 		else
 			fmask(x,y)=(flowdirs(x,y)==NO_FLOW);
 	diagnostic("succeeded!\n");
