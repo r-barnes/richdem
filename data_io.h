@@ -17,6 +17,9 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 	std::ofstream fout;
 	std::string outputsep=" ";
 	int output_type=OUTPUT_DEM;
+	timeval startTime;
+
+	gettimeofday(&startTime, NULL);
 
 	diagnostic_arg("Opening ASCII output file \"%s\"...",filename.c_str());
 	fout.open(filename.c_str());
@@ -83,6 +86,8 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 //	diagnostic("succeeded.\n");
 
 	fout.close();
+
+	diagnostic_arg("Write time was: %lf\n", timediff(startTime));
 
 	return 0;
 }
