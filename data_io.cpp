@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <string.h>
 
 int load_ascii_data(const char filename[], float_2d &elevations){
 	FILE *fin;
