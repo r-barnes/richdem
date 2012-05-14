@@ -10,6 +10,7 @@
 #include "watershed.h"
 //#include "debug.h"
 #include <string>
+#include <sys/time.h>
 
 #include "tclap/CmdLine.h"
 
@@ -18,6 +19,10 @@ int main(int argc, char **argv){
 #ifdef ARCGIS
 	setbuf ( stdout , NULL );
 #endif
+
+	timeval calcTimeStart;
+	double calcTime=0;
+
 	TCLAP::CmdLine cmd("RichDEM is a suite of DEM analysis functions for determining hydrologic properties. It has been developed by Richard Barnes (rbarnes@umn.edu). Find RichDEM on the web at \"http://www.richdem.com\".", ' ', RICHDEM_VERSION);
 	TCLAP::SwitchArg cl_d8("8","d8","Use the D8 flow metric (Dinf is default)", cmd, false);
 	TCLAP::SwitchArg cl_fill_pits("p","pits","Perform pit-filling prior to other operations", cmd, false);
@@ -39,6 +44,7 @@ int main(int argc, char **argv){
 	float_2d elevations;
 	load_ascii_data(cl_inputDEM.getValue().c_str(),elevations);
 
+	gettimeofday(&calcTimeStart, NULL);
 	if(cl_fill_pits.getValue()){
 		barnes_flood(elevations);
 		if(!cl_output_pit_filled.getValue().empty())
@@ -52,7 +58,7 @@ int main(int argc, char **argv){
 		if(!cl_output_unresolved_flowdirs.getValue().empty())
 			output_ascii_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
 
-		{
+		{	//Used to try to free memory after the process
 			int_2d flat_resolution_mask(elevations), groups;
 			resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
 
@@ -63,6 +69,8 @@ int main(int argc, char **argv){
 
 		int_2d area(elevations);
 		d8_upslope_area(flowdirs, area);
+		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
+
 		if(!cl_output_flow_acculm.getValue().empty())
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
 	} else {
@@ -71,7 +79,7 @@ int main(int argc, char **argv){
 		if(!cl_output_unresolved_flowdirs.getValue().empty())
 			output_ascii_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
 
-		{
+		{	//Used to try to free memory after the process
 			int_2d flat_resolution_mask(elevations), groups;
 			resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
 
@@ -82,6 +90,8 @@ int main(int argc, char **argv){
 
 		float_2d area(elevations);
 		dinf_upslope_area(flowdirs, area);
+		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
+
 		if(!cl_output_flow_acculm.getValue().empty())
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
 	}
