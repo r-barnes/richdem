@@ -20,7 +20,8 @@ int main(int argc, char **argv){
 	setbuf ( stdout , NULL );
 #endif
 
-	timeval calcTimeStart;
+	timeval calcTimeStart, totalTimeStart;
+	gettimeofday(&totalTimeStart, NULL);
 
 	TCLAP::CmdLine cmd("RichDEM is a suite of DEM analysis functions for determining hydrologic properties. It has been developed by Richard Barnes (rbarnes@umn.edu). Find RichDEM on the web at \"http://www.richdem.com\".", ' ', RICHDEM_VERSION);
 	TCLAP::SwitchArg cl_d8("8","d8","Use the D8 flow metric (Dinf is default)", cmd, false);
@@ -94,6 +95,8 @@ int main(int argc, char **argv){
 		if(!cl_output_flow_acculm.getValue().empty())
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
 	}
+
+	diagnostic_arg("Total time was: %lf\n", timediff(totalTimeStart));
 
 	return 0;
 }
