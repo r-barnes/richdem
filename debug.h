@@ -92,10 +92,11 @@ void array2d<T>::surroundings(int x0, int y0, int precision) const{
 	std::cout<<std::endl;
 }
 
-template <class T>		//To be used on flow accumulation DEMs
+//Note: the below cannot detect digital dams based on the metric it uses because the Dinf method may split flows in half so that all cells surrounding one with a high value have less area than that value.
+template <class T>		//To be used on flow accumulation DEMs.
 int digital_dams(const array2d<T> &dem) {
 	int dam_count=0;
-//	#pragma omp parallel for reduction(+:dam_count)
+	#pragma omp parallel for reduction(+:dam_count)
 	for(int x=0;x<dem.width();x++)
 	for(int y=0;y<dem.height();y++){
 		if(dem(x,y)==dem.no_data) 
@@ -107,8 +108,36 @@ int digital_dams(const array2d<T> &dem) {
 			if(dem(x+dx[n],y+dy[n])==dem.no_data) {digital_dam=false;break;}
 			if(dem(x+dx[n],y+dy[n])>dem(x,y)) {digital_dam=false;break;}
 		}
-		if(digital_dam)
+		if(digital_dam){
 			dam_count++;
+			dem.surroundings(x,y);
+		}
+	}
+	return dam_count;
+}
+
+//Note: the below cannot detect digital dams based on the metric it uses because the Dinf method may split flows in half so that all cells surrounding one with a high value have less area than that value.
+template <class T>		//To be used on flow accumulation DEMs
+int digital_dams_with_angs(const array2d<T> &dem, const array2d<T> &ang) {
+	int dam_count=0;
+	#pragma omp parallel for reduction(+:dam_count)
+	for(int x=0;x<dem.width();x++)
+	for(int y=0;y<dem.height();y++){
+		if(dem(x,y)==dem.no_data) 
+			continue;
+
+		bool digital_dam=true;
+		for(int n=1;n<=8;n++){
+			if(!dem.in_grid(x+dx[n],y+dy[n])) {digital_dam=false;break;}
+			if(dem(x+dx[n],y+dy[n])==dem.no_data) {digital_dam=false;break;}
+			if(dem(x+dx[n],y+dy[n])>dem(x,y)) {digital_dam=false;break;}
+		}
+		if(digital_dam){
+			dam_count++;
+			diagnostic("Possible digital dam!\n");
+			dem.surroundings(x,y);
+			ang.surroundings(x,y);
+		}
 	}
 	return dam_count;
 }
