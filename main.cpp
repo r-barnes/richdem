@@ -30,6 +30,7 @@ int main(int argc, char **argv){
 	TCLAP::ValueArg<std::string> cl_output_unresolved_flowdirs("u","uflowdirs","Output flow directions before flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_resolved_flowdirs("f","flowdirs","Output flow directions after flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_flow_acculm("a","acculm","Output flow accumulation (aka: contributing area, upslope area)",false,"","file",cmd); //TODO: Are these really all equivalent?
+	TCLAP::SwitchArg cl_are_there_dams("d","dams","Determines if the input file has digital dams. All other options ignored.", cmd, false);
 	TCLAP::UnlabeledValueArg<std::string> cl_inputDEM("inputDEM", "The DEM to be processed (must be in ArcGrid ASCII format)", true, "", "Input DEM", cmd);
 	try {
 		cmd.parse( argc, argv );
@@ -43,6 +44,11 @@ int main(int argc, char **argv){
 
 	float_2d elevations;
 	load_ascii_data(cl_inputDEM.getValue().c_str(),elevations);
+
+	if(cl_are_there_dams.getValue()){
+		diagnostic_arg("Found %d digital dams.\n",digital_dams(elevations));
+		return 0;
+	}
 
 	gettimeofday(&calcTimeStart, NULL);
 	if(cl_fill_pits.getValue()){
@@ -90,6 +96,7 @@ int main(int argc, char **argv){
 
 		float_2d area(elevations);
 		dinf_upslope_area(flowdirs, area);
+		diagnostic_arg("Min value was: %f\n", area.min());
 		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 
 		if(!cl_output_flow_acculm.getValue().empty())
