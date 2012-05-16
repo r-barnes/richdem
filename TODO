@@ -1,3 +1,5 @@
+Add checks for digital dams to d8 methods like they are in dinf methods in the flow_area functions
+
 sizeof returns a result of type size_t, which varies from system to system. Using the iostream operators for output would likely eliminate warnings thrown by this. Otherwise, find some way to make things work with printf/fprintf
 
 The 'collapse' directive on the parallel for loop thing may be useful
