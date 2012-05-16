@@ -120,9 +120,10 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
 
+	bool has_cells_without_flow_directions=false;
 	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
 	progress_bar(-1);
-	#pragma omp parallel for
+	#pragma omp parallel for reduction(|:has_cells_without_flow_directions)
 	for(int x=0;x<flowdirs.width();x++){
 		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
 		for(int y=0;y<flowdirs.height();y++){
@@ -131,8 +132,10 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				dependency(x,y)=9;	//Note: This is an unnecessary safety precaution
 				continue;
 			}
-			if(flowdirs(x,y)==NO_FLOW)
+			if(flowdirs(x,y)==NO_FLOW){
+				has_cells_without_flow_directions=true;
 				continue;
+			}
 			int n_high,n_low;
 			int nhx,nhy,nlx,nly;
 			where_do_i_flow(flowdirs(x,y),n_high,n_low);
@@ -148,6 +151,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		}
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	if(has_cells_without_flow_directions)
+		diagnostic("\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m\n");
 
 	diagnostic("%%Locating source cells...\n");
 	progress_bar(-1);
