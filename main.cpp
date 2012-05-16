@@ -96,7 +96,6 @@ int main(int argc, char **argv){
 
 		float_2d area(elevations);
 		dinf_upslope_area(flowdirs, area);
-		diagnostic_arg("Min value was: %f\n", area.min());
 		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 
 		if(!cl_output_flow_acculm.getValue().empty())
