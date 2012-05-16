@@ -107,10 +107,8 @@ int digital_dams(const array2d<T> &dem) {
 			if(dem(x+dx[n],y+dy[n])==dem.no_data) {digital_dam=false;break;}
 			if(dem(x+dx[n],y+dy[n])>dem(x,y)) {digital_dam=false;break;}
 		}
-		if(digital_dam){
+		if(digital_dam)
 			dam_count++;
-			dem.surroundings(x,y);
-		}
 	}
 	return dam_count;
 }
