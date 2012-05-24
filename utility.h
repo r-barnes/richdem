@@ -27,7 +27,7 @@
 //D8 Directions
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};	//TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
-const int dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
+const double dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
 const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
 const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 //derived from the following neighbour directions
