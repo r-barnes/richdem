@@ -65,7 +65,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	area.resize(flowdirs.width(),flowdirs.height(),false);
 	diagnostic("succeeded.\n");
 	diagnostic("Initializing the area matrix...");
-	area.init(-1);
+	area.init(0);
 	area.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
 
@@ -88,7 +88,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
 					continue;
 				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
-					dependency(x,y)++;
+					++dependency(x,y);
 		}
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
@@ -117,18 +117,16 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 		ccount++;
 		progress_bar(ccount*100/flowdirs.data_cells);
 
-		area(c.x,c.y)=1;
-		for(int n=1;n<=8;n++){
-			if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
-				continue;
-			if(flowdirs(c.x+dx[n],c.y+dy[n])!=NO_FLOW && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])])
-				area(c.x,c.y)+=area(c.x+dx[n],c.y+dy[n]);
-		}
+		area(c.x,c.y)+=1;
+
 		if(flowdirs(c.x,c.y)!=NO_FLOW){
 			int nx=c.x+dx[flowdirs(c.x,c.y)];
 			int ny=c.y+dy[flowdirs(c.x,c.y)];
-			if( flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data && (--dependency(nx,ny))==0)
-				sources.push(grid_cell(nx,ny));
+			if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
+				area(nx,ny)+=area(c.x,c.y);
+				if((--dependency(nx,ny))==0)
+					sources.push(grid_cell(nx,ny));
+			}
 		}
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
@@ -304,7 +302,7 @@ void d8_arcgis_convert(char_2d &flowdirs){
 //234   32 64 128
 //105   16     1
 //876    8  4  2
-	const char arcgis_flowdirs[9]={0,16,32,64,128,1,2,4,8};
+	const unsigned char arcgis_flowdirs[9]={0,16,32,64,128,1,2,4,8};
 	diagnostic("%%Converting flow directions to ArcGIS format...\n");
 	progress_bar(-1);
 	#pragma omp parallel for
