@@ -115,40 +115,32 @@ bool array2d<T>::operator==(const array2d<T> &other) const {
 
 template <class T>
 T array2d<T>::max() const {
-	bool init=false;
 	T maxval=no_data;
 	T temp;
-	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
+	#pragma omp parallel for collapse(2) reduction(max:maxval)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
 		temp=operator()(x,y);
-		if(temp==no_data) continue;
-		if(init && temp>maxval)
+		if(temp==no_data)
+			continue;
+		else if(temp>maxval || maxval==no_data)
 			maxval=temp;
-		else if (!init){
-			maxval=temp;
-			init=true;
-		}
 	}
 	return maxval;
 }
 
 template <class T>
 T array2d<T>::min() const {
-	bool init=false;
 	T minval=no_data;
 	T temp;
-	//TODO: OpenMP 3.1 min/max reduction operators can speed this up
+	#pragma omp parallel for collapse(2) reduction(min:minval)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
 		temp=operator()(x,y);
-		if(temp==no_data) continue;
-		if(init && temp<minval)
+		if(temp==no_data)
+			continue;
+		else if (temp<minval || minval==no_data)
 			minval=temp;
-		else if (!init){
-			minval=temp;
-			init=true;
-		}
 	}
 	return minval;
 }
@@ -160,13 +152,7 @@ typedef array2d<bool> bool_2d;
 typedef array2d<unsigned int> uint_2d;
 typedef array2d<int> int_2d;
 
-typedef struct grid_cell_typez {
-	int x;
-	int y;
-	float z;
-	grid_cell_typez(int x0, int y0, float z0):x(x0),y(y0),z(z0){}
-	grid_cell_typez(){}
-} grid_cellz;
+
 
 typedef struct grid_cell_type {
 	int x;
@@ -175,6 +161,16 @@ typedef struct grid_cell_type {
 	grid_cell_type(){}
 } grid_cell;
 
+
+
+typedef struct grid_cell_typez {
+	int x;
+	int y;
+	float z;
+	grid_cell_typez(int x0, int y0, float z0):x(x0),y(y0),z(z0){}
+	grid_cell_typez(){}
+} grid_cellz;
+
 class grid_cellz_compare{
 	bool reverse;
 	public:
@@ -182,6 +178,27 @@ class grid_cellz_compare{
 		bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
 			if (reverse) return (lhs.z<rhs.z);
 			else return (lhs.z>rhs.z);
+		}
+};
+
+
+
+typedef struct grid_cell_typezk {
+	int x;
+	int y;
+	float z;
+	int k;
+	grid_cell_typezk(int x0, int y0, float z0, int k0):x(x0),y(y0),z(z0),k(k0){}
+	grid_cell_typezk(){}
+} grid_cellzk;
+
+class grid_cellzk_compare{
+	bool reverse;
+	public:
+		grid_cellzk_compare(const bool& revparam=false){reverse=revparam;}
+		bool operator() (const grid_cellzk &lhs, const grid_cellzk &rhs) const{
+			if (reverse) return (lhs.z<rhs.z || (lhs.z==rhs.z && lhs.k<rhs.k));
+			else return (lhs.z>rhs.z || (lhs.z==rhs.z && lhs.k>rhs.k));
 		}
 };
 
