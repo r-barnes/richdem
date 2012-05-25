@@ -26,6 +26,7 @@ int main(int argc, char **argv){
 	TCLAP::CmdLine cmd("RichDEM is a suite of DEM analysis functions for determining hydrologic properties. It has been developed by Richard Barnes (rbarnes@umn.edu). Find RichDEM on the web at \"http://www.richdem.com\".", ' ', RICHDEM_VERSION);
 	TCLAP::SwitchArg cl_d8("8","d8","Use the D8 flow metric (Dinf is default)", cmd, false);
 	TCLAP::SwitchArg cl_fill_pits("p","pits","Perform pit-filling prior to other operations", cmd, false);
+	TCLAP::SwitchArg cl_fill_rpits("r","rpits","Use Barnes Flood+Flow Directions algorithm and quit. (TODO)", cmd, false);
 	TCLAP::ValueArg<std::string> cl_output_pit_filled("l","pitfilled","Output pit-filled DEM - only applicable if -p is specified",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_unresolved_flowdirs("u","uflowdirs","Output flow directions before flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_resolved_flowdirs("f","flowdirs","Output flow directions after flat resolution",false,"","file",cmd);
@@ -51,6 +52,25 @@ int main(int argc, char **argv){
 	}
 
 	gettimeofday(&calcTimeStart, NULL);
+	if(cl_fill_rpits.getValue()){
+		char_2d flowdirs;
+		barnes_flood_flowdirs(elevations,flowdirs);
+		if(!cl_output_resolved_flowdirs.getValue().empty())
+			output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(), flowdirs);
+		if(!cl_output_flow_acculm.getValue().empty()){
+			if(cl_d8.getValue()){
+				int_2d area(elevations);
+				d8_upslope_area(flowdirs, area);
+				diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
+				output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+			} else 
+				diagnostic("Dinf has not been implemented yet for rpits. TODO\n");
+		} else
+			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
+		
+		return 0;
+	}
+
 	if(cl_fill_pits.getValue()){
 		barnes_flood(elevations);
 		if(!cl_output_pit_filled.getValue().empty())
@@ -73,12 +93,13 @@ int main(int argc, char **argv){
 				output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
 		}
 
-		int_2d area(elevations);
-		d8_upslope_area(flowdirs, area);
-		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
-
-		if(!cl_output_flow_acculm.getValue().empty())
+		if(!cl_output_flow_acculm.getValue().empty()){
+			int_2d area(elevations);
+			d8_upslope_area(flowdirs, area);
+			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+		} else
+			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 	} else {
 		float_2d flowdirs(elevations);
 		dinf_flow_directions(elevations,flowdirs);
@@ -94,12 +115,14 @@ int main(int argc, char **argv){
 				output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
 		}
 
-		float_2d area(elevations);
-		dinf_upslope_area(flowdirs, area);
-		diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
-
-		if(!cl_output_flow_acculm.getValue().empty())
+		if(!cl_output_flow_acculm.getValue().empty()){
+			float_2d area(elevations);
+			dinf_upslope_area(flowdirs, area);
+//			digital_dams_with_angs(area, flowdirs); //TODO: REMOVE
+			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+		} else
+			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 	}
 
 	diagnostic_arg("Total time was: %lf\n", timediff(totalTimeStart));
