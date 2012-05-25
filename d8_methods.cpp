@@ -9,8 +9,6 @@
 	#include <omp.h>
 #endif
 
-
-
 //234
 //105
 //876
@@ -138,7 +136,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, float &slope, float &aspect, float &curvature){
+inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &slope, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 //Slope derived from ArcGIS help at:
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
 //Cells are identified as
@@ -186,12 +184,22 @@ inline void d8_slope_and_aspect(const float_2d &elevations, int x0, int y0, floa
 	if(slope==0)
 		aspect=-1;	//Special value denoting a flat
 
-//Z1 Z2 Z3
-//Z4 Z5 Z6
-//Z7 Z8 Z9
-	float D=( (d+f)/2 - e) / elevations.cellsize;	//D = [(Z4 + Z6) /2 - Z5] / L2
-	float E=( (b+h)/2 - e) / elevations.cellsize;	//E = [(Z2 + Z8) /2 - Z5] / L2
-	curvature=-2*(D+E)*100;
+//Z1 Z2 Z3   a b c
+//Z4 Z5 Z6   d e f
+//Z7 Z8 Z9   g h i
+	float L=1;//elevations.cellsize;	//TODO: Should be in the same units as z
+	
+	double D=( (d+f)/2 - e) / L / L;	//D = [(Z4 + Z6) /2 - Z5] / L^22
+	double E=( (b+h)/2 - e) / L / L;	//E = [(Z2 + Z8) /2 - Z5] / L^22
+	double F=(-a+c+g-i)/4/L/L;			//F=(-Z1+Z3+Z7-Z9)/(4L^2)
+	double G=(-d+f)/2/L;				//G=(-Z4+Z6)/(2L)
+	double H=(b-h)/2/L;					//H=(Z2-Z8)/(2L)
+	float slope2=-sqrt(G*G+H*H);
+	float aspect2=atan(-H/-G);
+	diagnostic_arg("Slopes: %f,%f\tAspects: %f,%f\n",slope,slope2,aspect,aspect2);
+	curvature=(float)(-2*(D+E)*100);
+	profile_curvature=(float)(-2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
+	planform_curvature=(float)(2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
 }
 
 
@@ -212,8 +220,8 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 				slopes(x,y)=slopes.no_data;
 				continue;
 			}
-			float rise_over_run,aspect,curvature;
-			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
+			float rise_over_run,aspect,curvature, profile_curvature, planform_curvature;
+			d8_terrain_attrib_helper(elevations, x, y, rise_over_run, aspect, curvature, profile_curvature, planform_curvature);
 			switch(slope_type){
 				case SLOPE_RISERUN:
 					slopes(x,y)=rise_over_run;
@@ -234,64 +242,58 @@ void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 }
 
 
+void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
+	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the aspects matrix...");
+	attribs.resize(elevations.width(),elevations.height());
+	attribs.no_data=-2;	//TODO: Should push this out to the calling helper functions
+	diagnostic("succeeded.\n");
+
+	diagnostic_arg("%%Calculating terrain attribute #%d...\n",attrib);
+	progress_bar(-1);
+	#pragma omp parallel for
+	for(int x=0;x<elevations.width();x++){
+		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
+		for(int y=0;y<elevations.height();y++){
+			if(elevations(x,y)==elevations.no_data){
+				attribs(x,y)=attribs.no_data;
+				continue;
+			}
+			float rise_over_run, aspect, curvature, profile_curvature, planform_curvature;
+			d8_terrain_attrib_helper(elevations, x, y, rise_over_run, aspect, curvature, profile_curvature, planform_curvature);
+			switch(attrib){
+				case TATTRIB_SLOPE:
+					attribs(x,y)=rise_over_run;break;
+				case TATTRIB_CURVATURE:
+					attribs(x,y)=curvature;break;
+				case TATTRIB_PLANFORM_CURVATURE:
+					attribs(x,y)=planform_curvature;break;
+				case TATTRIB_PROFILE_CURVATURE:
+					attribs(x,y)=profile_curvature;break;
+				case TATTRIB_ASPECT:
+					attribs(x,y)=aspect;break;
+			}
+		}
+	}
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+}
+
 
 void d8_aspect(const float_2d &elevations, float_2d &aspects){
-	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the aspects matrix...");
-	aspects.resize(elevations.width(),elevations.height());
-	aspects.no_data=-2;
-	diagnostic("succeeded.\n");
-
-	diagnostic("%%Calculating aspects...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++){
-			if(elevations(x,y)==elevations.no_data){
-				aspects(x,y)=aspects.no_data;
-				continue;
-			}
-			float rise_over_run,aspect,curvature;
-			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
-			aspects(x,y)=aspect;
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT);
 }
-
-
-
-
 
 void d8_curvature(const float_2d &elevations, float_2d &curvatures){
-	diagnostic_arg("The curvatures matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the curvatures matrix...");
-	curvatures.resize(elevations.width(),elevations.height());
-	curvatures.no_data=-2;
-	diagnostic("succeeded.\n");
-
-	diagnostic("%%Calculating curvatures...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++){
-			if(elevations(x,y)==elevations.no_data){
-				curvatures(x,y)=curvatures.no_data;
-				continue;
-			}
-			float rise_over_run,aspect,curvature;
-			d8_slope_and_aspect(elevations,x,y,rise_over_run,aspect,curvature);
-			curvatures(x,y)=curvature;
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE);
 }
 
+void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures){
+	d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE);
+}
 
-
-
+void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures){
+	d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
+}
 
 
 

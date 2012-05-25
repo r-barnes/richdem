@@ -12,11 +12,19 @@
 #define SLOPE_RADIAN	3
 #define SLOPE_DEGREE	4
 
+#define TATTRIB_SLOPE				1
+#define TATTRIB_CURVATURE			2
+#define TATTRIB_PLANFORM_CURVATURE	3
+#define TATTRIB_PROFILE_CURVATURE	4
+#define TATTRIB_ASPECT				5
+
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs);
 void d8_upslope_area(const char_2d &flowdirs, int_2d &area);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=SLOPE_RISERUN);
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
 void d8_curvature(const float_2d &elevations, float_2d &curvatures);
+void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures);
+void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures);
 
 //234
 //105
