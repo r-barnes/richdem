@@ -294,26 +294,3 @@ void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvat
 void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures){
 	d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
 }
-
-
-
-//TODO: ArcGIS calculates flow directions differently, so the procedure below is not valid
-//http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=Determining_flow_direction
-//http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=flow_direction
-void d8_arcgis_convert(char_2d &flowdirs){
-//234   32 64 128
-//105   16     1
-//876    8  4  2
-	const unsigned char arcgis_flowdirs[9]={0,16,32,64,128,1,2,4,8};
-	diagnostic("%%Converting flow directions to ArcGIS format...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
-		for(int y=0;y<flowdirs.height();y++){
-			if(flowdirs(x,y)==flowdirs.no_data) continue;
-			flowdirs(x,y)=arcgis_flowdirs[flowdirs(x,y)];
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
-}
