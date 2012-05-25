@@ -116,11 +116,10 @@ bool array2d<T>::operator==(const array2d<T> &other) const {
 template <class T>
 T array2d<T>::max() const {
 	T maxval=no_data;
-	T temp;
 	#pragma omp parallel for collapse(2) reduction(max:maxval)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		temp=operator()(x,y);
+		T temp=operator()(x,y);
 		if(temp==no_data)
 			continue;
 		else if(temp>maxval || maxval==no_data)
@@ -132,11 +131,10 @@ T array2d<T>::max() const {
 template <class T>
 T array2d<T>::min() const {
 	T minval=no_data;
-	T temp;
 	#pragma omp parallel for collapse(2) reduction(min:minval)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		temp=operator()(x,y);
+		T temp=operator()(x,y);
 		if(temp==no_data)
 			continue;
 		else if (temp<minval || minval==no_data)
