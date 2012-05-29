@@ -65,7 +65,7 @@ void tikz_flowdir_print(const char_2d &flowdirs, std::string filename, float x_s
 			case 5:
 				fout<<"eastarrow";break;
 			case 6:
-				fout<<"swarrow";break;
+				fout<<"searrow";break;
 			case 7:
 				fout<<"downarrow";break;
 			case 8:
