@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <cmath>
+#include <iostream>
 #include "utility.h"
 
 #define PRINT(ARR,PREC,WIDTH) std::cout<<std::setprecision(PREC)<<std::setw(WIDTH)<<ARR<<std::endl;
@@ -141,6 +142,25 @@ int digital_dams_with_angs(const array2d<T> &dem, const array2d<T> &ang) {
 		}
 	}
 	return dam_count;
+}
+
+
+template <class T>
+void print_and_highlight(const array2d<T> &dem, int xh, int yh) {
+	std::cerr<<std::endl;
+	for(int y=0;y<dem.height();y++){
+		for(int x=0;x<dem.width();x++){
+			if(xh==x && yh==y)
+				std::cerr<<"\033[91m";
+			if(sizeof(T)==1)
+				std::cerr<<(int)dem(x,y);
+			else
+				std::cerr<<dem(x,y);
+			if(xh==x && yh==y)
+				std::cerr<<"\033[39m";
+		}
+	std::cerr<<std::endl;
+	}
 }
 
 #endif
