@@ -9,6 +9,7 @@
 
 void print_edges(const float_2d &elevations, const std::deque<grid_cell> &low_edges, const std::deque<grid_cell> &high_edges);
 void dinf_pit_flows(const float_2d &elevations, float_2d &flowdirs);
+void tikz_flowdir_print(const char_2d &flowdirs, std::string filename, float x_scale, float y_scale, float x_offset, float y_offset, bool omit_edges);
 
 template <class T>
 void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){

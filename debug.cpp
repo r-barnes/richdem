@@ -1,4 +1,6 @@
 #include <deque>
+#include <fstream>
+#include <string>
 #include "data_structures.h"
 #include "interface.h"
 #include "flat_resolution.h"
@@ -33,4 +35,43 @@ void dinf_pit_flows(const float_2d &elevations, float_2d &flowdirs){
 	resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
 
 	dinf_flow_flats(flat_resolution_mask,groups,flowdirs);
+}
+
+void tikz_flowdir_print(const char_2d &flowdirs, std::string filename, float x_scale, float y_scale, float x_offset, float y_offset, bool omit_edges){
+	std::ofstream fout;
+
+	diagnostic_arg("%f %f %f %f\n",x_scale,y_scale,x_offset,y_offset);
+
+	diagnostic_arg("Opening TikZ flowdirs output file \"%s\"...",filename.c_str());
+	fout.open(filename.c_str());
+	if(!fout.is_open()){
+		diagnostic("failed!\n");
+		exit(-1);
+	}
+	diagnostic("succeeded.\n");
+
+	for(int y=(omit_edges?1:0);y<flowdirs.height()-(omit_edges?1:0);y++)
+	for(int x=(omit_edges?1:0);x<flowdirs.width()-(omit_edges?1:0);x++){
+		fout<<"\\node at ("<<((x)*x_scale+x_offset)<<","<<(((flowdirs.height()-1)-y)*y_scale+y_offset)<<") {$\\";
+		switch(flowdirs(x,y)){
+			case 1:
+				fout<<"leftarrow";break;
+			case 2:
+				fout<<"nwarrow";break;
+			case 3:
+				fout<<"uparrow";break;
+			case 4:
+				fout<<"nearrow";break;
+			case 5:
+				fout<<"eastarrow";break;
+			case 6:
+				fout<<"swarrow";break;
+			case 7:
+				fout<<"downarrow";break;
+			case 8:
+				fout<<"swarrow";break;
+		}
+		fout<<"$};"<<std::endl;
+	}
+	fout.close();
 }
