@@ -8,7 +8,7 @@
 #include "interface.h"
 #include "flat_resolution.h"
 #include "watershed.h"
-//#include "debug.h"
+#include "debug.h"
 #include <string>
 #include <sys/time.h>
 
@@ -32,6 +32,12 @@ int main(int argc, char **argv){
 	TCLAP::ValueArg<std::string> cl_output_resolved_flowdirs("f","flowdirs","Output flow directions after flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_flow_acculm("a","acculm","Output flow accumulation (aka: contributing area, upslope area)",false,"","file",cmd); //TODO: Are these really all equivalent?
 	TCLAP::SwitchArg cl_are_there_dams("d","dams","Determines if the input file has digital dams. All other options ignored.", cmd, false);
+	TCLAP::ValueArg<std::string> cl_output_tikz("","tikz","Output TikZ flow directions",false,"","file",cmd);
+	TCLAP::ValueArg<float> cl_output_tikzx("","tikzx","TikZ X scaling",false,1.,"file",cmd);
+	TCLAP::ValueArg<float> cl_output_tikzy("","tikzy","TikZ Y scaling",false,1.,"file",cmd);
+	TCLAP::ValueArg<float> cl_output_tikzxo("","tikzxo","TikZ X offset",false,0.,"file",cmd);
+	TCLAP::ValueArg<float> cl_output_tikzyo("","tikzyo","TikZ X offset",false,0.,"file",cmd);
+	TCLAP::SwitchArg cl_tikz_omit_edges("","tikzne","Omits edges of the grid in TikZ output", cmd, true);
 	TCLAP::UnlabeledValueArg<std::string> cl_inputDEM("inputDEM", "The DEM to be processed (must be in ArcGrid ASCII format)", true, "", "Input DEM", cmd);
 	try {
 		cmd.parse( argc, argv );
@@ -57,6 +63,8 @@ int main(int argc, char **argv){
 		barnes_flood_flowdirs(elevations,flowdirs);
 		if(!cl_output_resolved_flowdirs.getValue().empty())
 			output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(), flowdirs);
+		if(!cl_output_tikz.getValue().empty())
+			tikz_flowdir_print(flowdirs, cl_output_tikz.getValue(), cl_output_tikzx.getValue(), cl_output_tikzy.getValue(), cl_output_tikzxo.getValue(), cl_output_tikzyo.getValue(), cl_tikz_omit_edges.getValue());
 		if(!cl_output_flow_acculm.getValue().empty()){
 			if(cl_d8.getValue()){
 				int_2d area(elevations);
