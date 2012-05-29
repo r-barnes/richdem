@@ -187,6 +187,7 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 	}
 	diagnostic("succeeded.\n");
 
+	const int d8_order[9]={0,1,3,5,7,2,4,6,8};
 	diagnostic("%%Performing the Barnes Flood+Flow Directions...\n");
 	progress_bar(-1);
 	while(open.size()>0){
@@ -194,7 +195,8 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 		open.pop();
 		processed_cells++;
 
-		for(int n=1;n<=8;n++){
+		for(int no=1;no<=8;no++){
+			int n=d8_order[no];
 			int nx=c.x+dx[n];
 			int ny=c.y+dy[n];
 			if(!elevations.in_grid(nx,ny)) continue;
