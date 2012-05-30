@@ -34,6 +34,8 @@ int main(){
 		unit_aspect.clear();
 	}
 
+	return 0;
+
 	{
 		float_2d planform_curvature, unit_planform_curvature;
 		d8_planform_curvature(elevations, planform_curvature);
