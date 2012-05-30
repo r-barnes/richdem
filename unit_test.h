@@ -19,7 +19,9 @@ double unit_avg_diff(const array2d<T> &arr1, const array2d<T> &arr2){
 		if(arr1(x,y)==arr1.no_data || arr2(x,y)==arr2.no_data)
 			continue;
 		if(sample++<20)
-			diagnostic_arg("Percent slopes. RichDEM: %f, ArcGIS: %f\n",arr1(x,y),arr2(x,y));
+			diagnostic_arg("\tRichDEM: %f, ArcGIS: %f\n",arr1(x,y),arr2(x,y));
+		if(arr1(x,y)!=arr1(x,y) || arr2(x,y)!=arr2(x,y))	//If it's NaN
+			continue;
 		diff+=fabs(arr1(x,y)-arr2(x,y));
 		ccount++;
 	}
