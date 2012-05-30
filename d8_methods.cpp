@@ -169,8 +169,8 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	if(i==elevations.no_data) i=e;
 
 	//TODO: Could use actual cell sizes below
-	float dzdx=( (c+2*f+i) - (a+2*d+g)) / 8; //(8*x_cell_size);
-	float dzdy=( (g+2*h+i) - (a+2*b+c)) / 8; //(8*y_cell_size);
+	float dzdx=( (c+2*f+i) - (a+2*d+g)) / (8*elevations.cellsize);
+	float dzdy=( (g+2*h+i) - (a+2*b+c)) / (8*elevations.cellsize);
 	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
 
 
