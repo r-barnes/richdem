@@ -15,7 +15,7 @@
 int main(){
 	float_2d elevations;
 	load_ascii_data("unit_test/bf03.dem", elevations);
-
+goto bob;
 	{
 		float_2d slope_percent, unit_slope_percent;
 		d8_slope(elevations, slope_percent, TATTRIB_SLOPE_PERCENT);
@@ -33,13 +33,11 @@ int main(){
 		aspect.clear();
 		unit_aspect.clear();
 	}
-
-	return 0;
-
+bob:
 	{
 		float_2d planform_curvature, unit_planform_curvature;
 		d8_planform_curvature(elevations, planform_curvature);
-		load_ascii_data("unit_test/bf03_aspect.txt", unit_planform_curvature);
+		load_ascii_data("unit_test/bf03_planform_curvature.txt", unit_planform_curvature);
 		printf("Average PLANFORM CURVATURE difference: %lf\n",unit_avg_diff(planform_curvature, unit_planform_curvature));
 		planform_curvature.clear();
 		unit_planform_curvature.clear();
@@ -47,7 +45,7 @@ int main(){
 
 	{
 		float_2d profile_curvature, unit_profile_curvature;
-		d8_aspect(elevations, profile_curvature);
+		d8_profile_curvature(elevations, profile_curvature);
 		load_ascii_data("unit_test/bf03_profile_curvature.txt", unit_profile_curvature);
 		printf("Average PROFILE CURVATURE difference: %lf\n",unit_avg_diff(profile_curvature, unit_profile_curvature));
 		profile_curvature.clear();
