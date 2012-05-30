@@ -12,12 +12,14 @@ double unit_avg_diff(const array2d<T> &arr1, const array2d<T> &arr2){
 
 	double diff=0;
 	int ccount=0;
+	int sample=0;
 	#pragma omp parallel for collapse(2) reduction(+:diff) reduction(+:ccount)
 	for(int x=0;x<arr1.width();x++)
 	for(int y=0;y<arr2.height();y++){
 		if(arr1(x,y)==arr1.no_data || arr2(x,y)==arr2.no_data)
 			continue;
-//		diagnostic_arg("Percent slopes. RichDEM: %f, ArcGIS: %f\n",arr1(x,y),arr2(x,y));
+		if(sample++<20)
+			diagnostic_arg("Percent slopes. RichDEM: %f, ArcGIS: %f\n",arr1(x,y),arr2(x,y));
 		diff+=fabs(arr1(x,y)-arr2(x,y));
 		ccount++;
 	}
