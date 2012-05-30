@@ -143,6 +143,7 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 //Cells are identified as
 //Aspect derived from AcrGIS help at:
 //http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
+//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/009z000000vp000000/
 //Curvature dervied from ArcGIS help at:
 //http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#//00q90000000t000000
 //http://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/
@@ -180,11 +181,10 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	h*=0.3048;
 	i*=0.3048;*/
 
-	float dzdx=( (c+2*f+i) - (a+2*d+g)) / (8*elevations.cellsize);
-	float dzdy=( (g+2*h+i) - (a+2*b+c)) / (8*elevations.cellsize);
-	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
-
-
+	float dzdx,dzdy;
+	//Odd as this is, the ArcGIS documentation says they do not use the cell size!
+	dzdx=( (c+2*f+i) - (a+2*d+g)) / 8;
+	dzdy=( (g+2*h+i) - (a+2*b+c)) / 8;
 	aspect=180.0/M_PI*atan2(dzdy,-dzdx);
 	if(aspect<0)
 		aspect=90-aspect;
@@ -194,6 +194,13 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 		aspect=90.0-aspect;
 	if(rise_over_run==0)
 		aspect=-1;	//Special value denoting a flat
+
+	//But cellsize is accounted for in slope
+	dzdx/=elevations.cellsize;
+	dzdy/=elevations.cellsize;
+	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
+
+
 
 //Z1 Z2 Z3   a b c
 //Z4 Z5 Z6   d e f
