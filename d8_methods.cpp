@@ -152,14 +152,14 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 //g h i
 	float a,b,c,d,e,f,g,h,i;
 	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
-	if(elevations.in_grid(x0-1,y0-1))					    a=elevations(x0-1,y0-1);
-	if(elevations.in_grid(x0-1,y0))                         d=elevations(x0-1,y0);
-	if(elevations.in_grid(x0-1,y0+1))                       g=elevations(x0-1,y0+1);
-	if(elevations.in_grid(x0  ,y0-1))                       b=elevations(x0,y0-1);
-	if(elevations.in_grid(x0  ,y0+1))                       h=elevations(x0,y0+1);
-	if(elevations.in_grid(x0+1,y0-1))                       c=elevations(x0+1,y0-1);
-	if(elevations.in_grid(x0+1,y0))                         f=elevations(x0+1,y0);
-	if(elevations.in_grid(x0+1,y0+1))                       i=elevations(x0+1,y0+1);
+	if(elevations.in_grid(x0-1,y0-1))			a=elevations(x0-1,y0-1);
+	if(elevations.in_grid(x0-1,y0))             d=elevations(x0-1,y0);
+	if(elevations.in_grid(x0-1,y0+1))           g=elevations(x0-1,y0+1);
+	if(elevations.in_grid(x0  ,y0-1))           b=elevations(x0,y0-1);
+	if(elevations.in_grid(x0  ,y0+1))           h=elevations(x0,y0+1);
+	if(elevations.in_grid(x0+1,y0-1))           c=elevations(x0+1,y0-1);
+	if(elevations.in_grid(x0+1,y0))             f=elevations(x0+1,y0);
+	if(elevations.in_grid(x0+1,y0+1))           i=elevations(x0+1,y0+1);
 	if(a==elevations.no_data) a=e;
 	if(b==elevations.no_data) b=e;
 	if(c==elevations.no_data) c=e;
