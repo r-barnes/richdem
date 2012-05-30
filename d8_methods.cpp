@@ -136,7 +136,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &slope, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
+inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 //Slope derived from ArcGIS help at:
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
 //Cells are identified as
@@ -171,7 +171,7 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	//TODO: Could use actual cell sizes below
 	float dzdx=( (c+2*f+i) - (a+2*d+g)) / 8; //(8*x_cell_size);
 	float dzdy=( (g+2*h+i) - (a+2*b+c)) / 8; //(8*y_cell_size);
-	slope=sqrt(dzdx*dzdx+dzdy*dzdy);
+	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
 
 
 	aspect=180.0/M_PI*atan2(dzdy,-dzdx);
@@ -181,7 +181,7 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 		aspect=360.0-aspect+90.0;
 	else
 		aspect=90.0-aspect;
-	if(slope==0)
+	if(rise_over_run==0)
 		aspect=-1;	//Special value denoting a flat
 
 //Z1 Z2 Z3   a b c
@@ -194,52 +194,11 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	double F=(-a+c+g-i)/4/L/L;			//F=(-Z1+Z3+Z7-Z9)/(4L^2)
 	double G=(-d+f)/2/L;				//G=(-Z4+Z6)/(2L)
 	double H=(b-h)/2/L;					//H=(Z2-Z8)/(2L)
-	float slope2=-sqrt(G*G+H*H);
-	float aspect2=atan(-H/-G);
-	diagnostic_arg("Slopes: %f,%f\tAspects: %f,%f\n",slope,slope2,aspect,aspect2);
 	curvature=(float)(-2*(D+E)*100);
 	profile_curvature=(float)(-2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
 	planform_curvature=(float)(2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
 }
 
-
-void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
-	diagnostic_arg("The slope matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the slope matrix...");
-	slopes.resize(elevations.width(),elevations.height());
-	slopes.no_data=-1;
-	diagnostic("succeeded.\n");
-
-	diagnostic("%%Calculating slopes...\n");
-	progress_bar(-1);
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
-		for(int y=0;y<elevations.height();y++){
-			if(elevations(x,y)==elevations.no_data){
-				slopes(x,y)=slopes.no_data;
-				continue;
-			}
-			float rise_over_run,aspect,curvature, profile_curvature, planform_curvature;
-			d8_terrain_attrib_helper(elevations, x, y, rise_over_run, aspect, curvature, profile_curvature, planform_curvature);
-			switch(slope_type){
-				case SLOPE_RISERUN:
-					slopes(x,y)=rise_over_run;
-					break;
-				case SLOPE_PERCENT:
-					slopes(x,y)=rise_over_run*100;
-					break;
-				case SLOPE_RADIAN:
-					slopes(x,y)=atan(rise_over_run);
-					break;
-				case SLOPE_DEGREE:
-					slopes(x,y)=atan(rise_over_run)*180/M_PI;
-					break;
-			}
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
-}
 
 
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
@@ -272,10 +231,26 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 					attribs(x,y)=profile_curvature;break;
 				case TATTRIB_ASPECT:
 					attribs(x,y)=aspect;break;
+				case TATTRIB_SLOPE_RISERUN:
+					attribs(x,y)=rise_over_run;
+					break;
+				case TATTRIB_SLOPE_PERCENT:
+					attribs(x,y)=rise_over_run*100;
+					break;
+				case TATTRIB_SLOPE_RADIAN:
+					attribs(x,y)=atan(rise_over_run);
+					break;
+				case TATTRIB_SLOPE_DEGREE:
+					attribs(x,y)=atan(rise_over_run)*180/M_PI;
+					break;
 			}
 		}
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+}
+
+void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
+	d8_terrain_attribute(elevations, slopes, slope_type);
 }
 
 
