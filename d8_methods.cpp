@@ -98,8 +98,6 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
-			else if(flowdirs(x,y)==NO_FLOW)
-				continue;
 			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
