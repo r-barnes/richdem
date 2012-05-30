@@ -192,13 +192,14 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 		aspect=360.0-aspect+90.0;
 	else
 		aspect=90.0-aspect;
-	if(rise_over_run==0)
-		aspect=-1;	//Special value denoting a flat
 
 	//But cellsize is accounted for in slope
 	dzdx/=elevations.cellsize;
 	dzdy/=elevations.cellsize;
 	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
+
+	if(rise_over_run==0)
+		aspect=-1;	//Special value denoting a flat
 
 
 
@@ -213,8 +214,9 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	double G=(-d+f)/2/L;				//G=(-Z4+Z6)/(2L)
 	double H=(b-h)/2/L;					//H=(Z2-Z8)/(2L)
 	curvature=(float)(-2*(D+E)*100);
-	profile_curvature=(float)(-2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
-	planform_curvature=(float)(2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
+
+	profile_curvature=(float)(2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
+	planform_curvature=(float)(-2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
 }
 
 
