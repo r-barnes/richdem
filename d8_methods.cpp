@@ -139,6 +139,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 //Slope derived from ArcGIS help at:
 //http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
+//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Slope_works/009z000000vz000000/
 //Cells are identified as
 //Aspect derived from AcrGIS help at:
 //http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
@@ -151,14 +152,14 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 //g h i
 	float a,b,c,d,e,f,g,h,i;
 	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
-	if(x0-1>0 && y0-1>0)                                    a=elevations(x0-1,y0-1);
-	if(x0-1>0)                                              d=elevations(x0-1,y0);
-	if(x0-1>0 && y0+1<elevations.height())                  g=elevations(x0-1,y0+1);
-	if(y0-1>0)                                              b=elevations(x0,y0-1);
-	if(y0+1<elevations.height())                            h=elevations(x0,y0+1);
-	if(x0+1<elevations.width() && y0-1>0)                   c=elevations(x0+1,y0-1);
-	if(x0+1<elevations.width())                             f=elevations(x0+1,y0);
-	if(x0+1<elevations.width() && y0+1<elevations.height()) i=elevations(x0+1,y0+1);
+	if(elevations.in_grid(x0-1,y0-1))					    a=elevations(x0-1,y0-1);
+	if(elevations.in_grid(x0-1,y0))                         d=elevations(x0-1,y0);
+	if(elevations.in_grid(x0-1,y0+1))                       g=elevations(x0-1,y0+1);
+	if(elevations.in_grid(x0  ,y0-1))                       b=elevations(x0,y0-1);
+	if(elevations.in_grid(x0  ,y0+1))                       h=elevations(x0,y0+1);
+	if(elevations.in_grid(x0+1,y0-1))                       c=elevations(x0+1,y0-1);
+	if(elevations.in_grid(x0+1,y0))                         f=elevations(x0+1,y0);
+	if(elevations.in_grid(x0+1,y0+1))                       i=elevations(x0+1,y0+1);
 	if(a==elevations.no_data) a=e;
 	if(b==elevations.no_data) b=e;
 	if(c==elevations.no_data) c=e;
@@ -168,7 +169,17 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 	if(h==elevations.no_data) h=e;
 	if(i==elevations.no_data) i=e;
 
-	//TODO: Could use actual cell sizes below
+	//TODO: Convert elevations to meters? (1ft=0.3048m)
+/*	a*=0.3048;
+	b*=0.3048;
+	c*=0.3048;
+	d*=0.3048;
+	e*=0.3048;
+	f*=0.3048;
+	g*=0.3048;
+	h*=0.3048;
+	i*=0.3048;*/
+
 	float dzdx=( (c+2*f+i) - (a+2*d+g)) / (8*elevations.cellsize);
 	float dzdy=( (g+2*h+i) - (a+2*b+c)) / (8*elevations.cellsize);
 	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
@@ -187,10 +198,10 @@ inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0,
 //Z1 Z2 Z3   a b c
 //Z4 Z5 Z6   d e f
 //Z7 Z8 Z9   g h i
-	float L=1;//elevations.cellsize;	//TODO: Should be in the same units as z
+	float L=elevations.cellsize;		//TODO: Should be in the same units as z
 	
-	double D=( (d+f)/2 - e) / L / L;	//D = [(Z4 + Z6) /2 - Z5] / L^22
-	double E=( (b+h)/2 - e) / L / L;	//E = [(Z2 + Z8) /2 - Z5] / L^22
+	double D=( (d+f)/2 - e) / L / L;	//D = [(Z4 + Z6) /2 - Z5] / L^2
+	double E=( (b+h)/2 - e) / L / L;	//E = [(Z2 + Z8) /2 - Z5] / L^2
 	double F=(-a+c+g-i)/4/L/L;			//F=(-Z1+Z3+Z7-Z9)/(4L^2)
 	double G=(-d+f)/2/L;				//G=(-Z4+Z6)/(2L)
 	double H=(b-h)/2/L;					//H=(Z2-Z8)/(2L)
