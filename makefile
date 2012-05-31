@@ -24,6 +24,10 @@ unit: $(OBJ) obj/unit_test.o
 	$(CC) $(PRE_FLAGS) -o richdem_unit.exe $^ $(CFLAGS)
 	du -hs ./richdem_unit.exe
 
+test: $(OBJ) obj/test.o
+	$(CC) $(PRE_FLAGS) -o richdem.exe $^ $(CFLAGS)
+	du -hs ./richdem.exe
+
 debug: $(OBJ)
 	$(CC) $(PRE_FLAGS) -g -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
