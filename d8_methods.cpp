@@ -379,8 +379,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
 			if(closed(nx,ny)) 
 				continue;
 
-			if(labels(c.x,c.y)!=labels.no_data)
-				labels(nx,ny)=labels(c.x,c.y);
+			labels(nx,ny)=labels(c.x,c.y);
 
 			closed(nx,ny)=true;
 			if(elevations(nx,ny)<=c.z){
