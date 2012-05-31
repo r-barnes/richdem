@@ -316,7 +316,7 @@ void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatur
 //		"labels" will be altered to contain the labels of the watersheds
 //Returns:
 //		None
-void find_watersheds(float_2d &elevations, int_2d &labels){
+void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
 	std::stack<grid_cellz, std::vector<grid_cellz> > meander;
 	bool_2d closed;
@@ -324,7 +324,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 	unsigned long pitc=0,openc=0;
 	int clabel=1;	//TODO: Thought this was more clear than zero in the results.
 
-	diagnostic("\n###Barnes Flood\n");
+	diagnostic("\n###Barnes Flood+Watershed Labels\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	closed.resize(elevations.width(),elevations.height());
@@ -354,7 +354,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 	}
 	diagnostic("succeeded.\n");
 
-	diagnostic("%%Performing the Barnes Flood...\n");
+	diagnostic("%%Performing the Barnes Flood+Watershed Labels...\n");
 	progress_bar(-1);
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;
@@ -384,7 +384,8 @@ void find_watersheds(float_2d &elevations, int_2d &labels){
 
 			closed(nx,ny)=true;
 			if(elevations(nx,ny)<=c.z){
-				elevations(nx,ny)=c.z;
+				if(alter_elevations)
+					elevations(nx,ny)=c.z;
 				meander.push(grid_cellz(nx,ny,c.z));
 			} else
 				open.push(grid_cellz(nx,ny,elevations(nx,ny)));
