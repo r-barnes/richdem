@@ -7,9 +7,9 @@ CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
 ODIR=obj
 #PRE_FLAGS=-lgcov -g -fprofile-arcs -ftest-coverage
 PRE_FLAGS=-O3
-DEPS = d8_methods.h data_structures.h dinf_methods.h interface.h data_io.h pit_fill.h utility.h flat_resolution.h debug.h visualize.h watershed.h unit_test.h
+DEPS = d8_methods.h data_structures.h dinf_methods.h interface.h data_io.h pit_fill.h utility.h flat_resolution.h debug.h visualize.h unit_test.h
 
-_OBJ = d8_methods.o dinf_methods.o interface.o data_io.o pit_fill.o utility.o debug.o watershed.o
+_OBJ = d8_methods.o dinf_methods.o interface.o data_io.o pit_fill.o utility.o debug.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 obj/%.d: %.cpp %.h
