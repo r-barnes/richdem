@@ -7,7 +7,6 @@
 #include "pit_fill.h"
 #include "interface.h"
 #include "flat_resolution.h"
-#include "watershed.h"
 #include "debug.h"
 #include <string>
 #include <sys/time.h>
