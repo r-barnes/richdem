@@ -1,4 +1,4 @@
-#define  RICHDEM_VERSION  "0r~301"
+#define  RICHDEM_VERSION  "0r~321"
 #include "utility.h"
 #include "data_structures.h"
 #include "data_io.h"
@@ -134,6 +134,7 @@ int main(int argc, char **argv){
 	}
 
 	diagnostic_arg("Total time was: %lf\n", timediff(totalTimeStart));
+	diagnostic_arg("Ran RichDEMv%s.\n",RICHDEM_VERSION);
 
 	return 0;
 }
