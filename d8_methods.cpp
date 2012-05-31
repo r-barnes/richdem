@@ -5,6 +5,8 @@
 #include <queue>
 #include <limits>
 #include <cmath>
+#include <stack>
+#include <map>
 #ifdef _OPENMP
 	#include <omp.h>
 #endif
