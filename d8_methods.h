@@ -30,6 +30,9 @@ void d8_curvature(const float_2d &elevations, float_2d &curvatures);
 void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures);
 void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures);
 
+void find_watersheds(float_2d &elevations, int_2d &labels);
+void watershed_area(const int_2d &labels);
+
 //234
 //105
 //876
