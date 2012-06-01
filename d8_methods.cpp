@@ -231,7 +231,7 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the aspects matrix...");
-	attribs.resize(elevations.width(),elevations.height());
+	attribs.copyprops(elevations);
 	attribs.no_data=-2;	//TODO: Should push this out to the calling helper functions
 	diagnostic("succeeded.\n");
 
