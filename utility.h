@@ -2,6 +2,7 @@
 #define _utility_included
 
 #include <string>
+#include <cmath>
 #include "data_structures.h"
 //Neighbour directions
 //234
@@ -46,5 +47,23 @@ struct must_be{
 };
 
 std::istream& operator>>(std::istream& inputstream, const must_be &a);
+
+template <class T>
+T angdiff_deg(T a, T b){
+	T temp=fabs(a-b);					//Subtract (TODO: overloaded abs better)
+	temp-=360.0*floor(temp/360.0);		//Floating-point modulus brings it to [0,360)
+	if(temp>180.0)
+		temp=360.0-temp;
+	return temp;
+}
+
+template <class T>
+T angdiff_rad(T a, T b){
+	T temp=fabs(a-b);					//Subtract (TODO: overloaded abs better)
+	temp-=2*M_PI*floor(temp/(2*M_PI));		//Floating-point modulus brings it to [0,2*Pi)
+	if(temp>M_PI)
+		temp=2*M_PI-temp;
+	return temp;
+}
 
 #endif
