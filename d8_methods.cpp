@@ -135,7 +135,31 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-
+//Procedure:	d8_terrain_attrib_helper
+//Description:
+//		This calculates a variety of terrain attributes according
+//		to the work of Burrough 1998's "Principles of Geographical
+//		Information Systems" (p. 190). Algorithms and helpful ArcGIS
+//		pages are noted in comments in the code.
+//Restrictions:
+//		This function should never be called on a NoData cell
+//Inputs:
+//		elevations		A 2D array of cell elevations
+//		x0				X coordinate of cell to perform calculation on
+//		y0				Y coordinate of cell to perform calculation on
+//		rise_over_run	Returns rise-over-run slope
+//		aspect			Returns aspect in degrees [0,360). 0 is north,
+//						degrees increase in a clockwise fashion.
+//		curvature		Returns the difference of profile and planform
+//						curvatures
+//		profile_curvature	Returns the profile curvature
+//		planform_curvature	Returns the planform curvature
+//Requirements:
+//		None
+//Effects:
+//		Variables noted as "Returns" above are altered
+//Returns:
+//		None
 inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 /*
 Slope derived from ArcGIS help at:
@@ -153,12 +177,16 @@ http://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/
 
 Expanded ArcGIS curvature info
 http://support.esri.com/en/knowledgebase/techarticles/detail/21942
+
+Burrough 1998's "Principles of Geographical Information Systems" explains all these algorithms
 */
 
 //a b c
 //d e f
 //g h i
 	double a,b,c,d,e,f,g,h,i;
+	//Deal with grid edges and NoData values in the manner suggested by
+	//ArcGIS. Note that this function should never be called on a NoData cell
 	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
 	if(elevations.in_grid(x0-1,y0-1))			a=elevations(x0-1,y0-1);
 	if(elevations.in_grid(x0-1,y0))             d=elevations(x0-1,y0);
@@ -189,7 +217,8 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 	i*=0.3048;*/
 
 	double dzdx,dzdy;
-	//Odd as this is, the ArcGIS documentation says they do not use the cell size!
+	//Aspect calculation in the manner of Horn 1981
+	//ArcGIS doesn't use cell size fo aspect calculations.
 	dzdx=( (c+2*f+i) - (a+2*d+g)) / 8;
 	dzdy=( (g+2*h+i) - (a+2*b+c)) / 8;
 	aspect=180.0/M_PI*atan2(dzdy,-dzdx);
@@ -200,6 +229,7 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 	else
 		aspect=90.0-aspect;
 
+	//Slope calculation in the manner of Horn 1981
 	//But cellsize is accounted for in slope
 	dzdx/=elevations.cellsize;
 	dzdy/=elevations.cellsize;
@@ -213,8 +243,8 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 //Z1 Z2 Z3   a b c
 //Z4 Z5 Z6   d e f
 //Z7 Z8 Z9   g h i
-	float L=elevations.cellsize;		//TODO: Should be in the same units as z
-	
+	//Curvatures in the manner of Zevenbergen and Thorne 1987
+	double L=elevations.cellsize;		//TODO: Should be in the same units as z
 	double D=( (d+f)/2 - e) / L / L;	//D = [(Z4 + Z6) /2 - Z5] / L^2
 	double E=( (b+h)/2 - e) / L / L;	//E = [(Z2 + Z8) /2 - Z5] / L^2
 	double F=(-a+c+g-i)/4/L/L;			//F=(-Z1+Z3+Z7-Z9)/(4L^2)
@@ -228,6 +258,39 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 
 
 
+
+//Procedure:	d8_terrain_attribute
+//Description:
+//		This calculates a variety of terrain attributes according
+//		to the work of Burrough 1998's "Principles of Geographical
+//		Information Systems" (p. 190). This function calls
+//		d8_terrain_attrib_helper to calculate the actual attributes.
+//		This function may perform some post-processing (such as on
+//		slope), but it's purpose is essentially to just scan the grid
+//		and pass off the work.
+//Restrictions:
+//		None
+//Inputs:
+//		elevations		A 2D array of cell elevations
+//		attribs			A 2D array to hold the calculated attribute
+//		attrib			The attribute to be calculated
+//Attributes:
+//		Values "attrib" can take:
+//			TATTRIB_SLOPE
+//			TATTRIB_CURVATURE
+//			TATTRIB_PLANFORM_CURVATURE
+//			TATTRIB_PROFILE_CURVATURE
+//			TATTRIB_ASPECT
+//			TATTRIB_SLOPE_RISERUN
+//			TATTRIB_SLOPE_PERCENT
+//			TATTRIB_SLOPE_RADIAN
+//			TATTRIB_SLOPE_DEGREE
+//Requirements:
+//		None
+//Effects:
+//		"attribs" is altered to contain the calculated attribute
+//Returns:
+//		None
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the aspects matrix...");
