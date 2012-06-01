@@ -1,3 +1,9 @@
+print_and_highlight is duplicitous with print_dem
+
+Add Dinf support for the pit-carving thing
+
+Add checks for "edge contamination" to the D8 and Dinf area methods
+
 Add checks for digital dams to d8 methods like they are in dinf methods in the flow_area functions
 
 sizeof returns a result of type size_t, which varies from system to system. Using the iostream operators for output would likely eliminate warnings thrown by this. Otherwise, find some way to make things work with printf/fprintf
