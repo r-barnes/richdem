@@ -33,6 +33,9 @@ void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvat
 void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations=false);
 void watershed_area(const int_2d &labels);
 
+void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result);
+void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result);
+
 //234
 //105
 //876
