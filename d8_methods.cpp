@@ -481,3 +481,97 @@ void watershed_area(const int_2d &labels){
 	for(std::map<int, int>::iterator i=wsheds.begin();i!=wsheds.end();i++)
 		printf("Watershed %d has area %d\n",(*i).first,(*i).second);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Procedure:	d8_SPI
+//Description:
+//		Calculates the SPI terrain attribute
+//Inputs:
+//		flow_accumulation	A flow accumulation grid
+//		percent_slope		A percent_slope grid
+//		result				Returns the calculated SPI
+//Requirements:
+//		None
+//Effects:
+//		"result" will be altered to contain the calculated SPI
+//Returns:
+//		None
+void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
+		diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
+		exit(-1);
+	}
+
+	diagnostic_arg("The result matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the result matrix...");
+	result.copyprops(flow_accumulation);
+	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
+	diagnostic("succeeded.\n");
+
+	diagnostic("%%Calculating SPI...\n");
+	progress_bar(-1);
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<flow_accumulation.width();x++)
+		for(int y=0;y<flow_accumulation.height();y++)
+			if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
+				result(x,y)=result.no_data;
+			else
+				result(x,y)=log( (flow_accumulation(x,y)+0.001) * ((percent_slope(x,y)/100) + 0.001) );
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+}
+
+
+
+
+
+
+
+
+//Procedure:	d8_CTI
+//Description:
+//		Calculates the CTI terrain attribute
+//Inputs:
+//		flow_accumulation	A flow accumulation grid
+//		percent_slope		A percent_slope grid
+//		result				Returns the calculated SPI
+//Requirements:
+//		None
+//Effects:
+//		"result" will be altered to contain the calculated CTI
+//Returns:
+//		None
+void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
+		diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
+		exit(-1);
+	}
+
+	diagnostic_arg("The result matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the result matrix...");
+	result.copyprops(flow_accumulation);
+	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
+	diagnostic("succeeded.\n");
+
+	diagnostic("%%Calculating SPI...\n");
+	progress_bar(-1);
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<flow_accumulation.width();x++)
+		for(int y=0;y<flow_accumulation.height();y++)
+			if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
+				result(x,y)=result.no_data;
+			else
+				result(x,y)=log( (flow_accumulation(x,y)+0.001) / ((percent_slope(x,y)/100) + 0.001) );
+	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+}
