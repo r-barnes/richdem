@@ -41,12 +41,8 @@ void dadiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 	for(int y=0;y<arr2.height();y++)
 		if(arr1(x,y)==arr1.no_data || arr2(x,y)==arr2.no_data)
 			result(x,y)=arr1.no_data;
-		else{
-			result(x,y)=fabs(arr1(x,y)-arr2(x,y));
-			result(x,y)-=360.0*floor(result(x,y)/360.0);
-			if(result(x,y)>180.0)
-				result(x,y)=360.0-result(x,y);
-		}
+		else
+			result(x,y)=angdiff_deg(arr1(x,y),arr2(x,y));
 	diagnostic("success!\n");
 }
 
