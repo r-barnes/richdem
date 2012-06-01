@@ -160,7 +160,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 //		Variables noted as "Returns" above are altered
 //Returns:
 //		None
-inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
+inline static void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 /*
 Slope derived from ArcGIS help at:
 http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
