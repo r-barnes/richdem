@@ -1,3 +1,5 @@
+Speaking of, I think one of the only other improvements you could make would be to load the output grids created automatically as a default.  Otherwise, you could add a check box asking people if they did or didn’t want them to load after processing.  Something like “Add files after processing?” or what not.
+
 print_and_highlight is duplicitous with print_dem
 
 Add Dinf support for the pit-carving thing
