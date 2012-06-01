@@ -158,7 +158,7 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 //a b c
 //d e f
 //g h i
-	float a,b,c,d,e,f,g,h,i;
+	double a,b,c,d,e,f,g,h,i;
 	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
 	if(elevations.in_grid(x0-1,y0-1))			a=elevations(x0-1,y0-1);
 	if(elevations.in_grid(x0-1,y0))             d=elevations(x0-1,y0);
@@ -188,7 +188,7 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 	h*=0.3048;
 	i*=0.3048;*/
 
-	float dzdx,dzdy;
+	double dzdx,dzdy;
 	//Odd as this is, the ArcGIS documentation says they do not use the cell size!
 	dzdx=( (c+2*f+i) - (a+2*d+g)) / 8;
 	dzdy=( (g+2*h+i) - (a+2*b+c)) / 8;
