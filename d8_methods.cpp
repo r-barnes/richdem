@@ -137,16 +137,23 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 inline void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
-//Slope derived from ArcGIS help at:
-//http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
-//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Slope_works/009z000000vz000000/
-//Cells are identified as
-//Aspect derived from AcrGIS help at:
-//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
-//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/009z000000vp000000/
-//Curvature dervied from ArcGIS help at:
-//http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#//00q90000000t000000
-//http://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/
+/*
+Slope derived from ArcGIS help at:
+http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
+http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Slope_works/009z000000vz000000/
+
+Cells are identified as
+Aspect derived from AcrGIS help at:
+http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/00q900000023000000/
+http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/How_Aspect_works/009z000000vp000000/
+
+Curvature dervied from ArcGIS help at:
+http://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#//00q90000000t000000
+http://blogs.esri.com/esri/arcgis/2010/10/27/understanding-curvature-rasters/
+
+Expanded ArcGIS curvature info
+http://support.esri.com/en/knowledgebase/techarticles/detail/21942
+*/
 
 //a b c
 //d e f
