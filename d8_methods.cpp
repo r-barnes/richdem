@@ -270,23 +270,28 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 }
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
+	diagnostic("###Slope attribute calculation\n");
 	d8_terrain_attribute(elevations, slopes, slope_type);
 }
 
 
 void d8_aspect(const float_2d &elevations, float_2d &aspects){
+	diagnostic("###Aspect attribute calculation\n");
 	d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT);
 }
 
 void d8_curvature(const float_2d &elevations, float_2d &curvatures){
+	diagnostic("###Curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE);
 }
 
 void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures){
+	diagnostic("###Planform curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE);
 }
 
 void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures){
+	diagnostic("###Profile curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
 }
 
