@@ -43,12 +43,9 @@ void dadiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
 			result(x,y)=arr1.no_data;
 		else{
 			result(x,y)=fabs(arr1(x,y)-arr2(x,y));
-			if(result(x,y)>2*M_PI)
-				result(x,y)-=2*M_PI;
-			else if (result(x,y)>M_PI)
-				result(x,y)-=M_PI;
-//			if(result(x,y)>0.17453292519943295769)
-//				diagnostic_arg("%f-%f=%f\n",arr1(x,y),arr2(x,y),result(x,y));
+			result(x,y)-=360.0*floor(result(x,y)/360.0);
+			if(result(x,y)>180.0)
+				result(x,y)=360.0-result(x,y);
 		}
 	diagnostic("success!\n");
 }
