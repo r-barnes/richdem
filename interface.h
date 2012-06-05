@@ -3,6 +3,8 @@
 
 #include <cstdio>
 #include <sys/time.h>
+#include "utility.h"
+
 #define diagnostic_arg(message,...) fprintf(stderr,message,__VA_ARGS__)
 #define diagnostic(message) fprintf(stderr,message)
 double progress_bar(int percent);
@@ -14,20 +16,26 @@ double timediff(const timeval &startTime);
 	#define SUCCEEDED_IN "\tsucceeded in %.2lfs.\n"
 #endif
 
+#ifdef _OPENMP
+	#include <omp.h>
+#else
+	#define omp_get_thread_num()  0
+	#define omp_get_num_threads() 1
+#endif
+
+#define PROGRESS_BAR "=================================================="
+
 
 
 class ProgressBar{
 	private:
 		long total_work;
-		long old_percent;
+		int old_percent;
 		Timer timer;
 	public:
-		ProgressBar(int total_work0) : total_work(total_work0){}
-		void start(){
-			if(omp_get_thread_num()!=0)
-				return;
-
+		void start(long total_work0){
 			timer.start();
+			total_work=total_work0;
 			old_percent=0;
 			#ifndef ARCGIS
 				//This ANSI code clears the entire line
@@ -41,8 +49,8 @@ class ProgressBar{
 			if(omp_get_thread_num()!=0)
 				return;
 
-			long percent;
-			percent=work_done*omp_get_num_threads()*100/work_total;
+			int percent;
+			percent=(int)(work_done*omp_get_num_threads()*100/total_work);
 			if(percent>100)
 				percent=100;
 			if(percent==old_percent)
@@ -56,9 +64,6 @@ class ProgressBar{
 			#endif
 		}
 		double stop(){
-			if(omp_get_thread_num()!=0)
-				return;
-
 			#ifndef ARCGIS
 				//This ANSI code clears the entire line
 				fprintf(stderr,"\r\033[2K");
