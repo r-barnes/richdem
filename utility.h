@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include "data_structures.h"
+#include <sys/time.h>
 //Neighbour directions
 //234
 //105
@@ -65,5 +66,33 @@ T angdiff_rad(T a, T b){
 		temp=2*M_PI-temp;
 	return temp;
 }
+
+
+
+class Timer{
+	private:
+		timeval start_time;
+		double accumulated_time;
+	public:
+		Timer(){
+			accumulated_time=0;
+		}
+		void start(){
+			gettimeofday(&start_time, NULL);
+		}
+		void stop(){
+			timeval endTime;
+			gettimeofday(&endTime, NULL);
+
+			long seconds, useconds;
+			seconds  = endTime.tv_sec  - start_time.tv_sec;
+			useconds = endTime.tv_usec - start_time.tv_usec;
+
+			accumulated_time+=seconds + useconds/1000000.0;
+		}
+		double get(){
+			return accumulated_time;
+		}
+};
 
 #endif
