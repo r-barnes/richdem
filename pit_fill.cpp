@@ -30,6 +30,7 @@ void barnes_flood(float_2d &elevations){
 	bool_2d closed;
 	unsigned long processed_cells=0;
 	unsigned long pitc=0,openc=0;
+	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
@@ -55,7 +56,7 @@ void barnes_flood(float_2d &elevations){
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Performing the Barnes Flood...\n");
-	progress_bar(-1);
+	progress.start( elevations.width()*elevations.height() );
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;
 		if(meander.size()>0){
@@ -83,9 +84,9 @@ void barnes_flood(float_2d &elevations){
 			} else
 				open.push(grid_cellz(nx,ny,elevations(nx,ny)));
 		}
-		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+		progress.update(processed_cells);
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 	diagnostic_arg("%ld cells processed. %ld in pits, %ld not in pits.\n",processed_cells,pitc,openc);
 }
 
@@ -153,6 +154,7 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 	bool_2d closed;
 	unsigned long processed_cells=0;
 	int cell_num=0;
+	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood+Flow Directions\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
@@ -189,7 +191,7 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 
 	const int d8_order[9]={0,1,3,5,7,2,4,6,8};
 	diagnostic("%%Performing the Barnes Flood+Flow Directions...\n");
-	progress_bar(-1);
+	progress.start( elevations.width()*elevations.height() );
 	while(open.size()>0){
 		grid_cellzk c=open.top();
 		open.pop();
@@ -212,8 +214,8 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 
 			open.push(grid_cellzk(nx,ny,elevations(nx,ny),++cell_num));
 		}
-		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+		progress.update(processed_cells);
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 	diagnostic_arg("%ld cells processed.\n",processed_cells);
 }

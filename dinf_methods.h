@@ -108,6 +108,8 @@ float dinf_FlowDir(const array2d<T> &elevations, const int x, const int y){
 
 template <class T>
 void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
+	ProgressBar progress;
+
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),false);
@@ -122,17 +124,17 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Calculating Dinf flow directions...\n");
-	progress_bar(-1);
+	progress.start( elevations.width()*elevations.height() );
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
+		progress.update( x*elevations.height() );
 		for(int y=0;y<elevations.height();y++)
 			if(elevations(x,y)==elevations.no_data)
 				flowdirs(x,y)=flowdirs.no_data;
 			else
 				flowdirs(x,y)=dinf_FlowDir(elevations,x,y);
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 #endif
