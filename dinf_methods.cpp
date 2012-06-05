@@ -104,6 +104,7 @@ bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
 void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
+	ProgressBar progress;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
@@ -122,10 +123,10 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 	bool has_cells_without_flow_directions=false;
 	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.width()*flowdirs.height() );
 	#pragma omp parallel for reduction(|:has_cells_without_flow_directions)
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress.update( x*flowdirs.height() );
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data){
 				area(x,y)=area.no_data;
@@ -150,14 +151,14 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 				dependency(nhx,nhy)++;
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 	if(has_cells_without_flow_directions)
 		diagnostic("\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m\n");
 
 	diagnostic("%%Locating source cells...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.width()*flowdirs.height() );
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress.update( x*flowdirs.height() );
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
@@ -166,17 +167,17 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
 	diagnostic("%%Calculating up-slope areas...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.data_cells );
 	long int ccount=0;
 	while(sources.size()>0){
 		grid_cell c=sources.front();
 		sources.pop();
 
 		ccount++;
-		progress_bar(ccount*100/flowdirs.data_cells);
+		progress.update(ccount);
 		area(c.x,c.y)+=1;
 
 		if(flowdirs(c.x,c.y)==flowdirs.no_data || flowdirs(c.x,c.y)==NO_FLOW)
@@ -204,7 +205,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 		if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
 			sources.push(grid_cell(nhx,nhy));
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -262,16 +263,18 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 }
 
 void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs){
+	ProgressBar progress;
+
 	diagnostic("%%Calculating Dinf flow directions using flat mask...\n");
-	progress_bar(-1);
+	progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress_bar(x*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		progress.update( x*flat_resolution_mask.height() );
 		for(int y=1;y<flat_resolution_mask.height()-1;y++)
 			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
 				continue;
 			else if(flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=dinf_masked_FlowDir(flat_resolution_mask,groups,x,y);
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }

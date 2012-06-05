@@ -203,10 +203,11 @@ template <class T, class U>
 static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges,
 			const array2d<U> &flowdirs, const array2d<T> &elevations){
 	int nx,ny;
+	ProgressBar progress;
 	diagnostic("%%Searching for flats...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.width()*flowdirs.height() );
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress.update( x*flowdirs.height() );
 		for(int y=0;y<flowdirs.height();y++){
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
@@ -227,7 +228,7 @@ static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_ce
 			}
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 template <class T, class U>
