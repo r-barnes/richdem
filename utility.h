@@ -73,25 +73,43 @@ class Timer{
 	private:
 		timeval start_time;
 		double accumulated_time;
+		bool running;
+		double timediff(timeval beginning, timeval end){
+			long seconds, useconds;
+			seconds  = end.tv_sec  - beginning.tv_sec;
+			useconds = end.tv_usec - beginning.tv_usec;
+			return seconds + useconds/1000000.0;
+		}
 	public:
 		Timer(){
 			accumulated_time=0;
+			running=false;
 		}
 		void start(){
+			if(running)
+				throw "Timer was already started!";
+			running=true;
 			gettimeofday(&start_time, NULL);
 		}
 		void stop(){
-			timeval endTime;
-			gettimeofday(&endTime, NULL);
+			if(!running)
+				throw "Timer was already stopped!";
+			timeval end_time;
+			gettimeofday(&end_time, NULL);
 
-			long seconds, useconds;
-			seconds  = endTime.tv_sec  - start_time.tv_sec;
-			useconds = endTime.tv_usec - start_time.tv_usec;
-
-			accumulated_time+=seconds + useconds/1000000.0;
+			accumulated_time+=timediff(start_time,end_time);
 		}
 		double accumulated(){
+			if(running)
+				throw "Timer is still running!";
 			return accumulated_time;
+		}
+		double lap(){
+			if(!running)
+				throw "Timer was not started!";
+			timeval lap_time;
+			gettimeofday(&lap_time, NULL);
+			return timediff(start_time,lap_time);
 		}
 };
 
