@@ -6,7 +6,7 @@ CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
 
 ODIR=obj
 #PRE_FLAGS=-lgcov -g -fprofile-arcs -ftest-coverage
-PRE_FLAGS=-g
+PRE_FLAGS=-O3
 
 DEPS = d8_methods.h data_structures.h dinf_methods.h interface.h data_io.h pit_fill.h utility.h flat_resolution.h debug.h visualize.h unit_test.h
 
