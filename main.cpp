@@ -9,7 +9,6 @@
 #include "flat_resolution.h"
 #include "debug.h"
 #include <string>
-#include <sys/time.h>
 
 #include "tclap/CmdLine.h"
 
