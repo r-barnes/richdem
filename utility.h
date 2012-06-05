@@ -90,7 +90,7 @@ class Timer{
 
 			accumulated_time+=seconds + useconds/1000000.0;
 		}
-		double get(){
+		double accumulated(){
 			return accumulated_time;
 		}
 };

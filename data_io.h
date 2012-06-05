@@ -88,7 +88,7 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 	fout.close();
 
 	write_time.stop();
-	diagnostic_arg("Write time was: %lf\n", write_time.get());
+	diagnostic_arg("Write time was: %lf\n", write_time.accumulated());
 
 	return 0;
 }
