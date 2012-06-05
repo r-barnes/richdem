@@ -4,16 +4,16 @@
 #include "data_structures.h"
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/time.h>
 #include <string.h>
+#include "utility.h"
 
 int load_ascii_data(const char filename[], float_2d &elevations){
 	FILE *fin;
 	long long file_size;
 	int rows,columns;
-	timeval startTime;
+	Timer load_time;
 
-	gettimeofday(&startTime, NULL);
+	load_time.start();
 
 	errno=0;
 	diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename);
@@ -76,7 +76,8 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 
 	diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
 
-	diagnostic_arg("Read time was: %lf\n", timediff(startTime));
+	load_time.stop();
+	diagnostic_arg("Read time was: %lf\n", load_time.get());
 
 	return 0;
 }
