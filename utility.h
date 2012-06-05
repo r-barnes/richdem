@@ -94,6 +94,7 @@ class Timer{
 		void stop(){
 			if(!running)
 				throw "Timer was already stopped!";
+			running=false;
 			timeval end_time;
 			gettimeofday(&end_time, NULL);
 
