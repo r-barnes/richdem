@@ -12,6 +12,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	long long file_size;
 	int rows,columns;
 	Timer load_time;
+	ProgressBar progress;
 
 	load_time.start();
 
@@ -55,11 +56,11 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Reading elevation matrix...\n");
-	progress_bar(-1);
+	progress.start(file_size);
 	float temp;
 	elevations.data_cells=0;
 	for(int y=0;y<rows;y++){
-		progress_bar(((long long)ftell(fin))*((long long)100)/file_size); //Todo: Should I check to see if ftell fails here?
+		progress.update(ftell(fin)); //Todo: Should I check to see if ftell fails here?
 		for(int x=0;x<columns;x++){
 			if (fscanf(fin,"%f", &temp)!=1){
 				diagnostic("\n\tFailed! (Couldn't read or convert a value!)\n");
@@ -70,7 +71,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 				elevations.data_cells++;
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
 	fclose(fin);
 
