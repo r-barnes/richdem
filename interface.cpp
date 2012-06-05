@@ -1,12 +1,6 @@
 #include <stdio.h>
 #include "interface.h"
 #include <sys/time.h>
-#ifdef _OPENMP
-	#include <omp.h>
-#else
-	#define omp_get_thread_num()  0
-	#define omp_get_num_threads() 1
-#endif
 
 #define PROGRESS_BAR "=================================================="
 
