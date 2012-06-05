@@ -30,7 +30,9 @@ int main(int argc, char **argv){
 	TCLAP::ValueArg<std::string> cl_output_unresolved_flowdirs("u","uflowdirs","Output flow directions before flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_resolved_flowdirs("f","flowdirs","Output flow directions after flat resolution",false,"","file",cmd);
 	TCLAP::ValueArg<std::string> cl_output_flow_acculm("a","acculm","Output flow accumulation (aka: contributing area, upslope area)",false,"","file",cmd); //TODO: Are these really all equivalent?
-	TCLAP::SwitchArg cl_are_there_dams("d","dams","Determines if the input file has digital dams. All other options ignored.", cmd, false);
+	TCLAP::ValueArg<std::string> cl_output_spi("","spi","Output SPI (stream power index)",false,"","file",cmd);
+	TCLAP::ValueArg<std::string> cl_output_cti("","cti","Output CTI (compound topographic index, wetness index)",false,"","file",cmd);
+//	TCLAP::SwitchArg cl_are_there_dams("d","dams","Determines if the input file has digital dams. All other options ignored.", cmd, false); //TODO
 	TCLAP::ValueArg<std::string> cl_output_tikz("","tikz","Output TikZ flow directions",false,"","file",cmd);
 	TCLAP::ValueArg<float> cl_output_tikzx("","tikzx","TikZ X scaling",false,1.,"file",cmd);
 	TCLAP::ValueArg<float> cl_output_tikzy("","tikzy","TikZ Y scaling",false,1.,"file",cmd);
@@ -51,10 +53,10 @@ int main(int argc, char **argv){
 	float_2d elevations;
 	load_ascii_data(cl_inputDEM.getValue().c_str(),elevations);
 
-	if(cl_are_there_dams.getValue()){
-		diagnostic_arg("Found %d digital dams.\n",digital_dams(elevations));
-		return 0;
-	}
+//	if(cl_are_there_dams.getValue()){
+//		diagnostic_arg("Found %d digital dams.\n",digital_dams(elevations));
+//		return 0;
+//	}
 
 	gettimeofday(&calcTimeStart, NULL);
 	if(cl_fill_pfdirs.getValue()){
@@ -125,7 +127,6 @@ int main(int argc, char **argv){
 		if(!cl_output_flow_acculm.getValue().empty()){
 			float_2d area(elevations);
 			dinf_upslope_area(flowdirs, area);
-//			digital_dams_with_angs(area, flowdirs); //TODO: REMOVE
 			diagnostic_arg("Calc time was: %lf\n", timediff(calcTimeStart));
 			output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
 		} else
