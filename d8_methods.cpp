@@ -31,18 +31,20 @@ int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, 
 }
 
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs){
+	ProgressBar progress;
+
 	diagnostic("%%Calculating D8 flow directions using flat mask...\n");
-	progress_bar(-1);
+	progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
 	#pragma omp parallel for
 	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress_bar(x*flat_resolution_mask.height()*100/(flat_resolution_mask.width()*flat_resolution_mask.height()));
+		progress.update( x*flat_resolution_mask.height() );
 		for(int y=1;y<flat_resolution_mask.height()-1;y++)
 			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
 				continue;
 			else if (flowdirs(x,y)==NO_FLOW)
 				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -52,6 +54,7 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
+	ProgressBar progress;
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
@@ -70,10 +73,10 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.width()*flowdirs.height() );
 	#pragma omp parallel for
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress.update( x*flowdirs.height() );
 		for(int y=0;y<flowdirs.height();y++){
 			dependency(x,y)=0;
 			if(flowdirs(x,y)==flowdirs.no_data){
@@ -91,29 +94,29 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 					++dependency(x,y);
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
 	diagnostic("%%Locating source cells...\n");
-	progress_bar(-1);
+	progress.start( flowdirs.width()*flowdirs.height() );
 	for(int x=0;x<flowdirs.width();x++){
-		progress_bar(x*flowdirs.height()*100/(flowdirs.width()*flowdirs.height()));
+		progress.update( x*flowdirs.height() );
 		for(int y=0;y<flowdirs.height();y++)
 			if(flowdirs(x,y)==flowdirs.no_data)
 				continue;
 			else if(dependency(x,y)==0)
 				sources.push(grid_cell(x,y));
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
 	diagnostic("%%Calculating up-slope areas...\n");
-	progress_bar(-1);
+	progress.start(flowdirs.data_cells);
 	long int ccount=0;
 	while(sources.size()>0){
 		grid_cell c=sources.front();
 		sources.pop();
 
 		ccount++;
-		progress_bar(ccount*100/flowdirs.data_cells);
+		progress.update(ccount);
 
 		area(c.x,c.y)+=1;
 
@@ -127,7 +130,7 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 			}
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -292,6 +295,8 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 //Returns:
 //		None
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
+	ProgressBar progress;
+
 	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the aspects matrix...");
 	attribs.copyprops(elevations);
@@ -299,10 +304,10 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("%%Calculating terrain attribute #%d...\n",attrib);
-	progress_bar(-1);
+	progress.start( elevations.width()*elevations.height() );
 	#pragma omp parallel for
 	for(int x=0;x<elevations.width();x++){
-		progress_bar(x*elevations.height()*100/(elevations.width()*elevations.height()));
+		progress.update( x*elevations.height() );
 		for(int y=0;y<elevations.height();y++){
 			if(elevations(x,y)==elevations.no_data){
 				attribs(x,y)=attribs.no_data;
@@ -336,7 +341,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 			}
 		}
 	}
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
@@ -398,6 +403,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
 	unsigned long processed_cells=0;
 	unsigned long pitc=0,openc=0;
 	int clabel=1;	//TODO: Thought this was more clear than zero in the results.
+	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood+Watershed Labels\n");
 	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
@@ -430,7 +436,7 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Performing the Barnes Flood+Watershed Labels...\n");
-	progress_bar(-1);
+	progress.start( elevations.width()*elevations.height() );
 	while(open.size()>0 || meander.size()>0){
 		grid_cellz c;
 		if(meander.size()>0){
@@ -464,9 +470,9 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
 			} else
 				open.push(grid_cellz(nx,ny,elevations(nx,ny)));
 		}
-		progress_bar(processed_cells*100/(elevations.width()*elevations.height()));
+		progress.update(processed_cells);
 	}
-	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress_bar(-1));
+	diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress.stop());
 	diagnostic_arg("%ld cells processed. %ld in pits, %ld not in pits.\n",processed_cells,pitc,openc);
 }
 
@@ -509,6 +515,8 @@ void watershed_area(const int_2d &labels){
 //Returns:
 //		None
 void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+	Timer timer;
+
 	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
 		diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
 		exit(-1);
@@ -520,8 +528,8 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
 	diagnostic("succeeded.\n");
 
-	diagnostic("%%Calculating SPI...\n");
-	progress_bar(-1);
+	diagnostic("Calculating SPI...\n");
+	timer.start();
 	#pragma omp parallel for collapse(2)
 	for(int x=0;x<flow_accumulation.width();x++)
 		for(int y=0;y<flow_accumulation.height();y++)
@@ -529,7 +537,7 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 				result(x,y)=result.no_data;
 			else
 				result(x,y)=log( (flow_accumulation(x,y)+0.001) * ((percent_slope(x,y)/100) + 0.001) );
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg("succeeded in %lfs.\n",timer.lap());
 }
 
 
@@ -553,8 +561,10 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 //Returns:
 //		None
 void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+	Timer timer;
+
 	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
-		diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
+		diagnostic("Couldn't calculate CTI! The input matricies were of unequal dimensions!\n");
 		exit(-1);
 	}
 
@@ -564,8 +574,8 @@ void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
 	diagnostic("succeeded.\n");
 
-	diagnostic("%%Calculating SPI...\n");
-	progress_bar(-1);
+	diagnostic("Calculating CTI...");
+	timer.start();
 	#pragma omp parallel for collapse(2)
 	for(int x=0;x<flow_accumulation.width();x++)
 		for(int y=0;y<flow_accumulation.height();y++)
@@ -573,5 +583,5 @@ void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 				result(x,y)=result.no_data;
 			else
 				result(x,y)=log( (flow_accumulation(x,y)+0.001) / ((percent_slope(x,y)/100) + 0.001) );
-	diagnostic_arg(SUCCEEDED_IN,progress_bar(-1));
+	diagnostic_arg("succeeded in %lfs.\n",timer.lap());
 }

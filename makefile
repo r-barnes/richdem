@@ -6,7 +6,7 @@ CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
 
 ODIR=obj
 #PRE_FLAGS=-lgcov -g -fprofile-arcs -ftest-coverage
-PRE_FLAGS=-O3
+PRE_FLAGS=-g
 
 DEPS = d8_methods.h data_structures.h dinf_methods.h interface.h data_io.h pit_fill.h utility.h flat_resolution.h debug.h visualize.h unit_test.h
 
@@ -28,7 +28,7 @@ test: $(OBJ) obj/test.o
 	$(CC) $(PRE_FLAGS) -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
 
-debug: $(OBJ)
+debug: $(OBJ) obj/main.o
 	$(CC) $(PRE_FLAGS) -g -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
 
