@@ -120,14 +120,15 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 		area(c.x,c.y)+=1;
 
-		if(flowdirs(c.x,c.y)!=NO_FLOW){
-			int nx=c.x+dx[flowdirs(c.x,c.y)];
-			int ny=c.y+dy[flowdirs(c.x,c.y)];
-			if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
-				area(nx,ny)+=area(c.x,c.y);
-				if((--dependency(nx,ny))==0)
-					sources.push(grid_cell(nx,ny));
-			}
+		if(flowdirs(c.x,c.y)==NO_FLOW)
+			continue;
+
+		int nx=c.x+dx[flowdirs(c.x,c.y)];
+		int ny=c.y+dy[flowdirs(c.x,c.y)];
+		if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
+			area(nx,ny)+=area(c.x,c.y);
+			if((--dependency(nx,ny))==0)
+				sources.push(grid_cell(nx,ny));
 		}
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress.stop());
