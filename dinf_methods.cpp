@@ -59,13 +59,13 @@ void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 	//of flow is directed to the one we leave out).
 	assert(flowdir>=0 && flowdir<=2*M_PI+1e-6);
 
-	float temp=flowdir/(M_PI/4.);
+	flowdir/=(M_PI/4.);
 
-	if(fabs(temp-(int)temp)<1e-6){
+	if(fabs(flowdir-(int)flowdir)<1e-6){
 		nlow=-1;
-		nhigh=(int)ROUND(temp);
+		nhigh=(int)ROUND(flowdir);
 	} else {
-		nlow=(int)temp;
+		nlow=(int)flowdir;
 		nhigh=nlow+1;
 	}
 
