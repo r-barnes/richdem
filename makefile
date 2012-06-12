@@ -2,7 +2,8 @@
 #CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS #-fopenmp
 
 CC=g++
-CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
+CFLAGS=-Wall -fopenmp -ffp-contract=fast #-DARCGIS #-lX11 -pthread #-ltbb
+#-ffp-contract=fast enables forming of fused multiply-add instructions. Default is fast.
 
 ODIR=obj
 #PRE_FLAGS=-lgcov -g -fprofile-arcs -ftest-coverage
