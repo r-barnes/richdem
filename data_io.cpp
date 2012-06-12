@@ -78,7 +78,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 	diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
 
 	load_time.stop();
-	diagnostic_arg("Read time was: %lf\n", load_time.accumulated());
+	diagnostic_arg("Read time was: %lfs\n", load_time.accumulated());
 
 	return 0;
 }
