@@ -171,9 +171,9 @@ int main(int argc, char **argv){
 
 end_main:
 	total_time.stop();
-	diagnostic_arg("Total time was: %lf\n", total_time.accumulated());
-	diagnostic_arg("Time spent in computation: %lf\n",running_calc_time.accumulated());
-	diagnostic_arg("Time spent in I/O: %lf\n",running_io_time.accumulated());
+	diagnostic_arg("Total time was: %lfs\n", total_time.accumulated());
+	diagnostic_arg("Time spent in computation: %lfs\n",running_calc_time.accumulated());
+	diagnostic_arg("Time spent in I/O: %lfs\n",running_io_time.accumulated());
 	diagnostic_arg("Ran RichDEMv%s.\n",RICHDEM_VERSION);
 
 	return 0;
