@@ -1,4 +1,4 @@
-#define  RICHDEM_VERSION  "0r~321"
+#define  RICHDEM_VERSION  "0r~370"
 #include "utility.h"
 #include "data_structures.h"
 #include "data_io.h"
