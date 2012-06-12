@@ -178,9 +178,13 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 		ccount++;
 		progress.update(ccount);
+
+		if(flowdirs(c.x,c.y)==flowdirs.no_data)	//TODO: This line shouldn't be necessary since NoData's do not get added below
+			continue;
+
 		area(c.x,c.y)+=1;
 
-		if(flowdirs(c.x,c.y)==flowdirs.no_data || flowdirs(c.x,c.y)==NO_FLOW)
+		if(flowdirs(c.x,c.y)==NO_FLOW)
 			continue;
 
 		int n_high,n_low,nhx,nhy,nlx,nly;
