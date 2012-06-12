@@ -123,8 +123,11 @@ int main(int argc, char **argv){
 		{	//Used to try to free memory after the process
 			int_2d flat_resolution_mask(elevations), groups;
 			resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
-
 			d8_flow_flats(flat_resolution_mask,groups,flowdirs);
+
+			flat_resolution_mask.clear();
+			groups.clear();
+
 			if(!cl_output_resolved_flowdirs.getValue().empty())
 				output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
 		}
@@ -149,8 +152,11 @@ int main(int argc, char **argv){
 		{	//Used to try to free memory after the process
 			int_2d flat_resolution_mask(elevations), groups;
 			resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
-
 			dinf_flow_flats(flat_resolution_mask,groups,flowdirs);
+
+			flat_resolution_mask.clear();
+			groups.clear();
+
 			if(!cl_output_resolved_flowdirs.getValue().empty())
 				output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
 		}
