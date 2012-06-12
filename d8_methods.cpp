@@ -537,7 +537,7 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 			if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
 				result(x,y)=result.no_data;
 			else
-				result(x,y)=log( (flow_accumulation(x,y)+0.001) * ((percent_slope(x,y)/100) + 0.001) );
+				result(x,y)=log( flow_accumulation.cellsize*(flow_accumulation(x,y)+0.001) * ((percent_slope(x,y)/100) + 0.001) );
 	diagnostic_arg("succeeded in %lfs.\n",timer.lap());
 }
 
@@ -583,6 +583,6 @@ void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 			if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
 				result(x,y)=result.no_data;
 			else
-				result(x,y)=log( (flow_accumulation(x,y)+0.001) / ((percent_slope(x,y)/100) + 0.001) );
+				result(x,y)=log( flow_accumulation.cellsize*(flow_accumulation(x,y)+0.001) / ((percent_slope(x,y)/100) + 0.001) );
 	diagnostic_arg("succeeded in %lfs.\n",timer.lap());
 }
