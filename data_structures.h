@@ -157,6 +157,7 @@ T array2d<T>::min() const {
 
 //A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
 //	http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
+//TODO: What if this overflows?
 template <class T>
 void array2d<T>::low_pass_filter(){	//TODO: Should provide diagnostics, I think
 	array2d<T> filtered(*this);
@@ -192,6 +193,7 @@ void array2d<T>::low_pass_filter(){	//TODO: Should provide diagnostics, I think
 //4 0		-1.0	6.8		-1.0
 //567		-0.7	-1.0	-0.7
 //Weights sum to zero because they are normalized, according to ArcGIS
+//TODO: What if this overflows?
 template <class T>
 void array2d<T>::high_pass_filter(){	//TODO: Should provide diagnostics, I think
 	const float weights[8]={-1.0,-0.7,-1.0,-0.7,1.0,-0.7,-1.0,-0.7};
