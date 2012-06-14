@@ -198,13 +198,13 @@ void dinf_upslope_area_interval(const float_2d &flowdirs, grid_engine< boost::nu
 		float phigh,plow;
 		area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
 		if(flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data)
-			area(nhx,nhy)+=area(c.x,c.y)*(double)phigh;
+			area(nhx,nhy)+=area(c.x,c.y)*(T)phigh;
 
 		if(n_low!=-1){
 			nlx=c.x+dinf_dx[n_low];
 			nly=c.y+dinf_dy[n_low];
 			if(flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data){
-				area(nlx,nly)+=area(c.x,c.y)*(double)plow;
+				area(nlx,nly)+=area(c.x,c.y)*(T)plow;
 				if((--dependency(nlx,nly))==0)
 					sources.push(grid_cell(nlx,nly));
 			}
