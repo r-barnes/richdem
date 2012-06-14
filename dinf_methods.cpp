@@ -50,7 +50,7 @@ To convert Dinf to this, take
 //321
 //4 0
 //567
-void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
+static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 	//If it is very close to being directed into just one cell
 	//then we direct it into just one cell. If we mistakenly direct
 	//it into 2 cells, then we may create unresolvable loops in the
@@ -75,7 +75,7 @@ void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 }
 
 //This reacts correctly if the flow direction wedge number exceeds 7.
-void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, float &plow){
+static void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, float &plow){
 	if(nlow==-1){
 		phigh=1;
 		plow=0;
