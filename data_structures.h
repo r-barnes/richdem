@@ -9,6 +9,14 @@
 #include <iomanip>
 #include <string>
 
+//Use this D8 method //TODO
+//321
+//4 0
+//567
+const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
+const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
+const int dinf_d8_inverse[9]={4,5,6,7,0,1,2,3,4};
+
 template <class T>
 class array2d : public boost::numeric::ublas::matrix<T>{
 	public:
@@ -45,6 +53,8 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
 		void resize(int width, int height, bool preserve=false)
 			{boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
+		void low_pass_filter();
+		void high_pass_filter();
 };
 
 template <class T>
@@ -142,6 +152,74 @@ T array2d<T>::min() const {
 	}
 	return minval;
 }
+
+
+
+//A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
+//	http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
+template <class T>
+void array2d<T>::low_pass_filter(){	//TODO: Should provide diagnostics, I think
+	array2d<T> filtered(*this);
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++){
+		filtered(x,y)=operator()(x,y);
+		if(operator()(x,y)==no_data)
+			continue;
+
+		int ncount=1;	//Middle cell is defined
+		for(int n=0;n<8;n++){
+			int nx=x+dinf_dx[n];
+			int ny=y+dinf_dy[n];
+			if(operator()(nx,ny)!=no_data){
+				ncount++;
+				filtered(x,y)+=operator()(nx,ny);
+			}
+		}
+		filtered(x,y)/=ncount;
+	}
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		operator()(x,y)=filtered(x,y);
+}
+
+
+//The high pass filter accentuates the comparative difference in the values with its neighbors. A high pass filter calculates the focal sum statistic for each cell of the input using a 3 x 3 weighted kernel neighborhood. It brings out the boundaries between features (for example, where a water body meets the forest), thus sharpening edges between objects. The high pass filter is referred to as an edge enhancement filter.
+//	http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
+//Dinf Dirs			Weights
+//321		-0.7	-1.0	-0.7
+//4 0		-1.0	6.8		-1.0
+//567		-0.7	-1.0	-0.7
+//Weights sum to zero because they are normalized, according to ArcGIS
+template <class T>
+void array2d<T>::high_pass_filter(){	//TODO: Should provide diagnostics, I think
+	const float weights[8]={-1.0,-0.7,-1.0,-0.7,1.0,-0.7,-1.0,-0.7};
+	array2d<float> filtered(*this);
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++){
+		if(operator()(x,y)==no_data){
+			filtered(x,y)=no_data;
+			continue;
+		}
+
+		filtered(x,y)=operator()(x,y)*6.8;
+		for(int n=0;n<8;n++){
+			int nx=x+dinf_dx[n];
+			int ny=y+dinf_dy[n];
+			if(operator()(nx,ny)!=no_data){
+				filtered(x,y)+=operator()(nx,ny)*weights[n];
+			}
+		}
+	}
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		operator()(x,y)=(T)filtered(x,y);
+}
+
+
 
 typedef array2d<double> double_2d;
 typedef array2d<float> float_2d;
