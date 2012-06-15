@@ -50,7 +50,7 @@ int main(int argc, char **argv){
 			upper_of_max=boost::numeric::upper(area(x,y));
 			lower_of_max=boost::numeric::lower(area(x,y));
 		}
-	diagnostic_arg("Maximum interval width: %.12lf [%lf,%lf]\n",max_width,lower_of_max,upper_of_max);
+	diagnostic_arg("Maximum interval width on %s: %.12lf [%.12lf,%.12lf]\n",argv[1], max_width, lower_of_max, upper_of_max);
 	running_calc_time.stop();
 
 	total_time.stop();
