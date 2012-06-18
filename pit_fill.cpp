@@ -6,23 +6,22 @@
 #include <queue>
 #include <stack>
 
-//Procedure:	BarnesFlood
-//Description:
-//		The BarnesFlood starts on the edges of the DEM and then works its way
-//      inwards using a priority queue to determine the lowest cell which has
-//      a path to the edge. The neighbours of this cell are added to the priority
-//      queue if they are higher. If they are lower, they are added to a "pit"
-//      queue which is used to flood pits. Cells which are higher than a pit being
-//      filled are added to the priority queue. In this way, pits are filled without
-//      incurring the expense of the priority queue.
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//Requirements:
-//		None
-//Effects:
-//		"elevations" will be altered to contain a pit-filled version of the original
-//Returns:
-//		None
+//barnes_flood
+/**
+	@brief  Floods DEM inwards from the edges, filling all pits and removing all digital dams.
+	@author Richard Barnes
+
+      The BarnesFlood starts on the edges of the DEM and then works its way
+      inwards using a priority queue to determine the lowest cell which has
+      a path to the edge. The neighbours of this cell are added to the priority
+      queue if they are higher. If they are lower, they are added to a "pit"
+      queue which is used to flood pits. Cells which are higher than a pit being
+      filled are added to the priority queue. In this way, pits are filled without
+      incurring the expense of the priority queue.
+
+	@param[in,out]	elevations
+		A grid of cell elevations
+*/
 void barnes_flood(float_2d &elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
 //	std::queue<grid_cellz> meander;
