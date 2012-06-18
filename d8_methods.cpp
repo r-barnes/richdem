@@ -380,23 +380,25 @@ void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatur
 
 
 
+//find_watersheds
+/**
+	@brief  Labels watershed drainage areas, working inwards from the edges of the DEM
+	@author Richard Barnes
 
-//FindWatersheds works in the same way as BarnesFlood, save that it labels watersheds, working inwards from the edges of the DEM. This is helpful for checking flow accumulation
-//Procedure:	FindWatersheds
-//Description:
-//		Same as BarnesFlood. Labels starts out as no_data. If it is found that a
-//		no_data labels cell coincides with a non-no_data elevations cell, then this
-//		is the beginning of a new watershed. Cells which are flooded from a labeled
-//		cell take on that cell's label
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//		labels			A 2D array to hold the watershed labels
-//Requirements:
-//		None
-//Effects:
-//		"labels" will be altered to contain the labels of the watersheds
-//Returns:
-//		None
+	Same as #barnes_flood. Labels starts out as no_data. If it is found that a
+	no_data labels cell coincides with a non-no_data elevations cell, then this
+	is the beginning of a new watershed. Cells which are flooded from a labeled
+	cell take on that cell's label
+
+	@param[in,out]	elevations
+		A grid of cell elevations
+	@param[out]		labels
+		A grid to hold the watershed labels
+	@param[in]		alter_elevations
+		If true, then elevations is altered as though #barnes_flood had been applied. The result is that all cells drain to the edges of the DEM. Otherwise, elevations is not altered.
+
+	@post labels takes the properties and dimensions of elevations
+*/
 void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
 	std::stack<grid_cellz, std::vector<grid_cellz> > meander;
@@ -501,7 +503,7 @@ void watershed_area(const int_2d &labels){
 
 
 
-
+//d8_SPI
 /**
 	@brief  Calculates the SPI terrain attribute
 	@author Richard Barnes
@@ -549,7 +551,7 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 
 
 
-
+//d8_CTI
 /**
 	@brief  Calculates the CTI terrain attribute
 	@author Richard Barnes
