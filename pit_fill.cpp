@@ -19,7 +19,7 @@
       filled are added to the priority queue. In this way, pits are filled without
       incurring the expense of the priority queue.
 
-	@param[in,out]	elevations
+	@param[in,out]	&elevations
 		A grid of cell elevations
 */
 void barnes_flood(float_2d &elevations){
@@ -95,20 +95,24 @@ void barnes_flood(float_2d &elevations){
 
 
 
-//Procedure:	d8_edge_flow
-//Description:
-//		Determines what flow direction a cell on the edge of a DEM should have
-//		that flow direction should always be outward. This does that mapping
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//		flowdirs		A 2D array of D8 flow directions
-//Requirements:
-//		None
-//Effects:
-//		None
-//Returns:
-//		flowdirs.no_data if the elevation of the cell is elevations.no_data
-//		Otherwise, a D8 direction pointing off the grid
+//d8_edge_flow
+/**
+	@brief  Helper function which returns a flow direction pointing to an edge if (x,y) is a non-no_data edge cell
+	@author Richard Barnes
+
+	@param[in]	x
+		x-coordinate of the cell
+	@param[in]	y
+		y-coordinate of the cell
+	@param[in]	&elevations
+		A grid of cell elevations
+	@param[in]	&flowdirs
+		A grid of D8 flow directions
+
+	@pre	(x,y) must be an edge cell or an error will be thrown
+
+	@return If (x,y) is a non-no_data edge cell, then a D8 direction is returned which points to the edge
+*/
 char d8_edge_flow(int x, int y, const float_2d &elevations, const char_2d &flowdirs){
 	if(!elevations.edge_grid(x,y))	//NOTE: Shouldn't happen
 		throw "Barnes Flood+Flow Directions tried to initialize with a non-edge cell!";
@@ -134,20 +138,21 @@ char d8_edge_flow(int x, int y, const float_2d &elevations, const char_2d &flowd
 		throw "Barnes Flood+Flow Directions tried to initialize with a non-edge cell!";
 }
 
-//Procedure:	BarnesFloodFlowDirs
-//Description:
-//		Floods DEM inwards from its edges building up flow directions as it
-//		goes. The result is a D8 flowdirs array in which pits have been carved
-//		towards a drainage point. Based on Metz 2011.
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//		flowdirs		A 2D array for storing D8 flow directions
-//Requirements:
-//		None
-//Effects:
-//		"flowdirs" will be altered to contain D8 flow directions for each cell
-//Returns:
-//		None
+
+
+
+//barnes_flood_flowdirs
+/**
+	@brief  Determines D8 flow directions by flooding inwards. Pits are implicitly carved to drainage points. Based on Metz 2011.
+	@author Richard Barnes
+
+	@param[in]	&elevations
+		A grid of cell elevations
+	@param[out]	&flowdirs
+		A grid of D8 flow directions
+
+	@post flowdirs takes the properties and dimensions of elevations
+*/
 void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 	std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, grid_cellzk_compare> open;
 	bool_2d closed;
