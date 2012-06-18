@@ -139,31 +139,30 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 
 
-//Procedure:	d8_terrain_attrib_helper
-//Description:
-//		This calculates a variety of terrain attributes according
-//		to the work of Burrough 1998's "Principles of Geographical
-//		Information Systems" (p. 190). Algorithms and helpful ArcGIS
-//		pages are noted in comments in the code.
-//Restrictions:
-//		This function should never be called on a NoData cell
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//		x0				X coordinate of cell to perform calculation on
-//		y0				Y coordinate of cell to perform calculation on
-//		rise_over_run	Returns rise-over-run slope
-//		aspect			Returns aspect in degrees [0,360). 0 is north,
-//						degrees increase in a clockwise fashion.
-//		curvature		Returns the difference of profile and planform
-//						curvatures
-//		profile_curvature	Returns the profile curvature
-//		planform_curvature	Returns the planform curvature
-//Requirements:
-//		None
-//Effects:
-//		Variables noted as "Returns" above are altered
-//Returns:
-//		None
+//d8_terrain_attrib_helper
+/**
+	@brief  Calculate a variety of terrain attributes
+	@author Richard Barnes, Burrough (1998)
+
+	This calculates a variety of terrain attributes according
+	to the work of Burrough 1998's "Principles of Geographical
+	Information Systems" (p. 190). Algorithms and helpful ArcGIS
+	pages are noted in comments in the code.
+
+	@param[in]	&elevations			An elevation grid
+	@param[in]	x0					X coordinate of cell to perform calculation on
+	@param[in]	y0					Y coordinate of cell to perform calculation on
+	@param[out]	&rise_over_run
+		Returns rise-over-run slope as per Horn 1981
+	@param[out]	&aspect
+		Returns aspect as per Horn 1981 in degrees [0,360). Degrees increase in a clockwise fashion. 0 is north, -1 indicates a flat surface.
+	@param[out]	&curvature
+		Returns the difference of profile and planform curvatures (TODO: Clarify, this is from ArcGIS and was poorly described)
+	@param[out]	&profile_curvature	Returns the profile curvature as per Zevenbergen and Thorne 1987. 0 indicates a flat surface.
+	@param[out]	&planform_curvature	Returns the planform curvature as per Zevenbergen and Thorne 1987. 0 indicates a flat surface.
+
+	@pre This function should never be called on a NoData cell
+*/
 inline static void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
 /*
 Slope derived from ArcGIS help at:
@@ -185,9 +184,9 @@ http://support.esri.com/en/knowledgebase/techarticles/detail/21942
 Burrough 1998's "Principles of Geographical Information Systems" explains all these algorithms
 */
 
-//a b c
-//d e f
-//g h i
+	//a b c
+	//d e f
+	//g h i
 	double a,b,c,d,e,f,g,h,i;
 	//Deal with grid edges and NoData values in the manner suggested by
 	//ArcGIS. Note that this function should never be called on a NoData cell
@@ -239,14 +238,19 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	dzdy/=elevations.cellsize;
 	rise_over_run=sqrt(dzdx*dzdx+dzdy*dzdy);
 
-	if(rise_over_run==0)
+	if(rise_over_run==0){
 		aspect=-1;	//Special value denoting a flat
+		curvature=0;
+		profile_curvature=0;
+		planform_curvature=0;
+		return;
+	}
 
 
 
-//Z1 Z2 Z3   a b c
-//Z4 Z5 Z6   d e f
-//Z7 Z8 Z9   g h i
+	//Z1 Z2 Z3   a b c
+	//Z4 Z5 Z6   d e f
+	//Z7 Z8 Z9   g h i
 	//Curvatures in the manner of Zevenbergen and Thorne 1987
 	double L=elevations.cellsize;		//TODO: Should be in the same units as z
 	double D=( (d+f)/2 - e) / L / L;	//D = [(Z4 + Z6) /2 - Z5] / L^2
@@ -256,45 +260,51 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	double H=(b-h)/2/L;					//H=(Z2-Z8)/(2L)
 	curvature=(float)(-2*(D+E)*100);
 
-	profile_curvature=(float)(2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
-	planform_curvature=(float)(-2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
+	if(G==0 && H==0){
+		profile_curvature=0;
+		planform_curvature=0;
+		return;
+	} else {
+		profile_curvature=(float)(2*(D*G*G+E*H*H+F*G*H)/(G*G+H*H)*100);
+		planform_curvature=(float)(-2*(D*H*H+E*G*G-F*G*H)/(G*G+H*H)*100);
+	}
 }
 
 
 
 
-//Procedure:	d8_terrain_attribute
-//Description:
-//		This calculates a variety of terrain attributes according
-//		to the work of Burrough 1998's "Principles of Geographical
-//		Information Systems" (p. 190). This function calls
-//		d8_terrain_attrib_helper to calculate the actual attributes.
-//		This function may perform some post-processing (such as on
-//		slope), but it's purpose is essentially to just scan the grid
-//		and pass off the work.
-//Restrictions:
-//		None
-//Inputs:
-//		elevations		A 2D array of cell elevations
-//		attribs			A 2D array to hold the calculated attribute
-//		attrib			The attribute to be calculated
-//Attributes:
-//		Values "attrib" can take:
-//			TATTRIB_SLOPE
-//			TATTRIB_CURVATURE
-//			TATTRIB_PLANFORM_CURVATURE
-//			TATTRIB_PROFILE_CURVATURE
-//			TATTRIB_ASPECT
-//			TATTRIB_SLOPE_RISERUN
-//			TATTRIB_SLOPE_PERCENT
-//			TATTRIB_SLOPE_RADIAN
-//			TATTRIB_SLOPE_DEGREE
-//Requirements:
-//		None
-//Effects:
-//		"attribs" is altered to contain the calculated attribute
-//Returns:
-//		None
+//d8_terrain_attribute
+/**
+	@brief  Calculate a variety of terrain attributes
+	@author Richard Barnes, Burrough (1998)
+
+	This calculates a variety of terrain attributes according
+	to the work of Burrough 1998's "Principles of Geographical
+	Information Systems" (p. 190). This function calls
+	d8_terrain_attrib_helper to calculate the actual attributes.
+	This function may perform some post-processing (such as on
+	slope), but it's purpose is essentially to just scan the grid
+	and pass off the work to #d8_terrain_attrib_helper.
+
+	Possible attribute values are
+	<ul>
+		<li>#TATTRIB_SLOPE</li>
+		<li>#TATTRIB_CURVATURE</li>
+		<li>#TATTRIB_PLANFORM_CURVATURE</li>
+		<li>#TATTRIB_PROFILE_CURVATURE</li>
+		<li>#TATTRIB_ASPECT</li>
+		<li>#TATTRIB_SLOPE_RISERUN</li>
+		<li>#TATTRIB_SLOPE_PERCENT</li>
+		<li>#TATTRIB_SLOPE_RADIAN</li>
+		<li>#TATTRIB_SLOPE_DEGREE</li>
+	</ul>
+
+	@param[in]	&elevations			An elevation grid
+	@param[out]	&attribs			A grid to hold the results
+	@param[in]	&attrib				The attribute to be calculated
+
+	@post attribs takes the properties and dimensions of elevations
+*/
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	ProgressBar progress;
 
@@ -345,6 +355,25 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
+
+//d8_slope
+/**
+	@brief  Calculates the slope
+	@author Richard Barnes, Horn (1981)
+
+	Calculates the slope using Horn 1981, as per Burrough 1998's "Principles of Geographical Information Systems" (p. 190)
+
+	Possible slope values are
+	<ul>
+		<li>#TATTRIB_SLOPE_RISERUN</li>
+		<li>#TATTRIB_SLOPE_PERCENT</li>
+		<li>#TATTRIB_SLOPE_RADIAN</li>
+		<li>#TATTRIB_SLOPE_DEGREE</li>
+	</ul>
+
+	@param[in]	&elevations			An elevation grid
+	@param[out]	&slopes				A slope grid
+*/
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	diagnostic("\n###Slope attribute calculation\n");
 	d8_terrain_attribute(elevations, slopes, slope_type);
