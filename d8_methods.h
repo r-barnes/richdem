@@ -7,18 +7,21 @@
 	#include <omp.h>
 #endif
 
-#define SLOPE_RISERUN	1
-#define SLOPE_PERCENT	2
-#define SLOPE_RADIAN	3
-#define SLOPE_DEGREE	4
-
+/** Used with #d8_terrain_attribute to get an ill-defined curvature thing (TODO) */
 #define TATTRIB_CURVATURE			2
+/** Used with #d8_terrain_attribute to get planform curvature as per Zevenbergen and Thorne 1987 */
 #define TATTRIB_PLANFORM_CURVATURE	3
+/** Used with #d8_terrain_attribute to get profile curvature as per Zevenbergen and Thorne 1987 */
 #define TATTRIB_PROFILE_CURVATURE	4
+/** Used with #d8_terrain_attribute to get aspect as per Horn 1981 */
 #define TATTRIB_ASPECT				5
+/** Used with #d8_terrain_attribute to get slope as per Horn 1981 */
 #define TATTRIB_SLOPE_RISERUN		6
+/** Used with #d8_terrain_attribute to get slope as per Horn 1981, the value is multiplied by 100 */
 #define TATTRIB_SLOPE_PERCENT		7
+/** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken */
 #define TATTRIB_SLOPE_RADIAN		8
+/** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken and converted to degrees*/
 #define TATTRIB_SLOPE_DEGREE		9
 
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs);
