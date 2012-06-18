@@ -288,7 +288,6 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 
 	Possible attribute values are
 	<ul>
-		<li>#TATTRIB_SLOPE</li>
 		<li>#TATTRIB_CURVATURE</li>
 		<li>#TATTRIB_PLANFORM_CURVATURE</li>
 		<li>#TATTRIB_PROFILE_CURVATURE</li>
@@ -327,8 +326,6 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 			float rise_over_run, aspect, curvature, profile_curvature, planform_curvature;
 			d8_terrain_attrib_helper(elevations, x, y, rise_over_run, aspect, curvature, profile_curvature, planform_curvature);
 			switch(attrib){
-				case TATTRIB_SLOPE:
-					attribs(x,y)=rise_over_run;break;
 				case TATTRIB_CURVATURE:
 					attribs(x,y)=curvature;break;
 				case TATTRIB_PLANFORM_CURVATURE:
