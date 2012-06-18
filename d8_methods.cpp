@@ -298,8 +298,8 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	ProgressBar progress;
 
-	diagnostic_arg("The aspects matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the aspects matrix...");
+	diagnostic_arg("The attribute #%d matrix will require approximately %ldMB of RAM.\n", attrib, elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the attribute matrix...");
 	attribs.copyprops(elevations);
 	attribs.no_data=-2;	//TODO: Should push this out to the calling helper functions
 	diagnostic("succeeded.\n");
@@ -346,28 +346,28 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 }
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
-	diagnostic("###Slope attribute calculation\n");
+	diagnostic("\n###Slope attribute calculation\n");
 	d8_terrain_attribute(elevations, slopes, slope_type);
 }
 
 
 void d8_aspect(const float_2d &elevations, float_2d &aspects){
-	diagnostic("###Aspect attribute calculation\n");
+	diagnostic("\n###Aspect attribute calculation\n");
 	d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT);
 }
 
 void d8_curvature(const float_2d &elevations, float_2d &curvatures){
-	diagnostic("###Curvature attribute calculation\n");
+	diagnostic("\n###Curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE);
 }
 
 void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures){
-	diagnostic("###Planform curvature attribute calculation\n");
+	diagnostic("\n###Planform curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE);
 }
 
 void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures){
-	diagnostic("###Profile curvature attribute calculation\n");
+	diagnostic("\n###Profile curvature attribute calculation\n");
 	d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
 }
 
@@ -518,13 +518,15 @@ void watershed_area(const int_2d &labels){
 void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
 	Timer timer;
 
+	diagnostic("\n###d8_SPI\n");
+
 	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
 		diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
 		exit(-1);
 	}
 
-	diagnostic_arg("The result matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the result matrix...");
+	diagnostic_arg("The SPI matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the SPI matrix...");
 	result.copyprops(flow_accumulation);
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
 	diagnostic("succeeded.\n");
@@ -564,13 +566,15 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
 	Timer timer;
 
+	diagnostic("\n###d8_CTI\n");
+
 	if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
 		diagnostic("Couldn't calculate CTI! The input matricies were of unequal dimensions!\n");
 		exit(-1);
 	}
 
-	diagnostic_arg("The result matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the result matrix...");
+	diagnostic_arg("The CTI matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
+	diagnostic("Setting up the CTI matrix...");
 	result.copyprops(flow_accumulation);
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
 	diagnostic("succeeded.\n");
