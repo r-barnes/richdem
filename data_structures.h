@@ -55,6 +55,7 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 			{boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
 		void low_pass_filter();
 		void high_pass_filter();
+		void print_random_sample(int n=1, int seed=1) const;
 };
 
 template <class T>
@@ -151,6 +152,39 @@ T array2d<T>::min() const {
 			minval=temp;
 	}
 	return minval;
+}
+
+
+//array2d.print_random_sample
+/**
+	@brief  Prints one or more random data_cells from the grid
+	@author Richard Barnes
+
+	Prints one or more random data_cells from the grid. Note that if the grid is mostly no_data cells, the function may take a long time to complete as it will have to make many false attempts at finding data cells.
+
+	@post The grid must have data_cells>0, or the function will throw an error
+
+	@param[in]		n
+		The number of data_cells to print. Default is 1.
+	@param[in]		seed
+		Seed to use. The default value is 1.
+*/
+template <class T>
+void array2d<T>::print_random_sample(int n, int seed) const {
+	if(data_cells==0)
+		throw "Called print_random_sample() on a grid with no data_cells";
+
+	srand(seed);
+
+	for(int i=0;i<n;i++)
+		while (true){
+			int x=rand()%width();
+			int y=rand()%height();
+			if(operator()(x,y)!=no_data){
+				std::cout<<"("<<x<<","<<y<<") = "<<operator()(x,y)<<std::endl;
+				break;
+			}
+		}
 }
 
 
