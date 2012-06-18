@@ -231,24 +231,27 @@ typedef array2d<unsigned int> uint_2d;
 typedef array2d<int> int_2d;
 
 
-
+/** Stores the (x,y) coordinates of a grid cell */
 typedef struct grid_cell_type {
-	int x;
-	int y;
+	int x;				/**< Grid cell's x-coordinate */
+	int y;				/**< Grid cell's y-coordinate */
+	/** Initiate the grid cell to the coordinates (x0,y0)*/
 	grid_cell_type(int x0, int y0):x(x0),y(y0){}
+	/** Initiate the grid cell without coordinates; should generally be avoided.*/
 	grid_cell_type(){}
 } grid_cell;
 
 
-
+/** Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting with #grid_cellz_compare */
 typedef struct grid_cell_typez {
-	int x;
-	int y;
-	float z;
+	int x;				/**< Grid cell's x-coordinate */
+	int y;				/**< Grid cell's y-coordinate */
+	float z;			/**< Grid cell's z-coordinate */ //TODO: Need a T here
 	grid_cell_typez(int x0, int y0, float z0):x(x0),y(y0),z(z0){}
 	grid_cell_typez(){}
 } grid_cellz;
 
+/** Used for sorting grid cells defined by #grid_cell_typez */ //TODO: Need a T here
 class grid_cellz_compare{
 	bool reverse;
 	public:
@@ -260,16 +263,17 @@ class grid_cellz_compare{
 };
 
 
-
+/** Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; useful for stable priority sorting with #grid_cellzk_compare */
 typedef struct grid_cell_typezk {
-	int x;
-	int y;
-	float z;
-	int k;
+	int x;					/**< Grid cell's x-coordinate */
+	int y;					/**< Grid cell's y-coordinate */
+	float z;				/**< Grid cell's z-coordinate */	//TODO: Need a T here
+	int k;					/**< Used to store an integer to make sorting stable */
 	grid_cell_typezk(int x0, int y0, float z0, int k0):x(x0),y(y0),z(z0),k(k0){}
 	grid_cell_typezk(){}
 } grid_cellzk;
 
+/** Used for stable sorting of grid cells defined by #grid_cell_typezk */
 class grid_cellzk_compare{
 	bool reverse;
 	public:
