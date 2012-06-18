@@ -33,6 +33,10 @@ interval: $(OBJ) obj/interval_dinf_main.o
 	$(CC) $(PRE_FLAGS) -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
 
+jake: $(OBJ) obj/jake.o
+	$(CC) $(PRE_FLAGS) -o jake.exe $^ $(CFLAGS)
+	du -hs ./jake.exe
+
 debug: $(OBJ) obj/main.o
 	$(CC) $(PRE_FLAGS) -g -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
