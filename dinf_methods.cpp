@@ -116,7 +116,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 	diagnostic_arg("Setting up the area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the area matrix...");
-	area.resize(flowdirs.width(),flowdirs.height(),false);
+	area.copyprops(flowdirs);
 	area.init(0);
 	area.no_data=dinf_NO_DATA;
 	diagnostic("succeeded.\n");
