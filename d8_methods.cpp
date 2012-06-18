@@ -502,19 +502,20 @@ void watershed_area(const int_2d &labels){
 
 
 
-//Procedure:	d8_SPI
-//Description:
-//		Calculates the SPI terrain attribute
-//Inputs:
-//		flow_accumulation	A flow accumulation grid
-//		percent_slope		A percent_slope grid
-//		result				Returns the calculated SPI
-//Requirements:
-//		None
-//Effects:
-//		"result" will be altered to contain the calculated SPI
-//Returns:
-//		None
+/**
+	@brief  Calculates the SPI terrain attribute
+	@author Richard Barnes
+
+	@param[in]	&flow_accumulation	A flow accumulation grid (#dinf_upslope_area)
+	@param[in]	&percent_slope		A percent_slope grid (#d8_slope)
+	@param[out]	&result				Altered to return the calculated SPI
+
+	@pre flow_accumulation and percent_slope must be the same size
+
+	@post result takes the properties and dimensions of flow_accumulation
+
+	@todo Generalize for float and int grids
+*/
 void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
 	Timer timer;
 
@@ -549,20 +550,20 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 
 
 
+/**
+	@brief  Calculates the CTI terrain attribute
+	@author Richard Barnes
 
-//Procedure:	d8_CTI
-//Description:
-//		Calculates the CTI terrain attribute
-//Inputs:
-//		flow_accumulation	A flow accumulation grid
-//		percent_slope		A percent_slope grid
-//		result				Returns the calculated SPI
-//Requirements:
-//		None
-//Effects:
-//		"result" will be altered to contain the calculated CTI
-//Returns:
-//		None
+	@param[in]	&flow_accumulation	A flow accumulation grid (#dinf_upslope_area)
+	@param[in]	&percent_slope		A percent_slope grid (#d8_slope)
+	@param[out]	&result				Altered to return the calculated SPI
+
+	@pre flow_accumulation and percent_slope must be the same size
+
+	@post result takes the properties and dimensions of flow_accumulation
+
+	@todo Generalize for float and int grids
+*/
 void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
 	Timer timer;
 
