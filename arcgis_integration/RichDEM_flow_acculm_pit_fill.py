@@ -9,6 +9,7 @@ import subprocess
 import os
 import tempfile
 import uuid
+import time
 
 PROGPATH="richdem.exe"
 
@@ -45,8 +46,10 @@ def main():
 	#inZfile=str(desc.catalogPath)
 	arcpy.AddMessage("\nInput Elevation file: "+inputDEM)
 
+	start = time.time()
 	inputDEM_asc=make_temp_file()
 	arcpy.RasterToASCII_conversion(inputDEM, inputDEM_asc)
+	arcpy.AddMessage("Creating the temporary file took and raster conversion took " + str(round(time.time() - start,2)) + "s.")
 
 	fill_depressions=arcpy.GetParameterAsText(1)
 	arcpy.AddMessage("Fill depressions? " + fill_depressions)
