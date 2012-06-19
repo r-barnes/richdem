@@ -151,7 +151,7 @@ char d8_edge_flow(int x, int y, const float_2d &elevations, const char_2d &flowd
 	@param[out]	&flowdirs
 		A grid of D8 flow directions
 
-	@post flowdirs takes the properties and dimensions of elevations
+	@post \pname{flowdirs} takes the properties and dimensions of \pname{elevations}
 */
 void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 	std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, grid_cellzk_compare> open;
