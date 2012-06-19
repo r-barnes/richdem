@@ -284,7 +284,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	d8_terrain_attrib_helper to calculate the actual attributes.
 	This function may perform some post-processing (such as on
 	slope), but it's purpose is essentially to just scan the grid
-	and pass off the work to #d8_terrain_attrib_helper.
+	and pass off the work to d8_terrain_attrib_helper().
 
 	Possible attribute values are
 	<ul>
@@ -360,7 +360,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 
 	Calculates the slope using Horn 1981, as per Burrough 1998's "Principles of Geographical Information Systems" (p. 190)
 
-	Possible slope values are
+	Possible slope types are
 	<ul>
 		<li>#TATTRIB_SLOPE_RISERUN</li>
 		<li>#TATTRIB_SLOPE_PERCENT</li>
@@ -370,6 +370,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 
 	@param[in]	&elevations			An elevation grid
 	@param[out]	&slopes				A slope grid
+	@param[in]	&slope_type			A type, as in the description
 */
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
 	diagnostic("\n###Slope attribute calculation\n");
@@ -418,7 +419,7 @@ void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatur
 	@param[out]		labels
 		A grid to hold the watershed labels
 	@param[in]		alter_elevations
-		If true, then \pname{elevations} is altered as though #barnes_flood had been applied. The result is that all cells drain to the edges of the DEM. Otherwise, \pname{elevations} is not altered.
+		If true, then \pname{elevations} is altered as though barnes_flood() had been applied. The result is that all cells drain to the edges of the DEM. Otherwise, \pname{elevations} is not altered.
 
 	@post \pname{labels} takes the properties and dimensions of \pname{elevations}
 */
@@ -531,11 +532,11 @@ void watershed_area(const int_2d &labels){
 	@brief  Calculates the SPI terrain attribute
 	@author Richard Barnes
 
-	@param[in]	&flow_accumulation	A flow accumulation grid (#dinf_upslope_area)
-	@param[in]	&percent_slope		A percent_slope grid (#d8_slope)
+	@param[in]	&flow_accumulation	A flow accumulation grid (dinf_upslope_area())
+	@param[in]	&percent_slope		A percent_slope grid (d8_slope())
 	@param[out]	&result				Altered to return the calculated SPI
 
-	@pre flow_accumulation and percent_slope must be the same size
+	@pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
 	@post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
 
@@ -579,11 +580,11 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 	@brief  Calculates the CTI terrain attribute
 	@author Richard Barnes
 
-	@param[in]	&flow_accumulation	A flow accumulation grid (#dinf_upslope_area)
-	@param[in]	&percent_slope		A percent_slope grid (#d8_slope)
+	@param[in]	&flow_accumulation	A flow accumulation grid (dinf_upslope_area())
+	@param[in]	&percent_slope		A percent_slope grid (d8_slope())
 	@param[out]	&result				Altered to return the calculated SPI
 
-	@pre flow_accumulation and percent_slope must be the same size
+	@pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
 	@post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
 
