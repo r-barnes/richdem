@@ -188,12 +188,19 @@ void array2d<T>::print_random_sample(int n, int seed) const {
 }
 
 
+/**
+	@brief Smooths data by reducing local variation and removing noise with a neighbourhood average
+	@author Richard Barnes
 
-//A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
-//	http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
-//TODO: What if this overflows?
+	A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
+
+	See: http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
+
+	@todo What if this overflows?
+	@todo Progress bar? Other diagnostics?
+*/
 template <class T>
-void array2d<T>::low_pass_filter(){	//TODO: Should provide diagnostics, I think
+void array2d<T>::low_pass_filter(){
 	array2d<T> filtered(*this);
 	#pragma omp parallel for collapse(2)
 	for(int x=0;x<width();x++)
@@ -219,17 +226,28 @@ void array2d<T>::low_pass_filter(){	//TODO: Should provide diagnostics, I think
 		operator()(x,y)=filtered(x,y);
 }
 
+/**
+	@brief Accentuates comparatives differences between the cell and its neighbours.
+	@author Richard Barnes
 
-//The high pass filter accentuates the comparative difference in the values with its neighbors. A high pass filter calculates the focal sum statistic for each cell of the input using a 3 x 3 weighted kernel neighborhood. It brings out the boundaries between features (for example, where a water body meets the forest), thus sharpening edges between objects. The high pass filter is referred to as an edge enhancement filter.
-//	http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
-//Dinf Dirs			Weights
-//321		-0.7	-1.0	-0.7
-//4 0		-1.0	6.8		-1.0
-//567		-0.7	-1.0	-0.7
-//Weights sum to zero because they are normalized, according to ArcGIS
-//TODO: What if this overflows?
+	The high pass filter accentuates the comparative difference in the values with its neighbors. A high pass filter calculates the focal sum statistic for each cell of the input using a 3 x 3 weighted kernel neighborhood. It brings out the boundaries between features (for example, where a water body meets the forest), thus sharpening edges between objects. The high pass filter is referred to as an edge enhancement filter.
+
+	See: http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
+
+	\verbatim
+	Dinf Dirs           Weights
+	321            -0.7  -1.0  -0.7
+	4 0            -1.0   6.8  -1.0
+	567            -0.7  -1.0  -0.7
+	\endverbatim
+
+	Weights sum to zero because they are normalized, according to ArcGIS
+
+	@todo What if this overflows?
+	@todo Progress bar? Other diagnostics?
+*/
 template <class T>
-void array2d<T>::high_pass_filter(){	//TODO: Should provide diagnostics, I think
+void array2d<T>::high_pass_filter(){
 	const float weights[8]={-1.0,-0.7,-1.0,-0.7,1.0,-0.7,-1.0,-0.7};
 	array2d<float> filtered(*this);
 	#pragma omp parallel for collapse(2)
@@ -276,16 +294,18 @@ typedef struct grid_cell_type {
 } grid_cell;
 
 
-/// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting with #grid_cellz_compare
+/// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting with \ref grid_cellz_compare
+/// @todo z-coordinate should be templated
 typedef struct grid_cell_typez {
 	int x;				///< Grid cell's x-coordinate
 	int y;				///< Grid cell's y-coordinate
-	float z;			///< Grid cell's z-coordinate	//TODO: Need a T here
+	float z;			///< Grid cell's z-coordinate
 	grid_cell_typez(int x0, int y0, float z0):x(x0),y(y0),z(z0){}
 	grid_cell_typez(){}
 } grid_cellz;
 
-/// Used for sorting grid cells defined by #grid_cell_typez	 //TODO: Need a T here
+/// Used for sorting grid cells defined by \struct grid_cell_typez
+/// @todo Should have a T abstraction
 class grid_cellz_compare{
 	bool reverse;
 	public:
@@ -297,17 +317,18 @@ class grid_cellz_compare{
 };
 
 
-/// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; useful for stable priority sorting with #grid_cellzk_compare
+/// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; useful for stable priority sorting with \ref grid_cellzk_compare
+/// @todo z-coordinate should be templated
 typedef struct grid_cell_typezk {
 	int x;					///< Grid cell's x-coordinate 
 	int y;					///< Grid cell's y-coordinate 
-	float z;				///< Grid cell's z-coordinate 	//TODO: Need a T here
+	float z;				///< Grid cell's z-coordinate
 	int k;					///< Used to store an integer to make sorting stable
 	grid_cell_typezk(int x0, int y0, float z0, int k0):x(x0),y(y0),z(z0),k(k0){}
 	grid_cell_typezk(){}
 } grid_cellzk;
 
-/// Used for stable sorting of grid cells defined by #grid_cell_typezk
+/// Used for stable sorting of grid cells defined by \struct grid_cell_typezk
 class grid_cellzk_compare{
 	bool reverse;
 	public:
