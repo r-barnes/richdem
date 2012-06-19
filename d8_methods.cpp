@@ -302,7 +302,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	@param[out]	&attribs			A grid to hold the results
 	@param[in]	&attrib				The attribute to be calculated
 
-	@post attribs takes the properties and dimensions of elevations
+	@post \pname{attribs} takes the properties and dimensions of \pname{elevations}
 */
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	ProgressBar progress;
@@ -411,19 +411,16 @@ void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatur
 	@brief  Labels watershed drainage areas, working inwards from the edges of the DEM
 	@author Richard Barnes
 
-	Same as #barnes_flood. Labels starts out as no_data. If it is found that a
-	no_data labels cell coincides with a non-no_data elevations cell, then this
-	is the beginning of a new watershed. Cells which are flooded from a labeled
-	cell take on that cell's label
+	Same as #barnes_flood. \pname{labels} starts out as no_data. If it is found that a no_data labels cell coincides with a data_cell in \pname{elevations}, then this is the beginning of a new watershed. Cells which are flooded from a labeled cell take on that cell's label
 
 	@param[in,out]	elevations
 		A grid of cell elevations
 	@param[out]		labels
 		A grid to hold the watershed labels
 	@param[in]		alter_elevations
-		If true, then elevations is altered as though #barnes_flood had been applied. The result is that all cells drain to the edges of the DEM. Otherwise, elevations is not altered.
+		If true, then \pname{elevations} is altered as though #barnes_flood had been applied. The result is that all cells drain to the edges of the DEM. Otherwise, \pname{elevations} is not altered.
 
-	@post labels takes the properties and dimensions of elevations
+	@post \pname{labels} takes the properties and dimensions of \pname{elevations}
 */
 void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations){
 	std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
@@ -540,7 +537,7 @@ void watershed_area(const int_2d &labels){
 
 	@pre flow_accumulation and percent_slope must be the same size
 
-	@post result takes the properties and dimensions of flow_accumulation
+	@post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
 
 	@todo Generalize for float and int grids
 */
@@ -588,7 +585,7 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 
 	@pre flow_accumulation and percent_slope must be the same size
 
-	@post result takes the properties and dimensions of flow_accumulation
+	@post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
 
 	@todo Generalize for float and int grids
 */
