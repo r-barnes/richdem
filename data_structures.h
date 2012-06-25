@@ -213,7 +213,7 @@ void array2d<T>::low_pass_filter(){
 		for(int n=0;n<8;n++){
 			int nx=x+dinf_dx[n];
 			int ny=y+dinf_dy[n];
-			if(operator()(nx,ny)!=no_data){
+			if(in_grid(nx,ny) && operator()(nx,ny)!=no_data){
 				ncount++;
 				filtered(x,y)+=operator()(nx,ny);
 			}
@@ -262,7 +262,7 @@ void array2d<T>::high_pass_filter(){
 		for(int n=0;n<8;n++){
 			int nx=x+dinf_dx[n];
 			int ny=y+dinf_dy[n];
-			if(operator()(nx,ny)!=no_data){
+			if(in_grid(nx,ny) && operator()(nx,ny)!=no_data){
 				filtered(x,y)+=operator()(nx,ny)*weights[n];
 			}
 		}
