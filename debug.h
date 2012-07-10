@@ -164,17 +164,25 @@ double avg_diff(const array2d<T> &arr1, const array2d<T> &arr2){
 
 	double diff=0;
 	int ccount=0;
-	#pragma omp parallel for collapse(2) reduction(+:diff) reduction(+:ccount)
+	double maxdiff=0;
+	#pragma omp parallel for collapse(2) reduction(+:diff) reduction(+:ccount) reduction(max:maxdiff)
 	for(int x=0;x<arr1.width();x++)
 	for(int y=0;y<arr2.height();y++){
+		double temp_diff;
 		if(arr1(x,y)==arr1.no_data || arr2(x,y)==arr2.no_data)
 			continue;
 		if(arr1(x,y)!=arr1(x,y) || arr2(x,y)!=arr2(x,y))	//If it's NaN
 			continue;
-		diff+=fabs(arr1(x,y)-arr2(x,y));
+		temp_diff=fabs(arr1(x,y)-arr2(x,y));
+
+		diff+=temp_diff;
 		ccount++;
+
+		if(temp_diff>maxdiff)
+			maxdiff=temp_diff;
 	}
 	diagnostic("success!\n");
+	diagnostic_arg("Maximal difference was: %lf\n",maxdiff);
 
 	return (float)(diff/ccount);
 }
