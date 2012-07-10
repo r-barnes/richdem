@@ -32,19 +32,6 @@
 
 	@todo Ensure all grids are the same size
 */
-void jacob_wetland_metric(const float_2d &smoothed_cti, const char_2d &hydric_soils, const float_2d &smoothed_percent_slope, const float_2d &smoothed_profile_curvature, float_2d &result){
-	Timer timer;
-
-	diagnostic("\n###Jacob's Wetland Metric\n");
-
-	diagnostic_arg("Jacob's Wetland Metric matrix will require approximately %ldMB of RAM.\n", smoothed_cti.width()*smoothed_cti.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up Jacob's Wetland Metric matrix...");
-	result.copyprops(smoothed_cti);
-	result.no_data=-9999;	//TODO
-	diagnostic("succeeded.\n");
-
-
-}
 
 int main(int argc, char **argv){
 	Timer running_calc_time,running_io_time,total_time;
