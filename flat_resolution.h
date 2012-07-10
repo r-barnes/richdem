@@ -17,11 +17,13 @@
 	#include <omp.h>
 #endif
 
-//Procedure:	BuildGradient
+
+
+//Procedure:	BuildAwayGradient
 //Description:
 //		The queues of edge cells developed in "find_flat_edges()" are copied
 //		into the procedure. A breadth-first expansion labels cells by their
-//		distance away from terrain of differing elevation. The maximal distance
+//		distance away from terrain of higher elevation. The maximal distance
 //		encountered is noted.
 //Inputs:
 //		elevations		A 2D array of cell elevations
@@ -40,14 +42,14 @@
 //Returns:
 //		None
 template <class T, class U>
-static void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
+static void BuildAwayGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
 			int_2d &incrementations, std::deque<grid_cell> edges, 
 			std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
 	int loops=1;
 	grid_cell iteration_marker(-1,-1);
 
-	diagnostic("Performing a Barnes flat resolution step...");
+	diagnostic("Performing Barnes flat resolution's away gradient...");
 
 	//Incrementation
 	edges.push_back(iteration_marker);
@@ -80,67 +82,76 @@ static void BuildGradient(const array2d<T> &elevations, const array2d<U> &flowdi
 	diagnostic("succeeded!\n");
 }
 
-//Procedure:	BarnesStep3
+
+
+//Procedure:	BuildTowardsCombinedGradient
 //Description:
-//		The incrementation arrays developed in "BuildGradient()" are combined.
-//		The maximal D8 distances of the gradient away from higher terrain,
-//		which were stored in "flat_height" in "BuildGradient()" are used to
-//		invert the gradient away from higher terrain. The result is an
-//		elevation mask which has convergent flow characteristics and is
-//		guaranteed to drain the flat.
+//		The queues of edge cells developed in "find_flat_edges()" are copied
+//		into the procedure. A breadth-first expansion labels cells by their
+//		distance away from terrain of lower elevation. The maximal distance
+//		encountered is noted.
 //Inputs:
-//		elevations	A 2D array of cell elevations
-//		towards		A 2D array of incrementations towards lower terrain
-//					Developed in "BuildGradient()" from "low_edges"
-//		away		A 2D array of incrementations away from higher terrain
-//					Developed in "BuildGradient()" from "high_edges"
-//		flat_resolution_mask
-//					A 2D array which will hold the combined gradients
-//		edge		A FIFO queue which is used as a seed ("low_edges" should be passed)
-//		flat_height	A vector with length equal to the maximum number of labels
-//					It contains, for each flat, the maximal D8 distance
-//					of any cell in that flat from higher terrain
-//					Developed in "BuildGradient()"
-//		labels		A 2D array which stores labels developed in "label_this()"
+//		elevations		A 2D array of cell elevations
+//		flowdirs		A 2D array indicating the flow direction of each cell
+//		incrementations	A 2D array for storing incrementations
+//		edges			A traversible FIFO queue developed in "find_flat_edges()"
+//		flat_height		A vector with length equal to the maximum number of labels
+//		labels			A 2D array which stores labels developed in "label_this()"
 //Requirements:
-//		flat_resolution_mask
-//					Is initiliazed to "-1", which is the mask value
+//		incrementations	Is initiliazed to "0"
 //Effects:
-//		"flat_resolution_mask" will contain a weighted combination of
-//		"towards" and "away" the D8 distance of every flat cell from
-//		terrain of differing elevation.
-//		"towards" has every flat cell set to "-1"
-//		"edge" is emptied, except for an iteration marker
+//		"incrementations" will contain the D8 distance of every flat cell from
+//		terrain of differing elevation
+//		"flat_height" will contain, for each flat, the maximal distance any
+//		of its cells are from terrain of differing elevation
 //Returns:
 //		None
-template <class T>
-static void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_2d &away,
-			int_2d &flat_resolution_mask, std::deque<grid_cell> &edge,
-			const std::vector<int> &flat_height, const int_2d &labels){
+template <class T, class U>
+static void BuildTowardsCombinedGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
+			int_2d &incrementations, std::deque<grid_cell> edges, 
+			std::vector<int> &flat_height, const int_2d &labels){
 	int x,y,nx,ny;
+	int loops=1;
+	grid_cell iteration_marker(-1,-1);
 
-	diagnostic("Combining Barnes flat resolution steps...");
+	diagnostic("Performing Barnes flat resolution's toward gradient and combined gradient...");
 
-	while(edge.size()!=0){
-		x=edge.front().x;
-		y=edge.front().y;
-		edge.pop_front();
+	//Make previous incrementations negative so that we can keep track of where we are
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<incrementations.width();x++)
+	for(int y=0;y<incrementations.height();y++)
+		incrementations(x,y)*=-1;
 
-		if(towards(x,y)==-1) continue;
+
+	//Incrementation
+	edges.push_back(iteration_marker);
+	while(edges.size()!=1){	//Only iteration marker is left in the end
+		x=edges.front().x;
+		y=edges.front().y;
+		edges.pop_front();
+
+		if(x==-1){	//I'm an iteration marker
+			loops++;
+			edges.push_back(iteration_marker);
+			continue;
+		}
+
+		if(incrementations(x,y)>0) continue;	//I've already been incremented!
+
+		//If I incremented, maybe my neighbours should too
+		if(incrementations(x,y)!=0)
+			incrementations(x,y)=(flat_height[labels(x,y)]+incrementations(x,y))+2*loops;
+		else
+			incrementations(x,y)=2*loops;
 
 		for(int n=1;n<=8;n++){
-			nx=x+dx[n];
+			nx=x+dx[n];	
 			ny=y+dy[n];
-			if(elevations.in_grid(nx,ny) && elevations(nx,ny)==elevations(x,y))
-				edge.push_back(grid_cell(nx,ny));
+			if(elevations.in_grid(nx,ny) 
+					&& elevations(nx,ny)==elevations(x,y) 
+					&& flowdirs(nx,ny)==NO_FLOW)
+				edges.push_back(grid_cell(nx,ny));
 		}
-		if(towards(x,y)>0){
-			flat_resolution_mask(x,y)=2*towards(x,y);
-			if(away(x,y)>0)
-				flat_resolution_mask(x,y)+=flat_height[labels(x,y)]-away(x,y);
-		}
-			
-		towards(x,y)=-1;
 	}
 
 	diagnostic("succeeded!\n");
@@ -248,8 +259,8 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	diagnostic_arg("The flat resolution mask will require approximately %ldMB of RAM.\n",
 				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up flat resolution mask...");
-	flat_resolution_mask.resize(flowdirs.width(),flowdirs.height(),false);
-	flat_resolution_mask.init(-1);
+	flat_resolution_mask.copyprops(elevations);
+	flat_resolution_mask.init(0);
 	flat_resolution_mask.no_data=-1;
 	diagnostic("succeeded!\n");
 
@@ -284,25 +295,14 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 	high_edges=temp;
 	temp.clear();
 
-	diagnostic_arg("The incrementation matricies will require approximately %ldMB of RAM.\n",
-				2*flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
-	diagnostic("Setting up incrementation matricies...");
-	int_2d towards(elevations);
-	int_2d away(elevations);
-	towards.init(0);
-	away.init(0);
-	diagnostic("succeeded!\n");
-
 	diagnostic_arg("The flat height vector will require approximately %ldMB of RAM.\n",
 				group_number*((long)sizeof(int))/1024/1024);
 	diagnostic("Creating flat height vector...");
 	std::vector<int> flat_height(group_number);
 	diagnostic("succeeded!\n");
 
-	BuildGradient(elevations, flowdirs, towards, low_edges, flat_height, labels);
-	BuildGradient(elevations, flowdirs, away, high_edges, flat_height, labels); //Flat_height overwritten here
-
-	CombineGradients(elevations, towards, away, flat_resolution_mask, low_edges, flat_height, labels);
+	BuildAwayGradient(elevations, flowdirs, flat_resolution_mask, high_edges, flat_height, labels);
+	BuildTowardsCombinedGradient(elevations, flowdirs, flat_resolution_mask, low_edges, flat_height, labels);
 }
 
 
