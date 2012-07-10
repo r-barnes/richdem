@@ -194,6 +194,8 @@ void array2d<T>::print_random_sample(int n, int seed) const {
 
 	A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
 
+	The filtered grid is initialized to the unfiltered grid and used to store the responses. The filtered grid is then copied into the unfilitered grid.
+
 	See: http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
 
 	@todo What if this overflows?
@@ -201,11 +203,11 @@ void array2d<T>::print_random_sample(int n, int seed) const {
 */
 template <class T>
 void array2d<T>::low_pass_filter(){
-	array2d<T> filtered(*this);
+	array2d<T> filtered;
+	filtered=*this;
 	#pragma omp parallel for collapse(2)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		filtered(x,y)=operator()(x,y);
 		if(operator()(x,y)==no_data)
 			continue;
 
@@ -220,10 +222,8 @@ void array2d<T>::low_pass_filter(){
 		}
 		filtered(x,y)/=ncount;
 	}
-	#pragma omp parallel for collapse(2)
-	for(int x=0;x<width();x++)
-	for(int y=0;y<height();y++)
-		operator()(x,y)=filtered(x,y);
+
+	*this=filtered;
 }
 
 /**
@@ -243,22 +243,23 @@ void array2d<T>::low_pass_filter(){
 
 	Weights sum to zero because they are normalized, according to ArcGIS
 
+	The filtered grid is initialized to the unfiltered grid and used to store the responses. The filtered grid is then copied into the unfilitered grid.
+
 	@todo What if this overflows?
 	@todo Progress bar? Other diagnostics?
 */
 template <class T>
 void array2d<T>::high_pass_filter(){
 	const float weights[8]={-1.0,-0.7,-1.0,-0.7,1.0,-0.7,-1.0,-0.7};
-	array2d<float> filtered(*this);
+	array2d<float> filtered;
+	filtered=*this;
 	#pragma omp parallel for collapse(2)
 	for(int x=0;x<width();x++)
 	for(int y=0;y<height();y++){
-		if(operator()(x,y)==no_data){
-			filtered(x,y)=no_data;
+		if(operator()(x,y)==no_data)
 			continue;
-		}
 
-		filtered(x,y)=operator()(x,y)*6.8;
+		filtered(x,y)*=6.8;
 		for(int n=0;n<8;n++){
 			int nx=x+dinf_dx[n];
 			int ny=y+dinf_dy[n];
@@ -267,10 +268,8 @@ void array2d<T>::high_pass_filter(){
 			}
 		}
 	}
-	#pragma omp parallel for collapse(2)
-	for(int x=0;x<width();x++)
-	for(int y=0;y<height();y++)
-		operator()(x,y)=(T)filtered(x,y);
+
+	filtered=*this;
 }
 
 
