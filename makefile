@@ -26,8 +26,8 @@ unit: $(OBJ) obj/unit_test.o
 	du -hs ./richdem_unit.exe
 
 test: $(OBJ) obj/test.o
-	$(CC) $(PRE_FLAGS) -o richdem.exe $^ $(CFLAGS)
-	du -hs ./richdem.exe
+	$(CC) $(PRE_FLAGS) -o test.exe $^ $(CFLAGS)
+	du -hs ./test.exe
 
 interval: $(OBJ) obj/interval_dinf_main.o
 	$(CC) $(PRE_FLAGS) -o richdem.exe $^ $(CFLAGS)
