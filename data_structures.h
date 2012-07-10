@@ -56,6 +56,10 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 		void low_pass_filter();
 		void high_pass_filter();
 		void print_random_sample(int n=1, int seed=1) const;
+
+		template <class U> array2d<T>& operator*(U scalar);
+		template <class U> array2d<T>& operator*(const array2d<U> B);
+		template <class U> array2d<T>& operator+=(const array2d<U> B);
 };
 
 template <class T>
@@ -122,6 +126,42 @@ bool array2d<T>::operator==(const array2d<T> &other) const {
 		if(operator()(x,y)!=other(x,y))
 			return false;
 	return true;
+}
+
+template <class T>
+template <class U>
+array2d<T>& array2d<T>::operator*(U scalar) {
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		if(operator()(x,y)!=no_data)
+			operator()(x,y)*=(T)scalar;
+	return *this;
+}
+
+template <class T>
+template <class U>
+array2d<T>& array2d<T>::operator*(array2d<U> B) {
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		if(operator()(x,y)==no_data || B(x,y)==B.no_data)
+			operator()(x,y)=no_data;
+		else
+			operator()(x,y)*=(T)B(x,y);
+	return *this;
+}
+
+template <class T>
+template <class U> array2d<T>& array2d<T>::operator+=(const array2d<U> B){
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<width();x++)
+	for(int y=0;y<height();y++)
+		if(operator()(x,y)==no_data || B(x,y)==B.no_data)
+			operator()(x,y)=no_data;
+		else
+			operator()(x,y)+=(T)B(x,y);
+	return *this;
 }
 
 template <class T>
