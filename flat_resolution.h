@@ -135,9 +135,9 @@ static void CombineGradients(const array2d<T> &elevations, int_2d &towards, int_
 				edge.push_back(grid_cell(nx,ny));
 		}
 		if(towards(x,y)>0){
-			flat_resolution_mask(x,y)=2*(towards(x,y)-1);
+			flat_resolution_mask(x,y)=2*towards(x,y);
 			if(away(x,y)>0)
-				flat_resolution_mask(x,y)+=flat_height[labels(x,y)]-away(x,y)+1;
+				flat_resolution_mask(x,y)+=flat_height[labels(x,y)]-away(x,y);
 		}
 			
 		towards(x,y)=-1;
