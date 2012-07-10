@@ -106,6 +106,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 	std::queue<grid_cell> sources;
 	ProgressBar progress;
 
+	diagnostic("\n###Dinf Upslope Area\n");
+
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
 	diagnostic_arg("Setting up the dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(char))/1024/1024);
@@ -217,7 +219,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
 
-float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
+static float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
 	double smax=0;
 	int nmax=-1;
 	double rmax=0;
@@ -268,6 +270,8 @@ float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &grou
 
 void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs){
 	ProgressBar progress;
+
+	diagnostic("\n###Dinf Flow Flats\n");
 
 	diagnostic("%%Calculating Dinf flow directions using flat mask...\n");
 	progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
