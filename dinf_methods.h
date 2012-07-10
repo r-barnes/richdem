@@ -102,6 +102,8 @@ template <class T>
 void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 	ProgressBar progress;
 
+	diagnostic("\n###Dinf Flow Directions\n");
+
 	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Resizing flow directions matrix...");
 	flowdirs.resize(elevations.width(),elevations.height(),false);
