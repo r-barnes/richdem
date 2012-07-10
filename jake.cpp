@@ -43,20 +43,7 @@ void jacob_wetland_metric(const float_2d &smoothed_cti, const char_2d &hydric_so
 	result.no_data=-9999;	//TODO
 	diagnostic("succeeded.\n");
 
-	diagnostic("Calculating Jacob's Wetland Metric...");
-	timer.start();
-	#pragma omp parallel for collapse(2)
-	for(int x=0;x<result.width();x++)
-	for(int y=0;y<result.height();y++){
-		if(smoothed_cti(x,y)==smoothed_cti.no_data){
-			result(x,y)=result.no_data;
-			continue;
-		}
-		float temp=(-4)+(0.5*smoothed_cti(x,y))+(hydric_soils(x,y))-(0.2*smoothed_percent_slope(x,y))-(0.5*smoothed_profile_curvature(x,y));
-		result(x,y)=1/(1+pow(EULER_CONST,-temp));
-//		diagnostic_arg("Jake z=%f\n",temp);
-	}
-	diagnostic_arg("succeeded in %lfs.\n",timer.lap());
+
 }
 
 int main(int argc, char **argv){
@@ -65,6 +52,7 @@ int main(int argc, char **argv){
 	total_time.start();
 
 	float_2d elevations;
+
 	running_io_time.start();
 	load_ascii_data(argv[1],elevations);
 	running_io_time.stop();
@@ -93,17 +81,31 @@ int main(int argc, char **argv){
 	d8_CTI(area, percent_slope, cti);
 	area.clear();
 
+	float_2d linear_regressor(elevations);
+	linear_regressor.init(-4);
+	linear_regressor.no_data=-99999.123456;
+
+	cti.low_pass_filter();
+	linear_regressor+=cti*0.5;
+	cti.clear();
+
+	percent_slope.low_pass_filter();
+	linear_regressor+=percent_slope*-0.2;
+	percent_slope.clear();
+
 	float_2d profile_curvature;
 	d8_profile_curvature(elevations, profile_curvature);
 	elevations.clear();
 
-	float_2d result;
-	cti.low_pass_filter();
-	percent_slope.low_pass_filter();
 	profile_curvature.low_pass_filter();
+	linear_regressor+=profile_curvature*-0.5;
+	profile_curvature.clear();
 
 	char_2d hydric_soils;
 	load_ascii_data(argv[2], hydric_soils);
+
+	linear_regressor+=hydric_soils;
+	hydric_soils.clear();
 
 /*	std::cout<<"#######CTI##########"<<std::endl;
 	cti.print_random_sample(50);
@@ -112,13 +114,21 @@ int main(int argc, char **argv){
 	std::cout<<"#######Curvature##########"<<std::endl;
 	profile_curvature.print_random_sample(50);
 */
-	jacob_wetland_metric(cti, hydric_soils, percent_slope, profile_curvature, result);
-	result.low_pass_filter();
+
+	diagnostic("Jacob's Wetland Metric...");
+	#pragma omp parallel for collapse(2)
+	for(int x=0;x<linear_regressor.width();x++)
+	for(int y=0;y<linear_regressor.height();y++)
+		if(linear_regressor(x,y)!=linear_regressor.no_data)
+			linear_regressor(x,y)=1/(1+pow(EULER_CONST,-linear_regressor(x,y)));
+	diagnostic("succeeded.\n");
+
+	linear_regressor.low_pass_filter();
 
 	running_calc_time.stop();
 
 	running_io_time.start();
-	output_ascii_data(argv[3], result);
+	output_ascii_data(argv[3], linear_regressor);
 	running_io_time.stop();
 
 
@@ -127,10 +137,10 @@ int main(int argc, char **argv){
 	for(int i=0;i<1000;i++)
 		hist[i]=0;
 
-	for(int x=0;x<result.width();x++)
-	for(int y=0;y<result.height();y++)
-		if(result(x,y)!=result.no_data)
-			hist[(int)(result(x,y)*1000)]++;
+	for(int x=0;x<linear_regressor.width();x++)
+	for(int y=0;y<linear_regressor.height();y++)
+		if(linear_regressor(x,y)!=linear_regressor.no_data)
+			hist[(int)(linear_regressor(x,y)*1000)]++;
 
 	for(int i=0;i<1000;i++)
 		diagnostic_arg("JProb %d %ld\n",i,hist[i]);
@@ -145,4 +155,3 @@ int main(int argc, char **argv){
 
 	return 0;
 }
-
