@@ -236,6 +236,8 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 			int_2d &flat_resolution_mask, int_2d &labels){
 	std::deque<grid_cell> low_edges,high_edges;	//TODO: Need estimate of size
 
+	diagnostic("\n###Barnes Flat Resolution\n");
+
 	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",
 				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up labels matrix...");
