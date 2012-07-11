@@ -51,7 +51,7 @@ int main(int argc, char **argv){
 	float_2d flowdirs(elevations);
 	dinf_flow_directions(elevations,flowdirs);
 
-	int_2d flat_resolution_mask(elevations), groups;
+	int_2d flat_resolution_mask, groups;
 	resolve_flats_barnes(elevations,flowdirs,flat_resolution_mask,groups);
 	dinf_flow_flats(flat_resolution_mask,groups,flowdirs);
 	flat_resolution_mask.clear();
