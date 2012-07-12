@@ -58,16 +58,12 @@ void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
 
 	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
-	diagnostic_arg("The dependency matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(char))/1024/1024);
 	diagnostic("Resizing dependency matrix...");
-	dependency.resize(flowdirs.width(),flowdirs.height(),false);
+	dependency.copyprops(flowdirs);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The area matrix will require approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(unsigned int))/1024/1024);
-	diagnostic("Resizing the area matrix...");
-	area.resize(flowdirs.width(),flowdirs.height(),false);
-	diagnostic("succeeded.\n");
-	diagnostic("Initializing the area matrix...");
+	diagnostic("Setting up the area matrix...");
+	area.copyprops(flowdirs);
 	area.init(0);
 	area.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
@@ -307,8 +303,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
 	ProgressBar progress;
 
-	diagnostic_arg("The attribute #%d matrix will require approximately %ldMB of RAM.\n", attrib, elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Setting up the attribute matrix...");
+	diagnostic_arg("Setting up the attribute #%d matrix...", attrib);
 	attribs.copyprops(elevations);
 	attribs.no_data=-2;	//TODO: Should push this out to the calling helper functions
 	diagnostic("succeeded.\n");
@@ -433,13 +428,11 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
 	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood+Watershed Labels\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
-	closed.resize(elevations.width(),elevations.height());
+	closed.copyprops(elevations);
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
 	labels.copyprops(elevations);
 	labels.no_data=-1;
@@ -554,7 +547,6 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 		exit(-1);
 	}
 
-	diagnostic_arg("The SPI matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the SPI matrix...");
 	result.copyprops(flow_accumulation);
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
@@ -604,7 +596,6 @@ void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 		exit(-1);
 	}
 
-	diagnostic_arg("The CTI matrix will require approximately %ldMB of RAM.\n", flow_accumulation.width()*flow_accumulation.height()*((long)sizeof(float))/1024/1024);
 	diagnostic("Setting up the CTI matrix...");
 	result.copyprops(flow_accumulation);
 	result.no_data=-1;	//Log(x) can't take this value of real inputs, so we're good
