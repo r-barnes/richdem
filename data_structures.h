@@ -53,6 +53,8 @@ class array2d : public boost::numeric::ublas::matrix<T>{
 			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
 		void resize(int width, int height, bool preserve=false)
 			{boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
+		void clear()
+			{boost::numeric::ublas::matrix<T>::clear();}
 		void low_pass_filter();
 		void high_pass_filter();
 		void print_random_sample(int n=1, int seed=1) const;
