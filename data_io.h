@@ -70,6 +70,8 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 
 	diagnostic("%%Writing ArcGrid ASCII file data...\n");
 	progress.start( output_grid.width()*output_grid.height() );
+	fout.precision(precision);
+	fout.setf(std::ios::fixed);
 	for(int y=0;y<output_grid.height();y++){
 		progress.update( y*output_grid.width() );
 		if(output_type==OUTPUT_OMG)
@@ -78,7 +80,7 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
 			if(sizeof(T)==1)	//TODO: This is a crude way of detecting chars and bools
 				fout<<(int)output_grid(x,y)<<outputsep;
 			else
-				fout<<std::fixed<<std::setprecision(precision)<<output_grid(x,y)<<outputsep;
+				fout<<output_grid(x,y)<<outputsep;
 		fout<<std::endl;
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress.stop());
