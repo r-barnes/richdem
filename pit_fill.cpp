@@ -32,9 +32,8 @@ void barnes_flood(float_2d &elevations){
 	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
-	closed.resize(elevations.width(),elevations.height());
+	closed.copyprops(elevations);
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
@@ -161,13 +160,11 @@ void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
 	ProgressBar progress;
 
 	diagnostic("\n###Barnes Flood+Flow Directions\n");
-	diagnostic_arg("The closed matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up boolean flood array matrix...");
-	closed.resize(elevations.width(),elevations.height());
+	closed.copyprops(elevations);
 	closed.init(false);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The flowdirs matrix will require approximately %ldMB of RAM.\n", elevations.width()*elevations.height()*((long)sizeof(bool))/1024/1024);
 	diagnostic("Setting up the flowdirs matrix...");
 	flowdirs.copyprops(elevations);
 	flowdirs.no_data=NO_FLOW;

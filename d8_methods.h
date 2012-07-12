@@ -80,17 +80,10 @@ template<class T>
 void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 	ProgressBar progress;
 
-	diagnostic_arg("The D8 flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(char))/1024/1024);
-	diagnostic("Resizing flow directions matrix...");
-	flowdirs.resize(elevations.width(),elevations.height(),false);
-	diagnostic("succeeded.\n");
-
-	diagnostic("Setting no_data value on flowdirs matrix...");
-	flowdirs.no_data=d8_NO_DATA;
-	diagnostic("succeeded.\n");
-
-	diagnostic("Initializing D8 flow directions...");
+	diagnostic("Setting up the flow directions matrix...");
+	flowdirs.copyprops(elevations);
 	flowdirs.init(NO_FLOW);
+	flowdirs.no_data=d8_NO_DATA;
 	diagnostic("succeeded.\n");
 
 	diagnostic("%%Calculating D8 flow directions...\n");

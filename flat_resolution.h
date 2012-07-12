@@ -249,15 +249,11 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 
 	diagnostic("\n###Barnes Flat Resolution\n");
 
-	diagnostic_arg("The labels matrix will require approximately %ldMB of RAM.\n",
-				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up labels matrix...");
-	labels.resize(flowdirs.width(),flowdirs.height(),false);
+	labels.copyprops(flowdirs);
 	labels.init(-1);
 	diagnostic("succeeded.\n");
 
-	diagnostic_arg("The flat resolution mask will require approximately %ldMB of RAM.\n",
-				flowdirs.width()*flowdirs.height()*((long)sizeof(int))/1024/1024);
 	diagnostic("Setting up flat resolution mask...");
 	flat_resolution_mask.copyprops(elevations);
 	flat_resolution_mask.init(0);

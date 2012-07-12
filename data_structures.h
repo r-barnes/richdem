@@ -51,8 +51,10 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
 			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
 		const T& operator()(int x, int y) const
 			{return boost::numeric::ublas::matrix<T>::operator()(x,y);}
-		void resize(int width, int height, bool preserve=false)
-			{boost::numeric::ublas::matrix<T>::resize(width,height,preserve);}
+		void resize(int width, int height, bool preserve=false){
+			fprintf(stderr,"\n\tApprox RAM requirement: %lluMB\n", (unsigned long long)width * (unsigned long long)height * (unsigned long long)sizeof(T) / 1024 / 1024);
+			boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
+		}
 		void clear()
 			{boost::numeric::ublas::matrix<T>::clear();}
 		void low_pass_filter();
