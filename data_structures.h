@@ -18,7 +18,7 @@ const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
 const int dinf_d8_inverse[9]={4,5,6,7,0,1,2,3,4};
 
 template <class T>
-class array2d : public boost::numeric::ublas::matrix<T>{
+class array2d : protected boost::numeric::ublas::matrix<T>{
 	public:
 		double cellsize;
 //		std::string xllcorner,yllcorner;	//TODO: Should be string
