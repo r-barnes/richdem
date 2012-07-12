@@ -104,16 +104,9 @@ void dinf_flow_directions(const array2d<T> &elevations, float_2d &flowdirs){
 
 	diagnostic("\n###Dinf Flow Directions\n");
 
-	diagnostic_arg("The Dinf flow directions will require approximately %ldMB of RAM.\n",elevations.width()*elevations.height()*((long)sizeof(float))/1024/1024);
-	diagnostic("Resizing flow directions matrix...");
-	flowdirs.resize(elevations.width(),elevations.height(),false);
-	diagnostic("succeeded.\n");
-
-	diagnostic("Setting no_data value on flowdirs matrix...");
+	diagnostic("Setting up the Dinf flow directions matrix...");
+	flowdirs.copyprops(elevations);
 	flowdirs.no_data=dinf_NO_DATA;
-	diagnostic("succeeded.\n");
-
-	diagnostic("Initializing Dinf flow directions...");
 	flowdirs.init(NO_FLOW);
 	diagnostic("succeeded.\n");
 
