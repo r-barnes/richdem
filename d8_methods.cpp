@@ -11,41 +11,7 @@
 	#include <omp.h>
 #endif
 
-//234
-//105
-//876
-int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
-	int minimum_elevation=flat_resolution_mask(x,y);
-	int flowdir=NO_FLOW;
 
-	for(int n=1;n<=8;n++){
-		int nx=x+dx[n];
-		int ny=y+dy[n];
-		if(	groups(nx,ny)==groups(x,y) && (flat_resolution_mask(nx,ny)<minimum_elevation || (flat_resolution_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
-			minimum_elevation=flat_resolution_mask(nx,ny);
-			flowdir=n;
-		}
-	}
-
-	return flowdir;
-}
-
-void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs){
-	ProgressBar progress;
-
-	diagnostic("%%Calculating D8 flow directions using flat mask...\n");
-	progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
-	#pragma omp parallel for
-	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress.update( x*flat_resolution_mask.height() );
-		for(int y=1;y<flat_resolution_mask.height()-1;y++)
-			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
-				continue;
-			else if (flowdirs(x,y)==NO_FLOW)
-				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
-}
 
 
 
