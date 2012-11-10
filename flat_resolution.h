@@ -139,7 +139,7 @@ static void BuildTowardsCombinedGradient(const array2d<T> &elevations, const arr
 		if(incrementations(x,y)>0) continue;	//I've already been incremented!
 
 		//If I incremented, maybe my neighbours should too
-		if(incrementations(x,y)!=0)
+		if(incrementations(x,y)!=0)	//If it is not equal to zero, it _will_ be less than 0.
 			incrementations(x,y)=(flat_height[labels(x,y)]+incrementations(x,y))+2*loops;
 		else
 			incrementations(x,y)=2*loops;
