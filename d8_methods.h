@@ -2,6 +2,7 @@
 #define _d8_methods_included
 
 #include "data_structures.h"
+#include <queue>
 #include "interface.h"
 #ifdef _OPENMP
 	#include <omp.h>
@@ -25,7 +26,6 @@
 #define TATTRIB_SLOPE_DEGREE		9
 
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs);
-void d8_upslope_area(const char_2d &flowdirs, int_2d &area);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=TATTRIB_SLOPE_RISERUN);
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
 void d8_curvature(const float_2d &elevations, float_2d &curvatures);
@@ -76,8 +76,26 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
 	return flowdir;
 }
 
-template<class T>
-void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
+
+
+//d8_flow_directions
+/**
+	@brief  Calculates the D8 flow directions of a DEM
+	@author Richard Barnes
+
+	This calculates the D8 flow directions of a DEM. Its argument
+	'flowdirs' will return a grid with flow directions using the D8
+	neighbour system, as defined in utility.h. The choice of data type
+	for array2d must be able to hold exact values for all neighbour
+	identifiers (usually [-1,7]).
+
+	@todo								Combine dinf and d8 neighbour systems
+
+	@param[in]	&elevations	A DEM
+	@param[out] &flwodirs	Returns the flow direction of each cell
+*/
+template<class T, class U>
+void d8_flow_directions(const array2d<T> &elevations, array2d<U> &flowdirs){
 	ProgressBar progress;
 
 	diagnostic("Setting up the flow directions matrix...");
@@ -99,5 +117,102 @@ void d8_flow_directions(const array2d<T> &elevations, char_2d &flowdirs){
 	}
 	diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
+
+
+
+
+
+//d8_upslope_area
+/**
+	@brief  Calculates the D8 up-slope area, given the D8 flow directions
+	@author Richard Barnes
+
+	This calculates the D8 up-slope area of a grid of D8 flow directions using
+	by calculating each cell's dependency on its neighbours and then using
+	a priority-queue to process cells in a top-of-the-watershed-down fashion
+
+	@param[in]	&flowdirs		A D8 flowdir grid from d8_flow_directions()
+	@param[out] &area			Returns the up-slope area of each cell
+*/
+template<class T>
+void d8_upslope_area(const char_2d &flowdirs, array2d<T> &area){
+	char_2d dependency;
+	std::queue<grid_cell> sources;
+	ProgressBar progress;
+
+	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
+
+	diagnostic("Resizing dependency matrix...");
+	dependency.copyprops(flowdirs);
+	diagnostic("succeeded.\n");
+
+	diagnostic("Setting up the area matrix...");
+	area.copyprops(flowdirs);
+	area.init(0);
+	area.no_data=d8_NO_DATA;
+	diagnostic("succeeded.\n");
+
+	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
+	progress.start( flowdirs.width()*flowdirs.height() );
+	#pragma omp parallel for
+	for(int x=0;x<flowdirs.width();x++){
+		progress.update( x*flowdirs.height() );
+		for(int y=0;y<flowdirs.height();y++){
+			dependency(x,y)=0;
+			if(flowdirs(x,y)==flowdirs.no_data){
+				area(x,y)=area.no_data;
+				continue;
+			}
+			for(int n=1;n<=8;n++)
+				if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
+					continue;
+				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
+					continue;
+				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
+					continue;
+				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
+					++dependency(x,y);
+		}
+	}
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+
+	diagnostic("%%Locating source cells...\n");
+	progress.start( flowdirs.width()*flowdirs.height() );
+	for(int x=0;x<flowdirs.width();x++){
+		progress.update( x*flowdirs.height() );
+		for(int y=0;y<flowdirs.height();y++)
+			if(flowdirs(x,y)==flowdirs.no_data)
+				continue;
+			else if(dependency(x,y)==0)
+				sources.push(grid_cell(x,y));
+	}
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+
+	diagnostic("%%Calculating up-slope areas...\n");
+	progress.start(flowdirs.data_cells);
+	long int ccount=0;
+	while(sources.size()>0){
+		grid_cell c=sources.front();
+		sources.pop();
+
+		ccount++;
+		progress.update(ccount);
+
+		area(c.x,c.y)+=1;
+
+		if(flowdirs(c.x,c.y)==NO_FLOW)
+			continue;
+
+		int nx=c.x+dx[flowdirs(c.x,c.y)];
+		int ny=c.y+dy[flowdirs(c.x,c.y)];
+		if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
+			area(nx,ny)+=area(c.x,c.y);
+			if((--dependency(nx,ny))==0)
+				sources.push(grid_cell(nx,ny));
+		}
+	}
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+}
+
 
 #endif

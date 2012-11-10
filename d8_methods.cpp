@@ -51,89 +51,6 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, cha
 
 
 
-void d8_upslope_area(const char_2d &flowdirs, int_2d &area){
-	char_2d dependency;
-	std::queue<grid_cell> sources;
-	ProgressBar progress;
-
-	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
-
-	diagnostic("Resizing dependency matrix...");
-	dependency.copyprops(flowdirs);
-	diagnostic("succeeded.\n");
-
-	diagnostic("Setting up the area matrix...");
-	area.copyprops(flowdirs);
-	area.init(0);
-	area.no_data=d8_NO_DATA;
-	diagnostic("succeeded.\n");
-
-	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-	progress.start( flowdirs.width()*flowdirs.height() );
-	#pragma omp parallel for
-	for(int x=0;x<flowdirs.width();x++){
-		progress.update( x*flowdirs.height() );
-		for(int y=0;y<flowdirs.height();y++){
-			dependency(x,y)=0;
-			if(flowdirs(x,y)==flowdirs.no_data){
-				area(x,y)=area.no_data;
-				continue;
-			}
-			for(int n=1;n<=8;n++)
-				if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
-					continue;
-				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
-					continue;
-				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
-					continue;
-				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
-					++dependency(x,y);
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
-
-	diagnostic("%%Locating source cells...\n");
-	progress.start( flowdirs.width()*flowdirs.height() );
-	for(int x=0;x<flowdirs.width();x++){
-		progress.update( x*flowdirs.height() );
-		for(int y=0;y<flowdirs.height();y++)
-			if(flowdirs(x,y)==flowdirs.no_data)
-				continue;
-			else if(dependency(x,y)==0)
-				sources.push(grid_cell(x,y));
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
-
-	diagnostic("%%Calculating up-slope areas...\n");
-	progress.start(flowdirs.data_cells);
-	long int ccount=0;
-	while(sources.size()>0){
-		grid_cell c=sources.front();
-		sources.pop();
-
-		ccount++;
-		progress.update(ccount);
-
-		area(c.x,c.y)+=1;
-
-		if(flowdirs(c.x,c.y)==NO_FLOW)
-			continue;
-
-		int nx=c.x+dx[flowdirs(c.x,c.y)];
-		int ny=c.y+dy[flowdirs(c.x,c.y)];
-		if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
-			area(nx,ny)+=area(c.x,c.y);
-			if((--dependency(nx,ny))==0)
-				sources.push(grid_cell(nx,ny));
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
-}
-
-
-
-
-
 
 //d8_terrain_attrib_helper
 /**
@@ -204,17 +121,6 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	if(h==elevations.no_data) h=e;
 	if(i==elevations.no_data) i=e;
 
-	//TODO: Convert elevations to meters? (1ft=0.3048m)
-/*	a*=0.3048;
-	b*=0.3048;
-	c*=0.3048;
-	d*=0.3048;
-	e*=0.3048;
-	f*=0.3048;
-	g*=0.3048;
-	h*=0.3048;
-	i*=0.3048;*/
-
 	double dzdx,dzdy;
 	//Aspect calculation in the manner of Horn 1981
 	//ArcGIS doesn't use cell size fo aspect calculations.
@@ -241,6 +147,18 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 		planform_curvature=0;
 		return;
 	}
+
+
+	//TODO: Convert elevations to meters? (1ft=0.3048m)
+	a*=0.3048;
+	b*=0.3048;
+	c*=0.3048;
+	d*=0.3048;
+	e*=0.3048;
+	f*=0.3048;
+	g*=0.3048;
+	h*=0.3048;
+	i*=0.3048;
 
 
 
