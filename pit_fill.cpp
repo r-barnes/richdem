@@ -142,7 +142,7 @@ char d8_edge_flow(int x, int y, const float_2d &elevations, const char_2d &flowd
 
 //barnes_flood_flowdirs
 /**
-	@brief  Determines D8 flow directions by flooding inwards. Pits are implicitly carved to drainage points. Based on Metz 2011.
+	@brief  Determines D8 flow directions by flooding inwards, pits are implicitly carved to drainage points. Based on Metz 2011.
 	@author Richard Barnes
 
 	@param[in]	&elevations
