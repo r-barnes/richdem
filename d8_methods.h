@@ -270,4 +270,82 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 }
 
 
+
+
+//d8_upslope_cells
+/**
+	@brief  Calculates which cells ultimately full through a given cell, in the D8 sense
+	@author Richard Barnes
+
+	Given the coordinates x, y of a cell, this returns a grid indicating
+	which cells ultimately flow into the indicated cell.
+	1=Upslope cell
+	2=Member of initializing line
+	All other cells have a no_data value
+
+	@param[in]	&flowdirs		A D8 flowdir grid from d8_flow_directions()
+	@param[out] &area			Returns the up-slope area of each cell
+*/
+template<class T, class U>
+void d8_upslope_cells(int x0, int y0, int x1, int y1, const array2d<T> &flowdirs, array2d<U> &upslope_cells){
+	diagnostic("Setting up the upslope_cells matrix...");
+	upslope_cells.copyprops(flowdirs);
+	upslope_cells.init(d8_NO_DATA);
+	upslope_cells.no_data=d8_NO_DATA;
+	diagnostic("succeeded.\n");
+	ProgressBar progress;
+
+	std::queue<grid_cell> expansion;
+
+	if(x0>x1){
+		swap(x0,x1);
+		swap(y0,y1);
+	}
+
+	//Modified Bresenham Line-Drawing Algorithm
+	int deltax=x1-x0;
+	int deltay=y1-y0;
+	float error=0;
+	float deltaerr=(float)deltay/(float)deltax;
+	if (deltaerr<0)
+		deltaerr=-deltaerr;
+	diagnostic_arg("Line slope is %f\n",deltaerr);
+	int y=y0;
+	for(int x=x0;x<=x1;x++){
+		expansion.push(grid_cell(x,y));
+		upslope_cells(x,y)=2;
+		error+=deltaerr;
+		if (error>=0.5) {
+			expansion.push(grid_cell(x+1,y));
+			upslope_cells(x+1,y)=2;
+			y+=SGN(deltay);
+			error-=1;
+		}
+	}
+
+	progress.start(flowdirs.data_cells);
+	long int ccount=0;
+	while(expansion.size()>0){
+		grid_cell c=expansion.front();
+		expansion.pop();
+
+		progress.update(ccount++);
+
+		for(int n=1;n<=8;n++)
+			if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
+				continue;
+			else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
+				continue;
+			else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.no_data)
+				continue;
+			else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.no_data && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
+				expansion.push(grid_cell(c.x+dx[n],c.y+dy[n]));
+				upslope_cells(c.x+dx[n],c.y+dy[n])=1;
+			}
+	}
+	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+	diagnostic_arg("Found %ld up-slope cells.\n",ccount);
+}
+
+
 #endif
