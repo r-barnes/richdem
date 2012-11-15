@@ -16,7 +16,7 @@
 
 <p>RichDEM integrates with ArcGIS 10 for ease-of-use and better workflow.</p>
 
-<p>RichDEM is still in development, but will be available by June.</p>
+<p>RichDEM is still in development, but will be available soon.</p>
 
 <p>Please contact Richard Barnes (<a href="mailto:rbarnes@umn.edu">rbarnes@umn.edu</a>) if you have any questions.</p>
 </div>
