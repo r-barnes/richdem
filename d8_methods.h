@@ -190,7 +190,7 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, arr
 	@param[out] &area			Returns the up-slope area of each cell
 */
 template<class T, class U>
-void d8_upslope_area(const array_2d<T> &flowdirs, array2d<U> &area){
+void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 	char_2d dependency;
 	std::queue<grid_cell> sources;
 	ProgressBar progress;
