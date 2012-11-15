@@ -26,6 +26,8 @@
 #define DEG(A)		((A)*180.0/M_PI)
 #define SQ(A)		((A)*(A))
 
+#define SGN(A) (((A)==0)?0:(((A)<0)?-1:1))
+
 #define ROUND(A)	floor((A) + 0.5)
 
 //D8 Directions
@@ -114,5 +116,13 @@ class Timer{
 			return timediff(start_time,lap_time);
 		}
 };
+
+template<class T>
+void swap(T &a, T &b){
+	T temp;
+	temp=a;
+	a=b;
+	b=temp;
+}
 
 #endif
