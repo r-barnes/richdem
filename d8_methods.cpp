@@ -70,7 +70,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	//Deal with grid edges and NoData values in the manner suggested by
 	//ArcGIS. Note that this function should never be called on a NoData cell
 	a=b=c=d=e=f=g=h=i=elevations(x0,y0);
-	if(elevations.in_grid(x0-1,y0-1))			a=elevations(x0-1,y0-1);
+	if(elevations.in_grid(x0-1,y0-1))						a=elevations(x0-1,y0-1);
 	if(elevations.in_grid(x0-1,y0))             d=elevations(x0-1,y0);
 	if(elevations.in_grid(x0-1,y0+1))           g=elevations(x0-1,y0+1);
 	if(elevations.in_grid(x0  ,y0-1))           b=elevations(x0,y0-1);
@@ -86,6 +86,17 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	if(g==elevations.no_data) g=e;
 	if(h==elevations.no_data) h=e;
 	if(i==elevations.no_data) i=e;
+
+	//TODO: Convert elevations to meters? (1ft=0.3048m)
+	a*=0.3048;
+	b*=0.3048;
+	c*=0.3048;
+	d*=0.3048;
+	e*=0.3048;
+	f*=0.3048;
+	g*=0.3048;
+	h*=0.3048;
+	i*=0.3048;
 
 	double dzdx,dzdy;
 	//Aspect calculation in the manner of Horn 1981
@@ -115,16 +126,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 	}
 
 
-	//TODO: Convert elevations to meters? (1ft=0.3048m)
-	a*=0.3048;
-	b*=0.3048;
-	c*=0.3048;
-	d*=0.3048;
-	e*=0.3048;
-	f*=0.3048;
-	g*=0.3048;
-	h*=0.3048;
-	i*=0.3048;
+
 
 
 
