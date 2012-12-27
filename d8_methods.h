@@ -25,7 +25,6 @@
 /** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken and converted to degrees*/
 #define TATTRIB_SLOPE_DEGREE		9
 
-void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, char_2d &flowdirs);
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=TATTRIB_SLOPE_RISERUN);
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
 void d8_curvature(const float_2d &elevations, float_2d &curvatures);
@@ -225,7 +224,7 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 					continue;
 				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
 					continue;
-				else if(n==inverse_flow[flowdirs(x+dx[n],y+dy[n])])
+				else if(n==inverse_flow[(int)flowdirs(x+dx[n],y+dy[n])])
 					++dependency(x,y);
 		}
 	}
@@ -258,8 +257,8 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 		if(flowdirs(c.x,c.y)==NO_FLOW)
 			continue;
 
-		int nx=c.x+dx[flowdirs(c.x,c.y)];
-		int ny=c.y+dy[flowdirs(c.x,c.y)];
+		int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
+		int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
 		if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
 			area(nx,ny)+=area(c.x,c.y);
 			if((--dependency(nx,ny))==0)
