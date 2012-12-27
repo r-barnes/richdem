@@ -191,7 +191,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 
 	diagnostic_arg("Setting up the attribute #%d matrix...", attrib);
 	attribs.copyprops(elevations);
-	attribs.no_data=-2;	//TODO: Should push this out to the calling helper functions
+	attribs.no_data=-99999;	//TODO: Should push this out to the calling helper functions
 	diagnostic("succeeded.\n");
 
 	diagnostic_arg("%%Calculating terrain attribute #%d...\n",attrib);
