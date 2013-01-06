@@ -1,8 +1,0 @@
-Slope (3x3 window for greatest steepness?)
-Flow accumulation
-Curvature (profile curvature)
-Aspect (Standard deviation of aspect)
-Ravines=Flow accumulation, curvature, standard deviation of aspect
-	Get information from Dr. Mulla
-
-Need flow accumulation for both pit-filled and non-pitfilled DEMS for Mulla project
