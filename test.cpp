@@ -11,14 +11,16 @@
 #include <sys/time.h>
 
 int main(int argc, char **argv){
-	float_2d elevations,elevations2;
+	float_2d elevations;
+	char_2d flowdirs;
+	int_2d is_upslope;
+
 	load_ascii_data(argv[1],elevations);
+	elevations.low_pass_filter();
+	barnes_flood_flowdirs(elevations, flowdirs);
+	d8_upslope_cells(atoi(argv[3])-elevations.xllcorner, (elevations.yllcorner+elevations.height())-atoi(argv[4]), atoi(argv[5])-elevations.xllcorner, (elevations.yllcorner+elevations.height())-atoi(argv[6]), flowdirs, is_upslope);
 
-	elevations2=elevations;
+	output_ascii_data(argv[2], is_upslope);
 
-	int_2d labels,labels2;
-	find_watersheds(elevations,labels);
-	find_watersheds_test(elevations2,labels2);
-
-	diagnostic_arg("Diff was: %f\n",avg_diff(labels,labels2));
+	return 0;
 }
