@@ -351,12 +351,12 @@ void array2d<T>::high_pass_filter(){
 
 
 
-typedef array2d<double> double_2d;
-typedef array2d<float> float_2d;
-typedef array2d<signed char> char_2d;
-typedef array2d<bool> bool_2d;
+typedef array2d<double>       double_2d;
+typedef array2d<float>        float_2d;
+typedef array2d<signed char>  char_2d;
+typedef array2d<bool>         bool_2d;
 typedef array2d<unsigned int> uint_2d;
-typedef array2d<int> int_2d;
+typedef array2d<int>          int_2d;
 
 
 /// Stores the (x,y) coordinates of a grid cell
