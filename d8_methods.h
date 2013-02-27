@@ -79,8 +79,24 @@ void d8_CTI(
 //234
 //105
 //876
+//d8_FlowDir
+/**
+  @brief  Calculates the D8 flow direction of a cell
+  @author Richard Barnes
+
+  This calculates the D8 flow direction of a cell using the D8
+  neighbour system, as defined in utility.h.
+
+  Helper function for d8_flow_directions().
+
+  @param[in]  &elevations  A DEM
+  @param[in]  x            x coordinate of cell
+  @param[in]  y            y coordinate of cell
+
+  @returns The D8 flow direction of the cell
+*/
 template<class T>
-int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
+static int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
   T minimum_elevation=elevations(x,y);
   int flowdir=NO_FLOW;
 
@@ -103,10 +119,19 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
       return 7;
   }
 
-  //NOTE: Since the very edges of the DEM are defined to always flow outwards, if they have defined elevations, it is not necessary to check of a neighbour is IN_GRID in the following
-  //NOTE: It is assumed that the no_data datum is an extremely negative number, such that all water which makes it to the edge of the DEM's region of defined elevations is sucked directly off the grid, rather than piling up on the edges.
+  /*NOTE: Since the very edges of the DEM are defined to always flow outwards,
+  if they have defined elevations, it is not necessary to check of a neighbour
+  is IN_GRID in the following
+  NOTE: It is assumed that the no_data datum is an extremely negative
+  number, such that all water which makes it to the edge of the DEM's region
+  of defined elevations is sucked directly off the grid, rather than piling up
+  on the edges.*/
   for(int n=1;n<=8;n++)
-    if(  elevations(x+dx[n],y+dy[n])<minimum_elevation || (elevations(x+dx[n],y+dy[n])==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
+    if(
+      elevations(x+dx[n],y+dy[n])<minimum_elevation
+      || (elevations(x+dx[n],y+dy[n])==minimum_elevation
+            && flowdir>0 && flowdir%2==0 && n%2==1)
+    ){
       minimum_elevation=elevations(x+dx[n],y+dy[n]);
       flowdir=n;
     }
@@ -126,6 +151,8 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
   neighbour system, as defined in utility.h. The choice of data type
   for array2d must be able to hold exact values for all neighbour
   identifiers (usually [-1,7]).
+
+  Uses d8_FlowDir() as a helper function.
 
   @todo                    Combine dinf and d8 neighbour systems
 
@@ -165,6 +192,21 @@ void d8_flow_directions(
 //234
 //105
 //876
+//d8_masked_FlowDir
+/**
+  @brief  Helper function to d8_flow_flats()
+  @author Richard Barnes
+
+  This determines a cell's flow direction, taking into account flat membership.
+  It is a helper function to d8_flow_flats()
+
+  @param[in]  &flat_mask      A mask from resolve_flats_barnes()
+  @param[in]  &groups         A grouping from resolve_flats_barnes()
+  @param[in]  x               x coordinate of cell
+  @param[in]  y               y coordinate of cell
+
+  @returns    The flow direction of the cell
+*/
 static int d8_masked_FlowDir(
   const int_2d &flat_mask,
   const int_2d &groups,
@@ -245,7 +287,10 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
   std::queue<grid_cell> sources;
   ProgressBar progress;
 
-  diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
+  diagnostic_arg(
+    "The sources queue will require at most approximately %ldMB of RAM.\n",
+    flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024
+  );
 
   diagnostic("Resizing dependency matrix...");
   dependency.copyprops(flowdirs);
@@ -324,7 +369,7 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 
 //d8_upslope_cells
 /**
-  @brief  Calculates which cells ultimately full through a given cell, in the D8 sense
+  @brief  Calculates which cells ultimately D8-flow through a given cell
   @author Richard Barnes
 
   Given the coordinates x, y of a cell, this returns a grid indicating
@@ -337,7 +382,10 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
   @param[out] &area      Returns the up-slope area of each cell
 */
 template<class T, class U>
-void d8_upslope_cells(int x0, int y0, int x1, int y1, const array2d<T> &flowdirs, array2d<U> &upslope_cells){
+void d8_upslope_cells(
+  int x0, int y0, int x1, int y1,
+  const array2d<T> &flowdirs,array2d<U> &upslope_cells
+){
   diagnostic("Setting up the upslope_cells matrix...");
   upslope_cells.copyprops(flowdirs);
   upslope_cells.init(d8_NO_DATA);
