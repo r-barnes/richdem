@@ -5,25 +5,25 @@
 #include <queue>
 #include "interface.h"
 #ifdef _OPENMP
-	#include <omp.h>
+  #include <omp.h>
 #endif
 
 /** Used with #d8_terrain_attribute to get an ill-defined curvature thing (TODO) */
-#define TATTRIB_CURVATURE			2
+#define TATTRIB_CURVATURE           2
 /** Used with #d8_terrain_attribute to get planform curvature as per Zevenbergen and Thorne 1987 */
-#define TATTRIB_PLANFORM_CURVATURE	3
+#define TATTRIB_PLANFORM_CURVATURE  3
 /** Used with #d8_terrain_attribute to get profile curvature as per Zevenbergen and Thorne 1987 */
-#define TATTRIB_PROFILE_CURVATURE	4
+#define TATTRIB_PROFILE_CURVATURE   4
 /** Used with #d8_terrain_attribute to get aspect as per Horn 1981 */
-#define TATTRIB_ASPECT				5
+#define TATTRIB_ASPECT              5
 /** Used with #d8_terrain_attribute to get slope as per Horn 1981 */
-#define TATTRIB_SLOPE_RISERUN		6
+#define TATTRIB_SLOPE_RISERUN       6
 /** Used with #d8_terrain_attribute to get slope as per Horn 1981, the value is multiplied by 100 */
-#define TATTRIB_SLOPE_PERCENT		7
+#define TATTRIB_SLOPE_PERCENT       7
 /** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken */
-#define TATTRIB_SLOPE_RADIAN		8
+#define TATTRIB_SLOPE_RADIAN        8
 /** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken and converted to degrees*/
-#define TATTRIB_SLOPE_DEGREE		9
+#define TATTRIB_SLOPE_DEGREE        9
 
 void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=TATTRIB_SLOPE_RISERUN);
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
@@ -42,79 +42,79 @@ void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 //876
 template<class T>
 int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
-	T minimum_elevation=elevations(x,y);
-	int flowdir=NO_FLOW;
+  T minimum_elevation=elevations(x,y);
+  int flowdir=NO_FLOW;
 
-	if (elevations.edge_grid(x,y)){
-		if(x==0 && y==0)
-			return 2;
-		else if(x==0 && y==elevations.height()-1)
-			return 8;
-		else if(x==elevations.width()-1 && y==0)
-			return 4;
-		else if(x==elevations.width()-1 && y==elevations.height()-1)
-			return 6;
-		else if(x==0)
-			return 1;
-		else if(x==elevations.width()-1)
-			return 5;
-		else if(y==0)
-			return 3;
-		else if(y==elevations.height()-1)
-			return 7;
-	}
+  if (elevations.edge_grid(x,y)){
+    if(x==0 && y==0)
+      return 2;
+    else if(x==0 && y==elevations.height()-1)
+      return 8;
+    else if(x==elevations.width()-1 && y==0)
+      return 4;
+    else if(x==elevations.width()-1 && y==elevations.height()-1)
+      return 6;
+    else if(x==0)
+      return 1;
+    else if(x==elevations.width()-1)
+      return 5;
+    else if(y==0)
+      return 3;
+    else if(y==elevations.height()-1)
+      return 7;
+  }
 
-	//NOTE: Since the very edges of the DEM are defined to always flow outwards, if they have defined elevations, it is not necessary to check of a neighbour is IN_GRID in the following
-	//NOTE: It is assumed that the no_data datum is an extremely negative number, such that all water which makes it to the edge of the DEM's region of defined elevations is sucked directly off the grid, rather than piling up on the edges.
-	for(int n=1;n<=8;n++)
-		if(	elevations(x+dx[n],y+dy[n])<minimum_elevation || (elevations(x+dx[n],y+dy[n])==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
-			minimum_elevation=elevations(x+dx[n],y+dy[n]);
-			flowdir=n;
-		}
+  //NOTE: Since the very edges of the DEM are defined to always flow outwards, if they have defined elevations, it is not necessary to check of a neighbour is IN_GRID in the following
+  //NOTE: It is assumed that the no_data datum is an extremely negative number, such that all water which makes it to the edge of the DEM's region of defined elevations is sucked directly off the grid, rather than piling up on the edges.
+  for(int n=1;n<=8;n++)
+    if(  elevations(x+dx[n],y+dy[n])<minimum_elevation || (elevations(x+dx[n],y+dy[n])==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
+      minimum_elevation=elevations(x+dx[n],y+dy[n]);
+      flowdir=n;
+    }
 
-	return flowdir;
+  return flowdir;
 }
 
 
 
 //d8_flow_directions
 /**
-	@brief  Calculates the D8 flow directions of a DEM
-	@author Richard Barnes
+  @brief  Calculates the D8 flow directions of a DEM
+  @author Richard Barnes
 
-	This calculates the D8 flow directions of a DEM. Its argument
-	'flowdirs' will return a grid with flow directions using the D8
-	neighbour system, as defined in utility.h. The choice of data type
-	for array2d must be able to hold exact values for all neighbour
-	identifiers (usually [-1,7]).
+  This calculates the D8 flow directions of a DEM. Its argument
+  'flowdirs' will return a grid with flow directions using the D8
+  neighbour system, as defined in utility.h. The choice of data type
+  for array2d must be able to hold exact values for all neighbour
+  identifiers (usually [-1,7]).
 
-	@todo								Combine dinf and d8 neighbour systems
+  @todo                    Combine dinf and d8 neighbour systems
 
-	@param[in]	&elevations	A DEM
-	@param[out] &flwodirs	Returns the flow direction of each cell
+  @param[in]  &elevations  A DEM
+  @param[out] &flwodirs    Returns the flow direction of each cell
 */
 template<class T, class U>
 void d8_flow_directions(const array2d<T> &elevations, array2d<U> &flowdirs){
-	ProgressBar progress;
+  ProgressBar progress;
 
-	diagnostic("Setting up the flow directions matrix...");
-	flowdirs.copyprops(elevations);
-	flowdirs.init(NO_FLOW);
-	flowdirs.no_data=d8_NO_DATA;
-	diagnostic("succeeded.\n");
+  diagnostic("Setting up the flow directions matrix...");
+  flowdirs.copyprops(elevations);
+  flowdirs.init(NO_FLOW);
+  flowdirs.no_data=d8_NO_DATA;
+  diagnostic("succeeded.\n");
 
-	diagnostic("%%Calculating D8 flow directions...\n");
-	progress.start( elevations.width()*elevations.height() );
-	#pragma omp parallel for
-	for(int x=0;x<elevations.width();x++){
-		progress.update( x*elevations.height() );
-		for(int y=0;y<elevations.height();y++)
-			if(elevations(x,y)==elevations.no_data)
-				flowdirs(x,y)=flowdirs.no_data;
-			else
-				flowdirs(x,y)=d8_FlowDir(elevations,x,y);
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic("%%Calculating D8 flow directions...\n");
+  progress.start( elevations.width()*elevations.height() );
+  #pragma omp parallel for
+  for(int x=0;x<elevations.width();x++){
+    progress.update( x*elevations.height() );
+    for(int y=0;y<elevations.height();y++)
+      if(elevations(x,y)==elevations.no_data)
+        flowdirs(x,y)=flowdirs.no_data;
+      else
+        flowdirs(x,y)=d8_FlowDir(elevations,x,y);
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -124,51 +124,51 @@ void d8_flow_directions(const array2d<T> &elevations, array2d<U> &flowdirs){
 //105
 //876
 static int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
-	int minimum_elevation=flat_resolution_mask(x,y);
-	int flowdir=NO_FLOW;
+  int minimum_elevation=flat_resolution_mask(x,y);
+  int flowdir=NO_FLOW;
 
-	for(int n=1;n<=8;n++){
-		int nx=x+dx[n];
-		int ny=y+dy[n];
-		if(	groups(nx,ny)==groups(x,y) && (flat_resolution_mask(nx,ny)<minimum_elevation || (flat_resolution_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
-			minimum_elevation=flat_resolution_mask(nx,ny);
-			flowdir=n;
-		}
-	}
+  for(int n=1;n<=8;n++){
+    int nx=x+dx[n];
+    int ny=y+dy[n];
+    if(  groups(nx,ny)==groups(x,y) && (flat_resolution_mask(nx,ny)<minimum_elevation || (flat_resolution_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
+      minimum_elevation=flat_resolution_mask(nx,ny);
+      flowdir=n;
+    }
+  }
 
-	return flowdir;
+  return flowdir;
 }
 
 //d8_flow_flats
 /**
-	@brief  Calculates flow directions in flats
-	@author Richard Barnes
+  @brief  Calculates flow directions in flats
+  @author Richard Barnes
 
-	This determines the flow directions within flats which have been resolved
-	using resolve_flats_barnes().
+  This determines the flow directions within flats which have been resolved
+  using resolve_flats_barnes().
 
-	Uses the helper function d8_masked_FlowDir()
+  Uses the helper function d8_masked_FlowDir()
 
-	@param[in]	&flat_resolution_mask		A mask generated by resolve_flats_barnes()
-	@param[in]	&groups							A grouping generated by resolve_flats_barnes()
-	@param[out] &flowdirs						Returns flat-resolved flow directions
+  @param[in]  &flat_resolution_mask  A mask generated by resolve_flats_barnes()
+  @param[in]  &groups                A grouping generated by resolve_flats_barnes()
+  @param[out] &flowdirs              Returns flat-resolved flow directions
 */
 template<class U>
 void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, array2d<U> &flowdirs){
-	ProgressBar progress;
+  ProgressBar progress;
 
-	diagnostic("%%Calculating D8 flow directions using flat mask...\n");
-	progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
-	#pragma omp parallel for
-	for(int x=1;x<flat_resolution_mask.width()-1;x++){
-		progress.update( x*flat_resolution_mask.height() );
-		for(int y=1;y<flat_resolution_mask.height()-1;y++)
-			if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
-				continue;
-			else if (flowdirs(x,y)==NO_FLOW)
-				flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic("%%Calculating D8 flow directions using flat mask...\n");
+  progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
+  #pragma omp parallel for
+  for(int x=1;x<flat_resolution_mask.width()-1;x++){
+    progress.update( x*flat_resolution_mask.height() );
+    for(int y=1;y<flat_resolution_mask.height()-1;y++)
+      if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
+        continue;
+      else if (flowdirs(x,y)==NO_FLOW)
+        flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -178,94 +178,94 @@ void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, arr
 
 //d8_upslope_area
 /**
-	@brief  Calculates the D8 up-slope area, given the D8 flow directions
-	@author Richard Barnes
+  @brief  Calculates the D8 up-slope area, given the D8 flow directions
+  @author Richard Barnes
 
-	This calculates the D8 up-slope area of a grid of D8 flow directions using
-	by calculating each cell's dependency on its neighbours and then using
-	a priority-queue to process cells in a top-of-the-watershed-down fashion
+  This calculates the D8 up-slope area of a grid of D8 flow directions using
+  by calculating each cell's dependency on its neighbours and then using
+  a priority-queue to process cells in a top-of-the-watershed-down fashion
 
-	@param[in]	&flowdirs		A D8 flowdir grid from d8_flow_directions()
-	@param[out] &area			Returns the up-slope area of each cell
+  @param[in]  &flowdirs  A D8 flowdir grid from d8_flow_directions()
+  @param[out] &area      Returns the up-slope area of each cell
 */
 template<class T, class U>
 void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
-	char_2d dependency;
-	std::queue<grid_cell> sources;
-	ProgressBar progress;
+  char_2d dependency;
+  std::queue<grid_cell> sources;
+  ProgressBar progress;
 
-	diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
+  diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
 
-	diagnostic("Resizing dependency matrix...");
-	dependency.copyprops(flowdirs);
-	diagnostic("succeeded.\n");
+  diagnostic("Resizing dependency matrix...");
+  dependency.copyprops(flowdirs);
+  diagnostic("succeeded.\n");
 
-	diagnostic("Setting up the area matrix...");
-	area.copyprops(flowdirs);
-	area.init(0);
-	area.no_data=d8_NO_DATA;
-	diagnostic("succeeded.\n");
+  diagnostic("Setting up the area matrix...");
+  area.copyprops(flowdirs);
+  area.init(0);
+  area.no_data=d8_NO_DATA;
+  diagnostic("succeeded.\n");
 
-	diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-	progress.start( flowdirs.width()*flowdirs.height() );
-	#pragma omp parallel for
-	for(int x=0;x<flowdirs.width();x++){
-		progress.update( x*flowdirs.height() );
-		for(int y=0;y<flowdirs.height();y++){
-			dependency(x,y)=0;
-			if(flowdirs(x,y)==flowdirs.no_data){
-				area(x,y)=area.no_data;
-				continue;
-			}
-			for(int n=1;n<=8;n++)
-				if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
-					continue;
-				else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
-					continue;
-				else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
-					continue;
-				else if(n==inverse_flow[(int)flowdirs(x+dx[n],y+dy[n])])
-					++dependency(x,y);
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
+  progress.start( flowdirs.width()*flowdirs.height() );
+  #pragma omp parallel for
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++){
+      dependency(x,y)=0;
+      if(flowdirs(x,y)==flowdirs.no_data){
+        area(x,y)=area.no_data;
+        continue;
+      }
+      for(int n=1;n<=8;n++)
+        if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
+          continue;
+        else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
+          continue;
+        else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
+          continue;
+        else if(n==inverse_flow[(int)flowdirs(x+dx[n],y+dy[n])])
+          ++dependency(x,y);
+    }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
-	diagnostic("%%Locating source cells...\n");
-	progress.start( flowdirs.width()*flowdirs.height() );
-	for(int x=0;x<flowdirs.width();x++){
-		progress.update( x*flowdirs.height() );
-		for(int y=0;y<flowdirs.height();y++)
-			if(flowdirs(x,y)==flowdirs.no_data)
-				continue;
-			else if(dependency(x,y)==0)
-				sources.push(grid_cell(x,y));
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic("%%Locating source cells...\n");
+  progress.start( flowdirs.width()*flowdirs.height() );
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++)
+      if(flowdirs(x,y)==flowdirs.no_data)
+        continue;
+      else if(dependency(x,y)==0)
+        sources.push(grid_cell(x,y));
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
-	diagnostic("%%Calculating up-slope areas...\n");
-	progress.start(flowdirs.data_cells);
-	long int ccount=0;
-	while(sources.size()>0){
-		grid_cell c=sources.front();
-		sources.pop();
+  diagnostic("%%Calculating up-slope areas...\n");
+  progress.start(flowdirs.data_cells);
+  long int ccount=0;
+  while(sources.size()>0){
+    grid_cell c=sources.front();
+    sources.pop();
 
-		ccount++;
-		progress.update(ccount);
+    ccount++;
+    progress.update(ccount);
 
-		area(c.x,c.y)+=1;
+    area(c.x,c.y)+=1;
 
-		if(flowdirs(c.x,c.y)==NO_FLOW)
-			continue;
+    if(flowdirs(c.x,c.y)==NO_FLOW)
+      continue;
 
-		int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
-		int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
-		if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
-			area(nx,ny)+=area(c.x,c.y);
-			if((--dependency(nx,ny))==0)
-				sources.push(grid_cell(nx,ny));
-		}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
+    int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
+    int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
+    if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
+      area(nx,ny)+=area(c.x,c.y);
+      if((--dependency(nx,ny))==0)
+        sources.push(grid_cell(nx,ny));
+    }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
 
@@ -273,77 +273,77 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 
 //d8_upslope_cells
 /**
-	@brief  Calculates which cells ultimately full through a given cell, in the D8 sense
-	@author Richard Barnes
+  @brief  Calculates which cells ultimately full through a given cell, in the D8 sense
+  @author Richard Barnes
 
-	Given the coordinates x, y of a cell, this returns a grid indicating
-	which cells ultimately flow into the indicated cell.
-	1=Upslope cell
-	2=Member of initializing line
-	All other cells have a no_data value
+  Given the coordinates x, y of a cell, this returns a grid indicating
+  which cells ultimately flow into the indicated cell.
+  1=Upslope cell
+  2=Member of initializing line
+  All other cells have a no_data value
 
-	@param[in]	&flowdirs		A D8 flowdir grid from d8_flow_directions()
-	@param[out] &area			Returns the up-slope area of each cell
+  @param[in]  &flowdirs  A D8 flowdir grid from d8_flow_directions()
+  @param[out] &area      Returns the up-slope area of each cell
 */
 template<class T, class U>
 void d8_upslope_cells(int x0, int y0, int x1, int y1, const array2d<T> &flowdirs, array2d<U> &upslope_cells){
-	diagnostic("Setting up the upslope_cells matrix...");
-	upslope_cells.copyprops(flowdirs);
-	upslope_cells.init(d8_NO_DATA);
-	upslope_cells.no_data=d8_NO_DATA;
-	diagnostic("succeeded.\n");
-	ProgressBar progress;
+  diagnostic("Setting up the upslope_cells matrix...");
+  upslope_cells.copyprops(flowdirs);
+  upslope_cells.init(d8_NO_DATA);
+  upslope_cells.no_data=d8_NO_DATA;
+  diagnostic("succeeded.\n");
+  ProgressBar progress;
 
-	std::queue<grid_cell> expansion;
+  std::queue<grid_cell> expansion;
 
-	if(x0>x1){
-		swap(x0,x1);
-		swap(y0,y1);
-	}
+  if(x0>x1){
+    swap(x0,x1);
+    swap(y0,y1);
+  }
 
-	//Modified Bresenham Line-Drawing Algorithm
-	int deltax=x1-x0;
-	int deltay=y1-y0;
-	float error=0;
-	float deltaerr=(float)deltay/(float)deltax;
-	if (deltaerr<0)
-		deltaerr=-deltaerr;
-	diagnostic_arg("Line slope is %f\n",deltaerr);
-	int y=y0;
-	for(int x=x0;x<=x1;x++){
-		expansion.push(grid_cell(x,y));
-		upslope_cells(x,y)=2;
-		error+=deltaerr;
-		if (error>=0.5) {
-			expansion.push(grid_cell(x+1,y));
-			upslope_cells(x+1,y)=2;
-			y+=SGN(deltay);
-			error-=1;
-		}
-	}
+  //Modified Bresenham Line-Drawing Algorithm
+  int deltax=x1-x0;
+  int deltay=y1-y0;
+  float error=0;
+  float deltaerr=(float)deltay/(float)deltax;
+  if (deltaerr<0)
+    deltaerr=-deltaerr;
+  diagnostic_arg("Line slope is %f\n",deltaerr);
+  int y=y0;
+  for(int x=x0;x<=x1;x++){
+    expansion.push(grid_cell(x,y));
+    upslope_cells(x,y)=2;
+    error+=deltaerr;
+    if (error>=0.5) {
+      expansion.push(grid_cell(x+1,y));
+      upslope_cells(x+1,y)=2;
+      y+=SGN(deltay);
+      error-=1;
+    }
+  }
 
-	progress.start(flowdirs.data_cells);
-	long int ccount=0;
-	while(expansion.size()>0){
-		grid_cell c=expansion.front();
-		expansion.pop();
+  progress.start(flowdirs.data_cells);
+  long int ccount=0;
+  while(expansion.size()>0){
+    grid_cell c=expansion.front();
+    expansion.pop();
 
-		progress.update(ccount++);
+    progress.update(ccount++);
 
-		for(int n=1;n<=8;n++)
-			if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
-				continue;
-			else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
-				continue;
-			else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.no_data)
-				continue;
-			else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.no_data && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
-				expansion.push(grid_cell(c.x+dx[n],c.y+dy[n]));
-				upslope_cells(c.x+dx[n],c.y+dy[n])=1;
-			}
-	}
-	diagnostic_arg(SUCCEEDED_IN,progress.stop());
-	diagnostic_arg("Found %ld up-slope cells.\n",ccount);
+    for(int n=1;n<=8;n++)
+      if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
+        continue;
+      else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
+        continue;
+      else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.no_data)
+        continue;
+      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.no_data && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
+        expansion.push(grid_cell(c.x+dx[n],c.y+dy[n]));
+        upslope_cells(c.x+dx[n],c.y+dy[n])=1;
+      }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic_arg("Found %ld up-slope cells.\n",ccount);
 }
 
 
