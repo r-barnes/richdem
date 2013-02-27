@@ -60,7 +60,7 @@ int load_ascii_data(const char filename[], float_2d &elevations){
   float temp;
   elevations.data_cells=0;
   for(int y=0;y<rows;y++){
-    progress.update(ftell(fin)); //Todo: Should I check to see if ftell fails here?
+    progress.update(ftell(fin)); //Todo: Check to see if ftell fails here?
     for(int x=0;x<columns;x++){
       if (fscanf(fin,"%f", &temp)!=1){
         diagnostic("\n\tFailed! (Couldn't read or convert a value!)\n");
@@ -75,7 +75,11 @@ int load_ascii_data(const char filename[], float_2d &elevations){
 
   fclose(fin);
 
-  diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", elevations.width()*elevations.height(), elevations.data_cells, elevations.data_cells*100/elevations.width()/elevations.height());
+  diagnostic_arg(
+    "Read %ld cells, of which %ld contained data (%ld%%).\n",
+    elevations.width()*elevations.height(), elevations.data_cells,
+    elevations.data_cells*100/elevations.width()/elevations.height()
+  );
 
   load_time.stop();
   diagnostic_arg("Read time was: %lfs\n", load_time.accumulated());
@@ -136,9 +140,12 @@ int load_ascii_data(const char filename[], char_2d &data){
 
 //  data.no_data=(char)temp;
 
-  diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
+  diagnostic_arg(
+    "The loaded DEM will require approximately %ldMB of RAM.\n",
+    columns*rows*((long)sizeof(float))/1024/1024
+  );
 
-  diagnostic("Resizing data matrix...");  //TODO: Consider abstracting this block
+  diagnostic("Resizing data matrix...");
   data.resize(columns,rows);
   diagnostic("succeeded.\n");
 
@@ -147,7 +154,7 @@ int load_ascii_data(const char filename[], char_2d &data){
 
   data.data_cells=0;
   for(int y=0;y<rows;y++){
-    progress.update(ftell(fin)); //Todo: Should I check to see if ftell fails here?
+    progress.update(ftell(fin)); //Todo: Check to see if ftell fails here?
     for(int x=0;x<columns;x++){
       if (fscanf(fin,"%d", &temp)!=1){
         diagnostic("\n\tFailed! (Couldn't read or convert a value!)\n");
@@ -162,7 +169,11 @@ int load_ascii_data(const char filename[], char_2d &data){
 
   fclose(fin);
 
-  diagnostic_arg("Read %ld cells, of which %ld contained data (%ld%%).\n", data.width()*data.height(), data.data_cells, data.data_cells*100/data.width()/data.height());
+  diagnostic_arg(
+    "Read %ld cells, of which %ld contained data (%ld%%).\n",
+    data.width()*data.height(), data.data_cells,
+    data.data_cells*100/data.width()/data.height()
+  );
 
   load_time.stop();
   diagnostic_arg("Read time was: %lfs\n", load_time.accumulated());

@@ -14,7 +14,11 @@ int load_ascii_data(const char filename[], char_2d &data);
 
 
 template <class T>
-int output_ascii_data(const std::string filename, const array2d<T> &output_grid, int precision=8){
+int output_ascii_data(
+  const std::string filename,
+  const array2d<T> &output_grid,
+  int precision=8
+){
   std::ofstream fout;
   std::string outputsep=" ";
   int output_type=OUTPUT_DEM;
@@ -77,7 +81,7 @@ int output_ascii_data(const std::string filename, const array2d<T> &output_grid,
     if(output_type==OUTPUT_OMG)
       fout<<"|";
     for(int x=0;x<output_grid.width();x++)
-      if(sizeof(T)==1)  //TODO: This is a crude way of detecting chars and bools
+      if(sizeof(T)==1)  //TODO: Crude way of detecting chars and bools
         fout<<(int)output_grid(x,y)<<outputsep;
       else
         fout<<output_grid(x,y)<<outputsep;
