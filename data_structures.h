@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <queue>
 
 //Use this D8 method //TODO
 //321
@@ -416,5 +417,8 @@ class grid_cellzk_compare{
       else return (lhs.z>rhs.z || (lhs.z==rhs.z && lhs.k>rhs.k));
     }
 };
+
+typedef std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> grid_cellz_pq;
+typedef std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, grid_cellzk_compare> grid_cellzk_pq;
 
 #endif

@@ -23,7 +23,7 @@
     A grid of cell elevations
 */
 void barnes_flood(float_2d &elevations){
-  std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
+  grid_cellz_pq open;
 //  std::queue<grid_cellz> meander;
   std::stack<grid_cellz, std::vector<grid_cellz> > meander;
   bool_2d closed;
@@ -147,7 +147,7 @@ char d8_edge_flow(int x, int y, const float_2d &elevations, const char_2d &flowd
   @post \pname{flowdirs} takes the properties and dimensions of \pname{elevations}
 */
 void barnes_flood_flowdirs(const float_2d &elevations, char_2d &flowdirs){
-  std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, grid_cellzk_compare> open;
+  grid_cellzk_pq open;
   bool_2d closed;
   unsigned long processed_cells=0;
   int cell_num=0;
