@@ -34,15 +34,6 @@ const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
 
 void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
 
-//TODO: Don't think I'm using the must_be functionality any more
-//Used for checking input from files for structured tags
-struct must_be{
-  std::string val;
-    must_be(const std::string val):val(val){}
-};
-
-std::istream& operator>>(std::istream& inputstream, const must_be &a);
-
 template <class T>
 T angdiff_deg(T a, T b){
   T temp=fabs(a-b);          //Subtract (TODO: overloaded abs better)
