@@ -331,7 +331,7 @@ void d8_profile_curvature(
 void find_watersheds(
   float_2d &elevations, int_2d &labels, bool alter_elevations
 ){
-  std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
+  grid_cellz_pq open;
   std::stack<grid_cellz, std::vector<grid_cellz> > meander;
   bool_2d closed;
   unsigned long processed_cells=0;
