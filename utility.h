@@ -21,8 +21,6 @@
 #define SQRT2         1.414213562373095048801688724209698078569671875376948
 #define EULER_CONST   2.71828182845904523536028747135266249775724709369995
 
-#define ROUND(A)  floor((A) + 0.5)
-
 //D8 Directions
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
@@ -70,14 +68,27 @@ T angdiff_rad(T a, T b){
 
   @param[in]  val  Input value
 
-  @return -1 for a negative input, +1 for a positive input, and 0 for a zero input
+  @return
+    -1 for a negative input, +1 for a positive input, and 0 for a zero input
 */
 template <class T>
 T sgn(T val){
   return (T(0) < val) - (val < T(0));
 }
 
+//round
+/**
+  @brief  Rounds floating value to the nearest integer
+  @author Richard Barnes
 
+  @param[in]  val  Input value
+
+  @return val rounded to the nearest integer
+*/
+template <class T>
+T round(T val) {
+  return floor(val+0.5);
+}
 
 class Timer{
   private:
