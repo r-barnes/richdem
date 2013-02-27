@@ -13,6 +13,16 @@ void dinf_pit_flows(const float_2d &elevations, float_2d &flowdirs);
 void tikz_flowdir_print(const char_2d &flowdirs, std::string filename, float x_scale, float y_scale, float x_offset, float y_offset, bool omit_edges);
 
 template <class T>
+static inline T MIN(T a, T b) {
+  return (a<b)?a:b;
+}
+
+template <class T>
+static inline T MAX(T a, T b){
+  return (a>b)?a:b;
+}
+
+template <class T>
 void ddiff(const array2d<T> &arr1, const array2d<T> &arr2, array2d<T> &result){
   diagnostic("Differencing the two arrays...");
   if(arr1.width()!=arr2.width() || arr1.height()!=arr2.height())
