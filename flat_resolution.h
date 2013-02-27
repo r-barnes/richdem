@@ -29,9 +29,9 @@
 //    elevations       A 2D array of cell elevations
 //    flowdirs         A 2D array indicating the flow direction of each cell
 //    incrementations  A 2D array for storing incrementations
-//    edges            A traversible FIFO queue developed in "find_flat_edges()"
-//    flat_height      A vector with length equal to the maximum number of labels
-//    labels           A 2D array which stores labels developed in "label_this()"
+//    edges            A FIFO queue developed in "find_flat_edges()"
+//    flat_height    A vector with length equal to the maximum number of labels
+//    labels         A 2D array which stores labels developed in "label_this()"
 //Requirements:
 //    incrementations  Is initiliazed to "0"
 //Effects:
@@ -42,9 +42,11 @@
 //Returns:
 //    None
 template <class T, class U>
-static void BuildAwayGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
-      int_2d &incrementations, std::deque<grid_cell> edges, 
-      std::vector<int> &flat_height, const int_2d &labels){
+static void BuildAwayGradient(
+  const array2d<T> &elevations, const array2d<U> &flowdirs,
+  int_2d &incrementations, std::deque<grid_cell> edges, 
+  std::vector<int> &flat_height, const int_2d &labels
+){
   int x,y,nx,ny;
   int loops=1;
   grid_cell iteration_marker(-1,-1);
@@ -94,9 +96,9 @@ static void BuildAwayGradient(const array2d<T> &elevations, const array2d<U> &fl
 //    elevations       A 2D array of cell elevations
 //    flowdirs         A 2D array indicating the flow direction of each cell
 //    incrementations  A 2D array for storing incrementations
-//    edges            A traversible FIFO queue developed in "find_flat_edges()"
-//    flat_height      A vector with length equal to the maximum number of labels
-//    labels           A 2D array which stores labels developed in "label_this()"
+//    edges            A FIFO queue developed in "find_flat_edges()"
+//    flat_height    A vector with length equal to the maximum number of labels
+//    labels         A 2D array which stores labels developed in "label_this()"
 //Requirements:
 //    incrementations  Is initiliazed to "0"
 //Effects:
@@ -107,14 +109,16 @@ static void BuildAwayGradient(const array2d<T> &elevations, const array2d<U> &fl
 //Returns:
 //    None
 template <class T, class U>
-static void BuildTowardsCombinedGradient(const array2d<T> &elevations, const array2d<U> &flowdirs,
-      int_2d &incrementations, std::deque<grid_cell> edges, 
-      std::vector<int> &flat_height, const int_2d &labels){
+static void BuildTowardsCombinedGradient(
+  const array2d<T> &elevations, const array2d<U> &flowdirs,
+  int_2d &incrementations, std::deque<grid_cell> edges, 
+  std::vector<int> &flat_height, const int_2d &labels
+){
   int x,y,nx,ny;
   int loops=1;
   grid_cell iteration_marker(-1,-1);
 
-  diagnostic("Performing Barnes flat resolution's toward gradient and combined gradient...");
+  diagnostic("Barnes flat resolution: toward and combined gradients...");
 
   //Make previous incrementations negative so that we can keep track of where we are
   #pragma omp parallel for collapse(2)
@@ -139,7 +143,7 @@ static void BuildTowardsCombinedGradient(const array2d<T> &elevations, const arr
     if(incrementations(x,y)>0) continue;  //I've already been incremented!
 
     //If I incremented, maybe my neighbours should too
-    if(incrementations(x,y)!=0)  //If it is not equal to zero, it _will_ be less than 0.
+    if(incrementations(x,y)!=0)  //If !=0, it _will_ be less than 0.
       incrementations(x,y)=(flat_height[labels(x,y)]+incrementations(x,y))+2*loops;
     else
       incrementations(x,y)=2*loops;
@@ -177,7 +181,10 @@ static void BuildTowardsCombinedGradient(const array2d<T> &elevations, const arr
 //Returns:
 //    None
 template<class T>
-static void label_this(int x, int y, const int label, int_2d &labels, const array2d<T> &elevations){
+static void label_this(
+  int x, int y, const int label, int_2d &labels,
+  const array2d<T> &elevations
+){
   std::queue<grid_cell> to_fill;
   to_fill.push(grid_cell(x,y));
   const T target_elevation=elevations(x,y);
@@ -199,20 +206,24 @@ static void label_this(int x, int y, const int label, int_2d &labels, const arra
 //    Cells adjacent to lower and higher terrain are identified and
 //    added to the appropriate queue
 //Inputs:
-//    low_edges    A traversable FIFO queue for storing cells adjacent to lower terrain
-//    high_edges   A traversable FIFO queue for storing cells adjacent to higher terrain
+//    low_edges    A FIFO queue for storing cells adjacent to lower terrain
+//    high_edges   A FIFO queue for storing cells adjacent to higher terrain
 //    flowdirs     A 2D array indicating the flow direction of each cell
 //    elevations   A 2D array of cell elevations
 //Requirements:
-//    flowdirs     Cells without a defined flow direction have the value NO_FLOW
+//    flowdirs    Cells without a defined flow direction have the value NO_FLOW
 //Effects:
 //    "low_edges" & "high_edges" are populated with cells adjacent to
 //    lower and higher terrain, respectively
 //Returns:
 //    None
 template <class T, class U>
-static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_cell> &high_edges,
-      const array2d<U> &flowdirs, const array2d<T> &elevations){
+static void find_flat_edges(
+  std::deque<grid_cell> &low_edges,
+  std::deque<grid_cell> &high_edges,
+  const array2d<U> &flowdirs,
+  const array2d<T> &elevations
+){
   int nx,ny;
   ProgressBar progress;
   diagnostic("%%Searching for flats...\n");
@@ -243,8 +254,12 @@ static void find_flat_edges(std::deque<grid_cell> &low_edges, std::deque<grid_ce
 }
 
 template <class T, class U>
-void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdirs,
-      int_2d &flat_resolution_mask, int_2d &labels){
+void resolve_flats_barnes(
+  const array2d<T> &elevations,
+  const array2d<U> &flowdirs,
+  int_2d &flat_mask,
+  int_2d &labels
+){
   std::deque<grid_cell> low_edges,high_edges;  //TODO: Need estimate of size
 
   diagnostic("\n###Barnes Flat Resolution\n");
@@ -255,9 +270,9 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
   diagnostic("succeeded.\n");
 
   diagnostic("Setting up flat resolution mask...");
-  flat_resolution_mask.copyprops(elevations);
-  flat_resolution_mask.init(0);
-  flat_resolution_mask.no_data=-1;
+  flat_mask.copyprops(elevations);
+  flat_mask.init(0);
+  flat_mask.no_data=-1;
   diagnostic("succeeded!\n");
 
   find_flat_edges(low_edges, high_edges, flowdirs, elevations);
@@ -272,7 +287,7 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 
   diagnostic("Labeling flats...");
   int group_number=0;
-  for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();i++)
+  for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();++i)
     if(labels(i->x,i->y)==-1)
       label_this(i->x, i->y, group_number++, labels, elevations);
   diagnostic("succeeded!\n");
@@ -281,7 +296,7 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
 
   diagnostic("Removing flats without outlets from the queue...");
   std::deque<grid_cell> temp;
-  for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();i++)
+  for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();++i)
     if(labels(i->x,i->y)!=-1)
       temp.push_back(*i);
   diagnostic("succeeded.\n");
@@ -297,8 +312,14 @@ void resolve_flats_barnes(const array2d<T> &elevations, const array2d<U> &flowdi
   std::vector<int> flat_height(group_number);
   diagnostic("succeeded!\n");
 
-  BuildAwayGradient(elevations, flowdirs, flat_resolution_mask, high_edges, flat_height, labels);
-  BuildTowardsCombinedGradient(elevations, flowdirs, flat_resolution_mask, low_edges, flat_height, labels);
+  BuildAwayGradient(
+    elevations, flowdirs, flat_mask,
+    high_edges, flat_height, labels
+  );
+  BuildTowardsCombinedGradient(
+    elevations, flowdirs, flat_mask,
+    low_edges, flat_height, labels
+  );
 }
 
 

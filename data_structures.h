@@ -35,10 +35,15 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
     template<class U> void copyprops (const array2d<U> &copyfrom);
     long estimated_output_size();
     void init(T val);
-    void print_block(std:: ostream& out, int minx, int maxx, int miny, int maxy, int precision=0, std::streamsize swidth=2); //TODO
+    void print_block(
+      std:: ostream& out, int minx, int maxx, int miny, int maxy,
+      int precision=0, std::streamsize swidth=2
+    ); //TODO
     void surroundings(int x0, int y0, int precision=3) const; //TODO
     bool operator==(const array2d<T> &other) const;
-    template<class U> friend std::ostream& operator<<(std::ostream &out, const array2d<U> &arr);
+    template<class U> friend std::ostream& operator<<(
+      std::ostream &out, const array2d<U> &arr
+    );
     T max() const;
     T min() const;
     inline bool in_grid(int x, int y) const
@@ -52,11 +57,15 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
     const T& operator()(int x, int y) const
       {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
     void resize(int width, int height, bool preserve=false){
-      fprintf(stderr,"\n\tApprox RAM requirement: %lluMB\n", (unsigned long long)width * (unsigned long long)height * (unsigned long long)sizeof(T) / 1024 / 1024);
+      fprintf(
+        stderr,
+        "\n\tApprox RAM requirement: %lluMB\n",
+        (unsigned long long)width * (unsigned long long)height *
+          (unsigned long long)sizeof(T) / 1024 / 1024
+      );
       boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
     }
-    void clear()
-      {boost::numeric::ublas::matrix<T>::clear();}
+    void clear() {boost::numeric::ublas::matrix<T>::clear();}
     void low_pass_filter();
     void high_pass_filter();
     void print_random_sample(int n=1, int seed=1) const;
@@ -101,12 +110,21 @@ void array2d<T>::init(T val){
     operator()(x,y)=val;
 }
 
-template <> inline long array2d<float>::estimated_output_size(){return 9*this->width()*this->height();}
-template <> inline long array2d<char>::estimated_output_size(){return 4*this->width()*this->height();}
-template <> inline long array2d<bool>::estimated_output_size(){return 2*this->width()*this->height();}
-template <> inline long array2d<unsigned int>::estimated_output_size(){return 9*this->width()*this->height();}
+template <> inline long array2d<float>::estimated_output_size(){
+  return 9*this->width()*this->height();
+}
+template <> inline long array2d<char>::estimated_output_size(){
+  return 4*this->width()*this->height();
+}
+template <> inline long array2d<bool>::estimated_output_size(){
+  return 2*this->width()*this->height();
+}
+template <> inline long array2d<unsigned int>::estimated_output_size(){
+  return 9*this->width()*this->height();
+}
 
-//TODO: This is probably only useful for testing, since the file_io thing uses its own output
+//TODO: Probably only useful for testing, 
+//  since the file_io thing uses its own output
 template <class T>
 std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
   std::streamsize width=out.width();
@@ -204,7 +222,9 @@ T array2d<T>::min() const {
   @brief  Prints one or more random data_cells from the grid
   @author Richard Barnes
 
-  Prints one or more random data_cells from the grid. Note that if the grid is mostly no_data cells, the function may take a long time to complete as it will have to make many false attempts at finding data cells.
+  Prints one or more random data_cells from the grid. Note that if the grid is
+  mostly no_data cells, the function may take a long time to complete as it
+  will have to make many false attempts at finding data cells.
 
   @post The grid must have data_cells>0, or the function will throw an error
 
@@ -236,9 +256,13 @@ void array2d<T>::print_random_sample(int n, int seed) const {
   @brief Smooths data by reducing local variation and removing noise with a neighbourhood average
   @author Richard Barnes
 
-  A low pass filter smooths the data by reducing local variation and removing noise. The low pass filter calculates the average (mean) value for each 3 x 3 neighborhood. The effect is that the high and low values within each neighborhood will be averaged out, reducing the extreme values in the data.
+  A low pass filter smooths the data by reducing local variation and removing
+  noise. The low pass filter calculates the average (mean) value for each
+  3 x 3 neighborhood. The effect is that the high and low values within each
+  neighborhood will be averaged out, reducing the extreme values in the data.
 
-  The filtered grid is initialized to the unfiltered grid and used to store the responses. The filtered grid is then copied into the unfilitered grid.
+  The filtered grid is initialized to the unfiltered grid and used to store
+  the responses. The filtered grid is then copied into the unfilitered grid.
 
   See: http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
 
@@ -271,10 +295,15 @@ void array2d<T>::low_pass_filter(){
 }
 
 /**
-  @brief Accentuates comparatives differences between the cell and its neighbours.
+  @brief Accentuates differences between the cell and its neighbours.
   @author Richard Barnes
 
-  The high pass filter accentuates the comparative difference in the values with its neighbors. A high pass filter calculates the focal sum statistic for each cell of the input using a 3 x 3 weighted kernel neighborhood. It brings out the boundaries between features (for example, where a water body meets the forest), thus sharpening edges between objects. The high pass filter is referred to as an edge enhancement filter.
+  The high pass filter accentuates the comparative difference in the values
+  with its neighbors. A high pass filter calculates the focal sum statistic
+  for each cell of the input using a 3 x 3 weighted kernel neighborhood. It
+  brings out the boundaries between features (for example, where a water body
+  meets the forest), thus sharpening edges between objects. The high pass
+  filter is referred to as an edge enhancement filter.
 
   See: http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=Neighborhood%20filters
 
@@ -287,7 +316,8 @@ void array2d<T>::low_pass_filter(){
 
   Weights sum to zero because they are normalized, according to ArcGIS
 
-  The filtered grid is initialized to the unfiltered grid and used to store the responses. The filtered grid is then copied into the unfilitered grid.
+  The filtered grid is initialized to the unfiltered grid and used to store
+  the responses. The filtered grid is then copied into the unfilitered grid.
 
   @todo What if this overflows?
   @todo Progress bar? Other diagnostics?
@@ -330,14 +360,15 @@ typedef array2d<int> int_2d;
 typedef struct grid_cell_type {
   int x;        ///< Grid cell's x-coordinate
   int y;        ///< Grid cell's y-coordinate
-  /** Initiate the grid cell to the coordinates (x0,y0)*/
+  /// Initiate the grid cell to the coordinates (x0,y0)
   grid_cell_type(int x0, int y0):x(x0),y(y0){}
-  /** Initiate the grid cell without coordinates; should generally be avoided.*/
+  /// Initiate the grid cell without coordinates; should generally be avoided
   grid_cell_type(){}
 } grid_cell;
 
 
-/// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting with \ref grid_cellz_compare
+/// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting
+/// with \ref grid_cellz_compare
 /// @todo z-coordinate should be templated
 typedef struct grid_cell_typez {
   int x;        ///< Grid cell's x-coordinate
@@ -360,7 +391,8 @@ class grid_cellz_compare{
 };
 
 
-/// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; useful for stable priority sorting with \ref grid_cellzk_compare
+/// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k;
+/// useful for stable priority sorting with \ref grid_cellzk_compare
 /// @todo z-coordinate should be templated
 typedef struct grid_cell_typezk {
   int x;          ///< Grid cell's x-coordinate 
