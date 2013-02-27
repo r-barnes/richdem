@@ -317,7 +317,7 @@ void d8_upslope_cells(int x0, int y0, int x1, int y1, const array2d<T> &flowdirs
     if (error>=0.5) {
       expansion.push(grid_cell(x+1,y));
       upslope_cells(x+1,y)=2;
-      y+=SGN(deltay);
+      y+=sgn(deltay);
       error-=1;
     }
   }
