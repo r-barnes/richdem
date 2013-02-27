@@ -21,10 +21,6 @@
 #define SQRT2      1.414213562373095048801688724209698078569671875376948
 #define EULER_CONST    2.71828182845904523536028747135266249775724709369995
 
-#define MIN(A,B)   (((A)<(B))?(A):(B))
-#define MAX(A,B)   (((A)>(B))?(A):(B))
-#define DEG(A)    ((A)*180.0/M_PI)
-
 #define SGN(A) (((A)==0)?0:(((A)<0)?-1:1))
 
 #define ROUND(A)  floor((A) + 0.5)
