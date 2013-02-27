@@ -24,7 +24,6 @@
 #define MIN(A,B)   (((A)<(B))?(A):(B))
 #define MAX(A,B)   (((A)>(B))?(A):(B))
 #define DEG(A)    ((A)*180.0/M_PI)
-#define SQ(A)    ((A)*(A))
 
 #define SGN(A) (((A)==0)?0:(((A)<0)?-1:1))
 
