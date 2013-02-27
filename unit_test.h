@@ -5,6 +5,8 @@
 #include "interface.h"
 #include "utility.h"
 
+#define SQ(A)    ((A)*(A))
+
 template <class T>
 double unit_avg_diff(const array2d<T> &arr1, const array2d<T> &arr2){
   diagnostic("Finding average difference between two arrays...");
