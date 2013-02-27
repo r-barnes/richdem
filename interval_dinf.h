@@ -78,7 +78,7 @@ static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 
   if(fabs(flowdir-(int)flowdir)<1e-6){
     nlow=-1;
-    nhigh=(int)ROUND(flowdir);
+    nhigh=(int)round(flowdir);
   } else {
     nlow=(int)flowdir;
     nhigh=nlow+1;
