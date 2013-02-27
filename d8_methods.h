@@ -8,34 +8,73 @@
   #include <omp.h>
 #endif
 
-/** Used with #d8_terrain_attribute to get an ill-defined curvature thing (TODO) */
+/// Used with #d8_terrain_attribute to get an ill-defined curvature thing
+/// (TODO)
 #define TATTRIB_CURVATURE           2
-/** Used with #d8_terrain_attribute to get planform curvature as per Zevenbergen and Thorne 1987 */
+
+/// Used with #d8_terrain_attribute to get planform curvature as per
+/// Zevenbergen and Thorne 1987 */
 #define TATTRIB_PLANFORM_CURVATURE  3
-/** Used with #d8_terrain_attribute to get profile curvature as per Zevenbergen and Thorne 1987 */
+
+/// Used with #d8_terrain_attribute to get profile curvature as per
+/// Zevenbergen and Thorne 1987 */
 #define TATTRIB_PROFILE_CURVATURE   4
-/** Used with #d8_terrain_attribute to get aspect as per Horn 1981 */
+
+/// Used with #d8_terrain_attribute to get aspect as per Horn 1981
 #define TATTRIB_ASPECT              5
-/** Used with #d8_terrain_attribute to get slope as per Horn 1981 */
+
+/// Used with #d8_terrain_attribute to get slope as per Horn 1981
 #define TATTRIB_SLOPE_RISERUN       6
-/** Used with #d8_terrain_attribute to get slope as per Horn 1981, the value is multiplied by 100 */
+
+/// Used with #d8_terrain_attribute to get slope as per Horn 1981, the value
+/// is multiplied by 100
 #define TATTRIB_SLOPE_PERCENT       7
-/** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken */
+
+/// Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc
+/// tangent of the value is taken
 #define TATTRIB_SLOPE_RADIAN        8
-/** Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc tangent of the value is taken and converted to degrees*/
+
+/// Used with #d8_terrain_attribute to get slope as per Horn 1981, an arc 
+/// tangent of the value is taken and converted to degrees
 #define TATTRIB_SLOPE_DEGREE        9
 
-void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type=TATTRIB_SLOPE_RISERUN);
+void d8_slope(
+  const float_2d &elevations,
+  float_2d &slopes,
+  int slope_type=TATTRIB_SLOPE_RISERUN
+);
+
+void d8_profile_curvature(
+  const float_2d &elevations,
+  float_2d &profile_curvatures
+);
+
+void d8_planform_curvature(
+  const float_2d &elevations,
+  float_2d &planform_curvatures
+);
+
+void find_watersheds(
+  float_2d &elevations,
+  int_2d &labels,
+  bool alter_elevations=false
+);
+
 void d8_aspect(const float_2d &elevations, float_2d &aspects);
 void d8_curvature(const float_2d &elevations, float_2d &curvatures);
-void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures);
-void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures);
-
-void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations=false);
 void watershed_area(const int_2d &labels);
 
-void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result);
-void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result);
+void d8_SPI(
+  const float_2d &flow_accumulation,
+  const float_2d &percent_slope,
+  float_2d &result
+);
+
+void d8_CTI(
+  const float_2d &flow_accumulation,
+  const float_2d &percent_slope,
+  float_2d &result
+);
 
 //234
 //105
@@ -94,7 +133,10 @@ int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
   @param[out] &flwodirs    Returns the flow direction of each cell
 */
 template<class T, class U>
-void d8_flow_directions(const array2d<T> &elevations, array2d<U> &flowdirs){
+void d8_flow_directions(
+  const array2d<T> &elevations,
+  array2d<U> &flowdirs
+){
   ProgressBar progress;
 
   diagnostic("Setting up the flow directions matrix...");
@@ -123,15 +165,20 @@ void d8_flow_directions(const array2d<T> &elevations, array2d<U> &flowdirs){
 //234
 //105
 //876
-static int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
-  int minimum_elevation=flat_resolution_mask(x,y);
+static int d8_masked_FlowDir(
+  const int_2d &flat_mask,
+  const int_2d &groups,
+  const int x,
+  const int y
+){
+  int minimum_elevation=flat_mask(x,y);
   int flowdir=NO_FLOW;
 
   for(int n=1;n<=8;n++){
     int nx=x+dx[n];
     int ny=y+dy[n];
-    if(  groups(nx,ny)==groups(x,y) && (flat_resolution_mask(nx,ny)<minimum_elevation || (flat_resolution_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
-      minimum_elevation=flat_resolution_mask(nx,ny);
+    if(  groups(nx,ny)==groups(x,y) && (flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
+      minimum_elevation=flat_mask(nx,ny);
       flowdir=n;
     }
   }
@@ -144,29 +191,33 @@ static int d8_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &g
   @brief  Calculates flow directions in flats
   @author Richard Barnes
 
-  This determines the flow directions within flats which have been resolved
+  This determines flow directions within flats which have been resolved
   using resolve_flats_barnes().
 
   Uses the helper function d8_masked_FlowDir()
 
-  @param[in]  &flat_resolution_mask  A mask generated by resolve_flats_barnes()
-  @param[in]  &groups                A grouping generated by resolve_flats_barnes()
-  @param[out] &flowdirs              Returns flat-resolved flow directions
+  @param[in]  &flat_mask      A mask from resolve_flats_barnes()
+  @param[in]  &groups         A grouping from resolve_flats_barnes()
+  @param[out] &flowdirs       Returns flat-resolved flow directions
 */
 template<class U>
-void d8_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, array2d<U> &flowdirs){
+void d8_flow_flats(
+  const int_2d &flat_mask,
+  const int_2d &groups,
+  array2d<U> &flowdirs
+){
   ProgressBar progress;
 
   diagnostic("%%Calculating D8 flow directions using flat mask...\n");
-  progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
+  progress.start( flat_mask.width()*flat_mask.height() );
   #pragma omp parallel for
-  for(int x=1;x<flat_resolution_mask.width()-1;x++){
-    progress.update( x*flat_resolution_mask.height() );
-    for(int y=1;y<flat_resolution_mask.height()-1;y++)
-      if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++)
+      if(flat_mask(x,y)==flat_mask.no_data)
         continue;
       else if (flowdirs(x,y)==NO_FLOW)
-        flowdirs(x,y)=d8_masked_FlowDir(flat_resolution_mask,groups,x,y);
+        flowdirs(x,y)=d8_masked_FlowDir(flat_mask,groups,x,y);
   }
   diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }

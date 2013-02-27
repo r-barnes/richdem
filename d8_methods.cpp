@@ -34,15 +34,25 @@
   @param[out]  &rise_over_run
     Returns rise-over-run slope as per Horn 1981
   @param[out]  &aspect
-    Returns aspect as per Horn 1981 in degrees [0,360). Degrees increase in a clockwise fashion. 0 is north, -1 indicates a flat surface.
+    Returns aspect as per Horn 1981 in degrees [0,360). Degrees increase
+    in a clockwise fashion. 0 is north, -1 indicates a flat surface.
   @param[out]  &curvature
-    Returns the difference of profile and planform curvatures (TODO: Clarify, this is from ArcGIS and was poorly described)
-  @param[out]  &profile_curvature  Returns the profile curvature as per Zevenbergen and Thorne 1987. 0 indicates a flat surface.
-  @param[out]  &planform_curvature  Returns the planform curvature as per Zevenbergen and Thorne 1987. 0 indicates a flat surface.
+    Returns the difference of profile and planform curvatures
+    (TODO: Clarify, this is from ArcGIS and was poorly described)
+  @param[out]  &profile_curvature
+    Returns the profile curvature as per Zevenbergen and Thorne 1987.
+    0 indicates a flat surface.
+  @param[out]  &planform_curvature  
+    Returns the planform curvature as per Zevenbergen and Thorne 1987.
+    0 indicates a flat surface.
 
   @pre This function should never be called on a NoData cell
 */
-inline static void d8_terrain_attrib_helper(const float_2d &elevations, int x0, int y0, float &rise_over_run, float &aspect, float &curvature, float &profile_curvature, float &planform_curvature){
+inline static void d8_terrain_attrib_helper(
+  const float_2d &elevations, int x0, int y0, float &rise_over_run,
+  float &aspect, float &curvature, float &profile_curvature,
+  float &planform_curvature
+){
 /*
 Slope derived from ArcGIS help at:
 http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=How%20Slope%20works
@@ -134,12 +144,12 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   //Z4 Z5 Z6   d e f
   //Z7 Z8 Z9   g h i
   //Curvatures in the manner of Zevenbergen and Thorne 1987
-  double L=elevations.cellsize;    //TODO: Should be in the same units as z
+  double L=elevations.cellsize;     //TODO: Should be in the same units as z
   double D=( (d+f)/2 - e) / L / L;  //D = [(Z4 + Z6) /2 - Z5] / L^2
   double E=( (b+h)/2 - e) / L / L;  //E = [(Z2 + Z8) /2 - Z5] / L^2
-  double F=(-a+c+g-i)/4/L/L;      //F=(-Z1+Z3+Z7-Z9)/(4L^2)
-  double G=(-d+f)/2/L;        //G=(-Z4+Z6)/(2L)
-  double H=(b-h)/2/L;          //H=(Z2-Z8)/(2L)
+  double F=(-a+c+g-i)/4/L/L;        //F=(-Z1+Z3+Z7-Z9)/(4L^2)
+  double G=(-d+f)/2/L;              //G=(-Z4+Z6)/(2L)
+  double H=(b-h)/2/L;               //H=(Z2-Z8)/(2L)
   curvature=(float)(-2*(D+E)*100);
 
   if(G==0 && H==0){
@@ -204,8 +214,12 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
         attribs(x,y)=attribs.no_data;
         continue;
       }
-      float rise_over_run, aspect, curvature, profile_curvature, planform_curvature;
-      d8_terrain_attrib_helper(elevations, x, y, rise_over_run, aspect, curvature, profile_curvature, planform_curvature);
+      float rise_over_run, aspect, curvature;
+      float profile_curvature, planform_curvature;
+      d8_terrain_attrib_helper(
+        elevations, x, y, rise_over_run, aspect, curvature,
+        profile_curvature, planform_curvature
+      );
       switch(attrib){
         case TATTRIB_CURVATURE:
           attribs(x,y)=curvature;break;
@@ -270,12 +284,18 @@ void d8_curvature(const float_2d &elevations, float_2d &curvatures){
   d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE);
 }
 
-void d8_planform_curvature(const float_2d &elevations, float_2d &planform_curvatures){
+void d8_planform_curvature(
+  const float_2d &elevations,
+  float_2d &planform_curvatures
+){
   diagnostic("\n###Planform curvature attribute calculation\n");
   d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE);
 }
 
-void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatures){
+void d8_profile_curvature(
+  const float_2d &elevations,
+  float_2d &profile_curvatures
+){
   diagnostic("\n###Profile curvature attribute calculation\n");
   d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
 }
@@ -294,18 +314,23 @@ void d8_profile_curvature(const float_2d &elevations, float_2d &profile_curvatur
   @brief  Labels watershed drainage areas, working inwards from the edges of the DEM
   @author Richard Barnes
 
-  Same as #barnes_flood. \pname{labels} starts out as no_data. If it is found that a no_data labels cell coincides with a data_cell in \pname{elevations}, then this is the beginning of a new watershed. Cells which are flooded from a labeled cell take on that cell's label
+  Same as #barnes_flood. \pname{labels} starts out as no_data. If it is found
+  that a no_data labels cell coincides with a data_cell in \pname{elevations},
+  then this is the beginning of a new watershed. Cells which are flooded from
+  a labeled cell take on that cell's label
 
   @param[in,out] elevations        A grid of cell elevations
   @param[out]    labels            A grid to hold the watershed labels
   @param[in]     alter_elevations
-    If true, then \pname{elevations} is altered as though barnes_flood() had been applied.
-    The result is that all cells drain to the edges of the DEM. Otherwise, \pname{elevations}
-    is not altered.
+    If true, then \pname{elevations} is altered as though barnes_flood() had
+    been applied. The result is that all cells drain to the edges of the DEM. 
+    Otherwise, \pname{elevations} is not altered.
 
   @post \pname{labels} takes the properties and dimensions of \pname{elevations}
 */
-void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations){
+void find_watersheds(
+  float_2d &elevations, int_2d &labels, bool alter_elevations
+){
   std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> open;
   std::stack<grid_cellz, std::vector<grid_cellz> > meander;
   bool_2d closed;
@@ -380,7 +405,10 @@ void find_watersheds(float_2d &elevations, int_2d &labels, bool alter_elevations
     progress.update(processed_cells);
   }
   diagnostic_arg("\t\033[96msucceeded in %.2lfs\033[39m\n",progress.stop());
-  diagnostic_arg("%ld cells processed. %ld in pits, %ld not in pits.\n",processed_cells,pitc,openc);
+  diagnostic_arg(
+    "%ld cells processed. %ld in pits, %ld not in pits.\n",
+    processed_cells,pitc,openc
+  );
 }
 
 
@@ -414,9 +442,12 @@ void watershed_area(const int_2d &labels){
 
   \f$(\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001)\cdot(\frac{1}{100}\textit{PercentSlope}+0.001)\f$
 
-  @param[in]   &flow_accumulation  A flow accumulation grid (dinf_upslope_area())
-  @param[in]   &percent_slope      A percent_slope grid (d8_slope())
-  @param[out]  &result             Altered to return the calculated SPI
+  @param[in]   &flow_accumulation
+    A flow accumulation grid (dinf_upslope_area())
+  @param[in]   &percent_slope      
+    A percent_slope grid (d8_slope())
+  @param[out]  &result            
+    Altered to return the calculated SPI
 
   @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
@@ -424,7 +455,11 @@ void watershed_area(const int_2d &labels){
 
   @todo Generalize for float and int grids
 */
-void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+void d8_SPI(
+  const float_2d &flow_accumulation,
+  const float_2d &percent_slope,
+  float_2d &result
+){
   Timer timer;
 
   diagnostic("\n###d8_SPI\n");
@@ -463,9 +498,12 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 
   \f$\log{\frac{\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001}{\frac{1}{100}\textit{PercentSlope}+0.001}}\f$
 
-  @param[in]  &flow_accumulation  A flow accumulation grid (dinf_upslope_area())
-  @param[in]  &percent_slope      A percent_slope grid (d8_slope())
-  @param[out] &result             Altered to return the calculated SPI
+  @param[in]  &flow_accumulation 
+    A flow accumulation grid (dinf_upslope_area())
+  @param[in]  &percent_slope     
+    A percent_slope grid (d8_slope())
+  @param[out] &result             
+    Altered to return the calculated SPI
 
   @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
@@ -473,7 +511,11 @@ void d8_SPI(const float_2d &flow_accumulation, const float_2d &percent_slope, fl
 
   @todo Generalize for float and int grids
 */
-void d8_CTI(const float_2d &flow_accumulation, const float_2d &percent_slope, float_2d &result){
+void d8_CTI(
+  const float_2d &flow_accumulation,
+  const float_2d &percent_slope,
+  float_2d &result
+){
   Timer timer;
 
   diagnostic("\n###d8_CTI\n");
