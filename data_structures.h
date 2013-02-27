@@ -56,15 +56,7 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
       {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
     const T& operator()(int x, int y) const
       {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
-    void resize(int width, int height, bool preserve=false){
-      fprintf(
-        stderr,
-        "\n\tApprox RAM requirement: %lluMB\n",
-        (unsigned long long)width * (unsigned long long)height *
-          (unsigned long long)sizeof(T) / 1024 / 1024
-      );
-      boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
-    }
+    void resize(int width, int height, bool preserve);
     void clear() {boost::numeric::ublas::matrix<T>::clear();}
     void low_pass_filter();
     void high_pass_filter();
@@ -82,6 +74,17 @@ array2d<T>::array2d(){
   yllcorner=-1;
   data_cells=-1;
   no_data=-1;
+}
+
+template <class T>
+void array2d<T>::resize(int width, int height, bool preserve=false){
+  fprintf(
+    stderr,
+    "\n\tApprox RAM requirement: %lluMB\n",
+    (unsigned long long)width * (unsigned long long)height *
+      (unsigned long long)sizeof(T) / 1024 / 1024
+  );
+  boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
 }
 
 template<class T>
