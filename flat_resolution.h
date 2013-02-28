@@ -181,23 +181,23 @@ static void BuildTowardsCombinedGradient(
 //Returns:
 //    None
 template<class T>
+template<class T>
 static void label_this(
-  int x, int y, const int label, int_2d &labels,
+  int x0, int y0, const int label, int_2d &labels,
   const array2d<T> &elevations
 ){
   std::queue<grid_cell> to_fill;
-  to_fill.push(grid_cell(x,y));
-  const T target_elevation=elevations(x,y);
+  to_fill.push(grid_cell(x0,y0));
+  const T target_elevation=elevations(x0,y0);
 
   while(to_fill.size()>0){
-    x=to_fill.front().x;
-    y=to_fill.front().y;
+    grid_cell c=to_fill.front();
     to_fill.pop();
-    if(elevations(x,y)!=target_elevation || labels(x,y)>-1) continue;
-    labels(x,y)=label;
+    if(elevations(c.x,c.y)!=target_elevation || labels(c.x,c.y)>0) continue;
+    labels(c.x,c.y)=label;
     for(int n=1;n<=8;n++)
-      if(labels.in_grid(x+dx[n],y+dy[n]))
-        to_fill.push(grid_cell(x+dx[n],y+dy[n]));
+      if(labels.in_grid(c.x+dx[n],c.y+dy[n]))
+        to_fill.push(grid_cell(c.x+dx[n],c.y+dy[n]));
   }
 }
 
