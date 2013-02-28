@@ -19,28 +19,32 @@
 
 
 
-//Procedure:  BuildAwayGradient
-//Description:
-//    The queues of edge cells developed in "find_flat_edges()" are copied
-//    into the procedure. A breadth-first expansion labels cells by their
-//    distance away from terrain of higher elevation. The maximal distance
-//    encountered is noted.
-//Inputs:
-//    elevations       A 2D array of cell elevations
-//    flowdirs         A 2D array indicating the flow direction of each cell
-//    flat_mask        A 2D array for storing incrementations
-//    edges            A FIFO queue developed in "find_flat_edges()"
-//    flat_height    A vector with length equal to the maximum number of labels
-//    labels         A 2D array which stores labels developed in "label_this()"
-//Requirements:
-//    flat_mask  Is initiliazed to "0"
-//Effects:
-//    "flat_mask" will contain the D8 distance of every flat cell from
-//    terrain of differing elevation
-//    "flat_height" will contain, for each flat, the maximal distance any
-//    of its cells are from terrain of differing elevation
-//Returns:
-//    None
+//Procedure: BuildAwayGradient
+/**
+  @brief Build a gradient away from the high edges of the flats
+  @author Richard Barnes
+
+  The queue of high-edge cells developed in find_flat_edges() is copied
+  into the procedure. A breadth-first expansion labels cells by their
+  distance away from terrain of higher elevation. The maximal distance
+  encountered is noted.
+
+  @param[in]  &elevations   A 2D array of cell elevations
+  @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
+  @param[out] &incrementations  A 2D array for storing incrementations
+  @param[in]  &edges        The high-edge FIFO queue from find_flat_edges()
+  @param[out] &flat_height  Vector with length equal to max number of labels
+  @param[in]  &labels       2D array storing labels developed in label_this()
+
+  @pre
+    "incrementations" is initiliazed to "0"
+
+  @post
+    "incrementations" will contain the D8 distance of every flat cell from
+    terrain of differing elevation
+    "flat_height" will contain, for each flat, the maximal distance any
+    of its cells are from terrain of differing elevation
+*/
 template <class T, class U>
 static void BuildAwayGradient(
   const array2d<T> &elevations, const array2d<U> &flowdirs,
@@ -86,28 +90,31 @@ static void BuildAwayGradient(
 
 
 
-//Procedure:  BuildTowardsCombinedGradient
-//Description:
-//    The queues of edge cells developed in "find_flat_edges()" are copied
-//    into the procedure. A breadth-first expansion labels cells by their
-//    distance away from terrain of lower elevation. The maximal distance
-//    encountered is noted.
-//Inputs:
-//    elevations       A 2D array of cell elevations
-//    flowdirs         A 2D array indicating the flow direction of each cell
-//    flat_mask        A 2D array for storing incrementations
-//    edges            A FIFO queue developed in "find_flat_edges()"
-//    flat_height    A vector with length equal to the maximum number of labels
-//    labels         A 2D array which stores labels developed in "label_this()"
-//Requirements:
-//    flat_mask  Is initiliazed to "0"
-//Effects:
-//    "flat_mask" will contain the D8 distance of every flat cell from
-//    terrain of differing elevation
-//    "flat_height" will contain, for each flat, the maximal distance any
-//    of its cells are from terrain of differing elevation
-//Returns:
-//    None
+//Procedure: BuildTowardsCombinedGradient
+/**
+  @brief Builds gradient away from the low edges of flats, combines gradients
+  @author Richard Barnes
+
+  The queue of low-edge cells developed in find_flat_edges() is copied
+  into the procedure. A breadth-first expansion labels cells by their
+  distance away from terrain of lower elevation. This is combined with
+  the gradient from BuildAwayGradient() to give the final increments of
+  each cell in forming the flat mask.
+
+  @param[in]  &elevations   A 2D array of cell elevations
+  @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
+  @param[in,out]  &incrementations  A 2D array for storing incrementations
+  @param[in]  &edges        The low-edge FIFO queue from find_flat_edges()
+  @param[in]  &flat_height  Vector with length equal to max number of labels
+  @param[in]  &labels       2D array storing labels developed in label_this()
+
+  @pre
+    "incrementations" has been adjusted by BuildAwayGradient()
+
+  @post
+    "incrementations" will contain a convergent flow pattern which drains
+    every cell of the flat.
+*/
 template <class T, class U>
 static void BuildTowardsCombinedGradient(
   const array2d<T> &elevations, const array2d<U> &flowdirs,
@@ -162,24 +169,28 @@ static void BuildTowardsCombinedGradient(
 }
 
 
-//Procedure:  label_this
-//Description:
-//    Performs a flood fill operation which labels all the cells of a flat
-//    with a common label. Each flat will have a unique label
-//Inputs:
-//    x,y         Coordinates of seed for flood fill (a low edge cell)
-//    label       The label to apply to the cells
-//    labels      A 2D array containing the labels.
-//    elevations  A 2D array of cell elevations
-//Requirements:
-//    labels      Is initialized to "-1"
-//Effects:
-//    The 2D array "labels" is modified such that each cell
-//    which can be reached from (x,y) while traversing only
-//    cells which share the same elevation as (x,y)
-//    is labeled with "label"
-//Returns:
-//    None
+//Procedure: label_this
+/**
+  @brief Labels all the cells of a flat with a common label.
+  @author Richard Barnes
+
+  Performs a flood fill operation which labels all the cells of a flat
+  with a common label. Each flat will have a unique label
+
+  @param[in]  x           x-coordinate of flood fill seed
+  @param[in]  y           y-coordinate of flood-fill seed
+  @param[in]  label       Label to apply to the cells
+  @param[out] &labels     2D array which will contain the labels
+  @param[in]  &elevations 2D array of cell elevations
+
+  @pre
+    "labels" is initialized to "-1"
+  @post
+    The 2D array "labels" is modified such that each cell
+    which can be reached from (x,y) while traversing only
+    cells which share the same elevation as (x,y)
+    is labeled with "label"
+*/
 template<class T>
 static void label_this(
   int x0, int y0, const int label, int_2d &labels,
@@ -200,22 +211,24 @@ static void label_this(
   }
 }
 
-//Procedure:  find_flat_edges
-//Description:
-//    Cells adjacent to lower and higher terrain are identified and
-//    added to the appropriate queue
-//Inputs:
-//    low_edges    A FIFO queue for storing cells adjacent to lower terrain
-//    high_edges   A FIFO queue for storing cells adjacent to higher terrain
-//    flowdirs     A 2D array indicating the flow direction of each cell
-//    elevations   A 2D array of cell elevations
-//Requirements:
-//    flowdirs    Cells without a defined flow direction have the value NO_FLOW
-//Effects:
-//    "low_edges" & "high_edges" are populated with cells adjacent to
-//    lower and higher terrain, respectively
-//Returns:
-//    None
+//Procedure: find_flat_edges
+/**
+  @brief Identifies cells adjacent to higher and lower terrain
+  @author Richard Barnes
+
+  Cells adjacent to lower and higher terrain are identified and
+  added to the appropriate queue
+
+  @param[out] &low_edges  Queue for storing cells adjacent to lower terrain
+  @param[out] &high_edges Queue for storing cells adjacent to higher terrain
+  @param[in]  &flowdirs   2D array indicating flow direction for each cell
+  @param[in]  &elevations 2D array of cell elevations
+
+  @pre
+    "flowdirs" should be set such that cells without a defined flow direction
+    have a value #NO_FLOW.
+    "low_edges" and "high_edges" should be traversible
+*/
 template <class T, class U>
 static void find_flat_edges(
   std::deque<grid_cell> &low_edges,
@@ -252,6 +265,19 @@ static void find_flat_edges(
   diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
 
+
+//Procedure: resolve_flats_barnes
+/**
+  @brief  Performs the flat resolution by Barnes, Lehman, and Mulla.
+  @author Richard Barnes
+
+  TODO
+
+  @param[in]  &elevations 2D array of cell elevations
+  @param[in]  &flowdirs   2D array indicating flow direction of each cell
+  @param[in]  &flat_mask  2D array which will hold incremental elevation mask
+  @param[in]  &labels     2D array indicating flat membership
+*/
 template <class T, class U>
 void resolve_flats_barnes(
   const array2d<T> &elevations,
@@ -325,22 +351,22 @@ void resolve_flats_barnes(
 
 
 
-//Procedure:  flat_mask
-//Description:
-//    Searches through a flowdirs array to find cells with undefined flow
-//    directions. These are marked as such in a boolean array.
-//    Primarily for use in debugging (TODO).
-//Inputs:
-//    flowdirs  A 2D array of flow directions (char or float acceptable)
-//Requirements:
-//    None
-//Effects:
-//    The 2D array fmask is modified such that the value 3 represents
-//    cells with a NO_DATA value in flowdirs, 1 represents cells without
-//    a defined flow direction, and 0 represents cells with a defined
-//    flow direction.
-//Returns:
-//    None
+//Procedure: flat_mask
+/**
+  @brief  Creates binary mask indicating cells with undefined flow direction
+  @author Richard Barnes
+
+  Primarily for use in debugging (TODO).
+
+  @param[in]  &flowdirs 2D array indicating flow direction for each cell
+  @param[out] &fmask    2D binary array indicating whether cell is in a flat
+
+  @post
+  The 2D array fmask is modified such that the value 3 represents
+  cells with a NO_DATA value in flowdirs, 1 represents cells without
+  a defined flow direction, and 0 represents cells with a defined
+  flow direction.
+*/
 template <class T>
 void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
   diagnostic("Locating pits based on undefined flow directions...");
