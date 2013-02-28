@@ -14,15 +14,14 @@ int load_ascii_data(const char filename[], char_2d &data);
 
 //load_ascii_data
 /**
-  @brief  Writes an ArcGrid ASCII or OmniGlyph file
+  @brief  Writes an ArcGrid ASCII file or OmniGlyph file
   @author Richard Barnes
 
-  @param[in]  &filename		
-		Name of file to write (".omg" causes OmniGlyph output)
-	@param[in]	&elevations		DEM object to write
-	@param[in]	precision			Floating-point precision of output
+  @param[in]  &filename     Name of ArcGrid ASCII file to write
+  @param[in]  &elevations   DEM object to write
+  @param[in]  precision     Floating-point precision of output
 
-	@returns 0 upon success
+  @returns 0 upon success
 */
 template <class T>
 int output_ascii_data(
