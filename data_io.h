@@ -1,3 +1,10 @@
+/**
+  @file
+  Header and templated code for reading and writing data, primarily in the
+  ArcGrid ASCII format.
+
+  Richard Barnes (rbarnes@umn.edu), 2012
+*/
 #ifndef _data_io_included
 #define _data_io_included
 

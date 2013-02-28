@@ -1,3 +1,11 @@
+/**
+  @file
+  Template code defining data structures used throughout the package.
+  Defines 2D arrays, grid cells, and priority queues for grid cells,
+  among other.
+
+  Richard Barnes (rbarnes@umn.edu), 2012
+*/
 #ifndef _data_structures_included
 #define _data_structures_included
 
@@ -14,50 +22,70 @@
 //321
 //4 0
 //567
+///Definition of x offsets of D-inf neighbours
 const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
+///Definition of y offsets of D-inf neighbours
 const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
 const int dinf_d8_inverse[9]={4,5,6,7,0,1,2,3,4};
 
 template <class T>
 class array2d : protected boost::numeric::ublas::matrix<T>{
   public:
+    ///Value corresponding the length of one edge of a square DEM cell
     double cellsize;
 //    std::string xllcorner,yllcorner;  //TODO: Should be string
-    double xllcorner,yllcorner;
+    ///Global grid location of lower left x-coordinate
+    double xllcorner;
+    ///Global grid location of lower left y-coordinate
+    double yllcorner;
+    ///Number of cells containing data (excludes NO_DATA cells)
     long data_cells;
+    ///NO_DATA value. The cell does not contain data, should not be processed.
     T no_data;
 
     array2d ();
+    ///Creates array2d with no data, but invokes copyprops()
     template<class U> array2d (const array2d<U> &copyfrom);
     long width() const
       {return boost::numeric::ublas::matrix<T>::size1();}
     long height() const
       {return boost::numeric::ublas::matrix<T>::size2();}
+    ///Copys everything but the data from another array2d
     template<class U> void copyprops (const array2d<U> &copyfrom);
+    ///Prints an estimate of the file size were the array printed in ASCII
     long estimated_output_size();
+    ///Sets all the cells of an array2d to "val"
     void init(T val);
     void print_block(
       std:: ostream& out, int minx, int maxx, int miny, int maxy,
       int precision=0, std::streamsize swidth=2
     ); //TODO
     void surroundings(int x0, int y0, int precision=3) const; //TODO
+    ///Returns true if each cell of the array2d equals its counterpart in "other"
     bool operator==(const array2d<T> &other) const;
     template<class U> friend std::ostream& operator<<(
       std::ostream &out, const array2d<U> &arr
     );
     T max() const;
     T min() const;
+    ///Returns true if (x,y) is within the bounds of the array2d
     inline bool in_grid(int x, int y) const
       {return (x>=0 && y>=0 && x<width() && y<height());}
+    ///Returns true if (x,y) is not an edge cell
     inline bool interior_grid(int x, int y) const
       {return (x>=1 && y>=1 && x<width()-1 && y<height()-1);}
+    ///Returns true if (x,y) lies on the edge of the array2d
     inline bool edge_grid(int x, int y) const
       {return (x==0 || y==0 || x==width()-1 || y==height()-1);}
+    ///Returns a reference to (x,y)
     T& operator()(int x, int y)
       {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+    ///Returns a const reference to (x,y)
     const T& operator()(int x, int y) const
       {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+    ///Resizes the array2d. May or may not be destructive to existing data.
     void resize(int width, int height, bool preserve);
+    ///Destroys all data in the array2d.
     void clear() {boost::numeric::ublas::matrix<T>::clear();}
     void low_pass_filter();
     void high_pass_filter();

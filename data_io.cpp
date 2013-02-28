@@ -1,3 +1,10 @@
+/**
+  @file
+  Implementation code for reading and writing data, primarily in the
+  ArcGrid ASCII format.
+
+  Richard Barnes (rbarnes@umn.edu), 2012
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "interface.h"
