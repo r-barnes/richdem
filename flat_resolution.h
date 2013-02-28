@@ -1,8 +1,12 @@
-//Flat Resolution
-//Richard Barnes (rbarnes@umn.edu), 2012
-//Develops an elevation mask which is guaranteed to drain
-//a flat using a convergent flow pattern (unless it's a mesa)
+/**
+  @file
+  Flat Resolution
 
+  Richard Barnes (rbarnes@umn.edu), 2012
+
+  Contains code to generate an elevation mask which is guaranteed to drain
+  a flat using a convergent flow pattern (unless it's a mesa)
+*/
 #ifndef _flat_resolution_included
 #define _flat_resolution_included
 
