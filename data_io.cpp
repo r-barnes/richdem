@@ -12,10 +12,10 @@
   @brief  Reads an ArcGrid ASCII file
   @author Richard Barnes
 
-  @param[in]  &filename			Name of ArcGrid ASCII file to read
-	@param[out]	&elevations		DEM object containing contents of file
+  @param[in]  &filename     Name of ArcGrid ASCII file to read
+  @param[out] &elevations   DEM object containing contents of file
 
-	@returns 0 upon success
+  @returns 0 upon success
 */
 int load_ascii_data(const char filename[], float_2d &elevations){
   FILE *fin;
