@@ -102,7 +102,7 @@ void array2d<T>::copyprops (const array2d<U> &copyfrom){
 template <class T>
 template <class U>
 array2d<T>::array2d(const array2d<U> &copyfrom){
-  array2d();
+  *this=array2d();
   copyprops(copyfrom);
 }
 
