@@ -12,7 +12,18 @@ int load_ascii_data(const char filename[], char_2d &data);
 #define OUTPUT_DEM  1
 #define OUTPUT_OMG  2
 
+//load_ascii_data
+/**
+  @brief  Writes an ArcGrid ASCII or OmniGlyph file
+  @author Richard Barnes
 
+  @param[in]  &filename		
+		Name of file to write (".omg" causes OmniGlyph output)
+	@param[in]	&elevations		DEM object to write
+	@param[in]	precision			Floating-point precision of output
+
+	@returns 0 upon success
+*/
 template <class T>
 int output_ascii_data(
   const std::string filename,
