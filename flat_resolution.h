@@ -28,14 +28,14 @@
 //Inputs:
 //    elevations       A 2D array of cell elevations
 //    flowdirs         A 2D array indicating the flow direction of each cell
-//    incrementations  A 2D array for storing incrementations
+//    flat_mask        A 2D array for storing incrementations
 //    edges            A FIFO queue developed in "find_flat_edges()"
 //    flat_height    A vector with length equal to the maximum number of labels
 //    labels         A 2D array which stores labels developed in "label_this()"
 //Requirements:
-//    incrementations  Is initiliazed to "0"
+//    flat_mask  Is initiliazed to "0"
 //Effects:
-//    "incrementations" will contain the D8 distance of every flat cell from
+//    "flat_mask" will contain the D8 distance of every flat cell from
 //    terrain of differing elevation
 //    "flat_height" will contain, for each flat, the maximal distance any
 //    of its cells are from terrain of differing elevation
@@ -44,7 +44,7 @@
 template <class T, class U>
 static void BuildAwayGradient(
   const array2d<T> &elevations, const array2d<U> &flowdirs,
-  int_2d &incrementations, std::deque<grid_cell> edges, 
+  int_2d &flat_mask, std::deque<grid_cell> edges, 
   std::vector<int> &flat_height, const int_2d &labels
 ){
   int x,y,nx,ny;
@@ -66,10 +66,10 @@ static void BuildAwayGradient(
       continue;
     }
 
-    if(incrementations(x,y)>0) continue;  //I've already been incremented!
+    if(flat_mask(x,y)>0) continue;  //I've already been incremented!
 
     //If I incremented, maybe my neighbours should too
-    incrementations(x,y)=loops;
+    flat_mask(x,y)=loops;
     flat_height[labels(x,y)]=loops;
     for(int n=1;n<=8;n++){
       nx=x+dx[n];  
@@ -95,14 +95,14 @@ static void BuildAwayGradient(
 //Inputs:
 //    elevations       A 2D array of cell elevations
 //    flowdirs         A 2D array indicating the flow direction of each cell
-//    incrementations  A 2D array for storing incrementations
+//    flat_mask        A 2D array for storing incrementations
 //    edges            A FIFO queue developed in "find_flat_edges()"
 //    flat_height    A vector with length equal to the maximum number of labels
 //    labels         A 2D array which stores labels developed in "label_this()"
 //Requirements:
-//    incrementations  Is initiliazed to "0"
+//    flat_mask  Is initiliazed to "0"
 //Effects:
-//    "incrementations" will contain the D8 distance of every flat cell from
+//    "flat_mask" will contain the D8 distance of every flat cell from
 //    terrain of differing elevation
 //    "flat_height" will contain, for each flat, the maximal distance any
 //    of its cells are from terrain of differing elevation
@@ -111,7 +111,7 @@ static void BuildAwayGradient(
 template <class T, class U>
 static void BuildTowardsCombinedGradient(
   const array2d<T> &elevations, const array2d<U> &flowdirs,
-  int_2d &incrementations, std::deque<grid_cell> edges, 
+  int_2d &flat_mask, std::deque<grid_cell> edges, 
   std::vector<int> &flat_height, const int_2d &labels
 ){
   int x,y,nx,ny;
@@ -122,9 +122,9 @@ static void BuildTowardsCombinedGradient(
 
   //Make previous incrementations negative so that we can keep track of where we are
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<incrementations.width();x++)
-  for(int y=0;y<incrementations.height();y++)
-    incrementations(x,y)*=-1;
+  for(int x=0;x<flat_mask.width();x++)
+  for(int y=0;y<flat_mask.height();y++)
+    flat_mask(x,y)*=-1;
 
 
   //Incrementation
@@ -140,13 +140,13 @@ static void BuildTowardsCombinedGradient(
       continue;
     }
 
-    if(incrementations(x,y)>0) continue;  //I've already been incremented!
+    if(flat_mask(x,y)>0) continue;  //I've already been incremented!
 
     //If I incremented, maybe my neighbours should too
-    if(incrementations(x,y)!=0)  //If !=0, it _will_ be less than 0.
-      incrementations(x,y)=(flat_height[labels(x,y)]+incrementations(x,y))+2*loops;
+    if(flat_mask(x,y)!=0)  //If !=0, it _will_ be less than 0.
+      flat_mask(x,y)=(flat_height[labels(x,y)]+flat_mask(x,y))+2*loops;
     else
-      incrementations(x,y)=2*loops;
+      flat_mask(x,y)=2*loops;
 
     for(int n=1;n<=8;n++){
       nx=x+dx[n];  
@@ -180,7 +180,6 @@ static void BuildTowardsCombinedGradient(
 //    is labeled with "label"
 //Returns:
 //    None
-template<class T>
 template<class T>
 static void label_this(
   int x0, int y0, const int label, int_2d &labels,
