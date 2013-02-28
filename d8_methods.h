@@ -85,7 +85,8 @@ void d8_CTI(
   @author Richard Barnes
 
   This calculates the D8 flow direction of a cell using the D8
-  neighbour system, as defined in utility.h.
+  neighbour system, as defined in utility.h. Cells on the edge
+  of the grid flow off the nearest edge.
 
   Helper function for d8_flow_directions().
 
@@ -120,7 +121,7 @@ static int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
   }
 
   /*NOTE: Since the very edges of the DEM are defined to always flow outwards,
-  if they have defined elevations, it is not necessary to check of a neighbour
+  if they have defined elevations, it is not necessary to check if a neighbour
   is IN_GRID in the following
   NOTE: It is assumed that the no_data datum is an extremely negative
   number, such that all water which makes it to the edge of the DEM's region
@@ -157,7 +158,7 @@ static int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
   @todo                    Combine dinf and d8 neighbour systems
 
   @param[in]  &elevations  A DEM
-  @param[out] &flwodirs    Returns the flow direction of each cell
+  @param[out] &flowdirs    Returns the flow direction of each cell
 */
 template<class T, class U>
 void d8_flow_directions(
