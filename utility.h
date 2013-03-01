@@ -15,18 +15,27 @@
 //501
 //432
 
+///Value used to indicate that a flow direction cell has no data
 #define d8_NO_DATA    -100
 #define dinf_NO_DATA  -100
+///Value used to indicate that a cell does not have a defined flow direction
 #define NO_FLOW       -1
+///sqrt(2), used to generate distances from a central cell to its neighbours
 #define SQRT2         1.414213562373095048801688724209698078569671875376948
+///Used in Jake's linear regressor for determining whether a cell is a wetland
 #define EULER_CONST   2.71828182845904523536028747135266249775724709369995
 
 //D8 Directions
+///x offsets of D8 neighbours, from a central cell
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
+///y offsets of D8 neighbours, from a central cell
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
-const double dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
-const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
+///Arrows indicating flow directions
 const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
+///Distances from a central cell to each of its 8 neighbours
+const double dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
+///dx[] and dy[] offsets are labeled 0-8. This maps the inverse path from each of those cells.
+const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart below
 //derived from the following neighbour directions
 //234
 //105
@@ -83,9 +92,10 @@ T round(T val) {
 
 class Timer{
   private:
-    timeval start_time;
-    double accumulated_time;
-    bool running;
+    timeval start_time; ///<Last time the timer was started
+    double accumulated_time; ///<Accumulated running time since creation
+    bool running; ///<True when the timer is running
+    ///Number of seconds between two time objects
     double timediff(timeval beginning, timeval end){
       long seconds, useconds;
       seconds  = end.tv_sec  - beginning.tv_sec;
