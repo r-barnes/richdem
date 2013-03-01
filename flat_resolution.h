@@ -207,7 +207,10 @@ static void label_this(
   while(to_fill.size()>0){
     grid_cell c=to_fill.front();
     to_fill.pop();
-    if(elevations(c.x,c.y)!=target_elevation || labels(c.x,c.y)>0) continue;
+    if(elevations(c.x,c.y)!=target_elevation)
+      continue;
+    if(labels(c.x,c.y)>0)
+      continue;
     labels(c.x,c.y)=label;
     for(int n=1;n<=8;n++)
       if(labels.in_grid(c.x+dx[n],c.y+dy[n]))
