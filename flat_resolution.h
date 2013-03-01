@@ -244,6 +244,7 @@ static void find_flat_edges(
   const array2d<T> &elevations
 ){
   int nx,ny;
+  int cells_without_flow=0;
   ProgressBar progress;
   diagnostic("%%Searching for flats...\n");
   progress.start( flowdirs.width()*flowdirs.height() );
@@ -252,6 +253,8 @@ static void find_flat_edges(
     for(int y=0;y<flowdirs.height();y++){
       if(flowdirs(x,y)==flowdirs.no_data)
         continue;
+      if(flowdirs(x,y)==NO_FLOW)
+        cells_without_flow++;
       for(int n=1;n<=8;n++){
         nx=x+dx[n];
         ny=y+dy[n];
@@ -270,6 +273,7 @@ static void find_flat_edges(
     }
   }
   diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  diagnostic_arg("%d cells had no flow direction.\n",cells_without_flow);
 }
 
 
