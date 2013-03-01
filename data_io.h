@@ -85,7 +85,11 @@ int output_ascii_data(
     fout<<"xllcorner\t"<<std::fixed<<std::setprecision(precision)<<output_grid.xllcorner<<std::endl;
     fout<<"yllcorner\t"<<std::fixed<<std::setprecision(precision)<<output_grid.yllcorner<<std::endl;
     fout<<"cellsize\t"<<std::fixed<<std::setprecision(precision)<<output_grid.cellsize<<std::endl;
-    fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(precision)<<output_grid.no_data<<std::endl;  //TODO: This could be put out as a char, and that would be bad.
+    fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(precision);
+    if(sizeof(T)==1)  //TODO: Crude way of detecting chars and bools
+      fout<<(int)output_grid.no_data<<std::endl;
+    else
+      fout<<output_grid.no_data<<std::endl;
   }
   diagnostic("succeeded.\n");
 
