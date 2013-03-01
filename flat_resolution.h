@@ -384,13 +384,17 @@ void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
   fmask.copyprops(flowdirs);
   fmask.init(0);
   fmask.no_data=3;
-  #pragma omp parallel for
+  int cells_without_flow=0;
+  #pragma omp parallel for reduction(+:cells_without_flow)
   for(int x=0;x<flowdirs.width();x++)
   for(int y=0;y<flowdirs.height();y++)
     if(flowdirs(x,y)==flowdirs.no_data)
       fmask(x,y)=fmask.no_data;
-    else
+    else{
       fmask(x,y)=(flowdirs(x,y)==NO_FLOW);
+      cells_without_flow+=(flowdirs(x,y)==NO_FLOW);
+    }
   diagnostic("succeeded!\n");
+  diagnostic_arg("%d cells found without flow.\n",cells_without_flow);
 }
 #endif
