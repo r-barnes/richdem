@@ -28,7 +28,7 @@ void barnes_flood(float_2d &elevations){
   std::stack<grid_cellz, std::vector<grid_cellz> > meander;
   bool_2d closed;
   unsigned long processed_cells=0;
-  unsigned long pitc=0,openc=0;
+  unsigned long pitc=0;
   ProgressBar progress;
 
   diagnostic("\n###Barnes Flood\n");
@@ -60,11 +60,9 @@ void barnes_flood(float_2d &elevations){
     if(meander.size()>0){
       c=meander.top();
       meander.pop();
-      pitc++;
     } else {
       c=open.top();
       open.pop();
-      openc++;
     }
     processed_cells++;
 
@@ -77,7 +75,10 @@ void barnes_flood(float_2d &elevations){
 
       closed(nx,ny)=true;
       if(elevations(nx,ny)<=c.z){
-        elevations(nx,ny)=c.z;
+        if(elevations(nx,ny)<c.z){
+          ++pitc;
+          elevations(nx,ny)=c.z;
+        }
         meander.push(grid_cellz(nx,ny,c.z));
       } else
         open.push(grid_cellz(nx,ny,elevations(nx,ny)));
@@ -85,7 +86,7 @@ void barnes_flood(float_2d &elevations){
     progress.update(processed_cells);
   }
   diagnostic_arg(SUCCEEDED_IN,progress.stop());
-  diagnostic_arg("%ld cells processed. %ld in pits, %ld not in pits.\n",processed_cells,pitc,openc);
+  diagnostic_arg("%ld cells processed. %ld in pits.\n",processed_cells,pitc);
 }
 
 
