@@ -31,7 +31,7 @@ const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my 
 ///y offsets of D8 neighbours, from a central cell
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
 ///Arrows indicating flow directions
-const std::string fd[9]={"·","←","↖","↑","↗","→","↘","↓","↙"};
+const wchar_t fd[9]={L'·',L'←',L'↖',L'↑',L'↗',L'→',L'↘',L'↓',L'↙'};
 ///Distances from a central cell to each of its 8 neighbours
 const double dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
 ///dx[] and dy[] offsets are labeled 0-8. This maps the inverse path from each of those cells.
