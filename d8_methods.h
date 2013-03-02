@@ -217,10 +217,14 @@ static int d8_masked_FlowDir(
   int minimum_elevation=flat_mask(x,y);
   int flowdir=NO_FLOW;
 
+  //It is safe to do this without checking to see that (nx,ny) is within
+  //the grid because we only call this function on interior cells
   for(int n=1;n<=8;n++){
     int nx=x+dx[n];
     int ny=y+dy[n];
-    if(  groups(nx,ny)==groups(x,y) && (flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1)) ){
+    if( groups(nx,ny)!=groups(x,y))
+      continue;
+    if(  flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
       minimum_elevation=flat_mask(nx,ny);
       flowdir=n;
     }
