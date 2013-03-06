@@ -23,6 +23,8 @@
   @param[in]  &filename     Name of ArcGrid ASCII file to read
   @param[out] &elevations   DEM object containing contents of file
 
+  @todo Has minor bug where progress becomes negative at some point.
+
   @returns 0 upon success
 */
 int load_ascii_data(const char filename[], float_2d &elevations){
