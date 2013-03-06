@@ -1,8 +1,9 @@
 #CC=i586-mingw32msvc-g++
-#CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS #-fopenmp
+CC=x86_64-w64-mingw32-g++
+CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS -static-libgcc -static-libstdc++ #-fopenmp
 
-CC=g++
-CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
+#CC=g++
+#CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
 #-ffp-contract=fast enables forming of fused multiply-add instructions. Default is fast.
 
 ODIR=obj
