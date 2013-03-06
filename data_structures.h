@@ -109,9 +109,8 @@ template <class T>
 void array2d<T>::resize(int width, int height, bool preserve=false){
   fprintf(
     stderr,
-    "\n\tApprox RAM requirement: %lluMB\n",
-    (unsigned long long)width * (unsigned long long)height *
-      (unsigned long long)sizeof(T) / 1024 / 1024
+    "\n\tApprox RAM requirement: %fMB\n",
+    (float)width/1024. * (float)height/1024. * (float)sizeof(T)
   );
   boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
 }
