@@ -188,7 +188,7 @@ static void BuildTowardsCombinedGradient(
   @param[in]  &elevations 2D array of cell elevations
 
   @pre
-    "labels" is initialized to "-1"
+    "labels" is initialized to "0"
   @post
     The 2D array "labels" is modified such that each cell
     which can be reached from (x,y) while traversing only
@@ -302,7 +302,7 @@ void resolve_flats_barnes(
 
   diagnostic("Setting up labels matrix...");
   labels.copyprops(flowdirs);
-  labels.init(-1);
+  labels.init(0);
   diagnostic("succeeded.\n");
 
   diagnostic("Setting up flat resolution mask...");
@@ -322,9 +322,9 @@ void resolve_flats_barnes(
   }
 
   diagnostic("Labeling flats...");
-  int group_number=0;
+  int group_number=1;
   for(std::deque<grid_cell>::iterator i=low_edges.begin();i!=low_edges.end();++i)
-    if(labels(i->x,i->y)==-1)
+    if(labels(i->x,i->y)==0)
       label_this(i->x, i->y, group_number++, labels, elevations);
   diagnostic("succeeded!\n");
 
@@ -333,7 +333,7 @@ void resolve_flats_barnes(
   diagnostic("Removing flats without outlets from the queue...");
   std::deque<grid_cell> temp;
   for(std::deque<grid_cell>::iterator i=high_edges.begin();i!=high_edges.end();++i)
-    if(labels(i->x,i->y)!=-1)
+    if(labels(i->x,i->y)!=0)
       temp.push_back(*i);
   diagnostic("succeeded.\n");
 
