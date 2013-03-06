@@ -14,13 +14,27 @@ int main(int argc, char **argv){
   float_2d elevations;
   char_2d flowdirs;
   int_2d is_upslope;
+  uint_2d fmask;
 
   load_ascii_data(argv[1],elevations);
   elevations.low_pass_filter();
-  barnes_flood_flowdirs(elevations, flowdirs);
-  d8_upslope_cells(atoi(argv[3])-elevations.xllcorner, (elevations.yllcorner+elevations.height())-atoi(argv[4]), atoi(argv[5])-elevations.xllcorner, (elevations.yllcorner+elevations.height())-atoi(argv[6]), flowdirs, is_upslope);
+  barnes_flood(elevations);
 
-  output_ascii_data(argv[2], is_upslope);
+  output_ascii_data(argv[2], elevations);
+
+  return 0;
+
+  d8_flow_directions(elevations,flowdirs);
+  flat_mask(flowdirs,fmask);
+
+  output_ascii_data(argv[2], fmask);
+
+  int tflats=0;
+  for(int x=0;x<fmask.width();++x)
+  for(int y=0;y<fmask.height();++y)
+    if(fmask(x,y)==1)
+      tflats++;
+  printf("%d in flats\n",tflats);
 
   return 0;
 }
