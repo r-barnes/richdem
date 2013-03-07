@@ -49,10 +49,9 @@
     "flat_height" will contain, for each flat, the maximal distance any
     of its cells are from terrain of differing elevation
 */
-template <class T, class U>
+template <class T>
 static void BuildAwayGradient(
-  const array2d<T> &elevations, const array2d<U> &flowdirs,
-  int_2d &flat_mask, std::deque<grid_cell> edges, 
+  const array2d<T> &flowdirs, int_2d &flat_mask, std::deque<grid_cell> edges,
   std::vector<int> &flat_height, const int_2d &labels
 ){
   int x,y,nx,ny;
@@ -82,8 +81,8 @@ static void BuildAwayGradient(
     for(int n=1;n<=8;n++){
       nx=x+dx[n];  
       ny=y+dy[n];
-      if(elevations.in_grid(nx,ny) 
-          && elevations(nx,ny)==elevations(x,y) 
+      if(labels.in_grid(nx,ny) 
+          && labels(nx,ny)==labels(x,y) 
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
     }
@@ -119,10 +118,9 @@ static void BuildAwayGradient(
     "incrementations" will contain a convergent flow pattern which drains
     every cell of the flat.
 */
-template <class T, class U>
+template <class T>
 static void BuildTowardsCombinedGradient(
-  const array2d<T> &elevations, const array2d<U> &flowdirs,
-  int_2d &flat_mask, std::deque<grid_cell> edges, 
+  const array2d<T> &flowdirs, int_2d &flat_mask, std::deque<grid_cell> edges,
   std::vector<int> &flat_height, const int_2d &labels
 ){
   int x,y,nx,ny;
@@ -162,8 +160,8 @@ static void BuildTowardsCombinedGradient(
     for(int n=1;n<=8;n++){
       nx=x+dx[n];  
       ny=y+dy[n];
-      if(elevations.in_grid(nx,ny) 
-          && elevations(nx,ny)==elevations(x,y) 
+      if(labels.in_grid(nx,ny) 
+          && labels(nx,ny)==labels(x,y) 
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
     }
@@ -349,12 +347,10 @@ void resolve_flats_barnes(
   diagnostic("succeeded!\n");
 
   BuildAwayGradient(
-    elevations, flowdirs, flat_mask,
-    high_edges, flat_height, labels
+    flowdirs, flat_mask, high_edges, flat_height, labels
   );
   BuildTowardsCombinedGradient(
-    elevations, flowdirs, flat_mask,
-    low_edges, flat_height, labels
+    flowdirs, flat_mask, low_edges, flat_height, labels
   );
 }
 
