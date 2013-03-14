@@ -35,7 +35,7 @@
 
   @param[in]  &elevations   A 2D array of cell elevations
   @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
-  @param[out] &incrementations  A 2D array for storing incrementations
+  @param[out] &flat_mask    A 2D array for storing flat_mask
   @param[in]  &edges        The high-edge FIFO queue from find_flat_edges()
   @param[out] &flat_height  Vector with length equal to max number of labels
   @param[in]  &labels       2D array storing labels developed in label_this()
@@ -45,7 +45,7 @@
        not part of a flat, or a number greater than zero which identifies the
        flat to which the cell belongs.
     2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
-    3. Every cell in **incrementations** is initialized to 0.
+    3. Every cell in **flat_mask** is initialized to 0.
     4. **edges** contains, in no particular order, all the high edge cells of
        the DEM (those flat cells adjacent to higher terrain) which are part of
        drainable flats.
@@ -54,7 +54,7 @@
     1. **flat_height** will have an entry for each label value of **labels**
        indicating the maximal number of increments to be applied to the flat
        identified by that label.
-    2. **incrementations** will contain the number of increments to be applied
+    2. **flat_mask** will contain the number of increments to be applied
        to each cell to form a gradient away from higher terrain; cells not in a
        flat will have a value of 0.
 */
@@ -115,7 +115,7 @@ static void BuildAwayGradient(
 
   @param[in]  &elevations   A 2D array of cell elevations
   @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
-  @param[in,out]  &incrementations  A 2D array for storing incrementations
+  @param[in,out] &flat_mask A 2D array for storing flat_mask
   @param[in]  &edges        The low-edge FIFO queue from find_flat_edges()
   @param[in]  &flat_height  Vector with length equal to max number of labels
   @param[in]  &labels       2D array storing labels developed in label_this()
@@ -125,7 +125,7 @@ static void BuildAwayGradient(
        is not part of a flat, or a number greater than zero which identifies
        the flat to which the cell belongs.
     2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
-    3. Every cell in **incrementations** has either a value of 0, indicating
+    3. Every cell in **flat_mask** has either a value of 0, indicating
        that the cell is not part of a flat, or a value greater than zero
        indicating the number of increments which must be added to it to form a
        gradient away from higher terrain.
@@ -137,7 +137,7 @@ static void BuildAwayGradient(
        the DEM (those flat cells adjacent to lower terrain).
 
   @post
-    1. **incrementations** will contain the number of increments to be applied
+    1. **flat_mask** will contain the number of increments to be applied
        to each cell to form a superposition of the gradient away from higher
        terrain with the gradient towards lower terrain; cells not in a flat
        have a value of 0.
@@ -153,7 +153,7 @@ static void BuildTowardsCombinedGradient(
 
   diagnostic("Barnes flat resolution: toward and combined gradients...");
 
-  //Make previous incrementations negative so that we can keep track of where we are
+  //Make previous flat_mask negative so that we can keep track of where we are
   #pragma omp parallel for collapse(2)
   for(int x=0;x<flat_mask.width();x++)
   for(int y=0;y<flat_mask.height();y++)
