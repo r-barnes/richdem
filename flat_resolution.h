@@ -41,13 +41,22 @@
   @param[in]  &labels       2D array storing labels developed in label_this()
 
   @pre
-    "incrementations" is initiliazed to "0"
+    1. Every cell in **labels** is marked either 0, indicating that the cell is
+       not part of a flat, or a number greater than zero which identifies the
+       flat to which the cell belongs.
+    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    3. Every cell in **incrementations** is initialized to 0.
+    4. **edges** contains, in no particular order, all the high edge cells of
+       the DEM (those flat cells adjacent to higher terrain) which are part of
+       drainable flats.
 
   @post
-    "incrementations" will contain the D8 distance of every flat cell from
-    terrain of differing elevation
-    "flat_height" will contain, for each flat, the maximal distance any
-    of its cells are from terrain of differing elevation
+    1. **flat_height** will have an entry for each label value of **labels**
+       indicating the maximal number of increments to be applied to the flat
+       identified by that label.
+    2. **incrementations** will contain the number of increments to be applied
+       to each cell to form a gradient away from higher terrain; cells not in a
+       flat will have a value of 0.
 */
 template <class T>
 static void BuildAwayGradient(
@@ -112,11 +121,26 @@ static void BuildAwayGradient(
   @param[in]  &labels       2D array storing labels developed in label_this()
 
   @pre
-    "incrementations" has been adjusted by BuildAwayGradient()
+    1. Every cell in **labels** is marked either 0, indicating that the cell
+       is not part of a flat, or a number greater than zero which identifies
+       the flat to which the cell belongs.
+    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    3. Every cell in **incrementations** has either a value of 0, indicating
+       that the cell is not part of a flat, or a value greater than zero
+       indicating the number of increments which must be added to it to form a
+       gradient away from higher terrain.
+    4. **flat_height** has an entry for each label value of **labels**
+       indicating the maximal number of increments to be applied to the flat
+       identified by that label in order to form the gradient away from higher
+       terrain.
+    5. **edges** contains, in no particular order, all the low edge cells of
+       the DEM (those flat cells adjacent to lower terrain).
 
   @post
-    "incrementations" will contain a convergent flow pattern which drains
-    every cell of the flat.
+    1. **incrementations** will contain the number of increments to be applied
+       to each cell to form a superposition of the gradient away from higher
+       terrain with the gradient towards lower terrain; cells not in a flat
+       have a value of 0.
 */
 template <class T>
 static void BuildTowardsCombinedGradient(
@@ -186,12 +210,19 @@ static void BuildTowardsCombinedGradient(
   @param[in]  &elevations 2D array of cell elevations
 
   @pre
-    "labels" is initialized to "0"
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM.
+    2. **labels** has the same dimensions as **elevations**.
+    3. **(x0,y0)** belongs to the flat which is to be labeled.
+    4. **label** is a unique label which has not been previously applied to a
+       flat.
+    5. **labels** is initialized to zero prior to the first call to this
+       function.
+
   @post
-    The 2D array "labels" is modified such that each cell
-    which can be reached from (x,y) while traversing only
-    cells which share the same elevation as (x,y)
-    is labeled with "label"
+    1. **(x0,y0)** and every cell reachable from it by passing over only cells
+       of the same elevation as it (all the cells in the flat to which c
+       belongs) will be marked as **label** in **labels**.
 */
 template<class T>
 static void label_this(
@@ -230,9 +261,15 @@ static void label_this(
   @param[in]  &elevations 2D array of cell elevations
 
   @pre
-    "flowdirs" should be set such that cells without a defined flow direction
-    have a value #NO_FLOW.
-    "low_edges" and "high_edges" should be traversible
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM.
+    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+
+  @post
+    1. **high_edges** will contain, in no particular order, all the high edge
+       cells of the DEM: those flat cells adjacent to higher terrain.
+    2. **low_edges** will contain, in no particular order, all the low edge
+       cells of the DEM: those flat cells adjacent to lower terrain.
 */
 template <class T, class U>
 static void find_flat_edges(
@@ -286,6 +323,20 @@ static void find_flat_edges(
   @param[in]  &flowdirs   2D array indicating flow direction of each cell
   @param[in]  &flat_mask  2D array which will hold incremental elevation mask
   @param[in]  &labels     2D array indicating flat membership
+
+  @pre
+    1. **elevations** contains the elevations of every cell or the _NoData_
+        value for cells not part of the DEM.
+    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+
+  @post
+    1. **flat_mask** will have a value greater than or equal to zero for every
+       cell, indicating its number of increments. These can be used be used
+       in conjunction with **labels** to determine flow directions without
+       altering the DEM, or to alter the DEM in subtle ways to direct flow.
+    2. **labels** will have values greater than or equal to 1 for every cell
+       which is in a flat. Each flat's cells will bear a label unique to that
+       flat.
 */
 template <class T, class U>
 void resolve_flats_barnes(

@@ -246,6 +246,21 @@ static int d8_masked_FlowDir(
   @param[in]  &flat_mask      A mask from resolve_flats_barnes()
   @param[in]  &groups         A grouping from resolve_flats_barnes()
   @param[out] &flowdirs       Returns flat-resolved flow directions
+
+  @pre
+    1. **flat_mask** contains the number of increments to be applied to each
+       cell to form a gradient which will drain the flat it is a part of.
+    2. Any cell without a local gradient has a value of #NO_FLOW in
+       **flowdirs**; all other cells have defined flow directions.
+    3. If a cell is part of a flat, it has a value greater than zero in
+       **labels** indicating which flat it is a member of; otherwise, it has a
+       value of 0.
+
+  @post
+    1. Every cell whose flow direction could be resolved by this algorithm
+       (all drainable flats) will have a defined flow direction in
+       **flowdirs**. Any cells which could not be resolved (non-drainable
+       flats) will still be marked #NO_FLOW.
 */
 template<class U>
 void d8_flow_flats(
