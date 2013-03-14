@@ -251,7 +251,7 @@ T array2d<T>::min() const {
 //array2d.print_random_sample
 /**
   @brief  Prints one or more random data_cells from the grid
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   Prints one or more random data_cells from the grid. Note that if the grid is
   mostly no_data cells, the function may take a long time to complete as it
@@ -285,7 +285,7 @@ void array2d<T>::print_random_sample(int n, int seed) const {
 
 /**
   @brief Smooths data by reducing local variation and removing noise with a neighbourhood average
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   A low pass filter smooths the data by reducing local variation and removing
   noise. The low pass filter calculates the average (mean) value for each
@@ -327,7 +327,7 @@ void array2d<T>::low_pass_filter(){
 
 /**
   @brief Accentuates differences between the cell and its neighbours.
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   The high pass filter accentuates the comparative difference in the values
   with its neighbors. A high pass filter calculates the focal sum statistic

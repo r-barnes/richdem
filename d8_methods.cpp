@@ -21,7 +21,7 @@
 //d8_terrain_attrib_helper
 /**
   @brief  Calculate a variety of terrain attributes
-  @author Richard Barnes, Burrough (1998)
+  @author Richard Barnes (rbarnes@umn.edu), Burrough (1998)
 
   This calculates a variety of terrain attributes according
   to the work of Burrough 1998's "Principles of Geographical
@@ -168,7 +168,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 //d8_terrain_attribute
 /**
   @brief  Calculate a variety of terrain attributes
-  @author Richard Barnes, Burrough (1998)
+  @author Richard Barnes (rbarnes@umn.edu), Burrough (1998)
 
   This calculates a variety of terrain attributes according
   to the work of Burrough 1998's "Principles of Geographical
@@ -251,7 +251,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
 //d8_slope
 /**
   @brief  Calculates the slope
-  @author Richard Barnes, Horn (1981)
+  @author Richard Barnes (rbarnes@umn.edu), Horn (1981)
 
   Calculates the slope using Horn 1981, as per Burrough 1998's
   "Principles of Geographical Information Systems" (p. 190)
@@ -312,7 +312,7 @@ void d8_profile_curvature(
 //find_watersheds
 /**
   @brief  Labels watershed drainage areas, working inwards from the edges of the DEM
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   Same as #barnes_flood. \pname{labels} starts out as no_data. If it is found
   that a no_data labels cell coincides with a data_cell in \pname{elevations},
@@ -438,7 +438,7 @@ void watershed_area(const int_2d &labels){
 //d8_SPI
 /**
   @brief  Calculates the SPI terrain attribute
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   \f$(\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001)\cdot(\frac{1}{100}\textit{PercentSlope}+0.001)\f$
 
@@ -494,7 +494,7 @@ void d8_SPI(
 //d8_CTI
 /**
   @brief  Calculates the CTI terrain attribute
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   \f$\log{\frac{\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001}{\frac{1}{100}\textit{PercentSlope}+0.001}}\f$
 
