@@ -466,4 +466,70 @@ void d8_upslope_cells(
 }
 
 
+
+
+//d8_flats_alter_dem
+/**
+  @brief  Alters the elevations of the DEM so that all flats drain
+  @author Richard Barnes
+
+  This alters elevations within the DEM so that flats which have been
+  resolved using resolve_flats_barnes() will drain.
+
+  @param[in]     &flat_mask   A mask from resolve_flats_barnes()
+  @param[in]     &groups      A grouping from resolve_flats_barnes()
+  @param[in,out] &elevations  2D array of elevations
+
+  @pre
+    1. **flat_mask** contains the number of increments to be applied to each
+       cell to form a gradient which will drain the flat it is a part of.
+    2. If a cell is part of a flat, it has a value greater than zero in
+       **labels** indicating which flat it is a member of; otherwise, it has a
+       value of 0.
+
+  @post
+    1. Every cell whose part of a flat which could be drained will have its
+       elevation altered in such a way as to guarantee that its flat does
+       drain.
+*/
+template<class U>
+void d8_flats_alter_dem(
+  const int_2d &flat_mask,
+  const int_2d &labels,
+  array2d<U> &elevations
+){
+  ProgressBar progress;
+
+  diagnostic("%%Calculating D8 flow directions using flat mask...\n");
+  progress.start( flat_mask.width()*flat_mask.height() );
+  #pragma omp parallel for
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++){
+      if(labels(x,y)==0)
+        continue;
+
+      bool higher[9];
+      for(int n=1;n<=8;++n)
+        higher[n]=elevations(x,y)>elevations(x+dx[n],y+dy[n]);
+      //TODO: nextafterf is the floating point version; should use an
+      //overloaded version instead to be able to handle both double and float
+      for(int i=0;i<flat_mask(x,y);++i)
+        elevations(x,y)=nextafterf(elevations(x,y),std::numeric_limits<U>::infinity());
+      for(int n=1;n<=8;++n){
+        int nx=x+dx[n];
+        int ny=y+dy[n];      
+        if(labels(nx,ny)==labels(x,y))
+          continue;
+        if(elevations(x,y)<elevations(nx,ny))
+          continue;
+        if(!higher[n])
+          diagnostic_arg("Attempting to raise (%d,%d) resulted in an invalid alteration of the DEM!\n",x,y);
+      }
+    }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+}
+
+
 #endif
