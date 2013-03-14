@@ -253,7 +253,7 @@ static int d8_masked_FlowDir(
     2. Any cell without a local gradient has a value of #NO_FLOW in
        **flowdirs**; all other cells have defined flow directions.
     3. If a cell is part of a flat, it has a value greater than zero in
-       **labels** indicating which flat it is a member of; otherwise, it has a
+       **groups** indicating which flat it is a member of; otherwise, it has a
        value of 0.
 
   @post
