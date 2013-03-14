@@ -82,7 +82,7 @@ void d8_CTI(
 //d8_FlowDir
 /**
   @brief  Calculates the D8 flow direction of a cell
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This calculates the D8 flow direction of a cell using the D8
   neighbour system, as defined in utility.h. Cells on the edge
@@ -145,7 +145,7 @@ static int d8_FlowDir(const array2d<T> &elevations, const int x, const int y){
 //d8_flow_directions
 /**
   @brief  Calculates the D8 flow directions of a DEM
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This calculates the D8 flow directions of a DEM. Its argument
   'flowdirs' will return a grid with flow directions using the D8
@@ -196,7 +196,7 @@ void d8_flow_directions(
 //d8_masked_FlowDir
 /**
   @brief  Helper function to d8_flow_flats()
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This determines a cell's flow direction, taking into account flat membership.
   It is a helper function to d8_flow_flats()
@@ -236,7 +236,7 @@ static int d8_masked_FlowDir(
 //d8_flow_flats
 /**
   @brief  Calculates flow directions in flats
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This determines flow directions within flats which have been resolved
   using resolve_flats_barnes().
@@ -292,7 +292,7 @@ void d8_flow_flats(
 //d8_upslope_area
 /**
   @brief  Calculates the D8 up-slope area, given the D8 flow directions
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This calculates the D8 up-slope area of a grid of D8 flow directions using
   by calculating each cell's dependency on its neighbours and then using
@@ -390,7 +390,7 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
 //d8_upslope_cells
 /**
   @brief  Calculates which cells ultimately D8-flow through a given cell
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   Given the coordinates x, y of a cell, this returns a grid indicating
   which cells ultimately flow into the indicated cell.
@@ -471,7 +471,7 @@ void d8_upslope_cells(
 //d8_flats_alter_dem
 /**
   @brief  Alters the elevations of the DEM so that all flats drain
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   This alters elevations within the DEM so that flats which have been
   resolved using resolve_flats_barnes() will drain.

@@ -64,7 +64,7 @@ T angdiff_rad(T a, T b){
 //sgn
 /**
   @brief  Returns the sign (+1, -1, 0) of a number. Branchless.
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   @param[in]  val  Input value
 
@@ -79,7 +79,7 @@ T sgn(T val){
 //round
 /**
   @brief  Rounds floating value to the nearest integer
-  @author Richard Barnes
+  @author Richard Barnes (rbarnes@umn.edu)
 
   @param[in]  val  Input value
 

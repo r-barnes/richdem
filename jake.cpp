@@ -13,7 +13,7 @@
 
 /**
   @brief  Calculates Jacob's Wetland Metric
-  @author Richard Barnes, Jacob Galzki
+  @author Richard Barnes (rbarnes@umn.edu), Jacob Galzki
 
   @param[in]  &smoothed_cti
     CTI generated with d8_CTI() and smoothed with array2d::low_pass_filter()
