@@ -401,13 +401,14 @@ typedef struct grid_cell_type {
 /// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting
 /// with \ref grid_cellz_compare
 /// @todo z-coordinate should be templated
-typedef struct grid_cell_typez {
-  int x;        ///< Grid cell's x-coordinate
-  int y;        ///< Grid cell's y-coordinate
-  float z;      ///< Grid cell's z-coordinate
-  grid_cell_typez(int x0, int y0, float z0):x(x0),y(y0),z(z0){}
-  grid_cell_typez(){}
-} grid_cellz;
+class grid_cellz {
+  public:
+    int x;           ///< Grid cell's x-coordinate
+    int y;           ///< Grid cell's y-coordinate
+    float z;         ///< Grid cell's z-coordinate
+    grid_cellz(int x, int y, float z):x(x), y(y), z(z) {}
+    grid_cellz(){}
+};
 
 /// Used for sorting grid cells defined by \struct grid_cell_typez
 /// @todo Should have a T abstraction
