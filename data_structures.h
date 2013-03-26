@@ -409,45 +409,35 @@ class grid_cellz {
     float z;         ///< Grid cell's z-coordinate
     grid_cellz(int x, int y, float z):x(x), y(y), z(z) {}
     grid_cellz(){}
-};
-
-/// Used for sorting grid cells defined by \struct grid_cell_typez
-/// @todo Should have a T abstraction
-class grid_cellz_compare{
-  bool reverse;
-  public:
-    grid_cellz_compare(const bool& revparam=false){reverse=revparam;}
-    bool operator() (const grid_cellz &lhs, const grid_cellz &rhs) const{
-      if (reverse) return (lhs.z<rhs.z);
-      else return (lhs.z>rhs.z);
-    }
+    bool operator< (const grid_cellz& a) const { return z< a.z; }
+    bool operator> (const grid_cellz& a) const { return z> a.z; }
+    bool operator>=(const grid_cellz& a) const { return z>=a.z; }
+    bool operator<=(const grid_cellz& a) const { return z<=a.z; }
+    bool operator==(const grid_cellz& a) const { return z==a.z; }
+    bool operator!=(const grid_cellz& a) const { return !operator==(a); }
 };
 
 
 /// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k;
 /// useful for stable priority sorting with \ref grid_cellzk_compare
 /// @todo z-coordinate should be templated
-typedef struct grid_cell_typezk {
-  int x;          ///< Grid cell's x-coordinate 
-  int y;          ///< Grid cell's y-coordinate 
-  float z;        ///< Grid cell's z-coordinate
-  int k;          ///< Used to store an integer to make sorting stable
-  grid_cell_typezk(int x0, int y0, float z0, int k0):x(x0),y(y0),z(z0),k(k0){}
-  grid_cell_typezk(){}
-} grid_cellzk;
-
-/// Used for stable sorting of grid cells defined by \struct grid_cell_typezk
-class grid_cellzk_compare{
-  bool reverse;
+class grid_cellzk {
   public:
-    grid_cellzk_compare(const bool& revparam=false){reverse=revparam;}
-    bool operator() (const grid_cellzk &lhs, const grid_cellzk &rhs) const{
-      if (reverse) return (lhs.z<rhs.z || (lhs.z==rhs.z && lhs.k<rhs.k));
-      else return (lhs.z>rhs.z || (lhs.z==rhs.z && lhs.k>rhs.k));
-    }
+    int x;           ///< Grid cell's x-coordinate
+    int y;           ///< Grid cell's y-coordinate
+    float z;         ///< Grid cell's z-coordinate
+    int k;           ///< Used to store an integer to make sorting stable
+    grid_cellzk(int x, int y, float z, int k):x(x), y(y), z(z), k(k) {}
+    grid_cellzk(){}
+    bool operator< (const grid_cellzk& a) const { return z< a.z || (z==a.z && k<a.k); }
+    bool operator> (const grid_cellzk& a) const { return z> a.z || (z==a.z && k>a.k); }
+    bool operator>=(const grid_cellzk& a) const { return z>=a.z; }
+    bool operator<=(const grid_cellzk& a) const { return z<=a.z; }
+    bool operator==(const grid_cellzk& a) const { return z==a.z; }
+    bool operator!=(const grid_cellzk& a) const { return !operator==(a); }
 };
 
 typedef std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> grid_cellz_pq;
-typedef std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, grid_cellzk_compare> grid_cellzk_pq;
+typedef std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, std::greater<grid_cellzk> > grid_cellzk_pq;
 
 #endif
