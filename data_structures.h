@@ -388,14 +388,15 @@ typedef array2d<int>          int_2d;
 
 
 /// Stores the (x,y) coordinates of a grid cell
-typedef struct grid_cell_type {
-  int x;        ///< Grid cell's x-coordinate
-  int y;        ///< Grid cell's y-coordinate
-  /// Initiate the grid cell to the coordinates (x0,y0)
-  grid_cell_type(int x0, int y0):x(x0),y(y0){}
-  /// Initiate the grid cell without coordinates; should generally be avoided
-  grid_cell_type(){}
-} grid_cell;
+class grid_cell {
+  public:
+    int x; ///< Grid cell's x-coordinate
+    int y; ///< Grid cell's y-coordinate
+    /// Initiate the grid cell without coordinates; should generally be avoided
+    grid_cell(){}
+    /// Initiate the grid cell to the coordinates (x0,y0)
+    grid_cell(int x, int y):x(x),y(y){}
+};
 
 
 /// Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting
