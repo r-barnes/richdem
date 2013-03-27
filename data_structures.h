@@ -418,7 +418,7 @@ class grid_cellz : public grid_cell {
 
 
 /// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k;
-/// useful for stable priority sorting with \ref grid_cellzk_compare
+/// used by grid_cellz_pq
 /// @todo z-coordinate should be templated
 class grid_cellzk : public grid_cellz {
   public:
@@ -429,7 +429,27 @@ class grid_cellzk : public grid_cellz {
     bool operator> (const grid_cellzk& a) const { return z> a.z || (z==a.z && k>a.k); }
 };
 
-typedef std::priority_queue<grid_cellz, std::vector<grid_cellz>, grid_cellz_compare> grid_cellz_pq;
-typedef std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, std::greater<grid_cellzk> > grid_cellzk_pq;
+///A priority queue of grid_cells, sorted by ascending height
+class grid_cellz_pq : public std::priority_queue<grid_cellz, std::vector<grid_cellz>, std::greater<grid_cellz> > {
+  public:
+    void push_cell(int x, int y, float z){
+      std::priority_queue<grid_cellz, std::vector<grid_cellz>, std::greater<grid_cellz> >::push(grid_cellz(x,y,z));
+    }
+};
+
+///A priority queue of grid_cells, sorted by ascending height or, if heights
+///if heights are equal, by the order of insertion
+class grid_cellzk_pq : public std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, std::greater<grid_cellzk> > {
+  private:
+    int count;
+  public:
+    grid_cellzk_pq() : count(0) {}
+    void push(const grid_cellz &a){
+      std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, std::greater<grid_cellzk> >::push(grid_cellzk(a.x,a.y,a.z,count++));
+    }
+    void push_cell(int x, int y, float z){
+      std::priority_queue<grid_cellzk, std::vector<grid_cellzk>, std::greater<grid_cellzk> >::push(grid_cellzk(x,y,z,count++));
+    }
+};
 
 #endif
