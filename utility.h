@@ -1,3 +1,9 @@
+/**
+  @file
+  Defines timing functions, progress bars, and the D8 neighbourhood.
+
+  Richard Barnes (rbarnes@umn.edu), 2012
+*/
 #ifndef _utility_included
 #define _utility_included
 
