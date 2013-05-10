@@ -123,4 +123,185 @@ int output_ascii_data(
   return 0;
 }
 
+
+
+
+
+
+
+
+/**
+  @brief  Writes a floating-point grid file
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  &basename     Name, without extension, of output file
+  @param[in]  &output_grid  DEM object to write
+
+  @todo Does not check byte order (big-endian, little-endian)
+  @todo Does not output only IEEE-754 32-bit floating-point,
+        which is required by ArcGIS
+
+  @returns 0 upon success
+*/
+template <class T>
+int write_floating_data(
+  const std::string basename,
+  const array2d<T> &output_grid
+){
+  Timer write_time;
+  ProgressBar progress;
+  std::string fn_header(basename), fn_data(basename);
+
+  fn_header+=".hdr";
+  fn_data+=".flt";
+
+  write_time.start();
+
+
+  {
+    diagnostic_arg("Opening floating-point header file \"%s\" for writing...",fn_header.c_str());
+    std::ofstream fout;
+    fout.open(fn_header.c_str());
+    if(!fout.is_open()){
+      diagnostic("failed!\n");
+      exit(-1);  //TODO: Need to make this safer! Don't just close after all that work!
+    }
+    diagnostic("succeeded.\n");
+
+    diagnostic("Writing floating-point header file...");
+    fout<<"ncols\t\t"<<output_grid.width()<<std::endl;
+    fout<<"nrows\t\t"<<output_grid.height()<<std::endl;
+    fout<<"xllcorner\t"<<std::fixed<<std::setprecision(10)<<output_grid.xllcorner<<std::endl;
+    fout<<"yllcorner\t"<<std::fixed<<std::setprecision(10)<<output_grid.yllcorner<<std::endl;
+    fout<<"cellsize\t"<<std::fixed<<std::setprecision(10)<<output_grid.cellsize<<std::endl;
+    fout<<"NODATA_value\t"<<std::fixed<<std::setprecision(10)<<output_grid.no_data<<std::endl;
+    fout<<"BYTEORDER\tLSBFIRST"<<std::endl; //TODO
+    fout.close();
+    diagnostic("succeeded.\n");
+  }
+
+
+  diagnostic_arg("Opening floating-point data file \"%s\" for writing...",fn_data.c_str());
+
+  {
+    std::ofstream fout(fn_data.c_str(), std::ios::binary | std::ios::out);
+    if(!fout.is_open()){
+      diagnostic("failed!\n");
+      exit(-1);  //TODO: Need to make this safer! Don't just close after all that work!
+    }
+    diagnostic("succeeded.\n");
+
+    diagnostic("%%Writing floating-point data file...\n");
+    progress.start( output_grid.width()*output_grid.height() );
+    for(int y=0;y<output_grid.height();++y){
+      progress.update( y*output_grid.width() );
+      for(int x=0;x<output_grid.width();++x)
+        fout.write(reinterpret_cast<const char*>(&output_grid(x,y)), std::streamsize(sizeof(T)));
+    }
+    fout.close();
+    write_time.stop();
+    diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  }
+
+  diagnostic_arg("Write time was: %lf\n", write_time.accumulated());
+
+  return 0;
+}
+
+
+
+
+
+
+/**
+  @brief  Reads in a floating-point grid file
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  &basename     Name, without extension, of input file
+  @param[in]  &grid         DEM object in which to store data
+
+  @todo Does not check byte order (big-endian, little-endian)
+  @todo Does not input only IEEE-754 32-bit floating-point,
+        which is required by ArcGIS
+
+  @returns 0 upon success
+*/
+template <class T>
+int read_floating_data(
+  const std::string basename,
+  array2d<T> &grid
+){
+  Timer io_time;
+  ProgressBar progress;
+  std::string fn_header(basename), fn_data(basename);
+
+  fn_header+=".hdr";
+  fn_data+=".flt";
+
+  int columns, rows;
+  char byteorder;
+
+  io_time.start();
+
+
+  {
+    FILE *fin;
+    diagnostic_arg("Opening floating-point header file \"%s\" for reading...",fn_header.c_str());
+    fin=fopen(fn_header.c_str(),"r");
+    if(fin==NULL){
+      diagnostic("failed!\n");
+      exit(-1);
+    }
+    diagnostic("succeeded.\n");
+
+
+    diagnostic("Reading DEM header...");
+    if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %lf NODATA_value %f BYTEORDER %c",&columns, &rows, &grid.xllcorner, &grid.yllcorner, &grid.cellsize, &grid.no_data, &byteorder)!=7){
+      diagnostic("failed!\n");
+      exit(-1);
+    }
+    diagnostic("succeeded.\n");
+    fclose(fin);
+  }
+
+  diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
+
+  diagnostic("Resizing grid...");  //TODO: Consider abstracting this block
+  grid.resize(columns,rows);
+  diagnostic("succeeded.\n");
+
+
+
+  diagnostic_arg("Opening floating-point data file \"%s\" for reading...",fn_data.c_str());
+
+  {
+    std::ifstream fin(fn_data.c_str(), std::ios::binary | std::ios::in);
+    if(!fin.is_open()){
+      diagnostic("failed!\n");
+      exit(-1);  //TODO: Need to make this safer! Don't just close after all that work!
+    }
+    diagnostic("succeeded.\n");
+
+
+    diagnostic("%%Reading data...\n");
+    progress.start(columns*rows);
+    grid.data_cells=0;
+    for(int y=0;y<rows;++y){
+      progress.update(y*columns); //Todo: Check to see if ftell fails here?
+      for(int x=0;x<columns;++x){
+        fin.read(reinterpret_cast<char*>(&grid(x,y)), std::streamsize(sizeof(T)));
+        if(grid(x,y)!=grid.no_data)
+          grid.data_cells++;
+      }
+    }
+    io_time.stop();
+    diagnostic_arg(SUCCEEDED_IN,progress.stop());
+
+  }
+
+  diagnostic_arg("Write time was: %lf\n", io_time.accumulated());
+
+  return 0;
+}
+
 #endif
