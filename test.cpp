@@ -11,30 +11,12 @@
 #include <sys/time.h>
 
 int main(int argc, char **argv){
-  float_2d elevations;
-  char_2d flowdirs;
-  int_2d is_upslope;
-  uint_2d fmask;
+  float_2d elevations,elevations2;
 
   load_ascii_data(argv[1],elevations);
-  elevations.low_pass_filter();
-  barnes_flood(elevations);
-
-  output_ascii_data(argv[2], elevations);
-
-  return 0;
-
-  d8_flow_directions(elevations,flowdirs);
-  flat_mask(flowdirs,fmask);
-
-  output_ascii_data(argv[2], fmask);
-
-  int tflats=0;
-  for(int x=0;x<fmask.width();++x)
-  for(int y=0;y<fmask.height();++y)
-    if(fmask(x,y)==1)
-      tflats++;
-  printf("%d in flats\n",tflats);
+  write_floating_data(argv[2],elevations);
+  read_floating_data(argv[2],elevations);
+  output_ascii_data(argv[3],elevations,8);
 
   return 0;
 }
