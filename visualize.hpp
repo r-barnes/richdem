@@ -1,9 +1,9 @@
 #ifndef _visualize_included
 #define _visualize_included
 
-#include "CImg.h"
-#include "data_structures.h"
-#include "interface.h"
+#include "CImg.hpp"
+#include "data_structures.hpp"
+#include "interface.hpp"
 #include <iostream>
 #include <string>
 #include <limits>

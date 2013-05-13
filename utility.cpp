@@ -1,6 +1,6 @@
-#include "utility.h"
-#include "interface.h"
-#include "data_structures.h"
+#include "utility.hpp"
+#include "interface.hpp"
+#include "data_structures.hpp"
 #include <cstdio>
 
 void print_dem(const float_2d &elevations, int mark_x, int mark_y, int colour){

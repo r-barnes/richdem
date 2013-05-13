@@ -1,10 +1,10 @@
 #include <deque>
 #include <fstream>
 #include <string>
-#include "data_structures.h"
-#include "interface.h"
-#include "flat_resolution.h"
-#include "dinf_methods.h"
+#include "data_structures.hpp"
+#include "interface.hpp"
+#include "flat_resolution.hpp"
+#include "dinf_methods.hpp"
 
 void print_edges(const float_2d &elevations, const std::deque<grid_cell> &low_edges, const std::deque<grid_cell> &high_edges){
   for(int y=0;y<elevations.height();y++){

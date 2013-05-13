@@ -1,7 +1,7 @@
-#include "data_structures.h"
-#include "utility.h"
-#include "d8_methods.h"
-#include "interface.h"
+#include "data_structures.hpp"
+#include "utility.hpp"
+#include "d8_methods.hpp"
+#include "interface.hpp"
 #include <queue>
 #include <limits>
 #include <cmath>

@@ -3,7 +3,7 @@
 
 #include <cstdio>
 #include <sys/time.h>
-#include "utility.h"
+#include "utility.hpp"
 
 #define diagnostic_arg(message,...) fprintf(stderr,message,__VA_ARGS__)
 #define diagnostic(message) fprintf(stderr,message)

@@ -7,12 +7,12 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "interface.h"
-#include "data_structures.h"
+#include "interface.hpp"
+#include "data_structures.hpp"
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include "utility.h"
+#include "utility.hpp"
 #include <fstream>
 
 //load_ascii_data

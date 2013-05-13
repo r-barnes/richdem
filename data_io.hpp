@@ -8,7 +8,7 @@
 #ifndef _data_io_included
 #define _data_io_included
 
-#include "interface.h"
+#include "interface.hpp"
 #include <fstream>
 #include <string>
 //#include <fcntl.h> //Used for posix_fallocate

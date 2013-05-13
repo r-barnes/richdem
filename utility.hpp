@@ -9,7 +9,7 @@
 
 #include <string>
 #include <cmath>
-#include "data_structures.h"
+#include "data_structures.hpp"
 #include <sys/time.h>
 //Neighbour directions
 //234

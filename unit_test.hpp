@@ -2,8 +2,8 @@
 #define _unit_test_included
 
 #include <cmath>
-#include "interface.h"
-#include "utility.h"
+#include "interface.hpp"
+#include "utility.hpp"
 
 #define SQ(A)    ((A)*(A))
 
