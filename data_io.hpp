@@ -20,6 +20,23 @@ int write_arrows(const char filename[], const char_2d &flowdirs);
 #define OUTPUT_DEM  1
 #define OUTPUT_OMG  2
 
+class must_be {
+  public:
+    std::string match;
+    must_be(const std::string &match) : match(match) {}
+};
+
+std::istream& operator>>( std::istream &is, const must_be &a ){
+  std::string inp;
+  is >> inp;
+  if(inp!=a.match){
+    std::cerr<<"Failed to match require input string '" << a.match << "'. Found '" <<inp<<"'."<<std::endl;
+    exit(-1); //TODO: Can we fail gracefully?
+  }
+  return is;
+}
+
+
 //load_ascii_data
 /**
   @brief  Writes an ArcGrid ASCII file or OmniGlyph file
@@ -111,10 +128,6 @@ int output_ascii_data(
   }
   diagnostic_arg(SUCCEEDED_IN,progress.stop());
 
-//  diagnostic("Writing file data...");
-//  fout<<std::setprecision(precision)<<output_grid;
-//  diagnostic("succeeded.\n");
-
   fout.close();
 
   write_time.stop();
@@ -152,8 +165,17 @@ int write_floating_data(
   ProgressBar progress;
   std::string fn_header(basename), fn_data(basename);
 
-  fn_header+=".hdr";
-  fn_data+=".flt";
+  //TODO: The section below should work, but is something of an abomination
+  if(typeid(T)==typeid(float)){
+    fn_header+=".hdr";
+    fn_data+=".flt";
+  } else if (typeid(T)==typeid(double)){
+    fn_header+=".hdr";
+    fn_data+=".dflt";
+  } else {
+    std::cerr<<"Cannot read floating type data into this format!"<<std::endl;
+    exit(-1);
+  }
 
   write_time.start();
 
@@ -221,8 +243,6 @@ int write_floating_data(
   @param[in]  &grid         DEM object in which to store data
 
   @todo Does not check byte order (big-endian, little-endian)
-  @todo Does not input only IEEE-754 32-bit floating-point,
-        which is required by ArcGIS
 
   @returns 0 upon success
 */
@@ -235,19 +255,28 @@ int read_floating_data(
   ProgressBar progress;
   std::string fn_header(basename), fn_data(basename);
 
-  fn_header+=".hdr";
-  fn_data+=".flt";
+  //TODO: The section below should work, but is something of an abomination
+  if(typeid(T)==typeid(float)){
+    fn_header+=".hdr";
+    fn_data+=".flt";
+  } else if (typeid(T)==typeid(double)){
+    fn_header+=".hdr";
+    fn_data+=".dflt";
+  } else {
+    std::cerr<<"Cannot read floating type data into this format!"<<std::endl;
+    exit(-1);
+  }
 
   int columns, rows;
-  char byteorder;
+  std::string byteorder;
 
   io_time.start();
 
 
   {
-    FILE *fin;
+    std::ifstream fin;
     diagnostic_arg("Opening floating-point header file \"%s\" for reading...",fn_header.c_str());
-    fin=fopen(fn_header.c_str(),"r");
+    fin.open(fn_header.c_str());
     if(fin==NULL){
       diagnostic("failed!\n");
       exit(-1);
@@ -256,12 +285,15 @@ int read_floating_data(
 
 
     diagnostic("Reading DEM header...");
-    if(fscanf(fin,"ncols %d nrows %d xllcorner %lf yllcorner %lf cellsize %lf NODATA_value %f BYTEORDER %c",&columns, &rows, &grid.xllcorner, &grid.yllcorner, &grid.cellsize, &grid.no_data, &byteorder)!=7){
-      diagnostic("failed!\n");
-      exit(-1);
-    }
+    fin>>must_be("ncols")         >>columns;
+    fin>>must_be("nrows")         >>rows;
+    fin>>must_be("xllcorner")     >>grid.xllcorner;
+    fin>>must_be("yllcorner")     >>grid.yllcorner;
+    fin>>must_be("cellsize")      >>grid.cellsize;
+    fin>>must_be("NODATA_value")  >>grid.no_data;
+    fin>>must_be("BYTEORDER")     >>byteorder;
     diagnostic("succeeded.\n");
-    fclose(fin);
+    fin.close();
   }
 
   diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
