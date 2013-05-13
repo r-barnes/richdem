@@ -11,10 +11,10 @@
 #include "interface.hpp"
 #include <fstream>
 #include <string>
+#include <iostream>
+#include <typeinfo>
 //#include <fcntl.h> //Used for posix_fallocate
 
-int load_ascii_data(const char filename[], float_2d &elevations);
-int load_ascii_data(const char filename[], char_2d &data);
 int write_arrows(const char filename[], const char_2d &flowdirs);
 
 #define OUTPUT_DEM  1
@@ -37,7 +37,88 @@ std::istream& operator>>( std::istream &is, const must_be &a ){
 }
 
 
-//load_ascii_data
+
+/**
+  @brief  Reads an ArcGrid ASCII file
+  @author Richard Barnes
+
+  @param[in]  &filename     Name of ArcGrid ASCII file to read
+  @param[out] &elevations   DEM object containing contents of file
+
+  @todo Won't handle char data input correctly
+
+  @returns 0 upon success
+*/
+template<class T>
+int load_ascii_data(std::string filename, array2d<T> &elevations){
+  std::ifstream fin;
+  size_t file_size;
+  int rows,columns;
+  Timer load_time;
+  ProgressBar progress;
+
+  load_time.start();
+
+  diagnostic_arg("Opening input ASCII-DEM file \"%s\"...",filename.c_str());
+  fin.open(filename.c_str());
+  if(!fin.good()){
+    diagnostic("failed!\n");
+    exit(-1);
+  }
+  diagnostic("succeeded.\n");
+
+  diagnostic("Calculating file size...");
+  fin.seekg(0, fin.end);
+  file_size=fin.tellg();
+  fin.seekg(0, fin.beg);
+  diagnostic("succeeded.\n");
+
+//  posix_fadvise(fileno(fin),0,0,POSIX_FADV_SEQUENTIAL);
+
+  diagnostic("Reading DEM header...");
+  fin>>must_be("ncols")         >>columns;
+  fin>>must_be("nrows")         >>rows;
+  fin>>must_be("xllcorner")     >>elevations.xllcorner;
+  fin>>must_be("yllcorner")     >>elevations.yllcorner;
+  fin>>must_be("cellsize")      >>elevations.cellsize;
+  fin>>must_be("NODATA_value")  >>elevations.no_data;
+  diagnostic("succeeded.\n");
+
+  diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
+
+  diagnostic("Resizing elevation matrix...");  //TODO: Consider abstracting this block
+  elevations.resize(columns,rows);
+  diagnostic("succeeded.\n");
+
+  diagnostic("%%Reading elevation matrix...\n");
+  progress.start(file_size);
+
+  elevations.data_cells=0;
+  for(int y=0;y<rows;y++){
+    progress.update(fin.tellg()); //Todo: Check to see if ftell fails here?
+    for(int x=0;x<columns;x++){
+      fin>>elevations(x,y);
+      if(elevations(x,y)!=elevations.no_data)
+        elevations.data_cells++;
+    }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+
+  fin.close();
+
+  diagnostic_arg(
+    "Read %ld cells, of which %ld contained data (%ld%%).\n",
+    elevations.width()*elevations.height(), elevations.data_cells,
+    elevations.data_cells*100/elevations.width()/elevations.height()
+  );
+
+  load_time.stop();
+  diagnostic_arg("Read time was: %lfs\n", load_time.accumulated());
+
+  return 0;
+}
+
+
 /**
   @brief  Writes an ArcGrid ASCII file or OmniGlyph file
   @author Richard Barnes (rbarnes@umn.edu)
@@ -69,14 +150,6 @@ int output_ascii_data(
     exit(-1);  //TODO: Need to make this safer! Don't just close after all that work!
   }
   diagnostic("succeeded.\n");
-
-/*  diagnostic_arg("Reserving %ldMB of disk space...", output_grid.estimated_output_size()/1024/1024);
-  if(posix_fallocate(fileno(fout),0,output_grid.estimated_output_size())){
-    diagnostic("failed!\n");
-    return -1;
-  }
-  diagnostic("succeeded.\n");
-*/
 
   //OmniGlyph output
   if(filename.substr(filename.length()-4)==".omg"){
@@ -151,8 +224,6 @@ int output_ascii_data(
   @param[in]  &output_grid  DEM object to write
 
   @todo Does not check byte order (big-endian, little-endian)
-  @todo Does not output only IEEE-754 32-bit floating-point,
-        which is required by ArcGIS
 
   @returns 0 upon success
 */
@@ -334,6 +405,24 @@ int read_floating_data(
   diagnostic_arg("Write time was: %lf\n", io_time.accumulated());
 
   return 0;
+}
+
+
+/**
+  @brief  Universal read function. Calls everything else.
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]   &filename    Name of file to read in
+  @param[out]  &grid        DEM object in which to store data
+
+  @returns 0 upon success
+*/
+template<class T>
+int read_data(std::string filename, array2d<T> &grid){
+  if( filename.substr(filename.size()-3)=="flt" )
+    return read_floating_data(filename.substr(0,filename.size()-4), grid);
+  else
+    return load_ascii_data(filename, grid);
 }
 
 #endif
