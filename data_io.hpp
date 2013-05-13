@@ -30,7 +30,7 @@ std::istream& operator>>( std::istream &is, const must_be &a ){
   std::string inp;
   is >> inp;
   if(inp!=a.match){
-    std::cerr<<"Failed to match require input string '" << a.match << "'. Found '" <<inp<<"'."<<std::endl;
+    std::cerr<<"Failed to match required input string '" << a.match << "'. Found '" <<inp<<"'."<<std::endl;
     exit(-1); //TODO: Can we fail gracefully?
   }
   return is;
