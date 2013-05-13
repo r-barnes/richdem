@@ -10,13 +10,13 @@
 #ifndef _flat_resolution_included
 #define _flat_resolution_included
 
-#include "utility.h"
-#include "interface.h"
-#include "data_structures.h"
+#include "utility.hpp"
+#include "interface.hpp"
+#include "data_structures.hpp"
 #include <deque>
 #include <vector>
 #include <queue>
-#include "debug.h"
+#include "debug.hpp"
 #ifdef _OPENMP
   #include <omp.h>
 #endif

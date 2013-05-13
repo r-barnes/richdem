@@ -1,8 +1,8 @@
-#include "data_structures.h"
-#include "utility.h"
-#include "dinf_methods.h"
-#include "interface.h"
-#include "debug.h"
+#include "data_structures.hpp"
+#include "utility.hpp"
+#include "dinf_methods.hpp"
+#include "interface.hpp"
+#include "debug.hpp"
 #include <cmath>
 #include <queue>
 #ifdef _OPENMP

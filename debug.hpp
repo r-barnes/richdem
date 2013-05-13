@@ -4,7 +4,7 @@
 #include <deque>
 #include <cmath>
 #include <iostream>
-#include "utility.h"
+#include "utility.hpp"
 
 #define PRINT(ARR,PREC,WIDTH) std::cout<<std::setprecision(PREC)<<std::setw(WIDTH)<<ARR<<std::endl;
 

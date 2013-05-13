@@ -1,9 +1,9 @@
 #ifndef _dinf_methods_included
 #define _dinf_methods_included
 
-#include "interface.h"
-#include "data_structures.h"
-#include "utility.h"
+#include "interface.hpp"
+#include "data_structures.hpp"
+#include "utility.hpp"
 #ifdef _OPENMP
   #include <omp.h>
 #endif

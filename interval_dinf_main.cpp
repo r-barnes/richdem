@@ -1,13 +1,13 @@
 #define  RICHDEM_VERSION  "0r~370"
-#include "utility.h"
-#include "data_structures.h"
-#include "data_io.h"
-#include "dinf_methods.h"
-#include "pit_fill.h"
-#include "interface.h"
-#include "flat_resolution.h"
-#include "interval_dinf.h"
-#include "debug.h"
+#include "utility.hpp"
+#include "data_structures.hpp"
+#include "data_io.hpp"
+#include "dinf_methods.hpp"
+#include "pit_fill.hpp"
+#include "interface.hpp"
+#include "flat_resolution.hpp"
+#include "interval_dinf.hpp"
+#include "debug.hpp"
 #include <string>
 #include <boost/numeric/interval.hpp>
 
