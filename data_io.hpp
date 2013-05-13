@@ -84,8 +84,8 @@ int load_ascii_data(std::string filename, array2d<T> &elevations){
   fin>>must_be("cellsize")      >>elevations.cellsize;
   try {
     fin>>must_be("NODATA_value")  >>elevations.no_data;
-  } catch (const std::string &a) {
-    std::cerr<<a<<std::endl;
+  } catch (std::string e) {
+    std::cerr<<e<<std::endl;
     std::cerr<<"Continuing without a NoData value!"<<std::endl;
   }
   diagnostic("succeeded.\n");
