@@ -28,10 +28,11 @@ class must_be {
 
 std::istream& operator>>( std::istream &is, const must_be &a ){
   std::string inp;
+  size_t cpos=is.tellg();
   is >> inp;
   if(inp!=a.match){
-    std::cerr<<"Failed to match required input string '" << a.match << "'. Found '" <<inp<<"'."<<std::endl;
-    exit(-1); //TODO: Can we fail gracefully?
+    is.seekg(cpos);
+    throw std::string("Failed to match required input string '")+a.match+std::string("'. Found '") + inp + std::string("'.");
   }
   return is;
 }
@@ -81,7 +82,12 @@ int load_ascii_data(std::string filename, array2d<T> &elevations){
   fin>>must_be("xllcorner")     >>elevations.xllcorner;
   fin>>must_be("yllcorner")     >>elevations.yllcorner;
   fin>>must_be("cellsize")      >>elevations.cellsize;
-  fin>>must_be("NODATA_value")  >>elevations.no_data;
+  try {
+    fin>>must_be("NODATA_value")  >>elevations.no_data;
+  } catch (const std::string &a) {
+    std::cerr<<a<<std::endl;
+    std::cerr<<"Continuing without a NoData value!"<<std::endl;
+  }
   diagnostic("succeeded.\n");
 
   diagnostic_arg("The loaded DEM will require approximately %ldMB of RAM.\n",columns*rows*((long)sizeof(float))/1024/1024);
