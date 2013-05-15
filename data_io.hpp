@@ -408,7 +408,13 @@ int read_floating_data(
 
   }
 
-  diagnostic_arg("Write time was: %lf\n", io_time.accumulated());
+  diagnostic_arg(
+    "Read %ld cells, of which %ld contained data (%ld%%).\n",
+    grid.width()*grid.height(), grid.data_cells,
+    grid.data_cells*100/grid.width()/grid.height()
+  );
+
+  diagnostic_arg("Read time was: %lf\n", io_time.accumulated());
 
   return 0;
 }
