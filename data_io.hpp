@@ -32,7 +32,8 @@ std::istream& operator>>( std::istream &is, const must_be &a ){
   is >> inp;
   if(inp!=a.match){
     is.seekg(cpos);
-    throw std::string("Failed to match required input string '")+a.match+std::string("'. Found '") + inp + std::string("'.");
+    std::cerr<<"Failed to match required input string '"<<a.match<<"'. Found '"<<inp<< "'."<<std::endl;
+    throw std::string("Failed to match!");
   }
   return is;
 }
