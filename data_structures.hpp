@@ -86,7 +86,7 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
     ///Resizes the array2d. May or may not be destructive to existing data.
     void resize(int width, int height, bool preserve);
     ///Destroys all data in the array2d.
-    void clear() {boost::numeric::ublas::matrix<T>::clear();}
+    void clear() {assign_temporary(boost::numeric::ublas::matrix<T>(0,0));}
     void low_pass_filter();
     void high_pass_filter();
     void print_random_sample(int n=1, int seed=1) const;
