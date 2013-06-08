@@ -18,6 +18,17 @@ To use RichDEM, edit "main.cpp" to suit your needs and then simply run "make".
 
 To generate DOxygen documentation use "doxygen doxy.conf".
 
+Specific Algorithms
+===================
+Some of the algorithms used in RichDEM have lead to publications. Each
+publication has its own GitHub repository featuring easily-compiled, minimum
+working examples of the algorithms, along with examples and test data sets.
+
+These are available as follows:
+
+ * Flat-resolution algorithm. [Link](https://github.com/r-barnes/Barnes2013-FlatSurfaces)
+ * Depression-filling algorithm. [Link](https://github.com/r-barnes/Barnes2013-Depressions)
+
 Publications
 ============
 The algorithms used in RichDEM have been published in the following articles:
