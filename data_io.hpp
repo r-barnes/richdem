@@ -20,23 +20,19 @@ int write_arrows(const char filename[], const char_2d &flowdirs);
 #define OUTPUT_DEM  1
 #define OUTPUT_OMG  2
 
+/**
+@brief Forces input to match expectations.
+
+    Asserts that the next token of the input must match the argument provided
+    to the constructor of this class.
+*/
 class must_be {
   public:
     std::string match;
     must_be(const std::string &match) : match(match) {}
 };
 
-std::istream& operator>>( std::istream &is, const must_be &a ){
-  std::string inp;
-  size_t cpos=is.tellg();
-  is >> inp;
-  if(inp!=a.match){
-    is.seekg(cpos);
-    std::cerr<<"Failed to match required input string '"<<a.match<<"'. Found '"<<inp<< "'."<<std::endl;
-    throw std::string("Failed to match!");
-  }
-  return is;
-}
+std::istream& operator>>( std::istream &is, const must_be &a );
 
 
 

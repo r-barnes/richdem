@@ -7,6 +7,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include "data_io.hpp"
 #include "interface.hpp"
 #include "data_structures.hpp"
 #include <fcntl.h>
@@ -64,4 +65,22 @@ int write_arrows(const char filename[], const char_2d &flowdirs){
   diagnostic_arg("Write time was: %lf\n", write_time.accumulated());
 
   return 0;
+}
+
+
+/**
+Provides an input stream operator to the must_be class, which enables it to
+assert that the next token of the input must match the argument provided to
+the constructor of the class.
+*/
+std::istream& operator>>( std::istream &is, const must_be &a ){
+  std::string inp;
+  size_t cpos=is.tellg();
+  is >> inp;
+  if(inp!=a.match){
+    is.seekg(cpos);
+    std::cerr<<"Failed to match required input string '"<<a.match<<"'. Found '"<<inp<< "'."<<std::endl;
+    throw std::string("Failed to match!");
+  }
+  return is;
 }
