@@ -4,6 +4,7 @@
 #include "data_structures.hpp"
 #include <queue>
 #include "interface.hpp"
+#include <algorithm>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -416,8 +417,8 @@ void d8_upslope_cells(
   std::queue<grid_cell> expansion;
 
   if(x0>x1){
-    swap(x0,x1);
-    swap(y0,y1);
+    std::swap(x0,x1);
+    std::swap(y0,y1);
   }
 
   //Modified Bresenham Line-Drawing Algorithm
