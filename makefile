@@ -3,7 +3,7 @@
 #CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS -static-libgcc -static-libstdc++ #-fopenmp
 
 CC=g++
-CFLAGS=-Wall -fopenmp #-DARCGIS #-lX11 -pthread #-ltbb
+CFLAGS=-Wall -fopenmp -DNDEBUG #-DARCGIS #-lX11 -pthread #-ltbb
 #-ffp-contract=fast enables forming of fused multiply-add instructions. Default is fast.
 
 ODIR=obj
@@ -43,7 +43,7 @@ jaked: $(OBJ) obj/jake_deliverables.o
 	$(CC) $(PRE_FLAGS) -o jake_deliverables.exe $^ $(CFLAGS)
 	du -hs ./jake_deliverables.exe
 
-debug: $(OBJ) obj/main.o
+debug: $(OBJ) obj/test.o
 	$(CC) $(PRE_FLAGS) -g -o richdem.exe $^ $(CFLAGS)
 	du -hs ./richdem.exe
 
