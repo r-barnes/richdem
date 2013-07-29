@@ -308,6 +308,8 @@ void d8_upslope_area(const array2d<T> &flowdirs, array2d<U> &area){
   std::queue<grid_cell> sources;
   ProgressBar progress;
 
+  diagnostic("\n###D8 Upslope Area\n");
+
   diagnostic_arg(
     "The sources queue will require at most approximately %ldMB of RAM.\n",
     flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024
