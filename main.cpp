@@ -62,7 +62,7 @@ int main(int argc, char **argv){
     char_2d flowdirs;
 
     running_calc_time.start();
-    barnes_flood_flowdirs(elevations,flowdirs);
+    priority_flood_flowdirs(elevations,flowdirs);
     running_calc_time.stop();
 
     if(!cl_output_resolved_flowdirs.getValue().empty()){
