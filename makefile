@@ -11,8 +11,6 @@ ODIR=obj
 PRE_FLAGS=-O3
 #PRE_FLAGS=-g
 
-DEPS = d8_methods.h data_structures.h dinf_methods.h interface.h data_io.h pit_fill.h utility.h flat_resolution.h debug.h visualize.h unit_test.h interval_dinf.h
-
 _OBJ = d8_methods.o dinf_methods.o data_io.o pit_fill.o utility.o debug.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
