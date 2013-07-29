@@ -247,7 +247,7 @@ int write_floating_data(
     fn_header+=".hdr";
     fn_data+=".dflt";
   } else {
-    std::cerr<<"Cannot read floating type data into this format!"<<std::endl;
+    std::cerr<<"Cannot write floating type data into this format!"<<std::endl;
     exit(-1);
   }
 
