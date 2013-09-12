@@ -5,6 +5,7 @@
 #include <queue>
 #include "interface.hpp"
 #include <algorithm>
+#include <limits>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
