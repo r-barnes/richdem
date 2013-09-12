@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <vector>
 #include <queue>
 
 //Use this D8 method //TODO
@@ -28,11 +29,13 @@ const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
 const int dinf_d8_inverse[9]={4,5,6,7,0,1,2,3,4};
 
 template <class T>
-class array2d : protected boost::numeric::ublas::matrix<T>{
+class array2d {
+  private:
+    typedef std::vector< std::vector<T> > arr2d;
+    arr2d data;
   public:
     ///Value corresponding the length of one edge of a square DEM cell
     double cellsize;
-//    std::string xllcorner,yllcorner;  //TODO: Should be string
     ///Global grid location of lower left x-coordinate
     double xllcorner;
     ///Global grid location of lower left y-coordinate
@@ -45,16 +48,16 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
     array2d ();
     ///Creates array2d with no data, but invokes copyprops()
     template<class U> array2d (const array2d<U> &copyfrom);
-    long width() const
-      {return boost::numeric::ublas::matrix<T>::size1();}
-    long height() const
-      {return boost::numeric::ublas::matrix<T>::size2();}
+    long width() const  {return data[0].size();}
+    long height() const {return data.size();}
     ///Copys everything but the data from another array2d
     template<class U> void copyprops (const array2d<U> &copyfrom);
     ///Prints an estimate of the file size were the array printed in ASCII
     long estimated_output_size();
     ///Sets all the cells of an array2d to "val"
     void init(T val);
+    ///Assignment with casting
+    template<class U> array2d<T>& operator=(const array2d<U> &rhs);
     void print_block(
       std:: ostream& out, int minx, int maxx, int miny, int maxy,
       int precision=0, std::streamsize swidth=2
@@ -78,14 +81,14 @@ class array2d : protected boost::numeric::ublas::matrix<T>{
       {return (x==0 || y==0 || x==width()-1 || y==height()-1);}
     ///Returns a reference to (x,y)
     T& operator()(int x, int y)
-      {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+      {return data[y][x];}
     ///Returns a const reference to (x,y)
     const T& operator()(int x, int y) const
-      {return boost::numeric::ublas::matrix<T>::operator()(x,y);}
+      {return data[y][x];}
     ///Resizes the array2d. May or may not be destructive to existing data.
     void resize(int width, int height, bool preserve);
     ///Destroys all data in the array2d.
-    void clear() {} //TODO: Find a good way to clear the matrix
+    void clear();
     void low_pass_filter();
     void high_pass_filter();
     void print_random_sample(int n=1, int seed=1) const;
@@ -108,10 +111,11 @@ template <class T>
 void array2d<T>::resize(int width, int height, bool preserve=false){
   fprintf(
     stderr,
-    "\n\tApprox RAM requirement: %.2fMB\n",
-    (float)width/1024. * (float)height/1024. * (float)sizeof(T)
+    "\n\tApprox RAM requirement: %lluMB\n",
+    (unsigned long long)width * (unsigned long long)height *
+      (unsigned long long)sizeof(T) / 1024 / 1024
   );
-  boost::numeric::ublas::matrix<T>::resize(width,height,preserve);
+  data.resize(height, std::vector<T> (width));
 }
 
 template<class T>
@@ -218,32 +222,28 @@ template <class U> array2d<T>& array2d<T>::operator+=(const array2d<U> B){
 
 template <class T>
 T array2d<T>::max() const {
-  T maxval=no_data;
-  #pragma omp parallel for collapse(2) reduction(max:maxval)
-  for(int x=0;x<width();x++)
-  for(int y=0;y<height();y++){
-    T temp=operator()(x,y);
-    if(temp==no_data)
+  T maxfound=no_data;
+  for(int x=0;x<width();++x)
+  for(int y=0;y<height();++y)
+    if(operator()(x,y)==no_data)
       continue;
-    else if(temp>maxval || maxval==no_data)
-      maxval=temp;
-  }
-  return maxval;
+    else if (maxfound==no_data || operator()(x,y)>maxfound)
+      maxfound=operator()(x,y);
+
+  return maxfound;
 }
 
 template <class T>
 T array2d<T>::min() const {
-  T minval=no_data;
-  #pragma omp parallel for collapse(2) reduction(min:minval)
-  for(int x=0;x<width();x++)
-  for(int y=0;y<height();y++){
-    T temp=operator()(x,y);
-    if(temp==no_data)
+  T minfound=no_data;
+  for(int x=0;x<width();++x)
+  for(int y=0;y<height();++y)
+    if(operator()(x,y)==no_data)
       continue;
-    else if (temp<minval || minval==no_data)
-      minval=temp;
-  }
-  return minval;
+    else if (minfound==no_data || operator()(x,y)<minfound)
+      minfound=operator()(x,y);
+
+	return minfound;
 }
 
 
@@ -279,6 +279,12 @@ void array2d<T>::print_random_sample(int n, int seed) const {
         break;
       }
     }
+}
+
+template <class T>
+void array2d<T>::clear() {
+  data.clear();
+  std::vector< std::vector<T> >().swap(data); //Force a reallocation to free memory
 }
 
 
@@ -381,7 +387,7 @@ void array2d<T>::high_pass_filter(){
 typedef array2d<double>       double_2d;
 typedef array2d<float>        float_2d;
 typedef array2d<signed char>  char_2d;
-typedef array2d<bool>         bool_2d;
+typedef array2d<char>         bool_2d;
 typedef array2d<unsigned int> uint_2d;
 typedef array2d<int>          int_2d;
 
