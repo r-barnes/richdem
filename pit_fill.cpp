@@ -1,7 +1,6 @@
 #include "utility.hpp"
 #include "data_structures.hpp"
 #include "interface.hpp"
-#include <boost/numeric/ublas/matrix.hpp>
 #include <vector>
 #include <queue>
 #include <stack>
