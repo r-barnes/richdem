@@ -32,13 +32,6 @@ int main(int argc, char **argv){
   TCLAP::ValueArg<std::string> cl_output_flow_acculm("a","acculm","Output flow accumulation (aka: contributing area, upslope area)",false,"","file",cmd); //TODO: Are these really all equivalent?
   TCLAP::ValueArg<std::string> cl_output_spi("","spi","Output SPI (stream power index)",false,"","file",cmd);
   TCLAP::ValueArg<std::string> cl_output_cti("","cti","Output CTI (compound topographic index, wetness index)",false,"","file",cmd);
-//  TCLAP::SwitchArg cl_are_there_dams("d","dams","Determines if the input file has digital dams. All other options ignored.", cmd, false); //TODO
-  TCLAP::ValueArg<std::string> cl_output_tikz("","tikz","Output TikZ flow directions",false,"","file",cmd);
-  TCLAP::ValueArg<float> cl_output_tikzx("","tikzx","TikZ X scaling",false,1.,"file",cmd);
-  TCLAP::ValueArg<float> cl_output_tikzy("","tikzy","TikZ Y scaling",false,1.,"file",cmd);
-  TCLAP::ValueArg<float> cl_output_tikzxo("","tikzxo","TikZ X offset",false,0.,"file",cmd);
-  TCLAP::ValueArg<float> cl_output_tikzyo("","tikzyo","TikZ X offset",false,0.,"file",cmd);
-  TCLAP::SwitchArg cl_tikz_omit_edges("","tikzne","Omits edges of the grid in TikZ output", cmd, true);
   TCLAP::UnlabeledValueArg<std::string> cl_inputDEM("inputDEM", "The DEM to be processed (must be in ArcGrid ASCII format)", true, "", "Input DEM", cmd);
   try {
     cmd.parse( argc, argv );
@@ -50,7 +43,7 @@ int main(int argc, char **argv){
 
   float_2d elevations;
   running_io_time.start();
-  load_ascii_data(cl_inputDEM.getValue().c_str(),elevations);
+  read_data(cl_inputDEM.getValue().c_str(),elevations);
   running_io_time.stop();
 
 //  if(cl_are_there_dams.getValue()){
@@ -67,13 +60,7 @@ int main(int argc, char **argv){
 
     if(!cl_output_resolved_flowdirs.getValue().empty()){
       running_io_time.start();
-      output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(), flowdirs);
-      running_io_time.stop();
-    }
-
-    if(!cl_output_tikz.getValue().empty()){
-      running_io_time.start();
-      tikz_flowdir_print(flowdirs, cl_output_tikz.getValue(), cl_output_tikzx.getValue(), cl_output_tikzy.getValue(), cl_output_tikzxo.getValue(), cl_output_tikzyo.getValue(), cl_tikz_omit_edges.getValue());
+      write_floating_data(cl_output_resolved_flowdirs.getValue().c_str(), flowdirs);
       running_io_time.stop();
     }
 
@@ -86,7 +73,7 @@ int main(int argc, char **argv){
         running_calc_time.stop();
 
         running_io_time.start();
-        output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+        write_floating_data(cl_output_flow_acculm.getValue().c_str(),area);
         running_io_time.stop();
       } else
         diagnostic("Dinf has not been implemented yet for Priority-Flood+FlowDirections.\n"); //TODO
@@ -101,7 +88,7 @@ int main(int argc, char **argv){
     running_calc_time.stop();
     if(!cl_output_pit_filled.getValue().empty()){
       running_io_time.start();
-      output_ascii_data(cl_output_pit_filled.getValue().c_str(),elevations);
+      write_floating_data(cl_output_pit_filled.getValue().c_str(),elevations);
       running_io_time.stop();
     }
   }
@@ -116,7 +103,7 @@ int main(int argc, char **argv){
 
     if(!cl_output_unresolved_flowdirs.getValue().empty()){
       running_io_time.start();
-      output_ascii_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
+      write_floating_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
       running_io_time.stop();
     }
 
@@ -129,7 +116,7 @@ int main(int argc, char **argv){
       groups.clear();
 
       if(!cl_output_resolved_flowdirs.getValue().empty())
-        output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
+        write_floating_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
     }
 
     if(!cl_output_flow_acculm.getValue().empty()){
@@ -140,14 +127,14 @@ int main(int argc, char **argv){
       running_calc_time.stop();
 
       running_io_time.start();
-      output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+      write_floating_data(cl_output_flow_acculm.getValue().c_str(),area);
       running_io_time.stop();
     }
   } else {
     float_2d flowdirs(elevations);
     dinf_flow_directions(elevations,flowdirs);
     if(!cl_output_unresolved_flowdirs.getValue().empty())
-      output_ascii_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
+      write_floating_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
 
     {  //Used to try to free memory after the process
       int_2d flat_resolution_mask(elevations), groups;
@@ -158,7 +145,7 @@ int main(int argc, char **argv){
       groups.clear();
 
       if(!cl_output_resolved_flowdirs.getValue().empty())
-        output_ascii_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
+        write_floating_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
     }
 
     if(!cl_output_flow_acculm.getValue().empty()){
@@ -169,7 +156,7 @@ int main(int argc, char **argv){
       running_calc_time.stop();
 
       running_io_time.start();
-      output_ascii_data(cl_output_flow_acculm.getValue().c_str(),area);
+      write_floating_data(cl_output_flow_acculm.getValue().c_str(),area);
       running_io_time.stop();
     }
   }
