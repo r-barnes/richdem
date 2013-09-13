@@ -106,11 +106,10 @@ array2d<T>::array2d(){
 
 template <class T>
 void array2d<T>::resize(int width, int height, bool preserve=false){
-  std::stderr<<std::endl<<"\tApprox RAM requirement: "<<
+  std::cerr<<std::endl<<"\tApprox RAM requirement: "<<
     (unsigned long long)width * (unsigned long long)height *
       (unsigned long long)sizeof(T) / 1024 / 1024
     <<"MB."<<std::endl;
-  );
   data.resize(height, std::vector<T> (width));
 }
 

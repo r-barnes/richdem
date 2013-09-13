@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 #include <typeinfo>
+#include <cstdlib>
 //#include <fcntl.h> //Used for posix_fallocate
 
 int write_arrows(const char filename[], const char_2d &flowdirs);
