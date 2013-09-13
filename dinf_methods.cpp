@@ -5,6 +5,7 @@
 #include "debug.hpp"
 #include <cmath>
 #include <queue>
+#include <cassert>
 #ifdef _OPENMP
   #include <omp.h>
 #endif

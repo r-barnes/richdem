@@ -1,6 +1,7 @@
 #include <deque>
 #include <fstream>
 #include <string>
+#include <cstdlib>
 #include "data_structures.hpp"
 #include "interface.hpp"
 #include "flat_resolution.hpp"
