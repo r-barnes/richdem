@@ -32,6 +32,7 @@ int main(int argc, char **argv){
   TCLAP::ValueArg<std::string> cl_output_flow_acculm("a","acculm","Output flow accumulation (aka: contributing area, upslope area)",false,"","file",cmd); //TODO: Are these really all equivalent?
   TCLAP::ValueArg<std::string> cl_output_spi("","spi","Output SPI (stream power index)",false,"","file",cmd);
   TCLAP::ValueArg<std::string> cl_output_cti("","cti","Output CTI (compound topographic index, wetness index)",false,"","file",cmd);
+  TCLAP::ValueArg<float> cl_zscale("","zscale","Scale for z-axis (default: 1)",false,1.,"float",cmd);
   TCLAP::UnlabeledValueArg<std::string> cl_inputDEM("inputDEM", "The DEM to be processed (must be in ArcGrid ASCII format)", true, "", "Input DEM", cmd);
   try {
     cmd.parse( argc, argv );
@@ -148,16 +149,39 @@ int main(int argc, char **argv){
         write_floating_data(cl_output_resolved_flowdirs.getValue().c_str(),flowdirs);
     }
 
-    if(!cl_output_flow_acculm.getValue().empty()){
+    if(!cl_output_flow_acculm.getValue().empty() || !cl_output_spi.getValue().empty() || !cl_output_cti.getValue().empty()){
       float_2d area(elevations);
 
       running_calc_time.start();
       dinf_upslope_area(flowdirs, area);
       running_calc_time.stop();
 
-      running_io_time.start();
-      write_floating_data(cl_output_flow_acculm.getValue().c_str(),area);
-      running_io_time.stop();
+      if(!cl_output_flow_acculm.getValue().empty()){
+        running_io_time.start();
+        write_floating_data(cl_output_flow_acculm.getValue().c_str(),area);
+        running_io_time.stop();
+      }
+
+      if(!cl_output_spi.getValue().empty() || !cl_output_cti.getValue().empty()){
+        float_2d percent_slope(elevations);
+        d8_slope(elevations, percent_slope, TATTRIB_SLOPE_PERCENT, cl_zscale.getValue());
+
+        if(!cl_output_spi.getValue().empty()){
+          float_2d spi;
+          d8_SPI(area, percent_slope, spi);
+          running_io_time.start();
+          write_floating_data(cl_output_spi.getValue().c_str(),spi);
+          running_io_time.stop();
+        }
+
+        if(!cl_output_cti.getValue().empty()){
+          float_2d cti;
+          d8_CTI(area, percent_slope, cti);
+          running_io_time.start();
+          write_floating_data(cl_output_cti.getValue().c_str(),cti);
+          running_io_time.stop();
+        }
+      }
     }
   }
 
