@@ -43,17 +43,20 @@
 void d8_slope(
   const float_2d &elevations,
   float_2d &slopes,
-  int slope_type=TATTRIB_SLOPE_RISERUN
+  int slope_type,
+  float zscale
 );
 
 void d8_profile_curvature(
   const float_2d &elevations,
-  float_2d &profile_curvatures
+  float_2d &profile_curvatures,
+  float zscale
 );
 
 void d8_planform_curvature(
   const float_2d &elevations,
-  float_2d &planform_curvatures
+  float_2d &planform_curvatures,
+  float zscale
 );
 
 void find_watersheds(
@@ -62,8 +65,8 @@ void find_watersheds(
   bool alter_elevations=false
 );
 
-void d8_aspect(const float_2d &elevations, float_2d &aspects);
-void d8_curvature(const float_2d &elevations, float_2d &curvatures);
+void d8_aspect(const float_2d &elevations, float_2d &aspects, float zscale);
+void d8_curvature(const float_2d &elevations, float_2d &curvatures, float zscale);
 void watershed_area(const int_2d &labels);
 
 void d8_SPI(

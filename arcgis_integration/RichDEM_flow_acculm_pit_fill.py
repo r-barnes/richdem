@@ -29,10 +29,10 @@ def expand_layer_info(layerobj):
 	arcpy.AddMessage("File path: " + layerobj.path)
 
 def make_temp_file():
-	#temp_file_object=tempfile.NamedTemporaryFile(delete=False, suffix=".asc")
+	#temp_file_object=tempfile.NamedTemporaryFile(delete=False)
 	#temp_file_name=temp_file_object.name
 	#temp_file_object.close()
-	temp_file_name=os.path.join(tempfile.gettempdir(),"rd"+str(uuid.uuid1())+".asc")
+	temp_file_name=os.path.join(tempfile.gettempdir(),"rd"+str(uuid.uuid1()))
 	arcpy.AddMessage("Created temporary file: " + temp_file_name)
 	return temp_file_name
 
@@ -47,8 +47,8 @@ def main():
 	arcpy.AddMessage("\nInput Elevation file: "+inputDEM)
 
 	start = time.time()
-	inputDEM_asc=make_temp_file()
-	arcpy.RasterToASCII_conversion(inputDEM, inputDEM_asc)
+	inputDEM_flt=make_temp_file()
+	arcpy.RasterToFloat_conversion(inputDEM, inputDEM_flt+".flt")
 	arcpy.AddMessage("Creating the temporary file took and raster conversion took " + str(round(time.time() - start,2)) + "s.")
 
 	fill_depressions=arcpy.GetParameterAsText(1)
@@ -62,6 +62,15 @@ def main():
 
 	output_flow_acculm=arcpy.GetParameterAsText(4)
 	arcpy.AddMessage("Output flow accumulation? " + output_flow_acculm)
+	
+	zscale=arcpy.GetParameterAsText(5)
+	arcpy.AddMessage("z-scaling factor: " + zscale)
+	
+	output_cti=arcpy.GetParameterAsText(6)
+	arcpy.AddMessage("Output CTI? " + output_cti)
+	
+	output_spi=arcpy.GetParameterAsText(7)
+	arcpy.AddMessage("Output SPI? " + output_spi)
 
 
 
@@ -84,8 +93,22 @@ def main():
 		cmd.append('-a')
 		output_flow_acculm_temp=make_temp_file()
 		cmd.append(output_flow_acculm_temp)
+		
+	if zscale:
+		cmd.append('--zscale')
+		cmd.append(zscale)
+		
+	if output_cti:
+		cmd.append('--cti')
+		output_cti_temp=make_temp_file()
+		cmd.append(output_cti_temp)
+		
+	if output_spi:
+		cmd.append('--spi')
+		output_spi_temp=make_temp_file()
+		cmd.append(output_spi_temp)
 
-	cmd.append(inputDEM_asc)
+	cmd.append(inputDEM_flt+".flt")
 
 	arcpy.AddMessage("Command Line: "+str(cmd))
 	try:
@@ -123,14 +146,24 @@ def main():
 		sys.exit()
 
 	if fill_depressions=='true' and output_depression_filled_dem:
-		arcpy.AddMessage('Converting Depression Filled DEM to Raster')
-		arcpy.ASCIIToRaster_conversion(output_depression_filled_dem_temp, output_depression_filled_dem, "FLOAT")
-		os.remove(output_depression_filled_dem_temp)
+		arcpy.AddMessage('Converting Depression Filled to Raster')
+		arcpy.FloatToRaster_conversion(output_depression_filled_dem_temp+".flt", output_depression_filled_dem)
+		os.remove(output_depression_filled_dem_temp+".flt")
 
 	if output_flow_acculm:
-		arcpy.AddMessage('Converting Flow Accumulation DEM to Raster')
-		arcpy.ASCIIToRaster_conversion(output_flow_acculm_temp, output_flow_acculm, "FLOAT")
-		os.remove(output_flow_acculm_temp)
+		arcpy.AddMessage('Converting Flow Accumulation to Raster')
+		arcpy.FloatToRaster_conversion(output_flow_acculm_temp+".flt", output_flow_acculm)
+		os.remove(output_flow_acculm_temp+".flt")
+		
+	if output_cti:
+		arcpy.AddMessage('Converting CTI to Raster')
+		arcpy.FloatToRaster_conversion(output_cti_temp+".flt", output_cti)
+		os.remove(output_cti_temp+".flt")
+		
+	if output_spi:
+		arcpy.AddMessage('Converting SPI to Raster')
+		arcpy.FloatToRaster_conversion(output_spi_temp+".flt", output_spi)
+		os.remove(output_spi_temp+".flt")
 
 main()
 

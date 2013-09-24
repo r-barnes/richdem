@@ -49,9 +49,9 @@
   @pre This function should never be called on a NoData cell
 */
 inline static void d8_terrain_attrib_helper(
-  const float_2d &elevations, int x0, int y0, float &rise_over_run,
-  float &aspect, float &curvature, float &profile_curvature,
-  float &planform_curvature
+  const float_2d &elevations, int x0, int y0, float zscale,
+  float &rise_over_run, float &aspect, float &curvature,
+  float &profile_curvature, float &planform_curvature
 ){
 /*
 Slope derived from ArcGIS help at:
@@ -98,15 +98,15 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   if(i==elevations.no_data) i=e;
 
   //TODO: Convert elevations to meters? (1ft=0.3048m)
-  a*=0.3048;
-  b*=0.3048;
-  c*=0.3048;
-  d*=0.3048;
-  e*=0.3048;
-  f*=0.3048;
-  g*=0.3048;
-  h*=0.3048;
-  i*=0.3048;
+  a*=zscale;
+  b*=zscale;
+  c*=zscale;
+  d*=zscale;
+  e*=zscale;
+  f*=zscale;
+  g*=zscale;
+  h*=zscale;
+  i*=zscale;
 
   double dzdx,dzdy;
   //Aspect calculation in the manner of Horn 1981
@@ -196,7 +196,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 
   @post \pname{attribs} takes the properties and dimensions of \pname{elevations}
 */
-void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib){
+void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int attrib, float zscale){
   ProgressBar progress;
 
   diagnostic_arg("Setting up the attribute #%d matrix...", attrib);
@@ -217,7 +217,7 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
       float rise_over_run, aspect, curvature;
       float profile_curvature, planform_curvature;
       d8_terrain_attrib_helper(
-        elevations, x, y, rise_over_run, aspect, curvature,
+        elevations, x, y, zscale, rise_over_run, aspect, curvature,
         profile_curvature, planform_curvature
       );
       switch(attrib){
@@ -268,36 +268,38 @@ void d8_terrain_attribute(const float_2d &elevations, float_2d &attribs, int att
   @param[out] &slopes       A slope grid
   @param[in]  &slope_type   A type, as in the description
 */
-void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type){
+void d8_slope(const float_2d &elevations, float_2d &slopes, int slope_type, float zscale){
   diagnostic("\n###Slope attribute calculation\n");
-  d8_terrain_attribute(elevations, slopes, slope_type);
+  d8_terrain_attribute(elevations, slopes, slope_type, zscale);
 }
 
 
-void d8_aspect(const float_2d &elevations, float_2d &aspects){
+void d8_aspect(const float_2d &elevations, float_2d &aspects, float zscale){
   diagnostic("\n###Aspect attribute calculation\n");
-  d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT);
+  d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT, zscale);
 }
 
-void d8_curvature(const float_2d &elevations, float_2d &curvatures){
+void d8_curvature(const float_2d &elevations, float_2d &curvatures, float zscale){
   diagnostic("\n###Curvature attribute calculation\n");
-  d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE);
+  d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE, zscale);
 }
 
 void d8_planform_curvature(
   const float_2d &elevations,
-  float_2d &planform_curvatures
+  float_2d &planform_curvatures,
+  float zscale
 ){
   diagnostic("\n###Planform curvature attribute calculation\n");
-  d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE);
+  d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE, zscale);
 }
 
 void d8_profile_curvature(
   const float_2d &elevations,
-  float_2d &profile_curvatures
+  float_2d &profile_curvatures,
+  float zscale
 ){
   diagnostic("\n###Profile curvature attribute calculation\n");
-  d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE);
+  d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE, zscale);
 }
 
 

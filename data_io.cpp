@@ -15,6 +15,7 @@
 #include <string.h>
 #include "utility.hpp"
 #include <fstream>
+#include <algorithm>
 
 //write_arrows
 /**
@@ -74,10 +75,13 @@ assert that the next token of the input must match the argument provided to
 the constructor of the class.
 */
 std::istream& operator>>( std::istream &is, const must_be &a ){
-  std::string inp;
+  std::string inp, mstr;
   size_t cpos=is.tellg();
   is >> inp;
-  if(inp!=a.match){
+  mstr=a.match;
+  std::transform(inp.begin(), inp.end(), inp.begin(), ::tolower);
+  std::transform(mstr.begin(), mstr.end(), mstr.begin(), ::tolower);
+  if(inp!=mstr){
     is.seekg(cpos);
     std::cerr<<"Failed to match required input string '"<<a.match<<"'. Found '"<<inp<< "'."<<std::endl;
     throw std::string("Failed to match!");
