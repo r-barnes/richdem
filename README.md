@@ -14,15 +14,32 @@ It can calculate contributing/up-slope areas, slopes, curvatures, and aspects.
 Future versions may use Intel's Thread Building Blocks to achieve additional
 increases in speed.
 
-To use RichDEM, edit "main.cpp" to suit your needs and then simply run "make".
+Using It
+========
 
-To generate DOxygen documentation use "doxygen doxy.conf".
+Casual users will be interested in the **dist/** directory which contains
+pre-compiled Windows binaries and an ArcGIS toolbox for performing pit-filling,
+flow accumulation, CTI, and SPI caclulations under both the D8 and D-finite
+paradigms.
+
+More advanced users will appreciate the ability to run **DOxygen** on
+**doxy.conf** to generate thorough documentation. Browsing "main.cpp" should be
+sufficient to familiarize oneself with many of the functions and interface
+styles of the code. Throughout, the code is written in what I hope is an
+easy-to-follow style and many functions include extensive (and growing!)
+documentation.
 
 Specific Algorithms
 ===================
-Some of the algorithms used in RichDEM have lead to publications. Each
-publication has its own GitHub repository featuring easily-compiled, minimum
-working examples of the algorithms, along with examples and test data sets.
+Many of the algorithms used in RichDEM are documented in journal or conference
+publications. In the case of older algorithms by other authors, it is often
+possible to find the paper in the literature. Some of the newer algorithms I
+developed have not yet had a chance to be widely utilized. These algorithms are
+listed below.
+
+Additionally, each publication has its own GitHub repository featuring
+easily-compiled, minimum working examples of the algorithms, along with examples
+and test data sets.
 
 These are available as follows:
 
