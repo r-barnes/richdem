@@ -1,9 +1,12 @@
-CC=i586-mingw32msvc-g++
-#CC=x86_64-w64-mingw32-g++
-CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS -static-libgcc -static-libstdc++ #-fopenmp
+#CC=i586-mingw32msvc-g++
+#CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS -static-libgcc #-static-libstdc++ #-fopenmp
+#In the 32-bit mingw32 compiler, the static-libstdc++ command is covered by the static-libgcc command
 
-#CC=g++
-#CFLAGS=-Wall -fopenmp -DNDEBUG #-DARCGIS #-lX11 -pthread #-ltbb
+#CC=x86_64-w64-mingw32-g++
+#CFLAGS=-Wall -Wno-unknown-pragmas -DARCGIS -static-libgcc -static-libstdc++ #-fopenmp
+
+CC=g++
+CFLAGS=-Wall -fopenmp -DNDEBUG #-DARCGIS #-lX11 -pthread #-ltbb
 #-ffp-contract=fast enables forming of fused multiply-add instructions. Default is fast.
 
 ODIR=obj
