@@ -97,11 +97,11 @@ class array2d {
 
 template <class T>
 array2d<T>::array2d(){
-  cellsize=-1;
-  xllcorner=-1;
-  yllcorner=-1;
-  data_cells=-1;
-  no_data=-1;
+  cellsize   = -1;
+  xllcorner  = -1;
+  yllcorner  = -1;
+  data_cells = -1;
+  no_data    = -1;
 }
 
 template <class T>
@@ -116,11 +116,11 @@ void array2d<T>::resize(int width, int height, bool preserve=false){
 template<class T>
 template<class U>
 void array2d<T>::copyprops (const array2d<U> &copyfrom){
-  cellsize=copyfrom.cellsize;
-  xllcorner=copyfrom.xllcorner;
-  yllcorner=copyfrom.yllcorner;
-  data_cells=copyfrom.data_cells;
-  no_data=copyfrom.no_data;
+  cellsize   = copyfrom.cellsize;
+  xllcorner  = copyfrom.xllcorner;
+  yllcorner  = copyfrom.yllcorner;
+  data_cells = copyfrom.data_cells;
+  no_data    = copyfrom.no_data;
   resize(copyfrom.width(),copyfrom.height());
 }
 
@@ -152,7 +152,7 @@ template <> inline long array2d<unsigned int>::estimated_output_size(){
   return 9*this->width()*this->height();
 }
 
-//TODO: Probably only useful for testing, 
+//TODO: Probably only useful for testing,
 //  since the file_io thing uses its own output
 template <class T>
 std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
@@ -171,7 +171,7 @@ std::ostream& operator<< (std::ostream &out, const array2d<T> &arr){
 template <class T>
 bool array2d<T>::operator==(const array2d<T> &other) const {
   if(width()!=other.width() || height()!=other.height())
-    return false; 
+    return false;
   for(int x=0;x<width();x++)
   for(int y=0;y<height();y++)
     if(operator()(x,y)!=other(x,y))
