@@ -84,7 +84,7 @@ class array2d {
     const T& operator()(int x, int y) const
       {return data[y][x];}
     ///Resizes the array2d. May or may not be destructive to existing data.
-    void resize(int width, int height, bool preserve);
+    void resize(int width, int height, bool preserve=false);
     ///Destroys all data in the array2d.
     void clear();
     void low_pass_filter();
@@ -105,7 +105,7 @@ array2d<T>::array2d(){
 }
 
 template <class T>
-void array2d<T>::resize(int width, int height, bool preserve=false){
+void array2d<T>::resize(int width, int height, bool preserve){
   std::cerr<<std::endl<<"\tApprox RAM requirement: "<<
     (unsigned long long)width * (unsigned long long)height *
       (unsigned long long)sizeof(T) / 1024 / 1024
