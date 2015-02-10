@@ -104,7 +104,7 @@ int main(int argc, char **argv){
 
     if(!cl_output_unresolved_flowdirs.getValue().empty()){
       running_io_time.start();
-      write_floating_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
+      output_ascii_data(cl_output_unresolved_flowdirs.getValue().c_str(),flowdirs);
       running_io_time.stop();
     }
 
