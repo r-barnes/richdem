@@ -305,7 +305,8 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
           std::cerr<<"Path at ("<<x<<",0) had "<<accum_top[x]<<" accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
         #endif
         switch(flowdirs[0][x]){
-          case 0: //We're not going anywhere, but we need to accept accumulation
+          case -1: //We're not going anywhere, but we need to accept accumulation
+          case 0:
           case 1:
           case 5:
           case 8:
@@ -326,7 +327,8 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
           std::cerr<<"Path at ("<<x<<",Ym) had "<<accum_bot[x]<<" accumulation pointing towards "<<(int)flowdirs[segment_height-1][x]<<std::endl;
         #endif
         switch(flowdirs[segment_height-1][x]){
-          case 0: //We're not going anywhere, but we need to accept accumulation
+          case -1: //We're not going anywhere, but we need to accept accumulation
+          case 0:
           case 1:
           case 2:
           case 3:
@@ -475,7 +477,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   #endif
 
   std::cerr<<"Finding dependencies.."<<std::endl;
-  for(size_t y=0;y<links.size();y++)
+  for(int y=0;y<links.size();y++)
   for(int x=0;x<width;x++){
     int n = flowdirs[y][x];
 
