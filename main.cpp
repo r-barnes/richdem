@@ -1,5 +1,5 @@
 //Compile with
-// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11
+// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall
 // mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
 // gdalbuildvrt -input_file_list ifiles gdalbuildvrt -input_file_list ifiles output.vrt
 #include "gdal_priv.h"
@@ -13,6 +13,8 @@
 #include <string>
 #include <iomanip>
 #include <cassert>
+
+#define INTERNODE_DELAY 2000
 
 #include <chrono>
 #include <thread>
@@ -51,14 +53,20 @@ class GridCell{
   GridCell(int x, int y) : x(x), y(y) {}
 };
 
-void FollowPath(const int x0, const int y0, const int width, const int height, const std::vector< std::vector<char > > &flowdirs, std::vector<int> &top_row_links, std::vector<int> &bottom_row_links){
+void FollowPath(const int x0, const int y0, const int width, const int height, const std::vector< std::vector<char > > &flowdirs, const char no_data, std::vector<int> &top_row_links, std::vector<int> &bottom_row_links){
   int x = x0;
   int y = y0;
   //std::cerr<<"----------------------------"<<std::endl;
   while(true){
     int n  = flowdirs[y][x];
-    int nx = x+dx[n];
-    int ny = y+dy[n];
+
+    int nx,ny;
+    if(n<=0 || n==no_data){
+      n=0;
+    } else {
+      nx = x+dx[n];
+      ny = y+dy[n];
+    }
 
     //std::cerr<<x<<" "<<y<<std::endl;
 
@@ -84,7 +92,7 @@ void FollowPath(const int x0, const int y0, const int width, const int height, c
   }
 }
 
-void FollowPathAdd(const int x0, const int y0, const int width, const int height, const std::vector< std::vector<char > > &flowdirs, std::vector< std::vector<int> > &accum, const int additional_accum){
+void FollowPathAdd(const int x0, const int y0, const int width, const int height, const std::vector< std::vector<char > > &flowdirs, const char no_data, std::vector< std::vector<int> > &accum, const int additional_accum){
   int x = x0;
   int y = y0;
   //std::cerr<<"----------------------------"<<std::endl;
@@ -92,10 +100,14 @@ void FollowPathAdd(const int x0, const int y0, const int width, const int height
     accum[y][x] += additional_accum;
 
     int n  = flowdirs[y][x];
+    if(n<=0 || n==no_data)
+      return;
+
     int nx = x+dx[n];
     int ny = y+dy[n];
 
-    if(n==0 || nx<0 || nx==width || ny<0 || ny==height)
+
+    if(nx<0 || nx==width || ny<0 || ny==height)
       return;
 
     x = nx;
@@ -107,26 +119,27 @@ void FollowPathAdd(const int x0, const int y0, const int width, const int height
 
 
 
-void doNode(int my_node_number, int total_number_of_nodes, char *filename){
-  std::this_thread::sleep_for(std::chrono::milliseconds(4000*my_node_number));
+void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
+  std::this_thread::sleep_for(std::chrono::milliseconds(INTERNODE_DELAY*my_node_number));
   std::cerr<<std::endl<<std::endl;
   std::cerr<<"Node #"<<my_node_number<<std::endl;
   std::cerr<<"================="<<std::endl;
 
   GDALAllRegister();
 
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename, GA_ReadOnly);
+  GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<filename<<endl;
+    cerr<<"Could not open file: "<<flowdir_fname<<endl;
     return;
   }
 
-  GDALRasterBand *demband = fin->GetRasterBand(1);
+  GDALRasterBand *flowband = fin->GetRasterBand(1);
 
-  double no_data = demband->GetNoDataValue();
+  char no_data = flowband->GetNoDataValue();
+  std::cerr<<"No data value: "<<(int)no_data<<std::endl;
 
-  int width  = demband->GetXSize();
-  int height = demband->GetYSize();
+  int width  = flowband->GetXSize();
+  int height = flowband->GetYSize();
 
   int segment_first_line = (height/total_number_of_nodes)*my_node_number;
   int segment_last_line  = (height/total_number_of_nodes)*(my_node_number+1);
@@ -134,86 +147,40 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
     segment_last_line = height;
   int segment_height = segment_last_line - segment_first_line;
 
-  int dem_first_line = segment_first_line  -1;
-  int dem_last_line  = segment_last_line   +1;
-  if(dem_first_line<0)     dem_first_line = 0;
-  if(dem_last_line>height) dem_last_line  = height;
-  int dem_lines_to_read = dem_last_line-dem_first_line;
-
-  if(my_node_number==total_number_of_nodes-1)
-    dem_last_line = height;
-
   //Read in DEM data
-  std::vector< std::vector<float> > dem(dem_lines_to_read, std::vector<float>(width));
-  for(int y=dem_first_line;y<dem_last_line;y++)
-    demband -> RasterIO( GF_Read, 0, y, width, 1, &dem[y-dem_first_line][0], width, 1, GDT_Float32, 0, 0 );
+  std::vector< std::vector<char> > flowdirs(segment_height, std::vector<char>(width));
+  for(int y=segment_first_line;y<segment_last_line;y++){
+    std::vector<int> temp(width);
+//    flowband -> RasterIO( GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Float64, 0, 0 );
+    flowband -> RasterIO( GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Int32, 0, 0 );
+    flowdirs[y-segment_first_line]=std::vector<char>(temp.begin(),temp.end());
+  }
+  //TODO: Why? "y-segment_first_line" in the above?
+
+  // for(int y=0;y<segment_height;y++){
+  //   for(int x=0;x<width;x++)
+  //     std::cout<<setw(3)<<(int)flowdirs[y][x]<<" ";
+  //   std::cout<<std::endl;
+  // }
 
   ////////////////////////
-  //Assign flow directions
+  //Find dependencies
   ////////////////////////
-  std::cerr<<"Assigning flow directions."<<std::endl;
-  std::vector< std::vector<char> > flowdirs    (dem_lines_to_read, std::vector<char >(width,-1));
-  std::vector< std::vector<char> > dependencies(dem_lines_to_read, std::vector<char >(width,0));
-  for(int y=0;y<dem_lines_to_read;y++)
+  std::cerr<<"Calculating dependencies..."<<std::endl;
+  std::vector< std::vector<char> > dependencies(segment_height, std::vector<char>(width,0));
+  for(int y=0;y<segment_height;y++)
   for(int x=0;x<width;x++){
-    if(dem[y][x]==no_data) continue;
+    int n = flowdirs[y][x];
 
-    int lowest      = 0;
-    int elev_lowest = 99999999; //TODO
+    if(n<=0 || n==no_data) continue; //TODO: Make this compatible with ArcGIS
 
-    for(int n=1;n<=8;n++){
-      int nx = x+dx[n];
-      int ny = y+dy[n];
-      //Cells on the edge of the DEM point outwards
-      if(nx<0 || nx==width || ny<0 || ny==dem_lines_to_read){
-        flowdirs[y][x] = n;
-        lowest         = 0;
-        break;
-      }
-      //Ignore neighbours who are higher than I am
-      if(dem[ny][nx]>=dem[y][x]) continue;
-      //No neighbour has yet been lower than me, or this neighbour is the lowest
-      if(lowest==0 || elev_lowest>dem[ny][nx]){
-        lowest      = n;
-        elev_lowest = dem[ny][nx];
-      }
-    }
-    flowdirs[y][x] = lowest;
-    if(lowest>0)
-      dependencies[y+dy[lowest]][x+dx[lowest]]++;
+    int nx = x+dx[n];
+    int ny = y+dy[n];
+    if(nx<0 || ny<0 || nx==width || ny==segment_height) //TODO: Check ArcGIS compatibility
+      continue;
+
+    dependencies[ny][nx]++;
   }
-
-
-  //We no longer need the elevation data, so be sure it is cleared from memory
-  for(auto &r: dem){
-    r.clear();
-    r.shrink_to_fit();
-  }
-  dem.clear();
-  dem.shrink_to_fit();
-
-  //We no longer need the top and/or bottom row of the segment since that
-  //corresponds to a neighbouring slice. Therefore, drop that row.
-  auto startflows = flowdirs.begin();
-  auto endflows   = flowdirs.end();
-  if(my_node_number>0)
-    startflows++;
-  if(my_node_number<total_number_of_nodes-1)
-    endflows--;
-  flowdirs = std::vector< std::vector<char> >(startflows,endflows);
-
-  auto startdeps = dependencies.begin();
-  auto enddeps   = dependencies.end();
-  if(my_node_number>0)
-    startdeps++;
-  if(my_node_number<total_number_of_nodes-1)
-    enddeps--;
-  dependencies = std::vector< std::vector<char> >(startdeps,enddeps);
-
-  assert(flowdirs.size()     == segment_height);
-  assert(dependencies.size() == segment_height);
-
-  std::vector< std::vector<int> > accum(segment_height, std::vector<int>(width,0));
 
   ////////////////////////
   //Find peaks
@@ -222,22 +189,33 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   std::queue<GridCell> sources;
   for(int y=0;y<segment_height;y++)
   for(int x=0;x<width;x++)
-    if(dependencies[y][x]==0 && flowdirs[y][x]!=-1)
+    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data)
       sources.emplace(x,y);
 
   ////////////////////////
   //Calculate accumulation
   ////////////////////////
   std::cerr<<"Calculating accumulation"<<std::endl;
+  std::vector< std::vector<int> > accum(segment_height,std::vector<int>(width,0));
+
   while(!sources.empty()){
     GridCell c = sources.front();
     sources.pop();
 
+    int n = flowdirs[c.y][c.x];
+    if(n==no_data)
+      continue;
+
     accum[c.y][c.x]++;
 
-    int nx = c.x+dx[flowdirs[c.y][c.x]];
-    int ny = c.y+dy[flowdirs[c.y][c.x]];
-    if(nx<0 || nx==width || ny<0 || ny==segment_height || flowdirs[ny][nx]==-1)
+    if(n<=0)
+      continue;
+
+    int nx = c.x+dx[n];
+    int ny = c.y+dy[n];
+    if(nx<0 || nx==width || ny<0 || ny==segment_height)
+      continue;
+    if(flowdirs[ny][nx]==no_data)
       continue;
 
     accum[ny][nx] += accum[c.y][c.x];
@@ -246,13 +224,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
     if(dependencies[ny][nx]==0)
       sources.emplace(nx,ny);
   }
-
-  int max=0;
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++)
-    max=(accum[y][x]>max)?accum[y][x]:max;
-  std::cerr<<"Accum max on "<<my_node_number<<": "<<max<<std::endl;
-
 
   std::vector<int> top_row_links   (width,-1);
   std::vector<int> bottom_row_links(width,-1);
@@ -263,17 +234,17 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   std::cerr<<"Connecting top edges"<<std::endl;
   if(my_node_number!=0)
     for(int x=0;x<width;x++){
-      std::cerr<<x<<" ";
+      // std::cerr<<x<<" ";
       switch(flowdirs[0][x]){
         case 1:
         case 5:
         case 8:
         case 7:
         case 6:
-          FollowPath(x,0,width,segment_height,flowdirs,top_row_links,bottom_row_links);
+          FollowPath(x,0,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
       }
     }
-  std::cerr<<std::endl;
+  // std::cerr<<std::endl;
 
   std::cerr<<"Connecting bottom edges"<<std::endl;
   if(my_node_number!=total_number_of_nodes-1)
@@ -284,7 +255,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
         case 3:
         case 4:
         case 5:
-          FollowPath(x,segment_height-1,width,segment_height,flowdirs,top_row_links,bottom_row_links);
+          FollowPath(x,segment_height-1,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
       }
 
   //int MPI_Send(void* buf,int count,MPI_Datatype datatype,int dest,int tag,MPI_Comm comm);
@@ -297,19 +268,19 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   MPI_Send(flowdirs.back ().data(), flowdirs.back ().size(), MPI_BYTE,0,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD);
   std::cerr<<"Sent "<<(my_node_number+1)<<std::endl;
 
-  std::cerr<<"Result receiving "<<(my_node_number+1)<<std::endl;
+  //std::cerr<<"Result receiving "<<(my_node_number+1)<<std::endl;
   MPI_Status status;
   std::vector<int> accum_top(width), accum_bot(width);
   MPI_Recv(accum_top.data(), accum_top.size(), MPI_INT, 0, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
   MPI_Recv(accum_bot.data(), accum_bot.size(), MPI_INT, 0, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
-  std::cerr<<"Result received "<<(my_node_number+1)<<std::endl;
+  //std::cerr<<"Result received "<<(my_node_number+1)<<std::endl;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(4000*my_node_number));
+  std::this_thread::sleep_for(std::chrono::milliseconds(INTERNODE_DELAY*my_node_number));
 
-  std::cerr<<std::endl<<std::endl;
-  std::cerr<<"Node #"<<my_node_number<<std::endl;
-  std::cerr<<"================="<<std::endl;
-
+  // std::cerr<<std::endl<<std::endl;
+  // std::cerr<<"Node #"<<my_node_number<<std::endl;
+  // std::cerr<<"================="<<std::endl;
+/*
   std::cerr<<"Received top: ";
   for(auto &x: accum_top)
     std::cerr<<setw(4)<<x<<" ";
@@ -319,48 +290,42 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   for(auto &x: accum_bot)
     std::cerr<<setw(4)<<x<<" ";
   std::cerr<<endl;
-
+*/
   if(my_node_number!=0){
-    std::cerr<<"Now adding to paths on top."<<std::endl;
+  //  std::cerr<<"Now adding to paths on top."<<std::endl;
     for(int x=0;x<width;x++)
       if(accum_top[x]){
-        std::cerr<<"Path at "<<x<<" had accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
+        // std::cerr<<"Path at ("<<x<<",0) had "<<accum_top[x]<<" accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
         switch(flowdirs[0][x]){
           case 1:
           case 5:
           case 8:
           case 7:
           case 6:
-            std::cerr<<"Adding to path at "<<x<<std::endl;
-            FollowPathAdd(x, 0, width, segment_height, flowdirs, accum, accum_top[x]);
+            // std::cerr<<"Adding to path at "<<x<<std::endl;
+            FollowPathAdd(x, 0, width, segment_height, flowdirs, no_data, accum, accum_top[x]);//-accum[0][x]);
         }
       }
   }
 
   //std::cerr<<"Connecting bottom edges"<<std::endl;
   if(my_node_number!=total_number_of_nodes-1){
-    std::cerr<<"Now adding to paths on bot."<<std::endl;
+    //std::cerr<<"Now adding to paths on bot."<<std::endl;
     for(int x=0;x<width;x++)
       if(accum_bot[x]){
-        std::cerr<<"Path at "<<x<<" had accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
+        // std::cerr<<"Path at ("<<x<<",Ym) had "<<accum_bot[x]<<" accumulation pointing towards "<<(int)flowdirs[segment_height-1][x]<<std::endl;
         switch(flowdirs[segment_height-1][x]){
           case 1:
           case 2:
           case 3:
           case 4:
           case 5:
-            std::cerr<<"Adding to path at "<<x<<std::endl;
-            FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, accum, accum_bot[x]);
+            // std::cerr<<"Adding to path at "<<x<<std::endl;
+            FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, no_data, accum, accum_bot[x]);//-accum[segment_height-1][x]);
         }
       }
   }
 
-
-  max=0;
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++)
-    max=(accum[y][x]>max)?accum[y][x]:max;
-  std::cerr<<"Accum max on "<<my_node_number<<": "<<max<<std::endl;
 
   std::cerr<<"Writing out from "<<(my_node_number)<<std::endl;
   GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -370,7 +335,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   }
 
   std::string output_name = std::string("output")+std::to_string(my_node_number)+std::string(".tif");
-  GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, dem_lines_to_read, 1, GDT_Int32, NULL);
+  GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, segment_height, 1, GDT_Int32, NULL);
 
   if(fout==NULL){
     std::cerr<<"could not create output file."<<std::endl;
@@ -379,7 +344,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
 
   std::cerr<<"Files opened successfully."<<std::endl;
   double geotrans[6];
-  fin ->GetGeoTransform(geotrans);
+  fin->GetGeoTransform(geotrans);
 
   // Xgeo = GT(0) + Xpixel*GT(1) + Yline*GT(2)
   // Ygeo = GT(3) + Xpixel*GT(4) + Yline*GT(5)
@@ -398,17 +363,18 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
   oband->SetNoDataValue(0);
   //poBand->RasterIO( GF_Write, 0, 0, no2output.shape()[0], no2output.shape()[1], no2output.origin(), no2output.shape()[0], no2output.shape()[1], GDT_Float32, 0, 0 );
 
-  /* Once we're done, close properly the dataset */
-
   std::cerr<<"Writing out."<<std::endl;
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++){
-    int temp=accum[y][x];
-    oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Int32, 0, 0 );
+  for(int y=0;y<segment_height;y++){
+    for(int x=0;x<width;x++){
+      //int temp = accum[y][x];
+      //oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Int32, 0, 0 );
+      std::cout<<setw(3)<<accum[y][x]<<" ";
+    }
+    std::cout<<std::endl;
   }
 
   GDALClose(fin);
-  GDALClose(fout);
+  //GDALClose(fout); //TODO
 }
 
 
@@ -422,19 +388,20 @@ void doNode(int my_node_number, int total_number_of_nodes, char *filename){
 
 
 
-void DoMaster(int my_node_number, int total_number_of_nodes, char *filename){
+void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   GDALAllRegister();
 
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename, GA_ReadOnly);
+  GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<filename<<endl;
+    cerr<<"Could not open file: "<<flowdir_fname<<endl;
     return;
   }
 
-  GDALRasterBand *demband = fin->GetRasterBand(1);
+  GDALRasterBand *flowband = fin->GetRasterBand(1);
 
-  int width  = demband->GetXSize();
-  int height = demband->GetYSize();
+  int no_data = flowband->GetNoDataValue();
+
+  int width  = flowband->GetXSize();
   GDALClose(fin);
 
   std::vector< std::vector<int> >  links        (total_number_of_nodes*2,std::vector<int> (width  ));
@@ -459,16 +426,44 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *filename){
     std::cerr<<"Received "<<i<<std::endl;
   }
 
+  std::cerr<<"Received accumulation grid"<<std::endl;
+  for(size_t y=0;y<accum.size();y++){
+    if(y%2==0)
+      std::cerr<<"--------"<<std::endl;
+    for(size_t x=0;x<accum[0].size();x++)
+      std::cerr<<setw(3)<<accum[y][x]<<" ";
+    std::cerr<<std::endl;
+  }
 
+  std::cerr<<"Flowdirs"<<std::endl;
+  for(size_t y=0;y<flowdirs.size();y++){
+    if(y%2==0)
+      std::cerr<<"--------"<<std::endl;
+    for(size_t x=0;x<flowdirs[0].size();x++)
+      std::cerr<<setw(3)<<(int)flowdirs[y][x]<<" ";
+    std::cerr<<std::endl;
+  }
 
-  std::queue<GridCell> sources;
-  std::cerr<<"Finding sources.."<<std::endl;
-  for(int y=0;y<links.size();y++)
+  std::cerr<<"Links"<<std::endl;
+  for(size_t y=0;y<links.size();y++){
+    if(y%2==0)
+      std::cerr<<"--------"<<std::endl;
+    for(size_t x=0;x<links[0].size();x++)
+      std::cerr<<setw(3)<<(int)links[y][x]<<" ";
+    std::cerr<<std::endl;
+  }
+
+  std::cerr<<"Finding dependencies.."<<std::endl;
+  for(size_t y=0;y<links.size();y++)
   for(int x=0;x<width;x++){
-    int n  = flowdirs[y][x];
+    int n = flowdirs[y][x];
+
+    if(n<=0 || n==no_data)
+      continue;
+
     int nx = x+dx[n];
     int ny = y+dy[n];
-    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size() || n==0) //TODO: Consider using some kind of height-esque variable here
+    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size()) //TODO: Consider using some kind of height-esque variable here
       continue;
 
     //Part of the same strip. Use the links
@@ -485,20 +480,48 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *filename){
     dependencies[ny][nx]++;
   }
 
-  for(int y=0;y<links.size();y++)
+  std::cerr<<"Convert from accumulation to delta-accumulation..."<<std::endl;
+  for(size_t y=0;y<links.size();y++)
+  for(int x=0;x<width;x++){
+    int fd = flowdirs[y][x];
+    //On the bottom going up into the strip
+    if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5) )
+      accum[y][x] = 0;
+    //On the top going down into the strip
+    if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6) )
+      accum[y][x] = 0;
+  }
+
+  std::cerr<<"Accumulation grid following delta accumulation"<<std::endl;
+  for(size_t y=0;y<accum.size();y++){
+    if(y%2==0)
+      std::cerr<<"--------"<<std::endl;
+    for(size_t x=0;x<accum[0].size();x++)
+      std::cerr<<setw(3)<<accum[y][x]<<" ";
+    std::cerr<<std::endl;
+  }
+
+  std::cerr<<"Finding sources..."<<std::endl;
+  std::queue<GridCell> sources;
+  for(size_t y=1;y<links.size()-1;y++) //Don't need to worry about top and bottom strips
   for(int x=0;x<width;x++)
-    if(dependencies[y][x]==0)
+    if(dependencies[y][x]==0){
+      // std::cerr<<"Source at ("<<x<<","<<y<<")"<<std::endl;
       sources.emplace(x,y);
+    }
 
   std::cerr<<"Accumulating across aggregated grid"<<std::endl;
   while(!sources.empty()){
     GridCell c = sources.front();
     sources.pop();
 
-    int n  = flowdirs[c.y][c.x];
+    int n = flowdirs[c.y][c.x];
+    if(n<=0 || n==no_data)
+      continue;
+
     int nx = c.x+dx[n];
     int ny = c.y+dy[n];
-    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size() || n==0)
+    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
       continue;
 
     //Part of the same strip. Use the links
@@ -512,6 +535,8 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *filename){
         nx = -nx;
     }
 
+    std::cout<<"Pouring ("<<c.x<<","<<c.y<<") into ("<<nx<<","<<ny<<") with "<<accum[c.y][c.x]<<std::endl;
+
     accum[ny][nx] += accum[c.y][c.x];
     dependencies[ny][nx]--;
 
@@ -520,19 +545,29 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *filename){
   }
 
 
-  for(auto &r: accum){
-    for(auto &x: r)
-      std::cerr<<setw(4)<<x<<" ";
+  // for(auto &r: accum){
+  //   for(auto &x: r)
+  //     std::cerr<<setw(4)<<x<<" ";
+  //   std::cerr<<std::endl;
+  // }
+
+  std::cerr<<"Net accumulation grid"<<std::endl;
+  for(size_t y=0;y<accum.size();y++){
+    if(y%2==0)
+      std::cerr<<"--------"<<std::endl;
+    for(size_t x=0;x<accum[0].size();x++)
+      std::cerr<<setw(3)<<accum[y][x]<<" ";
     std::cerr<<std::endl;
   }
+
+
 
 
   std::cerr<<"Dispersing accumulation..."<<std::endl;
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
-    MPI_Status status;
-    accum[2*n]=std::vector<int>(width,400);
-    accum[2*n+1]=std::vector<int>(width,400);
+    // accum[2*n]=std::vector<int>(width,400);
+    // accum[2*n+1]=std::vector<int>(width,400);
     MPI_Send(accum[2*n]  .data(), accum[2*n]  .size(),MPI_INT, i, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD);
     MPI_Send(accum[2*n+1].data(), accum[2*n+1].size(),MPI_INT, i, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD);
   }
