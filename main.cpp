@@ -13,7 +13,7 @@
 #include <string>
 #include <iomanip>
 #include <cassert>
-//#define DEBUG 1
+#define DEBUG 1
 
 using namespace std;
 
@@ -304,17 +304,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
         #ifdef DEBUG
           std::cerr<<"Path at ("<<x<<",0) had "<<accum_top[x]<<" accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
         #endif
-        switch(flowdirs[0][x]){
-          case -1: //We're not going anywhere, but we need to accept accumulation
-          case 0:
-          case 1:
-          case 5:
-          case 8:
-          case 7:
-          case 6:
-            // std::cerr<<"Adding to path at "<<x<<std::endl;
-            FollowPathAdd(x, 0, width, segment_height, flowdirs, no_data, accum, accum_top[x]);//-accum[0][x]);
-        }
+        FollowPathAdd(x, 0, width, segment_height, flowdirs, no_data, accum, accum_top[x]);//-accum[0][x]);
       }
   }
 
@@ -326,17 +316,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
         #ifdef DEBUG
           std::cerr<<"Path at ("<<x<<",Ym) had "<<accum_bot[x]<<" accumulation pointing towards "<<(int)flowdirs[segment_height-1][x]<<std::endl;
         #endif
-        switch(flowdirs[segment_height-1][x]){
-          case -1: //We're not going anywhere, but we need to accept accumulation
-          case 0:
-          case 1:
-          case 2:
-          case 3:
-          case 4:
-          case 5:
-            // std::cerr<<"Adding to path at "<<x<<std::endl;
-            FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, no_data, accum, accum_bot[x]);//-accum[segment_height-1][x]);
-        }
+        FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, no_data, accum, accum_bot[x]);//-accum[segment_height-1][x]);
       }
   }
 
@@ -392,6 +372,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   //GDALClose(fout); //TODO
 
   //Synchronize Threads TODO
+  std::cerr.flush();
   if(my_node_number<total_number_of_nodes-1){
     int message=0;
     MPI_Send(&message, 1, MPI_INT, my_node_number+2, SYNC_SIG, MPI_COMM_WORLD);
@@ -427,6 +408,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
 
   std::vector< std::vector<int> >  links        (total_number_of_nodes*2,std::vector<int> (width  ));
   std::vector< std::vector<int> >  accum        (total_number_of_nodes*2,std::vector<int> (width  ));
+  std::vector< std::vector<int> >  accum_orig;
   std::vector< std::vector<char> > flowdirs     (total_number_of_nodes*2,std::vector<char>(width  ));
   std::vector< std::vector<char> > dependencies (total_number_of_nodes*2,std::vector<char>(width,0));
 
@@ -446,6 +428,8 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     MPI_Recv(flowdirs[2*n+1].data(), flowdirs[2*n+1].size(),MPI_BYTE,i,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
     std::cerr<<"Received "<<i<<std::endl;
   }
+
+  accum_orig = accum;
 
   #ifdef DEBUG
     std::cerr<<"Received accumulation grid"<<std::endl;
@@ -518,17 +502,17 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     dependencies[ny][nx]++;
   }
 
-  std::cerr<<"Convert from accumulation to delta-accumulation..."<<std::endl;
-  for(size_t y=0;y<links.size();y++)
-  for(int x=0;x<width;x++){
-    int fd = flowdirs[y][x];
-    //On the bottom going up into the strip
-    if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
-      accum[y][x] = 0;
-    //On the top going down into the strip
-    if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
-      accum[y][x] = 0;
-  }
+  // std::cerr<<"Convert from accumulation to delta-accumulation..."<<std::endl;
+  // for(size_t y=0;y<links.size();y++)
+  // for(int x=0;x<width;x++){
+  //   int fd = flowdirs[y][x];
+  //   //On the bottom going up into the strip or nowhere
+  //   if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
+  //     accum[y][x] = 0;
+  //   //On the top going down into the strip or nowhere
+  //   if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
+  //     accum[y][x] = 0;
+  // }
 
   #ifdef DEBUG
     std::cerr<<"Accumulation grid following delta accumulation"<<std::endl;
@@ -629,9 +613,24 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   #endif
 
 
+  std::cerr<<"Subtracting original accumulations..."<<std::endl;
+  for(int y=0;y<accum.size();y++)
+  for(int x=0;x<width;x++)
+    accum[y][x] -= accum_orig[y][x];
 
+  #ifdef DEBUG
+    std::cerr<<"Differenced accumulation grid"<<std::endl;
+    for(size_t y=0;y<accum.size();y++){
+      if(y%2==0)
+        std::cerr<<"--------"<<std::endl;
+      for(size_t x=0;x<accum[0].size();x++)
+        std::cerr<<setw(3)<<accum[y][x]<<" ";
+      std::cerr<<std::endl;
+    }
+  #endif
 
   std::cerr<<"Dispersing accumulation..."<<std::endl;
+  std::cerr.flush();
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
     // accum[2*n]=std::vector<int>(width,400);
