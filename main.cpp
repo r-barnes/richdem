@@ -15,7 +15,13 @@
 #include <cassert>
 #define DEBUG 1
 
+#ifdef DEBUG
+  #include <fstream>
+  #include <string>
+#endif
+
 using namespace std;
+
 
 #define TOP_LINKS_TAG        1
 #define BOT_LINKS_TAG        2
@@ -92,6 +98,9 @@ void FollowPath(const int x0, const int y0, const int width, const int height, c
 }
 
 void FollowPathAdd(int x, int y, const int width, const int height, const std::vector< std::vector<char > > &flowdirs, const char no_data, std::vector< std::vector<int> > &accum, const int additional_accum){
+  if(flowdirs[y][x]==no_data)
+    return;
+
   while(true){
     accum[y][x] += additional_accum;
 
@@ -355,15 +364,20 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   //poBand->RasterIO( GF_Write, 0, 0, no2output.shape()[0], no2output.shape()[1], no2output.origin(), no2output.shape()[0], no2output.shape()[1], GDT_Float32, 0, 0 );
 
   std::cerr<<"Writing out."<<std::endl;
+  #ifdef DEBUG
+  std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
+  #endif
   for(int y=0;y<segment_height;y++){
     for(int x=0;x<width;x++){
       int temp = accum[y][x];
       oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Int32, 0, 0 );
       #ifdef DEBUG
-        std::cerr<<setw(3)<<accum[y][x]<<" ";
+        foutasc<<setw(3)<<accum[y][x]<<" ";
+        cerr<<setw(3)<<accum[y][x]<<" ";
       #endif
     }
     #ifdef DEBUG
+      foutasc<<std::endl;
       std::cerr<<std::endl;
     #endif
   }
@@ -408,6 +422,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
 
   std::vector< std::vector<int> >  links        (total_number_of_nodes*2,std::vector<int> (width  ));
   std::vector< std::vector<int> >  accum        (total_number_of_nodes*2,std::vector<int> (width  ));
+  std::vector< std::vector<int> >  accumout     (total_number_of_nodes*2,std::vector<int> (width,0));
   std::vector< std::vector<int> >  accum_orig;
   std::vector< std::vector<char> > flowdirs     (total_number_of_nodes*2,std::vector<char>(width  ));
   std::vector< std::vector<char> > dependencies (total_number_of_nodes*2,std::vector<char>(width,0));
@@ -428,8 +443,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     MPI_Recv(flowdirs[2*n+1].data(), flowdirs[2*n+1].size(),MPI_BYTE,i,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
     std::cerr<<"Received "<<i<<std::endl;
   }
-
-  accum_orig = accum;
 
   #ifdef DEBUG
     std::cerr<<"Received accumulation grid"<<std::endl;
@@ -502,17 +515,23 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     dependencies[ny][nx]++;
   }
 
-  // std::cerr<<"Convert from accumulation to delta-accumulation..."<<std::endl;
-  // for(size_t y=0;y<links.size();y++)
-  // for(int x=0;x<width;x++){
-  //   int fd = flowdirs[y][x];
-  //   //On the bottom going up into the strip or nowhere
-  //   if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
-  //     accum[y][x] = 0;
-  //   //On the top going down into the strip or nowhere
-  //   if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
-  //     accum[y][x] = 0;
-  // }
+  //Cells which receive flow have already propagated their flow to their linked
+  //outlet cells in the doNode step. Therefore, we should set their accumulation
+  //here to zero to avoid having it be propagated twice.
+  std::cerr<<"Drop accumulation information at receivers..."<<std::endl;
+  for(size_t y=0;y<links.size();y++)
+  for(int x=0;x<width;x++){
+    int fd = flowdirs[y][x];
+    //On the bottom going up into the strip or nowhere
+    if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
+      accum[y][x] = 0;
+    //On the top going down into the strip or nowhere
+    if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
+      accum[y][x] = 0;
+  }
+
+ std::cerr<<"Make a note of delta accumulation grid..."<<std::endl;
+ accum_orig = accum;
 
   #ifdef DEBUG
     std::cerr<<"Accumulation grid following delta accumulation"<<std::endl;
@@ -529,7 +548,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   std::queue<GridCell> sources;
   for(size_t y=1;y<links.size()-1;y++) //Don't need to worry about top and bottom strips
   for(int x=0;x<width;x++)
-    if(dependencies[y][x]==0){
+    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data){
       // std::cerr<<"Source at ("<<x<<","<<y<<")"<<std::endl;
       sources.emplace(x,y);
     }
@@ -612,11 +631,65 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     }
   #endif
 
+  std::cerr<<"Generating delta accumulation grid of doom..."<<std::endl;
+  for(int y=0;y<links.size();y++)
+  for(int x=0;x<width;x++){
+    if(accum[y][x]==0)
+      continue;
 
-  std::cerr<<"Subtracting original accumulations..."<<std::endl;
-  for(int y=0;y<accum.size();y++)
-  for(int x=0;x<width;x++)
-    accum[y][x] -= accum_orig[y][x];
+    int n = flowdirs[y][x];
+
+    if(n<=0 || n==no_data)
+      continue;
+
+    #ifdef DEBUG
+      std::cerr<<"Subtracting "<<accum_orig[y][x]<<" from ("<<x<<","<<y<<")"<<std::endl;
+    #endif
+    accum[y][x] -= accum_orig[y][x]; //TODO: Should this maybe go above the `n<=0||n==no_data` check?
+
+    int nx = x+dx[n];
+    int ny = y+dy[n];
+    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size()) //TODO: Consider using some kind of height-esque variable here
+      continue;
+
+    // std::cerr<<"("<<x<<","<<y<<") points to n="<<(int)flowdirs[y][x]<<" at ("<<nx<<","<<ny<<") and has link="<<links[y][x]<<std::endl;
+
+    //Part of the same strip. Use the links
+    if(y/2==ny/2){
+      nx = links[y][x];
+      if(nx==99999999) //Path we are going into ends on a side edge or internally
+        continue;
+      ny = (ny%2==0)?ny:ny-1; //Map ny to the nearest strip top
+      if(nx<=0){       //This path ends on the top of the strip
+        nx = -nx;      //Map (-Inf,0] to [0,Inf]
+      } else {         //This path ends on the bottom of the strip
+        ny++;          //ny will not point to the bottom of the strip
+        nx--;          //Map [1,Inf) to [0,Inf)
+      }
+      #ifdef DEBUG
+        std::cerr<<"Subtracting "<<accum_orig[y][x]<<" from ("<<nx<<","<<ny<<")"<<std::endl;
+      #endif
+      accum[ny][nx] -= accum[y][x];
+    }
+  }
+
+
+  // std::cerr<<"Subtracting original accumulations..."<<std::endl;
+  // for(int y=0;y<accum.size();y++)
+  // for(int x=0;x<width;x++)
+  //   accum[y][x] -= accum_orig[y][x];
+
+  // std::cerr<<"Setting outlets to zero..."<<std::endl;
+  // for(size_t y=0;y<links.size();y++)
+  // for(int x=0;x<width;x++){
+  //   int fd = flowdirs[y][x];
+  //   //On the bottom going up into the strip or nowhere
+  //   if( y%2==0 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
+  //     accum[y][x] = accum_orig[y][x];
+  //   //On the top going down into the strip or nowhere
+  //   if( y%2==1 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
+  //     accum[y][x] = accum_orig[y][x];
+  // }
 
   #ifdef DEBUG
     std::cerr<<"Differenced accumulation grid"<<std::endl;
