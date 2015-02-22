@@ -1,7 +1,7 @@
 #include "gdal_priv.h"
 #include <iostream>
 #include <queue>
-#include <mpi.h>
+#include <boost/mpi.hpp>
 #include <string>
 #define DEBUG 1
 
@@ -95,6 +95,7 @@ void FollowPathAdd(int x, int y, const int width, const int height, const std::v
 
 void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   GDALAllRegister();
+  boost::mpi::communicator world;
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
@@ -207,18 +208,17 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
         FollowPath(x,segment_height-1,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
 
   //Send our partial computation to the master node
-  MPI_Send(top_row_links   .data(), top_row_links   .size(), MPI_INT, 0,TOP_LINKS_TAG,        MPI_COMM_WORLD);
-  MPI_Send(bottom_row_links.data(), bottom_row_links.size(), MPI_INT, 0,BOT_LINKS_TAG,        MPI_COMM_WORLD);
-  MPI_Send(accum.front()   .data(), accum.front()   .size(), MPI_INT, 0,TOP_ACCUMULATION_TAG, MPI_COMM_WORLD);
-  MPI_Send(accum.back ()   .data(), accum.back ()   .size(), MPI_INT, 0,BOT_ACCUMULATION_TAG, MPI_COMM_WORLD);
-  MPI_Send(flowdirs.front().data(), flowdirs.front().size(), MPI_BYTE,0,TOP_FLOWDIRS_TAG,     MPI_COMM_WORLD);
-  MPI_Send(flowdirs.back ().data(), flowdirs.back ().size(), MPI_BYTE,0,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD);
+  world.send(0, TOP_LINKS_TAG,        top_row_links);
+  world.send(0, BOT_LINKS_TAG,        bottom_row_links);
+  world.send(0, TOP_ACCUMULATION_TAG, accum.front());
+  world.send(0, BOT_ACCUMULATION_TAG, accum.back());
+  world.send(0, TOP_FLOWDIRS_TAG,     flowdirs.front());
+  world.send(0, BOT_FLOWDIRS_TAG,     flowdirs.back());
 
   //Receive results of master node's computation
-  MPI_Status status;
   std::vector<int> accum_top(width), accum_bot(width);
-  MPI_Recv(accum_top.data(), accum_top.size(), MPI_INT, 0, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
-  MPI_Recv(accum_bot.data(), accum_bot.size(), MPI_INT, 0, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
+  world.recv(0, TOP_ACCUMULATION_TAG, accum_top);
+  world.recv(0, BOT_ACCUMULATION_TAG, accum_bot);
 
   //Add to paths beginning at top
   if(my_node_number!=0)
@@ -296,6 +296,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
 void DoMaster(int total_number_of_nodes, char *flowdir_fname){
   GDALAllRegister();
+  boost::mpi::communicator world;
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
@@ -321,13 +322,12 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
   std::cerr<<"Total nodes: "<<(total_number_of_nodes)<<std::endl;
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
-    MPI_Status status;
-    MPI_Recv(links   [2*n]  .data(), links   [2*n]  .size(),MPI_INT, i,TOP_LINKS_TAG,        MPI_COMM_WORLD,&status);
-    MPI_Recv(links   [2*n+1].data(), links   [2*n+1].size(),MPI_INT, i,BOT_LINKS_TAG,        MPI_COMM_WORLD,&status);
-    MPI_Recv(accum   [2*n]  .data(), accum   [2*n]  .size(),MPI_INT, i,TOP_ACCUMULATION_TAG, MPI_COMM_WORLD,&status);
-    MPI_Recv(accum   [2*n+1].data(), accum   [2*n+1].size(),MPI_INT, i,BOT_ACCUMULATION_TAG, MPI_COMM_WORLD,&status);
-    MPI_Recv(flowdirs[2*n]  .data(), flowdirs[2*n]  .size(),MPI_BYTE,i,TOP_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
-    MPI_Recv(flowdirs[2*n+1].data(), flowdirs[2*n+1].size(),MPI_BYTE,i,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
+    world.recv(i, TOP_LINKS_TAG,        links   [2*n]);
+    world.recv(i, BOT_LINKS_TAG,        links   [2*n+1]);
+    world.recv(i, TOP_ACCUMULATION_TAG, accum   [2*n]);
+    world.recv(i, BOT_ACCUMULATION_TAG, accum   [2*n+1]);
+    world.recv(i, TOP_FLOWDIRS_TAG,     flowdirs[2*n]);
+    world.recv(i, BOT_FLOWDIRS_TAG,     flowdirs[2*n+1]);
   }
 
   std::cerr<<"Finding dependencies.."<<std::endl;
@@ -461,13 +461,14 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
   std::cerr<<"Dispersing accumulation..."<<std::endl;
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
-    MPI_Send(accum[2*n]  .data(), accum[2*n]  .size(),MPI_INT, i, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD);
-    MPI_Send(accum[2*n+1].data(), accum[2*n+1].size(),MPI_INT, i, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD);
+    world.send(i, TOP_ACCUMULATION_TAG, accum[2*n]);
+    world.send(i, BOT_ACCUMULATION_TAG, accum[2*n+1]);
   }
 }
 
 int main(int argc, char **argv){
-  MPI_Init(&argc,&argv);
+  boost::mpi::environment  env;
+  boost::mpi::communicator world;
 
   if(argc!=2){
     std::cerr<<"Syntax: "<<argv[0]<<" <DEM>"<<std::endl;
@@ -475,16 +476,10 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  int tid, nthreads;
-  MPI_Comm_rank(MPI_COMM_WORLD, &tid);
-  MPI_Comm_size(MPI_COMM_WORLD, &nthreads);
-
-  if(tid>0)
-    doNode(tid-1,nthreads-1,argv[1]);
+  if(world.rank()>0)
+    doNode(world.rank()-1,world.size()-1,argv[1]);
   else
-    DoMaster(tid-1,nthreads-1,argv[1]);
-
-  MPI_Finalize();
+    DoMaster(world.size()-1,argv[1]);
 
   return 0;
 }
