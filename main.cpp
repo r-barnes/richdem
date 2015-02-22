@@ -264,7 +264,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
   std::cerr<<"Writing out."<<std::endl;
   #ifdef DEBUG
-  std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
+    std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
   #endif
   for(int y=0;y<segment_height;y++){
     oband->RasterIO(GF_Write, 0, y, width, 1, accum[y].data(), width, 1, GDT_Int32, 0, 0);
