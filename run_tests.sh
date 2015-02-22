@@ -7,9 +7,9 @@ do
   do
     echo "Performing Test #$i with $((p + 1)) processors"
     mpirun -n $((p + 1)) ./parallel_flowdirs.exe "tests/testdem${i}.d8" &> "test_output$i.log"
-    if [ -a tests/output${i}_0 ]
+    if [ -a tests/output${i} ]
     then
-      cat output*asc | diff -w tests/output${i}_0 -
+      cat output*asc | diff -w tests/output${i} -
     else
       echo "No good values against which to check Test #$i"
     fi
