@@ -201,39 +201,23 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   ////////////////////////
   std::cerr<<"Connecting top edges"<<std::endl;
   if(my_node_number!=0)
-    for(int x=0;x<width;x++){
-      // std::cerr<<x<<" ";
-      switch(flowdirs[0][x]){
-        case 1:
-        case 5:
-        case 8:
-        case 7:
-        case 6:
-          FollowPath(x,0,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
-      }
-    }
+    for(int x=0;x<width;x++)
+      if( (5<=flowdirs[0][x] && flowdirs[0][x]<=8) || flowdirs[0][x]==1)
+        FollowPath(x,0,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
 
   std::cerr<<"Connecting bottom edges"<<std::endl;
   if(my_node_number!=total_number_of_nodes-1)
     for(int x=0;x<width;x++)
-      switch(flowdirs[segment_height-1][x]){
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-          FollowPath(x,segment_height-1,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
-      }
+      if(1<=flowdirs[segment_height-1][x] && flowdirs[segment_height-1][x]<=5)
+        FollowPath(x,segment_height-1,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
 
-  //int MPI_Send(void* buf,int count,MPI_Datatype datatype,int dest,int tag,MPI_Comm comm);
-  std::cerr<<"Sending "<<(my_node_number+1)<<std::endl;
+  //Send our partial computation to the master node
   MPI_Send(top_row_links   .data(), top_row_links   .size(), MPI_INT, 0,TOP_LINKS_TAG,        MPI_COMM_WORLD);
   MPI_Send(bottom_row_links.data(), bottom_row_links.size(), MPI_INT, 0,BOT_LINKS_TAG,        MPI_COMM_WORLD);
   MPI_Send(accum.front()   .data(), accum.front()   .size(), MPI_INT, 0,TOP_ACCUMULATION_TAG, MPI_COMM_WORLD);
   MPI_Send(accum.back ()   .data(), accum.back ()   .size(), MPI_INT, 0,BOT_ACCUMULATION_TAG, MPI_COMM_WORLD);
   MPI_Send(flowdirs.front().data(), flowdirs.front().size(), MPI_BYTE,0,TOP_FLOWDIRS_TAG,     MPI_COMM_WORLD);
   MPI_Send(flowdirs.back ().data(), flowdirs.back ().size(), MPI_BYTE,0,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD);
-  std::cerr<<"Sent "<<(my_node_number+1)<<std::endl;
 
   //Receive results of master node's computation
   MPI_Status status;
@@ -253,8 +237,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
       if(accum_bot[x])
         FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, no_data, accum, accum_bot[x]);//-accum[segment_height-1][x]);
 
-
-  std::cerr<<"Writing out from "<<(my_node_number)<<std::endl;
   GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
   if(poDriver==NULL){
     std::cerr<<"Could not open GDAL driver."<<std::endl;
@@ -263,7 +245,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
   std::string output_name = std::string("output")+std::to_string(my_node_number)+std::string(".tif");
   GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, segment_height, 1, GDT_Int32, NULL);
-
   if(fout==NULL){
     std::cerr<<"could not create output file."<<std::endl;
     return;
@@ -344,8 +325,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   std::vector< std::vector<char> > flowdirs     (total_number_of_nodes*2,std::vector<char>(width  ));
   std::vector< std::vector<char> > dependencies (total_number_of_nodes*2,std::vector<char>(width,0));
 
-  //int MPI_Recv(void* buf,int count,MPI_Datatype datatype,int source,int tag, MPI_Comm comm, MPI_Status *status);
-
   //Gather top links
   std::cerr<<"Total nodes: "<<(total_number_of_nodes)<<std::endl;
   for(int i=1;i<=total_number_of_nodes;i++){
@@ -411,9 +390,8 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   std::queue<GridCell> sources;
   for(size_t y=1;y<links.size()-1;y++) //Don't need to worry about top and bottom strips
   for(int x=0;x<width;x++)
-    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data){
+    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data)
       sources.emplace(x,y);
-    }
 
   std::cerr<<"Accumulating across aggregated grid"<<std::endl;
   while(!sources.empty()){
@@ -472,8 +450,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size()) //TODO: Consider using some kind of height-esque variable here
       continue;
 
-    // std::cerr<<"("<<x<<","<<y<<") points to n="<<(int)flowdirs[y][x]<<" at ("<<nx<<","<<ny<<") and has link="<<links[y][x]<<std::endl;
-
     //Part of the same strip. Use the links
     if(y/2==ny/2){
       nx = links[y][x];
@@ -491,11 +467,8 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   }
 
   std::cerr<<"Dispersing accumulation..."<<std::endl;
-  std::cerr.flush();
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
-    // accum[2*n]=std::vector<int>(width,400);
-    // accum[2*n+1]=std::vector<int>(width,400);
     MPI_Send(accum[2*n]  .data(), accum[2*n]  .size(),MPI_INT, i, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD);
     MPI_Send(accum[2*n+1].data(), accum[2*n+1].size(),MPI_INT, i, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD);
   }
