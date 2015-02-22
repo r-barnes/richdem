@@ -689,7 +689,7 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
     StripAdjust(x,y,links,nx,ny);
     if(nx==FLOW_TERMINATES){
       continue;
-    } else if(y/2==(y+dy[n])/2){    //If the cells were part of the same segment
+    } else if(y/2==ny/2){           //If the cells were part of the same segment
       accum[ny][nx] -= accum[y][x]; //then we need to subtract initial
     }                               //accumulation from the terminal
   }
