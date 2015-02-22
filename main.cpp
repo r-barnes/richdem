@@ -8,7 +8,7 @@
 #include <string>
 #include <limits>
 #include <cstdint>
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef DEBUG
   #include <fstream>
@@ -460,10 +460,8 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   for(int y=0;y<segment_height;y++){
     oband->RasterIO(GF_Write, 0, y, width, 1, accum[y].data(), width, 1, GDT_Int32, 0, 0);
     #ifdef DEBUG
-      for(int x=0;x<width;x++){
-        int temp = accum[y][x];
+      for(int x=0;x<width;x++)
         foutasc<<accum[y][x]<<" ";
-      }
       foutasc<<std::endl;
     #endif
   }
@@ -476,7 +474,38 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
 
 
+//In the master node, each set of two rows represents an entire segment's worth
+//of cells. Moving up or down within this representation of a segment means that
+//we are not going to a neighbouring cell, but, rather, we are going to the
+//terminal cell of a flow path originating at the cell we are currently
+//considering.
+void StripAdjust(
+  const int x,        //x-coordinate of cell which may begin a flow path
+  const int y,        //y-coordinate of cell which may begin a flow path
+  const Links &links, //Links between initial and terminal flow path cells
+  int &nx,            //Output! The flow path's terminal cell's x-coordinate
+                      //This may be FLOW_TERMINATES
+  int &ny             //Output! The flow path's terminal cell's y-coordinate
+){
+  if(y/2==ny/2){      //These cells are part of the same segment
+    nx = links[y][x]; //Find the x-coordinate of the flow path's terminal cell
 
+    if(nx==FLOW_TERMINATES) //This cell is the initial cell of a flow path which
+      return;               //terminates internally within the segment.
+                            //Therefore, move on to the next cell.
+
+    //In this case, we have used `y` to find out what segment we are on. To
+    //locate the flow path's terminal cell, begin by setting `ny` to the top
+    //y-coordinate of the segment.
+    ny = (ny%2==0)?ny:ny-1;
+    if(nx<=0){       //This path ends on the top of the segment
+      nx = -nx;      //Map (-Inf,0] to [0,Inf]
+    } else {         //This path ends on the bottom of the segment
+      ny++;          //ny will now point to the bottom of the segment
+      nx--;          //Map [1,Inf) to [0,Inf)
+    }
+  }
+}
 
 
 
@@ -550,28 +579,9 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
       continue;
 
-    //In the master node, each set of two rows represents an entire segment's
-    //worth of cells. Moving up or down within this representation of a segment
-    //means that we are not going to a neighbouring cell, but, rather, we are
-    //going to the terminal cell of a flow path originating at the cell we are
-    //currently considering.
-    if(y/2==ny/2){      //These cells are part of the same segment
-      nx = links[y][x]; //Find the x-coordinate of the flow path's terminal cell
-      //This cell is the initial cell of a flow path which terminates internally
-      //within the segment. Therefore, move on to the next cell.
-      if(nx==FLOW_TERMINATES)
-        continue;
-      //In this case, we have used `y` to find out what segment we are on. To
-      //locate the flow path's terminal cell, begin by setting `ny` to the top
-      //y-coordinate of the segment.
-      ny = (ny%2==0)?ny:ny-1;
-      if(nx<=0){       //This path ends on the top of the segment
-        nx = -nx;      //Map (-Inf,0] to [0,Inf]
-      } else {         //This path ends on the bottom of the segment
-        ny++;          //ny will now point to the bottom of the segment
-        nx--;          //Map [1,Inf) to [0,Inf)
-      }
-    }
+    StripAdjust(x,y,links,nx,ny);
+    if(nx==FLOW_TERMINATES)
+      continue;
 
     //Decrement the dependencies of the "neighbouring" cell
     dependencies[ny][nx]++;
@@ -630,25 +640,9 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
       continue;
 
-    //As before, when we were calculating the dependencies, if cells are part of
-    //the same segement, we need to move accumulation to the terminal cells of
-    //the flow paths their originate.
-    if(c.y/2==ny/2){          //Cells part of the same segment
-      nx = links[c.y][c.x];   //Get x-coordinate of terminal cell
-      if(nx==FLOW_TERMINATES) //Cell terminates internally in segment, move on
-        continue;             //to the next source.
-
-      //In this case, we have used `y` to find out what segment we are on. To
-      //locate the flow path's terminal cell, begin by setting `ny` to the top
-      //y-coordinate of the segment.
-      ny = (ny%2==0)?ny:ny-1;
-      if(nx<=0){              //This path ends on the top of the segment
-        nx = -nx;             //Map (-Inf,0] to [0,Inf]
-      } else {                //This path ends on the bottom of the segment
-        ny++;                 //ny will now point to the bottom of the segment
-        nx--;                 //Map [1,Inf) to [0,Inf)
-      }
-    }
+    StripAdjust(c.x,c.y,links,nx,ny);
+    if(nx==FLOW_TERMINATES)
+      continue;
 
     //Add accumulation to the "neighbouring cell"
     accum[ny][nx] += accum[c.y][c.x];
@@ -692,26 +686,12 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
       continue;
 
-    //As before, when we were calculating the dependencies, if cells are part of
-    //the same segement, we need to move accumulation to the terminal cells of
-    //the flow paths their originate.
-    if(y/2==ny/2){
-      nx = links[y][x];
-      if(nx==FLOW_TERMINATES) //Path we are going into ends on a side edge or internally
-        continue;
-      ny = (ny%2==0)?ny:ny-1; //Map ny to the nearest strip top
-      if(nx<=0){       //This path ends on the top of the strip
-        nx = -nx;      //Map (-Inf,0] to [0,Inf]
-      } else {         //This path ends on the bottom of the strip
-        ny++;          //ny will not point to the bottom of the strip
-        nx--;          //Map [1,Inf) to [0,Inf)
-      }
-
-      //Subtract this cell's input from the cell at the end of its flow path.
-      //The non-master nodes will propagate this cell's accumulation to that
-      //cell anyway.
-      accum[ny][nx] -= accum[y][x];
-    }
+    StripAdjust(x,y,links,nx,ny);
+    if(nx==FLOW_TERMINATES){
+      continue;
+    } else if(y/2==(y+dy[n])/2){    //If the cells were part of the same segment
+      accum[ny][nx] -= accum[y][x]; //then we need to subtract initial
+    }                               //accumulation from the terminal
   }
 
   //Send information to each of the non-master nodes so they can complete their
