@@ -1,7 +1,3 @@
-//Compile with
-// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall
-// mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
-// gdalbuildvrt -input_file_list ifiles gdalbuildvrt -input_file_list ifiles output.vrt
 #include "gdal_priv.h"
 #include "cpl_conv.h" // for CPLMalloc()
 #include <iostream>
