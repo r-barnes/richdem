@@ -22,24 +22,14 @@ using namespace std;
 #define BOT_FLOWDIRS_TAG     6
 #define SYNC_SIG             7
 
-/*
-  For reference, this is the definition of the RasterIO() function
-  CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
-                                   int nXOff, int nYOff, int nXSize, int nYSize,
-                                   void * pData, int nBufXSize, int nBufYSize,
-                                   GDALDataType eBufType,
-                                   int nPixelSpace,
-                                   int nLineSpace )
-*/
-
 //D8 Directions
+//234
+//105
+//876
 ///x offsets of D8 neighbours, from a central cell
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
 ///y offsets of D8 neighbours, from a central cell
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
-//234
-//105
-//876
 
 class GridCell{
  public:
@@ -61,8 +51,6 @@ void FollowPath(const int x0, const int y0, const int width, const int height, c
       nx = x+dx[n];
       ny = y+dy[n];
     }
-
-    //std::cerr<<x<<" "<<y<<std::endl;
 
     if(n==0 || nx<0 || nx==width){
       if(y0==0)
@@ -111,13 +99,6 @@ void FollowPathAdd(int x, int y, const int width, const int height, const std::v
 
 
 void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
-  //Synchronize Threads TODO
-  if(my_node_number>0){
-    MPI_Status status;
-    int message;
-    MPI_Recv(&message, 1, MPI_INT, my_node_number, SYNC_SIG, MPI_COMM_WORLD, &status);
-  }
-
   GDALAllRegister();
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
@@ -149,12 +130,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
     flowdirs[y-segment_first_line]=std::vector<char>(temp.begin(),temp.end());
   }
   //TODO: Why? "y-segment_first_line" in the above?
-
-  // for(int y=0;y<segment_height;y++){
-  //   for(int x=0;x<width;x++)
-  //     std::cout<<setw(3)<<(int)flowdirs[y][x]<<" ";
-  //   std::cout<<std::endl;
-  // }
 
   ////////////////////////
   //Find dependencies
@@ -237,7 +212,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
           FollowPath(x,0,width,segment_height,flowdirs,no_data,top_row_links,bottom_row_links);
       }
     }
-  // std::cerr<<std::endl;
 
   std::cerr<<"Connecting bottom edges"<<std::endl;
   if(my_node_number!=total_number_of_nodes-1)
@@ -261,64 +235,23 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   MPI_Send(flowdirs.back ().data(), flowdirs.back ().size(), MPI_BYTE,0,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD);
   std::cerr<<"Sent "<<(my_node_number+1)<<std::endl;
 
-  //Synchronize Threads TODO
-  if(my_node_number<total_number_of_nodes-1){
-    int message=0;
-    MPI_Send(&message, 1, MPI_INT, my_node_number+2, SYNC_SIG, MPI_COMM_WORLD);
-  }
-
-  //std::cerr<<"Result receiving "<<(my_node_number+1)<<std::endl;
+  //Receive results of master node's computation
   MPI_Status status;
   std::vector<int> accum_top(width), accum_bot(width);
   MPI_Recv(accum_top.data(), accum_top.size(), MPI_INT, 0, TOP_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
   MPI_Recv(accum_bot.data(), accum_bot.size(), MPI_INT, 0, BOT_ACCUMULATION_TAG, MPI_COMM_WORLD, &status);
-  //std::cerr<<"Result received "<<(my_node_number+1)<<std::endl;
 
-  //Synchronize Threads TODO
-  if(my_node_number>0){
-    MPI_Status status;
-    int message;
-    MPI_Recv(&message, 1, MPI_INT, my_node_number, SYNC_SIG, MPI_COMM_WORLD, &status);
-  }
-
-  #ifdef DEBUG
-    std::cerr<<std::endl<<std::endl;
-    std::cerr<<"Node #"<<my_node_number<<std::endl;
-    std::cerr<<"================="<<std::endl;
-
-    std::cerr<<"Received top: ";
-    for(auto &x: accum_top)
-      std::cerr<<setw(4)<<x<<" ";
-    std::cerr<<endl;
-
-    std::cerr<<"Received bot: ";
-    for(auto &x: accum_bot)
-      std::cerr<<setw(4)<<x<<" ";
-    std::cerr<<endl;
-  #endif
-
-  if(my_node_number!=0){
-  //  std::cerr<<"Now adding to paths on top."<<std::endl;
+  //Add to paths beginning at top
+  if(my_node_number!=0)
     for(int x=0;x<width;x++)
-      if(accum_top[x]){
-        #ifdef DEBUG
-          std::cerr<<"Path at ("<<x<<",0) had "<<accum_top[x]<<" accumulation pointing towards "<<(int)flowdirs[0][x]<<std::endl;
-        #endif
+      if(accum_top[x])
         FollowPathAdd(x, 0, width, segment_height, flowdirs, no_data, accum, accum_top[x]);//-accum[0][x]);
-      }
-  }
 
-  //std::cerr<<"Connecting bottom edges"<<std::endl;
-  if(my_node_number!=total_number_of_nodes-1){
-    //std::cerr<<"Now adding to paths on bot."<<std::endl;
+  //Add to paths beginning at bottom
+  if(my_node_number!=total_number_of_nodes-1)
     for(int x=0;x<width;x++)
-      if(accum_bot[x]){
-        #ifdef DEBUG
-          std::cerr<<"Path at ("<<x<<",Ym) had "<<accum_bot[x]<<" accumulation pointing towards "<<(int)flowdirs[segment_height-1][x]<<std::endl;
-        #endif
+      if(accum_bot[x])
         FollowPathAdd(x, segment_height-1, width, segment_height, flowdirs, no_data, accum, accum_bot[x]);//-accum[segment_height-1][x]);
-      }
-  }
 
 
   std::cerr<<"Writing out from "<<(my_node_number)<<std::endl;
@@ -373,15 +306,8 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
     #endif
   }
 
-  GDALClose(fin);
-  //GDALClose(fout); //TODO
-
-  //Synchronize Threads TODO
-  std::cerr.flush();
-  if(my_node_number<total_number_of_nodes-1){
-    int message=0;
-    MPI_Send(&message, 1, MPI_INT, my_node_number+2, SYNC_SIG, MPI_COMM_WORLD);
-  }
+  GDALClose(fin); //TODO
+  GDALClose(fout);
 }
 
 
@@ -425,44 +351,13 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
   for(int i=1;i<=total_number_of_nodes;i++){
     int n=i-1;
     MPI_Status status;
-    std::cerr<<"Receiving "<<i<<std::endl;
     MPI_Recv(links   [2*n]  .data(), links   [2*n]  .size(),MPI_INT, i,TOP_LINKS_TAG,        MPI_COMM_WORLD,&status);
     MPI_Recv(links   [2*n+1].data(), links   [2*n+1].size(),MPI_INT, i,BOT_LINKS_TAG,        MPI_COMM_WORLD,&status);
     MPI_Recv(accum   [2*n]  .data(), accum   [2*n]  .size(),MPI_INT, i,TOP_ACCUMULATION_TAG, MPI_COMM_WORLD,&status);
     MPI_Recv(accum   [2*n+1].data(), accum   [2*n+1].size(),MPI_INT, i,BOT_ACCUMULATION_TAG, MPI_COMM_WORLD,&status);
     MPI_Recv(flowdirs[2*n]  .data(), flowdirs[2*n]  .size(),MPI_BYTE,i,TOP_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
     MPI_Recv(flowdirs[2*n+1].data(), flowdirs[2*n+1].size(),MPI_BYTE,i,BOT_FLOWDIRS_TAG,     MPI_COMM_WORLD,&status);
-    std::cerr<<"Received "<<i<<std::endl;
   }
-
-  #ifdef DEBUG
-    std::cerr<<"Received accumulation grid"<<std::endl;
-    for(size_t y=0;y<accum.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<accum[0].size();x++)
-        std::cerr<<setw(3)<<accum[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-
-    std::cerr<<"Flowdirs"<<std::endl;
-    for(size_t y=0;y<flowdirs.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<flowdirs[0].size();x++)
-        std::cerr<<setw(3)<<(int)flowdirs[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-
-    std::cerr<<"Links"<<std::endl;
-    for(size_t y=0;y<links.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<links[0].size();x++)
-        std::cerr<<setw(3)<<(int)links[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-  #endif
 
   std::cerr<<"Finding dependencies.."<<std::endl;
   for(int y=0;y<links.size();y++)
@@ -477,8 +372,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size()) //TODO: Consider using some kind of height-esque variable here
       continue;
 
-    // std::cerr<<"("<<x<<","<<y<<") points to n="<<(int)flowdirs[y][x]<<" at ("<<nx<<","<<ny<<") and has link="<<links[y][x]<<std::endl;
-
     //Part of the same strip. Use the links
     if(y/2==ny/2){
       nx = links[y][x];
@@ -486,22 +379,12 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
         continue;
       ny = (ny%2==0)?ny:ny-1; //Map ny to the nearest strip top
       if(nx<=0){       //This path ends on the top of the strip
-        #ifdef DEBUG
-          std::cerr<<"Top modifiying "<<y<<" -> "<<ny<<std::endl;
-        #endif
         nx = -nx;      //Map (-Inf,0] to [0,Inf]
       } else {         //This path ends on the bottom of the strip
-        #ifdef DEBUG
-          std::cerr<<"Bottom modifiying "<<y<<" -> "<<ny<<std::endl;
-        #endif
         ny++;          //ny will not point to the bottom of the strip
         nx--;          //Map [1,Inf) to [0,Inf)
       }
     }
-
-    #ifdef DEBUG
-      std::cerr<<"("<<nx<<","<<ny<<") depends on ("<<x<<","<<y<<")"<<std::endl;
-    #endif
 
     dependencies[ny][nx]++;
   }
@@ -521,26 +404,14 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
       accum[y][x] = 0;
   }
 
- std::cerr<<"Make a note of delta accumulation grid..."<<std::endl;
- accum_orig = accum;
-
-  #ifdef DEBUG
-    std::cerr<<"Accumulation grid following delta accumulation"<<std::endl;
-    for(size_t y=0;y<accum.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<accum[0].size();x++)
-        std::cerr<<setw(3)<<accum[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-  #endif
+  std::cerr<<"Make a note of delta accumulation grid..."<<std::endl;
+  accum_orig = accum;
 
   std::cerr<<"Finding sources..."<<std::endl;
   std::queue<GridCell> sources;
   for(size_t y=1;y<links.size()-1;y++) //Don't need to worry about top and bottom strips
   for(int x=0;x<width;x++)
     if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data){
-      // std::cerr<<"Source at ("<<x<<","<<y<<")"<<std::endl;
       sources.emplace(x,y);
     }
 
@@ -558,10 +429,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     int nx = c.x+dx[n];
     int ny = c.y+dy[n];
 
-    #ifdef DEBUG
-      std::cerr<<"I am at ("<<c.x<<","<<c.y<<") and I want to go to n="<<n<<" at ("<<nx<<","<<ny<<")"<<std::endl;
-    #endif
-
     if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
       continue;
 
@@ -577,16 +444,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
         ny++;          //ny will not point to the bottom of the strip
         nx--;          //Map [1,Inf) to [0,Inf)
       }
-
-      #ifdef DEBUG
-        std::cerr<<"\tSame strip! Link="<<links[c.y][c.x]<<" leads to ("<<nx<<","<<ny<<")"<<std::endl;
-      #endif
     }
-
-    #ifdef DEBUG
-      std::cerr<<"\tPouring ("<<c.x<<","<<c.y<<") into ("<<nx<<","<<ny<<") with "<<accum[c.y][c.x]<<std::endl;
-      std::cerr<<"Decrementing dependencies to "<<(dependencies[ny][nx]-1)<<std::endl;
-    #endif
 
     accum[ny][nx] += accum[c.y][c.x];
     dependencies[ny][nx]--;
@@ -595,32 +453,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
       sources.emplace(nx,ny);
   }
 
-
-  // for(auto &r: accum){
-  //   for(auto &x: r)
-  //     std::cerr<<setw(4)<<x<<" ";
-  //   std::cerr<<std::endl;
-  // }
-
-  #ifdef DEBUG
-    std::cerr<<"Net accumulation grid"<<std::endl;
-    for(size_t y=0;y<accum.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<accum[0].size();x++)
-        std::cerr<<setw(3)<<accum[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-
-    std::cerr<<"Dependencies grid"<<std::endl;
-    for(size_t y=0;y<dependencies.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<dependencies[0].size();x++)
-        std::cerr<<setw(3)<<(int)dependencies[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-  #endif
 
   std::cerr<<"Generating delta accumulation grid of doom..."<<std::endl;
   for(int y=0;y<links.size();y++)
@@ -633,9 +465,6 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
     if(n<=0 || n==no_data)
       continue;
 
-    #ifdef DEBUG
-      std::cerr<<"Subtracting "<<accum_orig[y][x]<<" from ("<<x<<","<<y<<")"<<std::endl;
-    #endif
     accum[y][x] -= accum_orig[y][x]; //TODO: Should this maybe go above the `n<=0||n==no_data` check?
 
     int nx = x+dx[n];
@@ -657,41 +486,9 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
         ny++;          //ny will not point to the bottom of the strip
         nx--;          //Map [1,Inf) to [0,Inf)
       }
-      #ifdef DEBUG
-        std::cerr<<"Subtracting "<<accum_orig[y][x]<<" from ("<<nx<<","<<ny<<")"<<std::endl;
-      #endif
       accum[ny][nx] -= accum[y][x];
     }
   }
-
-
-  // std::cerr<<"Subtracting original accumulations..."<<std::endl;
-  // for(int y=0;y<accum.size();y++)
-  // for(int x=0;x<width;x++)
-  //   accum[y][x] -= accum_orig[y][x];
-
-  // std::cerr<<"Setting outlets to zero..."<<std::endl;
-  // for(size_t y=0;y<links.size();y++)
-  // for(int x=0;x<width;x++){
-  //   int fd = flowdirs[y][x];
-  //   //On the bottom going up into the strip or nowhere
-  //   if( y%2==0 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
-  //     accum[y][x] = accum_orig[y][x];
-  //   //On the top going down into the strip or nowhere
-  //   if( y%2==1 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
-  //     accum[y][x] = accum_orig[y][x];
-  // }
-
-  #ifdef DEBUG
-    std::cerr<<"Differenced accumulation grid"<<std::endl;
-    for(size_t y=0;y<accum.size();y++){
-      if(y%2==0)
-        std::cerr<<"--------"<<std::endl;
-      for(size_t x=0;x<accum[0].size();x++)
-        std::cerr<<setw(3)<<accum[y][x]<<" ";
-      std::cerr<<std::endl;
-    }
-  #endif
 
   std::cerr<<"Dispersing accumulation..."<<std::endl;
   std::cerr.flush();
