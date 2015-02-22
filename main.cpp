@@ -3,8 +3,7 @@
 #include <queue>
 #include <mpi.h>
 #include <string>
-#include <iomanip>
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef DEBUG
   #include <fstream>
@@ -265,7 +264,6 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
   GDALRasterBand *oband = fout->GetRasterBand(1);
   oband->SetNoDataValue(0);
-  //poBand->RasterIO( GF_Write, 0, 0, no2output.shape()[0], no2output.shape()[1], no2output.origin(), no2output.shape()[0], no2output.shape()[1], GDT_Float32, 0, 0 );
 
   std::cerr<<"Writing out."<<std::endl;
   #ifdef DEBUG
@@ -276,13 +274,11 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
       int temp = accum[y][x];
       oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Int32, 0, 0 );
       #ifdef DEBUG
-        foutasc<<setw(3)<<accum[y][x]<<" ";
-        cerr<<setw(3)<<accum[y][x]<<" ";
+        foutasc<<accum[y][x]<<" ";
       #endif
     }
     #ifdef DEBUG
       foutasc<<std::endl;
-      std::cerr<<std::endl;
     #endif
   }
 
