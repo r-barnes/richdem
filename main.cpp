@@ -7,10 +7,7 @@
 
 #ifdef DEBUG
   #include <fstream>
-  #include <string>
 #endif
-
-
 
 #define TOP_LINKS_TAG        1
 #define BOT_LINKS_TAG        2
@@ -297,7 +294,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
 
 
-void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
+void DoMaster(int total_number_of_nodes, char *flowdir_fname){
   GDALAllRegister();
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
