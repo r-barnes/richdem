@@ -1,15 +1,10 @@
 #include "gdal_priv.h"
-#include "cpl_conv.h" // for CPLMalloc()
 #include <iostream>
-#include <cmath>
-#include <stdint.h>
-#include <map>
 #include <queue>
 #include <mpi.h>
 #include <string>
 #include <iomanip>
-#include <cassert>
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
   #include <fstream>
