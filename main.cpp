@@ -3,7 +3,7 @@
 #include <queue>
 #include <boost/mpi.hpp>
 #include <string>
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
   #include <fstream>
@@ -267,14 +267,12 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
   #endif
   for(int y=0;y<segment_height;y++){
-    for(int x=0;x<width;x++){
-      int temp = accum[y][x];
-      oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Int32, 0, 0 );
-      #ifdef DEBUG
-        foutasc<<accum[y][x]<<" ";
-      #endif
-    }
+    oband->RasterIO(GF_Write, 0, y, width, 1, accum[y].data(), width, 1, GDT_Int32, 0, 0);
     #ifdef DEBUG
+      for(int x=0;x<width;x++){
+        int temp = accum[y][x];
+        foutasc<<accum[y][x]<<" ";
+      }
       foutasc<<std::endl;
     #endif
   }
