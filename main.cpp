@@ -11,7 +11,6 @@
   #include <string>
 #endif
 
-using namespace std;
 
 
 #define TOP_LINKS_TAG        1
@@ -103,7 +102,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<flowdir_fname<<endl;
+    std::cerr<<"Could not open file: "<<flowdir_fname<<std::endl;
     return;
   }
 
@@ -307,7 +306,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *flowdir_fname
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<flowdir_fname<<endl;
+    std::cerr<<"Could not open file: "<<flowdir_fname<<std::endl;
     return;
   }
 
