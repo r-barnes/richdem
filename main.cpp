@@ -8,6 +8,7 @@
 #include <string>
 #include <limits>
 #include <cstdint>
+#include <vector>
 //#define DEBUG 1
 
 #ifdef DEBUG
