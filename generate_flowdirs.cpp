@@ -130,6 +130,8 @@ int main(int argc, char **argv){
     return -1;
   }
 
+  std::cerr<<"Running "<<GDALVersionInfo("--version")<<std::endl;
+
   GDALAllRegister();              //Load GDAL drivers so we can read and write
 
   //Open dataset
