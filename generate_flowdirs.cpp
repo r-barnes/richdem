@@ -175,10 +175,14 @@ int main(int argc, char **argv){
   const char* projection_string=fin->GetProjectionRef();
   fout->SetProjection(projection_string);
 
+
   //We will write all of the data to the first raster band
   GDALRasterBand *oband = fout->GetRasterBand(1);
 
   switch(inp->GetRasterDataType()){
+    case GDT_Int16:
+      ProcessFile<int16_t, GDT_Int16>(inp,oband);
+      break;
     case GDT_Int32:
       ProcessFile<int32_t, GDT_Int32>(inp,oband);
       break;
