@@ -401,7 +401,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
   std::map<int, int> strip_to_max_label;
   std::map<int, int> label_to_strip;
   int maxlabel = 0;
-  for(int i=0;i<graphs.size();i++){
+  for(size_t i=0;i<graphs.size();i++){
     int newmaxlabel = 0;
     for(auto &fkey: graphs[i])
     for(auto &skey: fkey.second){
