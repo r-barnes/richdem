@@ -309,15 +309,12 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
   std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
   #endif
   for(int y=0;y<segment_height;y++){
-    for(int x=0;x<width;x++){
-      float temp = elev[y][x];
-      oband->RasterIO( GF_Write, x, y, 1, 1, &temp, 1, 1, GDT_Float32, 0, 0 );
-      #ifdef DEBUG
+    oband->RasterIO(GF_Write, 0, y, width, 1, elev[y].data(), width, 1, GDT_Float32, 0, 0);
+    #ifdef DEBUG
+      for(int x=0;x<width;x++){
         foutasc<<setw(3)<<elev[y][x]<<" ";
         cerr<<setw(3)<<elev[y][x]<<" ";
-      #endif
-    }
-    #ifdef DEBUG
+      }
       foutasc<<std::endl;
       std::cerr<<std::endl;
     #endif
