@@ -8,7 +8,7 @@
 #include <string>
 #include <limits>
 #include <cstdint>
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
   #include <fstream>
@@ -256,6 +256,12 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   if(my_node_number==total_number_of_nodes-1)
     segment_last_line = height;
   int segment_height = segment_last_line - segment_first_line;
+
+  if(flowband->GetRasterDataType()!=GDT_Int32){
+    std::cerr<<"Bad datatype. Got "<<(flowband->GetRasterDataType())
+             <<" was expecting "<<GDT_Int32<<std::endl;
+    return;
+  }
 
   //Read in the D8 flow directions data, one row at a time
   Flowdirs flowdirs(segment_height, FlowdirsRow(width));
