@@ -228,45 +228,47 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
     }
   #endif
 
-  //Synchronize Threads TODO
-  std::cerr.flush();
-  if(my_node_number<total_number_of_nodes-1)
-    world.send(my_node_number+2,SYNC_SIG, 0);
+  if(total_number_of_nodes>1){
+    //Synchronize Threads TODO
+    std::cerr.flush();
+    if(my_node_number<total_number_of_nodes-1)
+      world.send(my_node_number+2,SYNC_SIG, 0);
 
-  //TODO: Could have master load elevations while nodes are processing. This
-  //would speed things up slightly and reduce communication overhead.
-  world.send(0,TOP_ELEVATIONS_TAG,elev.front());
-  world.send(0,BOT_ELEVATIONS_TAG,elev.back() );
-  world.send(0,TOP_LABELS_TAG,labels.front());
-  world.send(0,BOT_LABELS_TAG,labels.back());
-  world.send(0,GRAPH_TAG,graph);
+    //TODO: Could have master load elevations while nodes are processing. This
+    //would speed things up slightly and reduce communication overhead.
+    world.send(0,TOP_ELEVATIONS_TAG,elev.front());
+    world.send(0,BOT_ELEVATIONS_TAG,elev.back() );
+    world.send(0,TOP_LABELS_TAG,labels.front());
+    world.send(0,BOT_LABELS_TAG,labels.back());
+    world.send(0,GRAPH_TAG,graph);
 
-  //Synchronize Threads TODO
-  std::cerr.flush();
-  if(my_node_number>0){
-    int msg;
-    world.recv(my_node_number,SYNC_SIG,msg);
-  }
+    //Synchronize Threads TODO
+    std::cerr.flush();
+    if(my_node_number>0){
+      int msg;
+      world.recv(my_node_number,SYNC_SIG,msg);
+    }
 
-  std::cerr<<"=========="<<my_node_number<<std::endl;
-  std::cerr<<"Receiving label offsets..."<<std::endl;
-  std::map<int,float> label_offsets;
-  world.recv(0,LABEL_OFFSETS,label_offsets);
+    std::cerr<<"=========="<<my_node_number<<std::endl;
+    std::cerr<<"Receiving label offsets..."<<std::endl;
+    std::map<int,float> label_offsets;
+    world.recv(0,LABEL_OFFSETS,label_offsets);
 
-  #ifdef DEBUG
-    for(auto &lo: label_offsets)
-      std::cerr<<lo.first<<"->"<<lo.second<<std::endl;
-  #endif
+    #ifdef DEBUG
+      for(auto &lo: label_offsets)
+        std::cerr<<lo.first<<"->"<<lo.second<<std::endl;
+    #endif
 
-  std::cerr<<"Applying label offsets..."<<std::endl;
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++){
-    auto my_label = labels[y][x];
-    if(elev[y][x]==no_data)
-      continue;
-    auto my_offset = label_offsets[my_label];
-    if(elev[y][x]<=my_offset)
-      elev[y][x] = my_offset;
+    std::cerr<<"Applying label offsets..."<<std::endl;
+    for(int y=0;y<segment_height;y++)
+    for(int x=0;x<width;x++){
+      auto my_label = labels[y][x];
+      if(elev[y][x]==no_data)
+        continue;
+      auto my_offset = label_offsets[my_label];
+      if(elev[y][x]<=my_offset)
+        elev[y][x] = my_offset;
+    }
   }
 
   std::cerr<<"Writing out from "<<(my_node_number)<<std::endl;
@@ -343,8 +345,10 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
 
 void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename){
   mpi::communicator world;
-
   GDALAllRegister();
+
+  if(total_number_of_nodes==1)
+    return;
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(dem_filename, GA_ReadOnly);
   if(fin==NULL){
