@@ -258,24 +258,28 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
     segment_last_line = height;
   int segment_height = segment_last_line - segment_first_line;
 
-  if(flowband->GetRasterDataType()!=GDT_Int32){
-    std::cerr<<"Bad datatype. Got "<<(flowband->GetRasterDataType())
-             <<" was expecting "<<GDT_Int32<<std::endl;
+  auto data_type = flowband->GetRasterDataType();
+
+  if(data_type!=GDT_Int32 && data_type!=GDT_Byte){
+    std::cerr<<"Bad datatype. Got "<<GDALGetDataTypeName(data_type)<<std::endl;
     return;
   }
 
   //Read in the D8 flow directions data, one row at a time
   Flowdirs flowdirs(segment_height, FlowdirsRow(width));
   for(int y=segment_first_line;y<segment_last_line;y++){
-    //Read data using its native format
-    std::vector<int> temp(width);
-    flowband -> RasterIO(GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Int32, 0, 0);
-
-    //Cast the data to our internal flowdir_t format.
-
+    //Read data using its native format and cast it data into our internal flowdir_t format.
     //Using `y-segment_first_line` converts from where we are reading in the
     //data to where that data is stored internally.
-    flowdirs[y-segment_first_line] = FlowdirsRow(temp.begin(),temp.end());
+    if(data_type==GDT_Byte){
+      std::vector<int8_t> temp(width);
+      flowband -> RasterIO(GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Byte, 0, 0);
+      flowdirs[y-segment_first_line] = FlowdirsRow(temp.begin(),temp.end());
+    } else if (data_type==GDT_Int32){
+      std::vector<int32_t> temp(width);
+      flowband -> RasterIO(GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Int32, 0, 0);
+      flowdirs[y-segment_first_line] = FlowdirsRow(temp.begin(),temp.end());
+    }
   }
 
 
@@ -538,7 +542,7 @@ void DoMaster(int total_number_of_nodes, char *flowdir_fname){
 
   //Get the essential properties
   GDALRasterBand *flowband = fin->GetRasterBand(1);
-  int no_data              = flowband->GetNoDataValue();
+  flowdir_t no_data        = flowband->GetNoDataValue();
   int width                = flowband->GetXSize();
   GDALClose(fin);
 
