@@ -10,11 +10,9 @@
 #include <string>
 #include <iomanip>
 #include <queue>
+#include <limits>
 //#include <unordered_map>
 //#define DEBUG 1
-
-//typedef std::unordered_map<int, std::unordered_map<int, float> > Graph;
-typedef std::map<int, std::map<int, float> > Graph;
 
 namespace mpi = boost::mpi;
 
@@ -64,26 +62,32 @@ class GridCell {
   GridCell(int x, int y):x(x),y(y){}
 };
 
+template<class elev_t>
 class GridCellZ : public GridCell {
  public:
-  float z;         ///< Grid cell's z-coordinate
-  GridCellZ(int x, int y, float z): GridCell(x,y), z(z) {}
+  elev_t z;         ///< Grid cell's z-coordinate
+  GridCellZ(int x, int y, elev_t z): GridCell(x,y), z(z) {}
   GridCellZ(){}
   bool operator> (const GridCellZ& a) const { return z>a.z; }
 };
 
-typedef std::priority_queue<GridCellZ, std::vector<GridCellZ>, std::greater<GridCellZ> > GridCellZ_pq;
-typedef std::vector< std::vector<int> >   Labels;
-typedef std::vector< std::vector<float> > Elevations;
+typedef int label_t;
+typedef std::vector<label_t> LabelRow;
+typedef std::vector<LabelRow> Labels;
 
 
 
 
-
-
-
-void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
+template<class elev_t, GDALDataType gdt_t>
+void DoNode(char *dem_filename){
+  typedef std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > > GridCellZ_pq;
+  typedef std::vector<elev_t>       ElevationRow;
+  typedef std::vector<ElevationRow> Elevations;
+  typedef std::map<label_t, std::map<label_t, elev_t> > Graph;
   mpi::communicator world;
+
+  const int my_node_number        = world.rank()-1;
+  const int total_number_of_nodes = world.size()-1; //Don't count master node
 
   //Synchronize Threads TODO
   std::cerr.flush();
@@ -96,22 +100,14 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(dem_filename, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<dem_filename<<endl;
+    cerr<<"Node "<<my_node_number<<" could not open file: "<<dem_filename<<endl;
     return;
   }
 
   GDALRasterBand *demband = fin->GetRasterBand(1);
-
-  int width  = demband->GetXSize();
-  int height = demband->GetYSize();
-  if(demband->GetRasterDataType()!=GDT_Float32 && demband->GetRasterDataType()!=5){ //TODO
-    std::cerr<<"Bad datatype. Got "<<(demband->GetRasterDataType())
-             <<" was expecting "<<GDT_Float32<<std::endl;
-    return;
-  }
-
-  float no_data = demband->GetNoDataValue();
-  std::cerr<<"No data value: "<<no_data<<std::endl;
+  int width               = demband->GetXSize();
+  int height              = demband->GetYSize();
+  elev_t no_data          = demband->GetNoDataValue();
 
   int segment_first_line = (height/total_number_of_nodes)*my_node_number;
   int segment_last_line  = (height/total_number_of_nodes)*(my_node_number+1);
@@ -120,24 +116,19 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
   int segment_height = segment_last_line - segment_first_line;
 
   //Read in DEM data
-  Elevations elev(segment_height, std::vector<float>(width));
+  Elevations elev(segment_height, ElevationRow(width));
   for(int y=segment_first_line;y<segment_last_line;y++){
-    #ifdef DEBUG
-      std::vector<int> temp(width);
-      demband -> RasterIO( GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Int32, 0, 0 );
-    #else
-      std::vector<float> temp(width);
-      demband -> RasterIO( GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Float32, 0, 0 );
-    #endif
-    elev[y-segment_first_line]=std::vector<float>(temp.begin(),temp.end());
+    ElevationRow temp(width);
+    demband -> RasterIO( GF_Read, 0, y, width, 1, temp.data(), width, 1, gdt_t, 0, 0 );
+    elev[y-segment_first_line]=temp;
   }
   //TODO: Why? "y-segment_first_line" in the above?
 
   //////////////////////////////////////////
   //Use the improved priority flood from Barnes 2014 TODO
   GridCellZ_pq open;
-  std::queue<GridCellZ> pit;
-  Labels labels(segment_height, std::vector<int>(width,0));
+  std::queue< GridCellZ<elev_t> > pit;
+  Labels labels(segment_height, LabelRow(width,0));
 
   std::cerr<<"Adding edges..."<<std::endl;
   for(int x=1;x<width-1;x++){
@@ -160,7 +151,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
   int current_label=2;  //TODO: Thought this was more clear than zero in the results.
   std::cerr<<"Performing Priority-Flood..."<<std::endl;
   while(open.size()>0 || pit.size()>0){
-    GridCellZ c;
+    GridCellZ<elev_t> c;
     if(pit.size()>0){
       c=pit.front();
       pit.pop();
@@ -185,8 +176,8 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
     auto my_label = labels[c.y][c.x];
 
     for(int n=1;n<=8;n++){
-      int nx = c.x+dx[n];
-      int ny = c.y+dy[n];
+      auto nx = c.x+dx[n];
+      auto ny = c.y+dy[n];
       if(nx<0 || ny<0 || nx==width || ny==segment_height) continue;
       auto other_label = std::abs(labels[ny][nx]);
       if(other_label!=0){
@@ -236,11 +227,11 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
 
     //TODO: Could have master load elevations while nodes are processing. This
     //would speed things up slightly and reduce communication overhead.
-    world.send(0,TOP_ELEVATIONS_TAG,elev.front());
-    world.send(0,BOT_ELEVATIONS_TAG,elev.back() );
-    world.send(0,TOP_LABELS_TAG,labels.front());
-    world.send(0,BOT_LABELS_TAG,labels.back());
-    world.send(0,GRAPH_TAG,graph);
+    world.send(0, TOP_ELEVATIONS_TAG, elev.front  ());
+    world.send(0, BOT_ELEVATIONS_TAG, elev.back   ());
+    world.send(0, TOP_LABELS_TAG,     labels.front());
+    world.send(0, BOT_LABELS_TAG,     labels.back ());
+    world.send(0, GRAPH_TAG,          graph);
 
     //Synchronize Threads TODO
     std::cerr.flush();
@@ -251,7 +242,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
 
     std::cerr<<"=========="<<my_node_number<<std::endl;
     std::cerr<<"Receiving label offsets..."<<std::endl;
-    std::map<int,float> label_offsets;
+    std::map<label_t,elev_t> label_offsets;
     world.recv(0,LABEL_OFFSETS,label_offsets);
 
     #ifdef DEBUG
@@ -279,7 +270,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
   }
 
   std::string output_name = std::string("output")+std::to_string(my_node_number)+std::string(".tif");
-  GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, segment_height, 1, GDT_Float32, NULL);
+  GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, segment_height, 1, gdt_t, NULL);
 
   if(fout==NULL){
     std::cerr<<"could not create output file."<<std::endl;
@@ -309,7 +300,7 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
   std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
   #endif
   for(int y=0;y<segment_height;y++){
-    oband->RasterIO(GF_Write, 0, y, width, 1, elev[y].data(), width, 1, GDT_Float32, 0, 0);
+    oband->RasterIO(GF_Write, 0, y, width, 1, elev[y].data(), width, 1, gdt_t, 0, 0);
     #ifdef DEBUG
       for(int x=0;x<width;x++){
         foutasc<<setw(3)<<elev[y][x]<<" ";
@@ -339,29 +330,32 @@ void doNode(int my_node_number, int total_number_of_nodes, char *dem_filename){
 
 
 
-
-void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename){
+template<class elev_t, GDALDataType gdt_t>
+void DoMaster(char *dem_filename){
+  typedef std::vector<elev_t>       ElevationRow;
+  typedef std::vector<ElevationRow> Elevations;
+  typedef std::map<label_t, std::map<label_t, elev_t> > Graph;
   mpi::communicator world;
   GDALAllRegister();
+
+  const int total_number_of_nodes = world.size()-1; //Don't count master node
 
   if(total_number_of_nodes==1)
     return;
 
   GDALDataset *fin = (GDALDataset*)GDALOpen(dem_filename, GA_ReadOnly);
   if(fin==NULL){
-    cerr<<"Could not open file: "<<dem_filename<<endl;
+    cerr<<"Master could not open file: "<<dem_filename<<endl;
     return;
   }
 
   GDALRasterBand *demband = fin->GetRasterBand(1);
-
-  float no_data = demband->GetNoDataValue();
-
-  int width  = demband->GetXSize();
+  elev_t no_data          = demband->GetNoDataValue();
+  int width               = demband->GetXSize();
   GDALClose(fin);
 
-  Elevations elev  (total_number_of_nodes*2,std::vector<float> (width  ));
-  Labels     labels(total_number_of_nodes*2,std::vector<int>   (width  ));
+  Elevations elev  (total_number_of_nodes*2,ElevationRow(width));
+  Labels     labels(total_number_of_nodes*2,LabelRow    (width));
   std::vector<Graph> graphs(total_number_of_nodes);
 
 
@@ -399,15 +393,15 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
   //Merge graphs
   std::cerr<<"Merging graphs"<<std::endl;
   Graph mastergraph;
-  std::map<int, int> strip_to_max_label;
-  std::map<int, int> label_to_strip;
-  int maxlabel = 0;
+  std::map<int, label_t> strip_to_max_label;
+  std::map<label_t, int> label_to_strip;
+  label_t maxlabel = 0;
   for(size_t i=0;i<graphs.size();i++){
-    int newmaxlabel = 0;
+    label_t newmaxlabel = 0;
     for(auto &fkey: graphs[i])
     for(auto &skey: fkey.second){
-      int flabel = fkey.first;
-      int slabel = skey.first;
+      auto flabel = fkey.first;
+      auto slabel = skey.first;
       if(flabel!=1)
         flabel += maxlabel;
       if(slabel!=1)
@@ -446,8 +440,8 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
         continue;
       auto my_label = labels[y][x];
       for(int n=6;n<=8;n++){
-        int nx = x+dx[n];
-        int ny = y+dy[n];
+        auto nx = x+dx[n];
+        auto ny = y+dy[n];
         #ifdef DEBUG
           std::cerr<<"Considering ("<<x<<","<<y<<") with n="<<n<<" pointing to ("<<nx<<","<<ny<<")"<<std::endl;
         #endif
@@ -478,12 +472,12 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
 
 
   std::cerr<<"Performing aggregated priority flood"<<std::endl;
-  typedef std::pair<float, int>   graph_node;
+  typedef std::pair<elev_t, label_t>  graph_node;
   std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
-  std::map<int,bool>              visited;
-  std::map<int,float>             graph_elev;
+  std::map<label_t,bool>              visited;
+  std::map<label_t,elev_t>            graph_elev;
 
-  open.emplace(-9e99,1); //TODO: Use min value
+  open.emplace(std::numeric_limits<elev_t>::min(),1);
 
   while(open.size()>0){
     graph_node c=open.top();
@@ -517,7 +511,7 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
       std::cerr<<setw(3)<<ge.first<<" = "<<setw(3)<<ge.second<<std::endl;
   #endif
 
-  std::vector< std::map<int,float> > strip_label_elevations(total_number_of_nodes);
+  std::vector< std::map<label_t,elev_t> > strip_label_elevations(total_number_of_nodes);
   for(auto &ge: graph_elev){
     auto vertex_num   = ge.first;
     auto elevation    = ge.second;
@@ -537,24 +531,42 @@ void DoMaster(int my_node_number, int total_number_of_nodes, char *dem_filename)
   //mpi::wait_all(reqs, reqs + total_number_of_nodes);
 }
 
+template<class elev_t, GDALDataType gdt_t>
+void DoRouter(char *dem_filename){
+  mpi::communicator world;
+  if(world.rank()==0)
+    DoMaster<elev_t,gdt_t>(dem_filename);
+  else
+    DoNode<elev_t,gdt_t>(dem_filename);
+}
+
 int main(int argc, char **argv){
   mpi::environment env;
   mpi::communicator world;
 
   if(argc!=2){
     std::cerr<<"Syntax: "<<argv[0]<<" <DEM>"<<std::endl;
-    MPI_Finalize();
     return -1;
   }
 
-  int my_thread_number, nthreads;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_thread_number);
-  MPI_Comm_size(MPI_COMM_WORLD, &nthreads);
+  GDALAllRegister();
+  GDALDataset *fin = (GDALDataset*)GDALOpen(argv[1], GA_ReadOnly);
+  if(fin==NULL){
+    if(world.rank()==0)
+      cerr<<"Could not peek at file: "<<argv[1]<<endl;
+    return -1;
+  }
 
-  if(my_thread_number>0)
-    doNode(world.rank()-1,world.size()-1,argv[1]);
-  else
-    DoMaster(my_thread_number-1,nthreads-1,argv[1]);
+  GDALRasterBand *band = fin->GetRasterBand(1);
+
+  if(band->GetRasterDataType()==GDT_Int16)
+    DoRouter<int16_t, GDT_Int16>(argv[1]);
+  else if(band->GetRasterDataType()==GDT_Float32)
+    DoRouter<float, GDT_Float32>(argv[1]);
+  else if(world.rank()==0)
+    std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(band->GetRasterDataType())<<std::endl;
+
+  GDALClose(fin);
 
   return 0;
 }
