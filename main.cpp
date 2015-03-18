@@ -525,10 +525,10 @@ void DoMaster(char *dem_filename){
   mpi::request reqs[total_number_of_nodes];
   for(int i=1;i<=total_number_of_nodes;i++){
     int n   = i-1;
-    //reqs[n] = world.isend(i, LABEL_OFFSETS, strip_label_elevations[n]); //TODO
-    world.send(i, LABEL_OFFSETS, strip_label_elevations[n]); //TODO
+    reqs[n] = world.isend(i, LABEL_OFFSETS, strip_label_elevations[n]); //TODO
+    //world.send(i, LABEL_OFFSETS, strip_label_elevations[n]); //TODO
   }
-  //mpi::wait_all(reqs, reqs + total_number_of_nodes);
+  mpi::wait_all(reqs, reqs + total_number_of_nodes);
 }
 
 template<class elev_t, GDALDataType gdt_t>
