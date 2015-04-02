@@ -60,14 +60,6 @@ std::string FlowdirsFilename(const std::string &basename, int node_number){
 }
 
 
-void CopyGDALHeader(GDALDataset *fin, GDALDataset *fout){
-  double geotrans[6];
-  fin->GetGeoTransform(geotrans);
-  fout->SetGeoTransform(geotrans);
-
-  const char* projection_string=fin->GetProjectionRef();
-  fout->SetProjection(projection_string);
-}
 
 
 
