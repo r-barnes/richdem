@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <functional>
 
-GDALDataType peekGDALType(std::string filename) {
+GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
   assert(fin!=NULL);
@@ -21,6 +21,24 @@ GDALDataType peekGDALType(std::string filename) {
 
   return data_type;
 }
+
+template<class T>
+void getGDALHeader(const std::string &filename, int &height, int &width, T &no_data, double *geotrans){
+  GDALAllRegister();
+  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+  assert(fin!=NULL);
+
+  GDALRasterBand *band   = fin->GetRasterBand(1);
+
+  height  = band->GetYSize();
+  no_data = band->GetNoDataValue();
+  width   = band->GetXSize();
+
+  fin->GetGeoTransform(geotrans);
+
+  GDALClose(fin);
+}
+
 
 template<class T>
 GDALDataType NativeTypeToGDAL() {
@@ -107,8 +125,6 @@ void combineSavedNativeIntoGDAL(const std::string &out_name, const std::string &
     int this_height, this_width;
     fin.read(reinterpret_cast<char*>(&this_height), sizeof(int));
     fin.read(reinterpret_cast<char*>(&this_width ), sizeof(int));
-
-    std::cerr<<"Height: "<<this_height<<"Width: "<<this_width<<std::endl;
 
     for(int y=0;y<this_height;y++,y_overall++){
       fin.read(reinterpret_cast<char*>(rowdata.data()), width*sizeof(T));
@@ -275,6 +291,18 @@ class Array2D {
   bool empty     () const { return data.empty(); }
   T    noData    () const { return no_data; }
 
+  void setNoData(const T &ndval){
+    no_data = ndval;
+  }
+
+  void redimension(){
+    total_height=view_height=data.size();
+    if(view_height>0)
+      total_width=view_width=data.front().size();
+    else
+      total_width=view_width=0;
+  }
+
   T&       operator()(int x, int y)       { return data[y][x]; }
   const T& operator()(int x, int y) const { return data[y][x]; }
 
@@ -282,6 +310,10 @@ class Array2D {
   Row&       bottomRow()       { return data.back (); }
   const Row& topRow   () const { return data.front(); }
   const Row& bottomRow() const { return data.back (); }
+
+  void emplaceRow(Row &row){
+    data.emplace_back(row);
+  }
 
   Row& rowRef(int rownum){
     return data[rownum];

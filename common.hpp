@@ -1,4 +1,4 @@
-#define FLOWDIR_NO_DATA 255
+#define FLOWDIR_NO_DATA ((uint8_t)255)
 
 //D8 Directions
 ///x offsets of D8 neighbours, from a central cell
