@@ -3,6 +3,7 @@
 // mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
 // TODO: MPI abort
 // TODO: See optimization notes at "http://www.boost.org/doc/libs/1_56_0/doc/html/mpi/tutorial.html"
+// For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
 #include "gdal_priv.h"
 #include <iostream>
 #include <map>
