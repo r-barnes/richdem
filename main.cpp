@@ -454,7 +454,7 @@ void FillDepressions(int ram, char *dem_filename){
       if(i>0)
         world.recv(i,FLATS_SIG,my_flats);
       int segment_first_line = (dem_height/world.size())*i;
-      for(auto &f: agg_flats){
+      for(auto &f: my_flats){
         std::cerr<<"###"<<i<<" "<<f.first<<" "<<strip_to_max_label[i]<<std::endl;
         auto my_set    = unified_labels.findSet(f.first+strip_to_max_label[i]);
         f.second.ymin += segment_first_line;
