@@ -295,6 +295,11 @@ class Array2D {
     no_data = ndval;
   }
 
+  void setAll(const T &val){
+    for(auto &row: data)
+      std::fill(row.begin(),row.end(),val);
+  }
+
   void redimension(){
     total_height=view_height=data.size();
     if(view_height>0)
