@@ -534,10 +534,12 @@ int main(int argc, char **argv){
   boost::mpi::communicator world;
 
   if(argc!=3){
-    std::cerr<<"Syntax: "<<argv[0]<<" <RAM> <DEM>"<<std::endl;
-    std::cerr<<"RAM is an integer value estimating the number of MEGABYTES of available RAM."<<std::endl;
-    std::cerr<<"0 implies UNLIMITED RAM. All nodes will retain their data in RAM at all times."<<std::endl;
-    std::cerr<<"Anything greater than 0 implies LIMITED RAM. Sequential processing with temporary files will be used limit RAM usage."<<std::endl;
+    if(world.rank()==0){
+      std::cerr<<"Syntax: "<<argv[0]<<" <RAM> <DEM>"<<std::endl;
+      std::cerr<<"RAM is an integer value estimating the number of MEGABYTES of available RAM."<<std::endl;
+      std::cerr<<"0 implies UNLIMITED RAM. All nodes will retain their data in RAM at all times."<<std::endl;
+      std::cerr<<"Anything greater than 0 implies LIMITED RAM. Sequential processing with temporary files will be used limit RAM usage."<<std::endl;
+    }
     return -1;
   }
 
