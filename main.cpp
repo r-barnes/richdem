@@ -9,6 +9,7 @@
 #include <boost/mpi.hpp>
 #include <boost/filesystem.hpp>
 #include <string>
+#include <queue>
 #include "Array2D.hpp"
 #include "common.hpp"
 //#define DEBUG 1
@@ -74,13 +75,19 @@ const char GRID_TOP    = 2;
 const char GRID_RIGHT  = 4;
 const char GRID_BOTTOM = 8;
 
-typedef std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > > GridCellZ_pq;
+
 
 template<class elev_t, GDALDataType gdt_t>
 void PriorityFlood(Array2D<elev_t> &dem, Array2D<label_t> &labels, char edge){
-  GridCellZ_pq pq;
+  std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > > pq;
+  std::queue< GridCellZ<elev_t> > pit;
+  typedef std::map<label_t, std::map<label_t, elev_t> > Graph;
 
   labels.init(0);
+
+  Graph my_graph;
+
+  int current_label = 2;
 
   for(int x=0;x<dem.width();x++){
     pq.emplace_back(x,0,dem(x,0));
@@ -99,9 +106,87 @@ void PriorityFlood(Array2D<elev_t> &dem, Array2D<label_t> &labels, char edge){
       labels(dem.width()-1,y) = -1;
   }
 
-  while(!pq.empty()){
+  while(!pq.empty() || !pit.empty()){
+    GridCellZ<elev_t> c;
+    if(pit.size()>0){
+      c=pit.front();
+      c.pop();
+    } else {
+      c=pq.top();
+      pq.pop();
+    }
 
+    //Since labels are inherited from parent cells we need to be able to process
+    //previously labeled cells. But all the edge cells are already in the
+    //my_open queue and may also be added to that queue by a parent cell. So
+    //they could be processed twice! The solution is to assign the negative of a
+    //label and then make the label positive when we actually process the cell.
+    //This way, if we ever see we are processing a cell with a positive label,
+    //we will know it was already processed.
+    if(labels(c.x,c.y)>0)             //Positive label. Cell already processed.
+      continue;
+    else if(labels(c.x,c.y)==0)           //Label=0. Cell has never been seen.
+      labels(c.x,c.y) = current_label++;  //current_label is the next new label.
+    else if(labels(c.x,c.y)<0)            //Cell's parent added it.
+      labels(c.x,c.y) = -labels(c.x,c.y); //Mark cell as visited
+
+    //At this point the cell's label is guaranteed to be positive and in the
+    //range [1,MAX_INTEGER] (unless we overflow).
+    auto my_label = labels(c.x,c.y);
+
+    for(int n=1;n<=8;n++){
+      auto nx = c.x+dx[n]; //Neighbour's x-coordinate
+      auto ny = c.y+dy[n]; //Neighbour's y-coordinate
+
+      //Check to see if the neighbour coordinates are valid
+      if(nx<0 || ny<0 || nx==dem.width() || ny==dem.viewHeight()) continue;
+      auto n_label = std::abs(labels(nx,ny)); //Neighbour's label
+      //Does the neighbour have a label? If so, it is part of the edge, has
+      //already been assigned a label by a parent cell which must be of lower or
+      //equal elevation to the current cell, or has already been processed, in
+      //which case its elevation is lower or equal to this cell.
+      if(n_label!=0){
+        //If the neighbour's label were the same as the current cell's, then the
+        //current cell's flow and the neighbour's flow eventually comingle. If
+        //the neighbour's label is different it has been added by a cell whose
+        //flow drains the opposite side of a watershed from this cell. Here, we
+        //make a note of the height of that watershed.
+        if(n_label!=my_label){
+          auto elev_over = std::max(dem(nx,ny),dem(c.x,c.y)); //TODO: I think this should always be the neighbour.
+          //Haven't seen this watershed before
+          if(my_graph[my_label].count(n_label)==0){
+            my_graph[my_label][n_label] = elev_over;
+            my_graph[n_label][my_label] = elev_over;
+          //We've seen this watershed before, so only make a note of the
+          //spill-over elevation if it is lower than what we've seen before.
+          } else if(elev_over<my_graph[my_label][n_label]){
+            my_graph[my_label][n_label] = elev_over;
+            my_graph[n_label][my_label] = elev_over;
+          }
+        }
+        continue;
+      }
+
+      //The neighbour is not one we've seen before, so mark it as being part of
+      //our watershed and add it as an unprocessed item to the queue.
+      my_labels(nx,ny) = -my_labels(c.x,c.y);
+
+
+      if(dem(nx,ny)!=dem.noData())        //The neighbour is part of the DEM's data
+        my_flowdirs(nx,ny) = d8_inverse[n]; //and flows into this cell
+
+      //If the neighbour is lower than this cell, elevate it to the level of
+      //this cell so that a depression is not formed. The flow directions will
+      //be fixed later, after all the depressions have been filled.
+      if(dem(nx,ny)<=c.z){
+        dem(nx,ny) = c.z;
+        pit.emplace(nx,ny,c.z);
+      //Otherwise, if the neighbour is higher, do not adjust its elevation.
+      } else
+        pq.emplace(nx,ny,dem(nx,ny));
+    }
   }
+
 }
 
 
@@ -250,10 +335,10 @@ int main(int argc, char **argv){
 
       //Indicate edges
       for(int x=0;x<(int)(total_width/bwidth);x++){
-        jobs[0][x].edge                |= GRID_TOP;
-        jobs[jobs.size()-1][x].gridtop |= GRID_BOTTOM;
+        jobs[0][x].edge             |= GRID_TOP;
+        jobs[jobs.size()-1][x].edge |= GRID_BOTTOM;
       }
-      for(int y=0;,y(int)(total_height/beight);y++){
+      for(int y=0;y<(int)(total_height/bheight);y++){
         jobs[y][0].edge                |= GRID_LEFT;
         jobs[y][jobs[y].size()-1].edge |= GRID_RIGHT;
       }
