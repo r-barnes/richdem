@@ -39,6 +39,19 @@ void getGDALHeader(const std::string &filename, int &height, int &width, T &no_d
   GDALClose(fin);
 }
 
+void getGDALDimensions(const std::string &filename, int &height, int &width){
+  GDALAllRegister();
+  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+  assert(fin!=NULL);
+
+  GDALRasterBand *band = fin->GetRasterBand(1);
+
+  height  = band->GetYSize();
+  width   = band->GetXSize();
+
+  GDALClose(fin);
+}
+
 
 template<class T>
 GDALDataType NativeTypeToGDAL() {
@@ -181,7 +194,10 @@ class Array2D {
     total_height = band->GetYSize();
     no_data      = band->GetNoDataValue();
 
-    assert(xOffset+part_width<=total_width || yOffset+part_height<=total_height);
+    if(xOffset+part_width>=total_width)
+      part_width = total_width-xOffset;
+    if(yOffset+part_height>=total_height)
+      part_height = total_height-yOffset;
 
     if(part_width==0)
       part_width = total_width;
@@ -361,6 +377,12 @@ class Array2D {
         std::cout<<col<<" ";
       std::cerr<<std::endl;
     }
+  }
+
+  void init(T val){
+    for(auto &row: data)
+    for(auto &col: row)
+      col=val;
   }
 
   void clear(){
