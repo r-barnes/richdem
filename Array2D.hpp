@@ -324,8 +324,21 @@ class Array2D {
       total_width=view_width=0;
   }
 
-  T&       operator()(int x, int y)       { return data[y][x]; }
-  const T& operator()(int x, int y) const { return data[y][x]; }
+  T& operator()(int x, int y){
+    assert(x>=0);
+    assert(y>=0);
+    assert((unsigned int)x<data[0].size());
+    assert((unsigned int)y<data.size());
+    return data[y][x];
+  }
+
+  const T& operator()(int x, int y) const {
+    assert(x>=0);
+    assert(y>=0);
+    assert((unsigned int)x<data[0].size());
+    assert((unsigned int)y<data.size());
+    return data[y][x];
+  }
 
   Row&       topRow   ()       { return data.front(); }
   Row&       bottomRow()       { return data.back (); }
