@@ -345,6 +345,21 @@ class Array2D {
   const Row& topRow   () const { return data.front(); }
   const Row& bottomRow() const { return data.back (); }
 
+  Row leftColumn() const {
+    Row temp(data.size());
+    for(size_t y=0;y<data.size();y++)
+      temp[y] = data[y][0];
+    return temp;
+  }
+
+  Row rightColumn() const {
+    Row temp(data.size());
+    size_t right = data[0].size()-1;
+    for(size_t y=0;y<data.size();y++)
+      temp[y] = data[y][right];
+    return temp;
+  }
+
   void emplaceRow(Row &row){
     data.emplace_back(row);
   }
