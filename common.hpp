@@ -33,7 +33,7 @@ class GridCellZ : public GridCell {
   elev_t z;         ///< Grid cell's z-coordinate
   GridCellZ(int x, int y, elev_t z): GridCell(x,y), z(z) {}
   GridCellZ(){}
-  bool operator> (const GridCellZ& a) const { return z>a.z; }
+  bool operator> (const GridCellZ<elev_t>& a) const { return z>a.z; }
 };
 
 typedef int     label_t;

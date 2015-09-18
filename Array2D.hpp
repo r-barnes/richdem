@@ -195,7 +195,7 @@ class Array2D {
     no_data      = band->GetNoDataValue();
 
     if(xOffset+part_width>=total_width)
-      part_width = total_width-xOffset;
+      part_width  = total_width-xOffset;
     if(yOffset+part_height>=total_height)
       part_height = total_height-yOffset;
 
@@ -210,7 +210,7 @@ class Array2D {
     view_xoff = xOffset;
     view_yoff = yOffset;
 
-    std::cerr<<"Allocating: "<<view_height<<"x"<<view_width<<std::endl;
+    std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     data = InternalArray(view_height, Row(view_width));
     for(int y=yOffset;y<yOffset+view_height;y++)
       band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 );
@@ -263,7 +263,7 @@ class Array2D {
   }
 
   //Create an internal array
-  Array2D(int height, int width, const T& val = T()) : Array2D() {
+  Array2D(int width, int height, const T& val = T()) : Array2D() {
     data      = InternalArray(height, Row(width, val));
     total_height = view_height = height;
     total_width  = view_width  = width;
@@ -277,35 +277,14 @@ class Array2D {
       loadNative(filename, xOffset, yOffset, part_width, part_height);
   }
 
-  //Create an internal array from a file, dividing it into strips
-  Array2D(const std::string &filename, int my_strip_number, int strip_count){
-    GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-    assert(fin!=NULL);
-
-    GDALRasterBand *band = fin->GetRasterBand(1);
-
-    int width  = band->GetXSize();
-    int height = band->GetYSize();
-    GDALClose(fin);
-
-    int segment_first_line = (height/strip_count)*my_strip_number;
-    int segment_last_line  = (height/strip_count)*(my_strip_number+1);
-    if(my_strip_number==strip_count-1)
-      segment_last_line = height;
-
-    int segment_height = segment_last_line - segment_first_line;
-
-    loadGDAL(filename,0,segment_first_line,width,segment_height);
-  }
-
-  int  width     () const { return total_width;  }
-  int  height    () const { return total_height; }
-  int  viewWidth () const { return view_width;   }
-  int  viewHeight() const { return view_height;  }
-  int  viewXoff  () const { return view_xoff;    }
-  int  viewYoff  () const { return view_yoff;    }
-  bool empty     () const { return data.empty(); }
-  T    noData    () const { return no_data; }
+  int  totalWidth () const { return total_width;    }
+  int  totalHeight() const { return total_height;   }
+  int  viewWidth  () const { return data[0].size(); }
+  int  viewHeight () const { return data.size();    }
+  int  viewXoff   () const { return view_xoff;      }
+  int  viewYoff   () const { return view_yoff;      }
+  bool empty      () const { return data.empty();   }
+  T    noData     () const { return no_data;        }
 
   void setNoData(const T &ndval){
     no_data = ndval;
@@ -327,16 +306,19 @@ class Array2D {
   T& operator()(int x, int y){
     assert(x>=0);
     assert(y>=0);
-    assert((unsigned int)x<data[0].size());
-    assert((unsigned int)y<data.size());
+    //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
+    assert((unsigned int)x<viewWidth());
+    assert((unsigned int)y<viewHeight());
+    assert((unsigned int)x<data[y].size());
     return data[y][x];
   }
 
   const T& operator()(int x, int y) const {
     assert(x>=0);
     assert(y>=0);
-    assert((unsigned int)x<data[0].size());
-    assert((unsigned int)y<data.size());
+    assert((unsigned int)x<viewWidth());
+    assert((unsigned int)y<viewHeight());
+    assert((unsigned int)x<data[y].size());
     return data[y][x];
   }
 
