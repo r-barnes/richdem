@@ -6,6 +6,7 @@
 // For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
 #include "gdal_priv.h"
 #include <iostream>
+#include <iomanip>
 #include <boost/mpi.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/serialization/map.hpp>
@@ -22,7 +23,7 @@
 #include <cstdint>
 #include "Array2D.hpp"
 #include "common.hpp"
-//#define DEBUG 1
+#define DEBUG 1
 
 
 
@@ -453,6 +454,63 @@ void Producer(std::vector< std::vector< Job<elev_t> > > &jobs){
     if(x>0 && y<gridheight-1)           //Bottom left
       HandleCorner(c.bot_elev.front(), jobs[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs[y+1][x-1].top_label.back(),  mastergraph);
   }
+
+
+  std::cerr<<"Mastergraph constructed!"<<std::endl;
+
+
+  std::cerr<<"Performing aggregated priority flood"<<std::endl;
+  typedef std::pair<elev_t, label_t>  graph_node;
+  std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
+  std::map<label_t,bool>              visited;
+  std::map<label_t,elev_t>            graph_elev;
+
+  open.emplace(std::numeric_limits<elev_t>::min(),1);
+
+  while(open.size()>0){
+    graph_node c=open.top();
+    open.pop();
+    auto my_elev       = c.first;
+    auto my_vertex_num = c.second;
+    #ifdef DEBUG
+      std::cerr<<"Popped "<<my_vertex_num<<std::endl;
+    #endif
+    if(visited[my_vertex_num])
+      continue;
+
+    graph_elev[my_vertex_num] = my_elev;
+    visited[my_vertex_num]    = true;
+
+    for(auto &n: mastergraph[my_vertex_num]){
+      auto n_vertex_num = n.first;
+      auto n_elev       = n.second;
+      if(visited.count(n_vertex_num))
+        continue;
+      #ifdef DEBUG
+        std::cerr<<"Proposing going to "<<n_vertex_num<<" with "<<std::max(n_elev,my_elev)<<std::endl;
+      #endif
+      open.emplace(std::max(n_elev,my_elev),n_vertex_num);
+    }
+  }
+
+  #ifdef DEBUG
+    std::cerr<<"Graph elevations"<<std::endl;
+    for(auto &ge: graph_elev)
+      std::cerr<<std::setw(3)<<ge.first<<" = "<<std::setw(3)<<ge.second<<std::endl;
+  #endif
+
+/*  std::vector< std::map<label_t,elev_t> > strip_label_elevations(total_number_of_nodes);
+  for(auto &ge: graph_elev){
+    auto vertex_num   = ge.first;
+    auto elevation    = ge.second;
+    auto strip_num    = label_to_strip[vertex_num];
+    auto label_offset = strip_to_max_label[strip_num];
+    vertex_num       -= label_offset;
+    strip_label_elevations[strip_num][vertex_num] = elevation;
+  }
+*/
+
+
 
 
 
