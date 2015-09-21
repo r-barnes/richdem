@@ -125,14 +125,18 @@ const uint8_t GRID_BOTTOM = 8;
 
 
 template<class elev_t>
-void PriorityFlood(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::map<label_t, std::map<label_t, elev_t> > &my_graph, uint8_t edge){
+void PriorityFlood(
+  Array2D<elev_t>                               &dem,
+  Array2D<label_t>                              &labels,
+  int32_t                                        current_label, //NOTE: Should start at at least 2 (TODO: Explain why)
+  std::map<label_t, std::map<label_t, elev_t> > &my_graph,
+  uint8_t edge
+){
   typedef std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > > GridCellZ_pq;
   GridCellZ_pq pq;
   std::queue< GridCellZ<elev_t> > pit;
 
   labels.init(0);
-
-  int32_t current_label = 2;
 
   for(int x=0;x<dem.viewWidth();x++){
     pq.emplace(x,0,dem(x,0));
@@ -285,7 +289,7 @@ void Consumer(){
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
-      PriorityFlood(dem,labels,job1.graph,chunk.edge);
+      PriorityFlood(dem,labels,chunk.label_offset,job1.graph,chunk.edge);
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
       job1.top_elev    = dem.topRow     ();
@@ -312,7 +316,7 @@ void Consumer(){
       //These use the same logic as the analogous lines above
       Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
       Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
-      PriorityFlood(dem,labels,graph,chunk.edge);
+      PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
         if(graph_elev.count(labels(x,y))){
