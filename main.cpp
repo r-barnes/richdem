@@ -364,8 +364,7 @@ void HandleEdge(
 
     auto my_label = label_a[i];
 
-    for(int di=-1;i<=1;i++){
-      int ni = i+di;
+    for(int ni=i-1;i<=i+1;i++){
       if(ni<0 || ni==len) // || elev_b[ni]==no_data) //TODO: Does no_data really matter here?
         continue;
       auto other_label = label_b[ni];
