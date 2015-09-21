@@ -1,9 +1,11 @@
 //Compile with
 // mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization
 // mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
+// gdal_merge.py -o merged.tif -of GTiff -n -9999 -a_nodata -9999 output*tif
 // TODO: MPI abort
 // TODO: See optimization notes at "http://www.boost.org/doc/libs/1_56_0/doc/html/mpi/tutorial.html"
 // For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
+// abs("single_proc@1"-"merged@1")>0
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
