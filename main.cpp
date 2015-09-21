@@ -37,60 +37,78 @@
                                    int nLineSpace )
 */
 
-template<class elev_t>
-class Job {
+class ChunkInfo{
  private:
   friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version){
-      ar & label_offset;
-      ar & top_elev;
-      ar & bot_elev;
-      ar & left_elev;
-      ar & right_elev;
-      ar & top_label;
-      ar & bot_label;
-      ar & left_label;
-      ar & right_label;
-      ar & graph;
-      ar & edge;
-      ar & gridx;
-      ar & gridy;
-      ar & filename;
-      ar & x;
-      ar & y;
-      ar & width;
-      ar & height;
-      ar & label_offset;
-    }
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & edge;
+    ar & x;
+    ar & y;
+    ar & width;
+    ar & height;
+    ar & gridx;
+    ar & gridy;
+    ar & label_offset;
+    ar & filename;
+  }
  public:
-  char edge;
+  uint8_t edge;
   int32_t x,y,width,height,gridx,gridy;
   int32_t label_offset;
   std::string filename;
-  std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
-  std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
-  std::map<label_t, std::map<label_t, elev_t> > graph;
-  Job(){}
-  Job(std::string filename, int32_t label_offset, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(){}
+  ChunkInfo(std::string filename, int32_t label_offset, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->edge         = 0;
-    this->label_offset = label_offset;
-    this->gridx        = gridx;
-    this->gridy        = gridy;
-    this->filename     = filename;
     this->x            = x;
     this->y            = y;
     this->width        = width;
-    this->height       = height;
+    this->height       = height;   
+    this->gridx        = gridx;
+    this->gridy        = gridy;
+    this->label_offset = label_offset;
+    this->filename     = filename;
+  }
+};
+
+template<class elev_t>
+class Job1 {
+ private:
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & top_elev;
+    ar & bot_elev;
+    ar & left_elev;
+    ar & right_elev;
+    ar & top_label;
+    ar & bot_label;
+    ar & left_label;
+    ar & right_label;
+    ar & graph;
+    ar & chunk_info;
+  }
+ public:
+  ChunkInfo chunk_info;
+  std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
+  std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
+  std::map<label_t, std::map<label_t, elev_t> > graph;
+  std::map<label_t,elev_t> graph_elev;
+  //Job(){}
+  Job1(){}
+  Job1(const ChunkInfo &chunk_info){
+    this->chunk_info = chunk_info;
   }
 };
 
 typedef int32_t label_t;
 
 
-
+//TODO: What are these for?
 const int TAG_JOB      = 0;
-const int TAG_SYNC_MSG = 1;
+const int TAG_FIRST_PF = 1;
+const int TAG_FINAL_PF = 2;
+const int TAG_SYNC_MSG = 3;
 
 const int SYNC_MSG_KILL = 0;
 const int SYNC_MSG_JOB  = 1;
@@ -243,13 +261,14 @@ void Consumer(){
 
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
-    } else if (sync_message==SYNC_MSG_JOB){
-      Job<elev_t> job;
-      world.recv(0, TAG_JOB, job);
-      std::cout<<"Node "<<world.rank()<<" has job "<<job.x<<"-"<<(job.x+job.width)<<" "<< job.y<<"-"<<(job.y+job.height)<<std::endl;
+    } else if (sync_message==TAG_FIRST_PF){
+      ChunkInfo chunk_info;
+      world.recv(0, TAG_JOB, chunk_info);
+      Job1<elev_t> job(chunk_info);
+      std::cout<<"Node "<<world.rank()<<" has job "<<job.chunk_info.x<<"-"<<(job.chunk_info.x+job.chunk_info.width)<<" "<< job.chunk_info.y<<"-"<<(job.chunk_info.y+job.chunk_info.height)<<std::endl;
 
       //Read in the data associated with the job
-      Array2D<elev_t>   dem(job.filename, true, job.x, job.y, job.width, job.height);
+      Array2D<elev_t>   dem(job.chunk_info.filename, true, job.chunk_info.x, job.chunk_info.y, job.chunk_info.width, job.chunk_info.height);
 
       //These variables are needed by Priority-Flood. The internal
       //interconnections of labeled regions (named "graph") are also needed to
@@ -259,7 +278,7 @@ void Consumer(){
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
-      PriorityFlood(dem,labels,job.graph,job.edge);
+      PriorityFlood(dem,labels,job.graph,job.chunk_info.edge);
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
       job.top_elev    = dem.topRow     ();
@@ -277,6 +296,10 @@ void Consumer(){
       //job.graph = graph;
 
       world.send(0, TAG_JOB, job);
+    } else if (sync_message==TAG_FINAL_PF){
+
+
+
     }
   }
 }
@@ -351,6 +374,62 @@ void HandleCorner(
 }
 
 
+template<class JobSendType, class JobRecvType>
+void SendJobs(int job_id, std::vector< std::vector< JobSendType > > &job_send, std::vector< std::vector< JobRecvType > > &job_recv){
+  boost::mpi::environment env;
+  boost::mpi::communicator world;
+  int active_nodes = 0;
+
+  //Loop through all of the jobs, delegating them to Consumers
+  for(size_t y=0;y<job_send.size();y++)
+  for(size_t x=0;x<job_send[0].size();x++){
+    std::cerr<<"Sending job "<<y<<"/"<<job_send.size()<<", "<<x<<"/"<<job_send[0].size()<<std::endl;
+
+    //If fewer jobs have been delegated than there are Consumers available,
+    //delegate the job to a new Consumer.
+    if(active_nodes<world.size()-1){
+      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+      world.send(active_nodes+1,TAG_SYNC_MSG,job_id);
+      world.isend(active_nodes+1,TAG_JOB,job_send[y][x]);
+      active_nodes++;
+
+    //Once all of the consumers are active, wait for them to return results. As
+    //each Consumer returns a result, pass it the next unfinished Job until
+    //there are no jobs left.
+    } else {
+      JobRecvType finished_job;
+      boost::mpi::status status;
+
+      //Execute a blocking receive until some consumer finishes its work.
+      //Receive that work.
+      status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
+      job_recv[finished_job.chunk_info.gridy][finished_job.chunk_info.gridx] = finished_job;
+
+      //Delegate new work to that consumer
+      world.send (status.source(),TAG_SYNC_MSG,SYNC_MSG_JOB);
+      world.isend(status.source(),TAG_JOB     ,job_send[y][x]  );
+    }
+  }
+
+  while(active_nodes>0){
+    JobRecvType finished_job;
+    boost::mpi::status status;
+
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
+    job_recv[finished_job.chunk_info.gridy][finished_job.chunk_info.gridx] = finished_job;
+
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_nodes--;
+    (void)status; //TODO: Suppress non-usage warning
+  }
+}
+
+
+
+
 
 
 //Producer takes a collection of Jobs and delegates them to Consumers. Once all
@@ -359,66 +438,18 @@ void HandleCorner(
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
 template<class elev_t, GDALDataType gdt_t>
-void Producer(std::vector< std::vector< Job<elev_t> > > &jobs){
-  boost::mpi::environment env;
+void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   boost::mpi::communicator world;
-  int active_nodes = 0;
 
-  //Loop through all of the jobs, delegating them to Consumers
-  for(size_t y=0;y<jobs.size();y++)
-  for(size_t x=0;x<jobs[0].size();x++){
-    std::cerr<<"Sending job "<<y<<"/"<<jobs.size()<<", "<<x<<"/"<<jobs[0].size()<<std::endl;
+  std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
 
-    //If fewer jobs have been delegated than there are Consumers available,
-    //delegate the job to a new Consumer.
-    if(active_nodes<world.size()-1){
-      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes+1,TAG_SYNC_MSG,SYNC_MSG_JOB);
-      world.isend(active_nodes+1,TAG_JOB,jobs[y][x]);
-      active_nodes++;
-
-    //Once all of the consumers are active, wait for them to return results. As
-    //each Consumer returns a result, pass it the next unfinished Job until
-    //there are no jobs left.
-    } else {
-      Job<elev_t> finished_job;
-      boost::mpi::status status;
-
-      //Execute a blocking receive until some consumer finishes its work.
-      //Receive that work.
-      status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
-      jobs[finished_job.gridy][finished_job.gridx] = finished_job;
-
-      //Delegate new work to that consumer
-      world.send (status.source(),TAG_SYNC_MSG,SYNC_MSG_JOB);
-      world.isend(status.source(),TAG_JOB     ,jobs[y][x]  );
-    }
-  }
-
-  while(active_nodes>0){
-    Job<elev_t> finished_job;
-    boost::mpi::status status;
-
-    //Execute a blocking receive until some consumer finishes its work.
-    //Receive that work
-    status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
-    jobs[finished_job.gridy][finished_job.gridx] = finished_job;
-
-    //Decrement the number of consumers we are waiting on. When this hits 0 all
-    //of the jobs have been completed and we can move on
-    active_nodes--;
-    (void)status; //TODO: Suppress non-usage warning
-  }
-
-
-
-
+  SendJobs(TAG_FIRST_PF, chunks, jobs1);
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
   //method is not guaranteed to release space.
   std::map<label_t, std::map<label_t, elev_t> > mastergraph;
-  for(auto &row: jobs)
+  for(auto &row: jobs1)
   for(auto &cell: row){
     for(auto const &fkey: cell.graph)
     for(auto const &skey: fkey.second)
@@ -427,33 +458,36 @@ void Producer(std::vector< std::vector< Job<elev_t> > > &jobs){
   }
 
   //Now look at the chunks around a central chunk c.
-  const int gridwidth  = jobs.front().size();
-  const int gridheight = jobs.size();
+  const int gridwidth  = jobs1.front().size();
+  const int gridheight = jobs1.size();
 
-  for(size_t y=0;y<jobs.size();y++)
-  for(size_t x=0;x<jobs.front().size();x++){
-    auto &c = jobs[y][x];
+  for(size_t y=0;y<jobs1.size();y++)
+  for(size_t x=0;x<jobs1.front().size();x++){
+    auto &c = jobs1[y][x];
 
     if(y>0)
-      HandleEdge(c.top_elev,   jobs[y-1][x].bot_elev,   c.top_label,   jobs[y-1][x].bot_label,   mastergraph);
+      HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph);
     if(y<gridheight-1)
-      HandleEdge(c.bot_elev,   jobs[y+1][x].top_elev,   c.bot_label,   jobs[y+1][x].top_label,   mastergraph);
+      HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph);
     if(x>0)
-      HandleEdge(c.left_elev,  jobs[y][x-1].right_elev, c.left_label,  jobs[y][x-1].right_label, mastergraph);
+      HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph);
     if(x<gridwidth-1)
-      HandleEdge(c.right_elev, jobs[y][x+1].left_elev,  c.right_label, jobs[y][x+1].left_label,  mastergraph);
+      HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph);
 
 
     //I wish I had wrote it all in LISP.
     if(y>0 && x>0)                      //Top left
-      HandleCorner(c.top_elev.front(), jobs[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs[y-1][x-1].bot_label.back(),  mastergraph);
+      HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph);
     if(y<gridheight-1 && x<gridwidth-1) //Bottom right
-      HandleCorner(c.bot_elev.back(),  jobs[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs[y+1][x+1].top_label.front(), mastergraph);
+      HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph);
     if(y>0 && x<gridwidth-1)            //Top right
-      HandleCorner(c.top_elev.back(),  jobs[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs[y-1][x+1].bot_label.front(), mastergraph);
+      HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph);
     if(x>0 && y<gridheight-1)           //Bottom left
-      HandleCorner(c.bot_elev.front(), jobs[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs[y+1][x-1].top_label.back(),  mastergraph);
+      HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph);
   }
+
+  jobs1.clear();
+  jobs1.shrink_to_fit();
 
 
   std::cerr<<"Mastergraph constructed!"<<std::endl;
@@ -499,6 +533,22 @@ void Producer(std::vector< std::vector< Job<elev_t> > > &jobs){
       std::cerr<<std::setw(3)<<ge.first<<" = "<<std::setw(3)<<ge.second<<std::endl;
   #endif
 
+
+
+
+  //SendJobs(TAG_FINAL_PF, jobs);
+
+
+
+
+
+
+
+
+
+
+
+
 /*  std::vector< std::map<label_t,elev_t> > strip_label_elevations(total_number_of_nodes);
   for(auto &ge: graph_elev){
     auto vertex_num   = ge.first;
@@ -535,7 +585,7 @@ template<class elev_t, GDALDataType gdt_t>
 int Preparer(int argc, char **argv){
   boost::mpi::environment env;
 
-  std::vector< std::vector< Job<elev_t> > >     jobs;
+  std::vector< std::vector< ChunkInfo > >     chunks;
   std::string filename;
 
   if(argv[1]==std::string("many")){
@@ -586,10 +636,10 @@ int Preparer(int argc, char **argv){
     //TODO: Avoid creating extremely narrow or small strips
     int32_t label_offset = 2;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
-      jobs.push_back( std::vector< Job<elev_t> >() );
+      chunks.push_back( std::vector< ChunkInfo >() );
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         std::cerr<<"Constructing job ("<<x<<","<<y<<")"<<std::endl;
-        jobs.back().emplace_back(filename, label_offset, gridx, gridy, x, y, bwidth, bheight);
+        chunks.back().emplace_back(filename, label_offset, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
@@ -612,13 +662,13 @@ int Preparer(int argc, char **argv){
 
     //If a job is on the edge of the raster, mark it as having this property so
     //that it can be handled with elegance later.
-    for(auto &e: jobs.front())
+    for(auto &e: chunks.front())
       e.edge |= GRID_TOP;
-    for(auto &e: jobs.back())
+    for(auto &e: chunks.back())
       e.edge |= GRID_BOTTOM;
-    for(size_t y=0;y<jobs.size();y++){
-      jobs[y].front().edge |= GRID_LEFT;
-      jobs[y].back().edge  |= GRID_RIGHT;
+    for(size_t y=0;y<chunks.size();y++){
+      chunks[y].front().edge |= GRID_LEFT;
+      chunks[y].back().edge  |= GRID_RIGHT;
     }
 
   } else {
@@ -627,7 +677,7 @@ int Preparer(int argc, char **argv){
   }
 
   //Pass off the list of jobs to Producer.
-  Producer<elev_t, gdt_t>(jobs);
+  Producer<elev_t, gdt_t>(chunks);
 
   return 0;
 }
