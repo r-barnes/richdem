@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <algorithm>
 #include <functional>
@@ -354,6 +355,10 @@ class Array2D {
     std::fill(data[rownum].begin(),data[rownum].end(),val);
   }
 
+  const std::vector<T>& getRowData(int rownum){
+    return data[rownum].data();
+  }
+
   void setRow(int rownum, const Row &row){
     assert(row.size()==(unsigned int)total_width);
     data[rownum] = row;
@@ -412,20 +417,40 @@ class Array2D {
       fout.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
   }
 
-  void saveGDAL(const std::string &filename, const std::string &template_name){
+  void saveGDAL(const std::string &filename, const std::string &template_name, int xoffset, int yoffset){
     GDALDataset *fintempl = (GDALDataset*)GDALOpen(template_name.c_str(), GA_ReadOnly);
-    assert(fintempl!=NULL);
+    assert(fintempl!=NULL); //TODO: Error handle
 
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    assert(poDriver!=NULL);
-    GDALDataset *fout    = poDriver->Create(filename.c_str(), view_width, view_height, 1, myGDALType(), NULL);
-    assert(fout!=NULL);
+    assert(poDriver!=NULL); //TODO: Error handle
+    GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
+    assert(fout!=NULL);     //TODO: Error handle
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
 
+    //The geotransform maps each grid cell to a point in an affine-transformed
+    //projection of the actual terrain. The geostransform is specified as follows:
+    //    Xgeo = GT(0) + Xpixel*GT(1) + Yline*GT(2)
+    //    Ygeo = GT(3) + Xpixel*GT(4) + Yline*GT(5)
+    //In case of north up images, the GT(2) and GT(4) coefficients are zero, and
+    //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
+    //position is the top left corner of the top left pixel of the raster.
     double geotrans[6];
     fintempl->GetGeoTransform(geotrans);
+
+    //We shift the top-left pixel of hte image eastward to the appropriate
+    //coordinate
+    geotrans[0] += xoffset*geotrans[1];
+
+    //We shift the top-left pixel of the image southward to the appropriate
+    //coordinate
+    geotrans[3] += yoffset*geotrans[5];
+
+    #ifdef DEBUG
+      std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
+    #endif
+
     fout->SetGeoTransform(geotrans);
 
     const char* projection_string=fintempl->GetProjectionRef();
@@ -434,7 +459,7 @@ class Array2D {
     GDALClose(fintempl);
 
     for(int y=0;y<view_height;y++)
-      oband->RasterIO(GF_Write, 0, y, view_width, 1, data[y].data(), view_width, 1, myGDALType(), 0, 0);
+      oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0);
 
     GDALClose(fout);
   }

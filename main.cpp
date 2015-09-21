@@ -52,14 +52,16 @@ class ChunkInfo{
     ar & label_offset;
     ar & max_label;
     ar & filename;
+    ar & id;
   }
  public:
   uint8_t edge;
   int32_t x,y,width,height,gridx,gridy;
   int32_t label_offset,max_label;
+  int32_t id;
   std::string filename;
   ChunkInfo(){}
-  ChunkInfo(std::string filename, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(std::string filename, int32_t id, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->edge         = 0;
     this->x            = x;
     this->y            = y;
@@ -69,6 +71,7 @@ class ChunkInfo{
     this->gridy        = gridy;
     this->label_offset = label_offset;
     this->max_label    = max_label;
+    this->id           = id;
     this->filename     = filename;
   }
 };
@@ -316,6 +319,11 @@ void Consumer(){
         }
 
       std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
+
+      //At this point we're done with the calculation! Boo-yeah!
+
+      std::string output_name = std::string("/z/output")+std::to_string(chunk.id)+std::string(".tif");
+      dem.saveGDAL(output_name, chunk.filename, chunk.x, chunk.y);
 
       world.send(0, TAG_DONE_SECOND, 0);
     }
@@ -630,6 +638,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 template<class elev_t, GDALDataType gdt_t>
 int Preparer(int argc, char **argv){
   boost::mpi::environment env;
+  int chunkid = 0;
 
   std::vector< std::vector< ChunkInfo > >     chunks;
   std::string filename;
@@ -686,7 +695,7 @@ int Preparer(int argc, char **argv){
       chunks.push_back( std::vector< ChunkInfo >() );
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         std::cerr<<"Constructing job ("<<x<<","<<y<<")"<<std::endl;
-        chunks.back().emplace_back(filename, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
+        chunks.back().emplace_back(filename, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
