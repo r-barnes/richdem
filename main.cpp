@@ -98,7 +98,6 @@ class Job1 {
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::map<label_t, std::map<label_t, elev_t> > graph;
-  std::map<label_t,elev_t> graph_elev;
   Job1(){}
 };
 
@@ -297,14 +296,10 @@ void Consumer(){
       job1.left_elev   = dem.leftColumn ();
       job1.right_elev  = dem.rightColumn();
 
-
       job1.top_label   = labels.topRow     ();
       job1.bot_label   = labels.bottomRow  ();
       job1.left_label  = labels.leftColumn ();
       job1.right_label = labels.rightColumn();
-
-      std::cerr<<"TE: "<<job1.top_elev.size()<<" TL: "<<job1.top_label.size()<<std::endl;
-      //job.graph = graph;
 
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
@@ -451,6 +446,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     } else {
       Job1<elev_t> finished_job;
 
+      //TODO: Note here about how the code below could be incorporated
+
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
       boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
@@ -482,6 +479,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     active_nodes--;
   }
 
+
+  //TODO: Note here about how the code above code be incorporated
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
@@ -527,7 +526,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   jobs1.clear();
   jobs1.shrink_to_fit();
 
-
   std::cerr<<"Mastergraph constructed!"<<std::endl;
 
 
@@ -551,7 +549,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       continue;
 
     graph_elev[my_vertex_num] = my_elev;
-    visited[my_vertex_num]    = true;
+    visited   [my_vertex_num] = true;
 
     for(auto &n: mastergraph[my_vertex_num]){
       auto n_vertex_num = n.first;
