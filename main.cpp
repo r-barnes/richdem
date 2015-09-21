@@ -311,6 +311,11 @@ void Consumer(){
       std::map<label_t, elev_t> graph_elev;
       world.recv(0, TAG_SECOND_DATA, graph_elev);
 
+      std::cerr<<"ChunkID: "<<chunk.id<<" got a graph of size: "<<graph_elev.size()<<std::endl;
+      std::cerr<<"Chunk label_offset: "<<chunk.label_offset<<" max: "<<chunk.max_label<<std::endl;
+      for(auto &fv: graph_elev)
+        std::cerr<<"\t Label: "<<fv.first<<" Elev: "<<fv.second<<std::endl;
+
       std::map<label_t, std::map<label_t, elev_t> > graph;
 
       //These use the same logic as the analogous lines above
@@ -319,10 +324,8 @@ void Consumer(){
       PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
-        if(graph_elev.count(labels(x,y))){
-          if(dem(x,y)<graph_elev[labels(x,y)])
-            dem(x,y)=graph_elev[labels(x,y)];
-        }
+        if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev[labels(x,y)])
+          dem(x,y)=graph_elev[labels(x,y)];
 
       std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
 
@@ -563,11 +566,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
   }
 
-  #ifdef DEBUG
+  //#ifdef DEBUG
     std::cerr<<"Graph elevations"<<std::endl;
     for(const auto &ge: graph_elev)
       std::cerr<<std::setw(3)<<ge.first<<" = "<<std::setw(3)<<ge.second<<std::endl;
-  #endif
+  //#endif
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
