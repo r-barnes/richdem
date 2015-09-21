@@ -1,7 +1,7 @@
 export OMPI_CXX=clang++
 
 compile: main.cpp
-	mpic++ -o parallel_pit_fill.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system
+	mpic++ -o parallel_pit_fill.exe -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system
 
 debug: main.cpp
 	mpic++ -o parallel_pit_fill.exe -g     `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system

@@ -23,7 +23,7 @@
 #include <cstdint>
 #include "Array2D.hpp"
 #include "common.hpp"
-#define DEBUG 1
+//#define DEBUG 1
 
 
 
@@ -50,15 +50,16 @@ class ChunkInfo{
     ar & gridx;
     ar & gridy;
     ar & label_offset;
+    ar & max_label;
     ar & filename;
   }
  public:
   uint8_t edge;
   int32_t x,y,width,height,gridx,gridy;
-  int32_t label_offset;
+  int32_t label_offset,max_label;
   std::string filename;
   ChunkInfo(){}
-  ChunkInfo(std::string filename, int32_t label_offset, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(std::string filename, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->edge         = 0;
     this->x            = x;
     this->y            = y;
@@ -67,6 +68,7 @@ class ChunkInfo{
     this->gridx        = gridx;
     this->gridy        = gridy;
     this->label_offset = label_offset;
+    this->max_label    = max_label;
     this->filename     = filename;
   }
 };
@@ -86,32 +88,29 @@ class Job1 {
     ar & left_label;
     ar & right_label;
     ar & graph;
-    ar & chunk_info;
   }
  public:
-  ChunkInfo chunk_info;
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::map<label_t, std::map<label_t, elev_t> > graph;
   std::map<label_t,elev_t> graph_elev;
-  //Job(){}
   Job1(){}
-  Job1(const ChunkInfo &chunk_info){
-    this->chunk_info = chunk_info;
-  }
 };
 
 typedef int32_t label_t;
 
 
 //TODO: What are these for?
-const int TAG_JOB      = 0;
-const int TAG_FIRST_PF = 1;
-const int TAG_FINAL_PF = 2;
-const int TAG_SYNC_MSG = 3;
+const int TAG_WHICH_JOB   = 0;
+const int TAG_CHUNK_DATA  = 1;
+const int TAG_DONE_FIRST  = 2;
+const int TAG_SECOND_DATA = 3;
+const int TAG_DONE_SECOND = 4;
 
 const int SYNC_MSG_KILL = 0;
-const int SYNC_MSG_JOB  = 1;
+const int JOB_CHUNK     = 1;
+const int JOB_FIRST     = 2;
+const int JOB_SECOND    = 3;
 
 const uint8_t GRID_LEFT   = 1;
 const uint8_t GRID_TOP    = 2;
@@ -245,61 +244,80 @@ void Consumer(){
   boost::mpi::environment env;
   boost::mpi::communicator world;
 
-  int sync_message; //This stores the message tag which indicates
-                    //which actions the consumer should take
+  int the_job;   //Which job should consumer perform?
+
+  ChunkInfo chunk;
 
   //Have the consumer process messages as long as they are coming using a
   //blocking receive to wait.
   while(true){
-    world.recv(0, TAG_SYNC_MSG, sync_message); //Blocking wait
+    world.recv(0, TAG_WHICH_JOB, the_job); //Blocking wait
 
 
     //This message indicates that everything is done and the Consumer should shut
     //down.
-    if(sync_message==SYNC_MSG_KILL){
+    if(the_job==SYNC_MSG_KILL){
+      std::cerr<<"Killing "<<world.rank()<<std::endl;
+      MPI_Finalize();
       return;
+
+    } else if (the_job==JOB_CHUNK){
+      world.recv(0, TAG_CHUNK_DATA, chunk);
 
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
-    } else if (sync_message==TAG_FIRST_PF){
-      ChunkInfo chunk_info;
-      world.recv(0, TAG_JOB, chunk_info);
-      Job1<elev_t> job(chunk_info);
-      std::cout<<"Node "<<world.rank()<<" has job "<<job.chunk_info.x<<"-"<<(job.chunk_info.x+job.chunk_info.width)<<" "<< job.chunk_info.y<<"-"<<(job.chunk_info.y+job.chunk_info.height)<<std::endl;
+    } else if (the_job==JOB_FIRST){
+      Job1<elev_t> job1;
+      std::cout<<"Node "<<world.rank()<<" has job "<<chunk.x<<"-"<<(chunk.x+chunk.width)<<" "<< chunk.y<<"-"<<(chunk.y+chunk.height)<<std::endl;
 
       //Read in the data associated with the job
-      Array2D<elev_t>   dem(job.chunk_info.filename, true, job.chunk_info.x, job.chunk_info.y, job.chunk_info.width, job.chunk_info.height);
+      Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
 
       //These variables are needed by Priority-Flood. The internal
       //interconnections of labeled regions (named "graph") are also needed to
       //solve the problem, but that can be passed directly from the job object.
       Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
-      //std::map<label_t, std::map<label_t, elev_t> > graph;
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
-      PriorityFlood(dem,labels,job.graph,job.chunk_info.edge);
+      PriorityFlood(dem,labels,job1.graph,chunk.edge);
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
-      job.top_elev    = dem.topRow     ();
-      job.bot_elev    = dem.bottomRow  ();
-      job.left_elev   = dem.leftColumn ();
-      job.right_elev  = dem.rightColumn();
+      job1.top_elev    = dem.topRow     ();
+      job1.bot_elev    = dem.bottomRow  ();
+      job1.left_elev   = dem.leftColumn ();
+      job1.right_elev  = dem.rightColumn();
 
 
-      job.top_label   = labels.topRow     ();
-      job.bot_label   = labels.bottomRow  ();
-      job.left_label  = labels.leftColumn ();
-      job.right_label = labels.rightColumn();
+      job1.top_label   = labels.topRow     ();
+      job1.bot_label   = labels.bottomRow  ();
+      job1.left_label  = labels.leftColumn ();
+      job1.right_label = labels.rightColumn();
 
-      std::cerr<<"TE: "<<job.top_elev.size()<<" TL: "<<job.top_label.size()<<std::endl;
+      std::cerr<<"TE: "<<job1.top_elev.size()<<" TL: "<<job1.top_label.size()<<std::endl;
       //job.graph = graph;
 
-      world.send(0, TAG_JOB, job);
-    } else if (sync_message==TAG_FINAL_PF){
+      world.send(0, TAG_DONE_FIRST, job1);
+    } else if (the_job==JOB_SECOND){
+      std::map<label_t, elev_t> graph_elev;
+      world.recv(0, TAG_SECOND_DATA, graph_elev);
 
+      std::map<label_t, std::map<label_t, elev_t> > graph;
 
+      //These use the same logic as the analogous lines above
+      Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
+      Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
+      PriorityFlood(dem,labels,graph,chunk.edge);
+      for(int y=0;y<dem.viewHeight();y++)
+      for(int x=0;x<dem.viewWidth();x++)
+        if(graph_elev.count(labels(x,y))){
+          if(dem(x,y)<graph_elev[labels(x,y)])
+            dem(x,y)=graph_elev[labels(x,y)];
+        }
 
+      std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
+
+      world.send(0, TAG_DONE_SECOND, 0);
     }
   }
 }
@@ -317,7 +335,6 @@ void HandleEdge(
   //const elev_t no_data
 ){
   //Guarantee that all vectors are of the same length
-  std::cerr<<elev_a.size()<<" "<<elev_b.size()<<" "<<label_a.size()<<" "<<label_b.size()<<std::endl;
   assert(elev_a.size ()==elev_b.size ());
   assert(label_a.size()==label_b.size());
   assert(elev_a.size ()==label_b.size());
@@ -374,59 +391,6 @@ void HandleCorner(
 }
 
 
-template<class JobSendType, class JobRecvType>
-void SendJobs(int job_id, std::vector< std::vector< JobSendType > > &job_send, std::vector< std::vector< JobRecvType > > &job_recv){
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
-  int active_nodes = 0;
-
-  //Loop through all of the jobs, delegating them to Consumers
-  for(size_t y=0;y<job_send.size();y++)
-  for(size_t x=0;x<job_send[0].size();x++){
-    std::cerr<<"Sending job "<<y<<"/"<<job_send.size()<<", "<<x<<"/"<<job_send[0].size()<<std::endl;
-
-    //If fewer jobs have been delegated than there are Consumers available,
-    //delegate the job to a new Consumer.
-    if(active_nodes<world.size()-1){
-      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes+1,TAG_SYNC_MSG,job_id);
-      world.isend(active_nodes+1,TAG_JOB,job_send[y][x]);
-      active_nodes++;
-
-    //Once all of the consumers are active, wait for them to return results. As
-    //each Consumer returns a result, pass it the next unfinished Job until
-    //there are no jobs left.
-    } else {
-      JobRecvType finished_job;
-      boost::mpi::status status;
-
-      //Execute a blocking receive until some consumer finishes its work.
-      //Receive that work.
-      status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
-      job_recv[finished_job.chunk_info.gridy][finished_job.chunk_info.gridx] = finished_job;
-
-      //Delegate new work to that consumer
-      world.send (status.source(),TAG_SYNC_MSG,SYNC_MSG_JOB);
-      world.isend(status.source(),TAG_JOB     ,job_send[y][x]  );
-    }
-  }
-
-  while(active_nodes>0){
-    JobRecvType finished_job;
-    boost::mpi::status status;
-
-    //Execute a blocking receive until some consumer finishes its work.
-    //Receive that work
-    status = world.recv(boost::mpi::any_source,TAG_JOB,finished_job);
-    job_recv[finished_job.chunk_info.gridy][finished_job.chunk_info.gridx] = finished_job;
-
-    //Decrement the number of consumers we are waiting on. When this hits 0 all
-    //of the jobs have been completed and we can move on
-    active_nodes--;
-    (void)status; //TODO: Suppress non-usage warning
-  }
-}
-
 
 
 
@@ -439,11 +403,69 @@ void SendJobs(int job_id, std::vector< std::vector< JobSendType > > &job_send, s
 //processing.
 template<class elev_t, GDALDataType gdt_t>
 void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
+  boost::mpi::environment env;
   boost::mpi::communicator world;
+  int active_nodes = 0;
+
+  std::map<int,ChunkInfo> rank_to_chunk;
 
   std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
 
-  SendJobs(TAG_FIRST_PF, chunks, jobs1);
+
+  //Loop through all of the jobs, delegating them to Consumers
+  active_nodes=0;
+  for(size_t y=0;y<chunks.size();y++)
+  for(size_t x=0;x<chunks[0].size();x++){
+    std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
+
+    //If fewer jobs have been delegated than there are Consumers available,
+    //delegate the job to a new Consumer.
+    if(active_nodes<world.size()-1){
+      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks[y][x]);
+
+      rank_to_chunk[active_nodes+1] = chunks[y][x];
+      world.isend(active_nodes+1,TAG_WHICH_JOB,JOB_FIRST);
+      active_nodes++;
+
+    //Once all of the consumers are active, wait for them to return results. As
+    //each Consumer returns a result, pass it the next unfinished Job until
+    //there are no jobs left.
+    } else {
+      Job1<elev_t> finished_job;
+
+      //Execute a blocking receive until some consumer finishes its work.
+      //Receive that work.
+      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+
+      //NOTE: This could be used to implement more robust handling of lost nodes
+      ChunkInfo received_chunk = rank_to_chunk[status.source()];
+      jobs1[received_chunk.gridy][received_chunk.gridx] = finished_job;
+
+      //Delegate new work to that consumer
+      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
+
+      rank_to_chunk[status.source()] = chunks[y][x];
+      world.isend (status.source(),TAG_WHICH_JOB,JOB_FIRST);
+    }
+  }
+
+  while(active_nodes>0){
+    Job1<elev_t> finished_job;
+
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+    ChunkInfo received_chunk = rank_to_chunk[status.source()];
+    jobs1[received_chunk.gridy][received_chunk.gridx] = finished_job;
+
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_nodes--;
+  }
+
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
@@ -529,47 +551,71 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   #ifdef DEBUG
     std::cerr<<"Graph elevations"<<std::endl;
-    for(auto &ge: graph_elev)
+    for(const auto &ge: graph_elev)
       std::cerr<<std::setw(3)<<ge.first<<" = "<<std::setw(3)<<ge.second<<std::endl;
   #endif
 
+  std::cerr<<"Sending out final jobs..."<<std::endl;
+  //Loop through all of the jobs, delegating them to Consumers
+  active_nodes=0;
+  for(size_t y=0;y<chunks.size();y++)
+  for(size_t x=0;x<chunks[0].size();x++){
+    std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
 
+    std::map<elev_t, label_t> job2;
+    for(const auto &ge: graph_elev)
+      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
+        job2[ge.first] = ge.second;
 
+    //If fewer jobs have been delegated than there are Consumers available,
+    //delegate the job to a new Consumer.
+    if(active_nodes<world.size()-1){
+      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks[y][x]);
 
-  //SendJobs(TAG_FINAL_PF, jobs);
+      rank_to_chunk[active_nodes+1] = chunks[y][x];
+      world.send (active_nodes+1,TAG_WHICH_JOB,JOB_SECOND);
+      world.isend(active_nodes+1,TAG_SECOND_DATA,job2);
+      active_nodes++;
 
+    //Once all of the consumers are active, wait for them to return results. As
+    //each Consumer returns a result, pass it the next unfinished Job until
+    //there are no jobs left.
+    } else {
+      int msg;
 
+      //Execute a blocking receive until some consumer finishes its work.
+      //Receive that work.
+      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,msg);
 
+      //Delegate new work to that consumer
+      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
 
-
-
-
-
-
-
-
-
-/*  std::vector< std::map<label_t,elev_t> > strip_label_elevations(total_number_of_nodes);
-  for(auto &ge: graph_elev){
-    auto vertex_num   = ge.first;
-    auto elevation    = ge.second;
-    auto strip_num    = label_to_strip[vertex_num];
-    auto label_offset = strip_to_max_label[strip_num];
-    vertex_num       -= label_offset;
-    strip_label_elevations[strip_num][vertex_num] = elevation;
+      rank_to_chunk[status.source()] = chunks[y][x];
+      world.send (status.source(),TAG_WHICH_JOB,JOB_SECOND);
+      world.isend(status.source(),TAG_SECOND_DATA,job2);
+    }
   }
-*/
+
+  while(active_nodes>0){
+    int msg;
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,msg);
 
 
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_nodes--;
 
-
-
-
-
+    std::cerr<<"Nodes left: "<<active_nodes<<std::endl;
+  }
 
   for(int i=1;i<world.size();i++)
-    world.isend(i,TAG_SYNC_MSG,SYNC_MSG_KILL);
-
+    world.isend(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+  MPI_Finalize();
 }
 
 
@@ -635,11 +681,12 @@ int Preparer(int argc, char **argv){
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
     int32_t label_offset = 2;
+    const int32_t label_increment = 2*bheight+2*bwidth+1;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.push_back( std::vector< ChunkInfo >() );
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         std::cerr<<"Constructing job ("<<x<<","<<y<<")"<<std::endl;
-        chunks.back().emplace_back(filename, label_offset, gridx, gridy, x, y, bwidth, bheight);
+        chunks.back().emplace_back(filename, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
@@ -651,7 +698,6 @@ int Preparer(int argc, char **argv){
         //section obviously correct. Although we do not expect to run out of
         //labels, it is possible to rigorously check for this condition here,
         //before we have used much time or I/O.
-        int32_t label_increment = 2*gridx+2*gridy+1;
         if(std::numeric_limits<int>::max()-label_offset<label_increment){
           std::cerr<<"Ran out of labels. Cannot proceed."<<std::endl;
           env.abort(-1); //TODO: Set error code
@@ -660,6 +706,13 @@ int Preparer(int argc, char **argv){
       }
     }
 
+    //#ifdef DEBUG
+      for(int y=0;y<chunks.size();y++)
+      for(int x=0;x<chunks[0].size();x++){
+        std::cerr<<"Chunk offset: "<<y<<" "<<x<<" "<<chunks[y][x].label_offset<<" "<<chunks[y][x].max_label<< std::endl;
+      }
+    //#endif
+  
     //If a job is on the edge of the raster, mark it as having this property so
     //that it can be handled with elegance later.
     for(auto &e: chunks.front())
