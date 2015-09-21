@@ -579,10 +579,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
 
-    std::map<elev_t, label_t> job2;
+    std::map<label_t, elev_t> job2;
     for(const auto &ge: graph_elev)
-      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
+      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label){
         job2[ge.first] = ge.second;
+        std::cerr<<"I will send this: "<<ge.first<<" "<<ge.second<<" "<<job2[ge.first]<<std::endl;
+      }
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
