@@ -537,7 +537,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::map<label_t,bool>              visited;
   std::map<label_t,elev_t>            graph_elev;
 
-  open.emplace(std::numeric_limits<elev_t>::min(),1);
+  open.emplace(std::numeric_limits<elev_t>::lowest(),1);
 
   while(open.size()>0){
     graph_node c=open.top();
