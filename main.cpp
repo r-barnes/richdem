@@ -265,7 +265,6 @@ void Consumer(){
     //This message indicates that everything is done and the Consumer should shut
     //down.
     if(the_job==SYNC_MSG_KILL){
-      std::cerr<<"Killing "<<world.rank()<<std::endl;
       MPI_Finalize();
       return;
 
@@ -276,7 +275,6 @@ void Consumer(){
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
       Job1<elev_t> job1;
-      std::cout<<"Node "<<world.rank()<<" has job "<<chunk.x<<"-"<<(chunk.x+chunk.width)<<" "<< chunk.y<<"-"<<(chunk.y+chunk.height)<<std::endl;
 
       //Read in the data associated with the job
       Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
@@ -305,11 +303,6 @@ void Consumer(){
     } else if (the_job==JOB_SECOND){
       std::map<label_t, elev_t> graph_elev;
       world.recv(0, TAG_SECOND_DATA, graph_elev);
-
-      std::cerr<<"ChunkID: "<<chunk.id<<" got a graph of size: "<<graph_elev.size()<<std::endl;
-      std::cerr<<"Chunk label_offset: "<<chunk.label_offset<<" max: "<<chunk.max_label<<std::endl;
-      for(auto &fv: graph_elev)
-        std::cerr<<"\t Label: "<<fv.first<<" Elev: "<<fv.second<<std::endl;
 
       std::map<label_t, std::map<label_t, elev_t> > graph;
 
@@ -563,12 +556,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
   }
 
-  //#ifdef DEBUG
-    std::cerr<<"Graph elevations"<<std::endl;
-    for(const auto &ge: graph_elev)
-      std::cerr<<std::setw(3)<<ge.first<<" = "<<std::setw(3)<<ge.second<<std::endl;
-  //#endif
-
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
   active_nodes=0;
@@ -578,10 +565,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     std::map<label_t, elev_t> job2;
     for(const auto &ge: graph_elev)
-      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label){
+      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
         job2[ge.first] = ge.second;
-        std::cerr<<"I will send this: "<<ge.first<<" "<<ge.second<<" "<<job2[ge.first]<<std::endl;
-      }
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
@@ -625,8 +610,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //Decrement the number of consumers we are waiting on. When this hits 0 all
     //of the jobs have been completed and we can move on
     active_nodes--;
-
-    std::cerr<<"Nodes left: "<<active_nodes<<std::endl;
   }
 
   for(int i=1;i<world.size();i++)
@@ -702,7 +685,6 @@ int Preparer(int argc, char **argv){
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.push_back( std::vector< ChunkInfo >() );
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        std::cerr<<"Constructing job ("<<x<<","<<y<<")"<<std::endl;
         chunks.back().emplace_back(filename, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
@@ -723,13 +705,6 @@ int Preparer(int argc, char **argv){
       }
     }
 
-    //#ifdef DEBUG
-      for(int y=0;y<chunks.size();y++)
-      for(int x=0;x<chunks[0].size();x++){
-        std::cerr<<"Chunk offset: "<<y<<" "<<x<<" "<<chunks[y][x].label_offset<<" "<<chunks[y][x].max_label<< std::endl;
-      }
-    //#endif
-  
     //If a job is on the edge of the raster, mark it as having this property so
     //that it can be handled with elegance later.
     for(auto &e: chunks.front())
