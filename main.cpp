@@ -260,6 +260,8 @@ void Consumer(){
   boost::mpi::environment env;
   boost::mpi::communicator world;
 
+  Timer calc,overall;
+
   int the_job;   //Which job should consumer perform?
 
   ChunkInfo chunk;
@@ -277,11 +279,13 @@ void Consumer(){
       return;
 
     } else if (the_job==JOB_CHUNK){
+      overall.start();
       world.recv(0, TAG_CHUNK_DATA, chunk);
 
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
+      calc.start();
       Job1<elev_t> job1;
 
       //Read in the data associated with the job
@@ -306,6 +310,13 @@ void Consumer(){
       job1.bot_label   = labels.bottomRow  ();
       job1.left_label  = labels.leftColumn ();
       job1.right_label = labels.rightColumn();
+
+      overall.stop();
+      calc.stop();
+
+      std::cerr<<"\tCalculation took "<<calc.accumulated()<<"s. Overall="<<overall.accumulated()<<"s."<<std::endl;
+      overall.reset();
+      calc.reset();
 
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
@@ -428,7 +439,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   active_nodes=0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
     if(chunks[y][x].nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
@@ -439,9 +450,9 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(active_nodes<world.size()-1){
       // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
       world.send(active_nodes+1,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks[y][x]);
+      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks.at(y).at(x));
 
-      rank_to_chunk[active_nodes+1] = chunks[y][x];
+      rank_to_chunk[active_nodes+1] = chunks.at(y).at(x);
       world.isend(active_nodes+1,TAG_WHICH_JOB,JOB_FIRST);
       active_nodes++;
 
@@ -459,13 +470,13 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
       //NOTE: This could be used to implement more robust handling of lost nodes
       ChunkInfo received_chunk = rank_to_chunk[status.source()];
-      jobs1[received_chunk.gridy][received_chunk.gridx] = finished_job;
+      jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
 
       //Delegate new work to that consumer
       world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
       world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
 
-      rank_to_chunk[status.source()] = chunks[y][x];
+      rank_to_chunk[status.source()] = chunks.at(y).at(x);
       world.isend (status.source(),TAG_WHICH_JOB,JOB_FIRST);
     }
   }
@@ -477,7 +488,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //Receive that work
     boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
     ChunkInfo received_chunk = rank_to_chunk[status.source()];
-    jobs1[received_chunk.gridy][received_chunk.gridx] = finished_job;
+    jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
 
     //Decrement the number of consumers we are waiting on. When this hits 0 all
     //of the jobs have been completed and we can move on
@@ -677,12 +688,12 @@ void Preparer(int argc, char **argv){
       std::string line;
       std::getline(fin_layout,line);
 
-      chunks.resize(chunks.size()+1); //Increase size by one
+      chunks.emplace_back(std::vector<ChunkInfo>());
 
       std::stringstream cells(line);
       std::string       filename;
       gridx = -1;
-      while(std::getline(cells,filename,',')){
+      while(std::getline(cells,filename,',')){ //Make sure this is reading all of hte file names
         gridx++;
         filename = trimStr(filename);
         //If the comma delimits only whitespace, then this is a null chunk
@@ -712,10 +723,10 @@ void Preparer(int argc, char **argv){
                    file_type!=this_chunk_type){
           std::cerr<<"All of the files specified by <layout_file> must be the same size and type!"<<std::endl;
           env.abort(-1); //TODO: Set error code
-        } else {
-          chunks.back().emplace_back(path_and_filename.string(), chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
-          label_offset+=label_increment;
         }
+
+        chunks.back().emplace_back(path_and_filename.string(), chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        label_offset+=label_increment;
       }
 
       if(row_width==-1){ //This is the first row
@@ -772,7 +783,7 @@ void Preparer(int argc, char **argv){
     int32_t label_offset = 2;
     const int32_t label_increment = 2*bheight+2*bwidth+1;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
-      chunks.resize(chunks.size()+1); //Increase size by one
+      chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         chunks.back().emplace_back(filename, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
