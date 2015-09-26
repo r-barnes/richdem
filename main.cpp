@@ -6,16 +6,19 @@
 // TODO: See optimization notes at "http://www.boost.org/doc/libs/1_56_0/doc/html/mpi/tutorial.html"
 // For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
 // abs("single_proc@1"-"merged@1")>0
+// SRTM data: https://dds.cr.usgs.gov/srtm/version2_1/SRTM1/Region_03/
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
 #include <boost/mpi.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/serialization/map.hpp>
 #include <string>
 #include <queue>
 #include <vector>
 #include <limits>
+#include <fstream> //For reading layout files
+#include <sstream> //Used for parsing the <layout_file>
+#include <boost/filesystem.hpp>
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -55,15 +58,20 @@ class ChunkInfo{
     ar & max_label;
     ar & filename;
     ar & id;
+    ar & nullChunk;
   }
  public:
   uint8_t edge;
   int32_t x,y,width,height,gridx,gridy;
   int32_t label_offset,max_label;
   int32_t id;
+  bool    nullChunk;
   std::string filename;
-  ChunkInfo(){}
+  ChunkInfo(){
+    nullChunk = true;
+  }
   ChunkInfo(std::string filename, int32_t id, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+    this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
     this->y            = y;
@@ -247,7 +255,7 @@ void PriorityFlood(
 }
 
 
-template<class elev_t, GDALDataType gdt_t>
+template<class elev_t>
 void Consumer(){
   boost::mpi::environment env;
   boost::mpi::communicator world;
@@ -277,7 +285,7 @@ void Consumer(){
       Job1<elev_t> job1;
 
       //Read in the data associated with the job
-      Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
+      Array2D<elev_t>   dem(chunk.filename, chunk.x, chunk.y, chunk.width, chunk.height);
 
       //These variables are needed by Priority-Flood. The internal
       //interconnections of labeled regions (named "graph") are also needed to
@@ -307,7 +315,7 @@ void Consumer(){
       std::map<label_t, std::map<label_t, elev_t> > graph;
 
       //These use the same logic as the analogous lines above
-      Array2D<elev_t>   dem(chunk.filename, true, chunk.x, chunk.y, chunk.width, chunk.height);
+      Array2D<elev_t>   dem(chunk.filename, chunk.x, chunk.y, chunk.width, chunk.height);
       Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
       PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
       for(int y=0;y<dem.viewHeight();y++)
@@ -405,7 +413,7 @@ void HandleCorner(
 //to compute the global properties necessary to the solution. Each Job, suitably
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
-template<class elev_t, GDALDataType gdt_t>
+template<class elev_t>
 void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   boost::mpi::environment env;
   boost::mpi::communicator world;
@@ -421,6 +429,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
+    if(chunks[y][x].nullChunk){
+      std::cerr<<"\tNull chunk: skipping."<<std::endl;
+      continue;
+    }
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
@@ -619,6 +631,16 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
 
 
+std::string trimStr(std::string const& str){
+  if(str.empty())
+      return str;
+
+  std::size_t firstScan = str.find_first_not_of(' ');
+  std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
+  std::size_t last      = str.find_last_not_of(' ');
+  return str.substr(first, last-first+1);
+}
+
 
 //Preparer divides up the input raster file into chunks which can be processed
 //independently by the Consumers. Since the chunking may be done on-the-fly or
@@ -626,33 +648,98 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 //with both. Once assemebled, the collection of jobs is passed off to Producer,
 //which is agnostic as to the original form of the jobs and handles
 //communication and solution assembly.
-template<class elev_t, GDALDataType gdt_t>
-int Preparer(int argc, char **argv){
-  boost::mpi::environment env;
+void Preparer(int argc, char **argv){
+  boost::mpi::environment  env;
+  boost::mpi::communicator world;
   int chunkid = 0;
 
-  std::vector< std::vector< ChunkInfo > >     chunks;
-  std::string filename;
+  std::vector< std::vector< ChunkInfo > > chunks;
+  std::string  filename;
+  GDALDataType file_type;
 
   if(argv[1]==std::string("many")){
-    std::cout<<"This feature is still experimental!\n";
-    return -1;
+    std::cerr<<"Multi file mode"<<std::endl;
 
-    std::cout<<"Locating files...\n";
-    //Convert argv[4], the extension argument, into a string for easy
-    //manipulation
-    std::string extension(argv[4]);
-    //Recursively loop through each file in the indicated directory and its
-    //subdirectories. Check to see if it ends with the appropriate extension
-    //and, if it does, add it to the list of files to be processed.
-    for (boost::filesystem::recursive_directory_iterator i(argv[3]), end; i != end; ++i)
-      if (!is_directory(i->path())){
-        std::string this_filename=i->path().filename().string();
-        if (0==this_filename.compare(this_filename.length() - extension.length(), extension.length(), extension))
-          //files_to_process.push_back(this_filename);
-          std::cout << "   " << this_filename << "\n";
+    int32_t gridx        = 0;
+    int32_t gridy        = -1;
+    int32_t row_width    = -1;
+    int32_t label_offset = -1;
+    int32_t chunk_width  = -1;
+    int32_t chunk_height = -1;
+    int32_t label_increment;
+    
+    boost::filesystem::path layout_path_and_name = argv[3];
+    auto path = layout_path_and_name.parent_path();
+
+    std::ifstream fin_layout(argv[3]);
+    while(fin_layout.good()){
+      gridy++;
+      std::string line;
+      std::getline(fin_layout,line);
+
+      chunks.resize(chunks.size()+1); //Increase size by one
+
+      std::stringstream cells(line);
+      std::string       filename;
+      gridx = -1;
+      while(std::getline(cells,filename,',')){
+        gridx++;
+        filename = trimStr(filename);
+        //If the comma delimits only whitespace, then this is a null chunk
+        if(filename==""){
+          chunks.back().emplace_back();
+          continue;
+        }
+
+
+        //Okay, the file exists. Let's check it out.
+        auto         path_and_filename = path / filename;
+        int          this_chunk_width;
+        int          this_chunk_height;
+        GDALDataType this_chunk_type;
+
+        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
+        this_chunk_type = peekGDALType(path_and_filename.string());
+
+        if(label_offset==-1){ //We haven't examined any of the files yet
+          chunk_height    = this_chunk_height;
+          chunk_width     = this_chunk_width;
+          file_type       = this_chunk_type;
+          label_increment = 2*chunk_height+2*chunk_width+1;
+          label_offset    = 2;
+        } else if( chunk_height!=this_chunk_height || 
+                   chunk_width!=this_chunk_width   ||
+                   file_type!=this_chunk_type){
+          std::cerr<<"All of the files specified by <layout_file> must be the same size and type!"<<std::endl;
+          env.abort(-1); //TODO: Set error code
+        } else {
+          chunks.back().emplace_back(path_and_filename.string(), chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+          label_offset+=label_increment;
+        }
       }
-    std::cout<<std::flush; //Ensure all file names are written before we continue
+
+      if(row_width==-1){ //This is the first row
+        row_width = gridx;
+      } else if(row_width!=gridx){
+        std::cerr<<"All rows of <layout_file> most specify the same number of files!"<<std::endl;
+        env.abort(-1); //TODO: Set error code
+      }
+    }
+
+    //nullChunks imply that the chunks around them have edges, as though they
+    //are on the edge of the raster.
+    for(int y=0;y<chunks.size();y++)
+    for(int x=0;x<chunks[0].size();x++){
+      if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
+        chunks[y][x].edge |= GRID_TOP;
+      if(y+1<chunks.size() && x>0 && chunks[y+1][x].nullChunk)
+        chunks[y][x].edge |= GRID_BOTTOM;
+      if(y>0 && x-1>0 && chunks[y][x-1].nullChunk)
+        chunks[y][x].edge |= GRID_LEFT;
+      if(y>0 && x+1<chunks[0].size() && chunks[y][x+1].nullChunk)
+        chunks[y][x].edge |= GRID_RIGHT;
+    }
+
   } else if(argv[1]==std::string("one")) {
     std::cerr<<"Single file mode"<<std::endl;
     int32_t bwidth  = std::stoi(argv[4]);
@@ -664,6 +751,8 @@ int Preparer(int argc, char **argv){
 
     //Get the total dimensions of the input file
     getGDALDimensions(filename, total_height, total_width);
+    file_type = peekGDALType(filename);
+
 
     //If the user has specified -1, that implies that they want the entire
     //dimension of the raster along the indicated axis to be processed within a
@@ -683,7 +772,7 @@ int Preparer(int argc, char **argv){
     int32_t label_offset = 2;
     const int32_t label_increment = 2*bheight+2*bwidth+1;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
-      chunks.push_back( std::vector< ChunkInfo >() );
+      chunks.resize(chunks.size()+1); //Increase size by one
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         chunks.back().emplace_back(filename, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
@@ -705,26 +794,52 @@ int Preparer(int argc, char **argv){
       }
     }
 
-    //If a job is on the edge of the raster, mark it as having this property so
-    //that it can be handled with elegance later.
-    for(auto &e: chunks.front())
-      e.edge |= GRID_TOP;
-    for(auto &e: chunks.back())
-      e.edge |= GRID_BOTTOM;
-    for(size_t y=0;y<chunks.size();y++){
-      chunks[y].front().edge |= GRID_LEFT;
-      chunks[y].back().edge  |= GRID_RIGHT;
-    }
-
   } else {
     std::cout<<"Unrecognised option! Must be 'many' or 'one'!"<<std::endl;
-    return -1;
+    env.abort(-1);
   }
 
-  //Pass off the list of jobs to Producer.
-  Producer<elev_t, gdt_t>(chunks);
+  //If a job is on the edge of the raster, mark it as having this property so
+  //that it can be handled with elegance later.
+  for(auto &e: chunks.front())
+    e.edge |= GRID_TOP;
+  for(auto &e: chunks.back())
+    e.edge |= GRID_BOTTOM;
+  for(size_t y=0;y<chunks.size();y++){
+    chunks[y].front().edge |= GRID_LEFT;
+    chunks[y].back().edge  |= GRID_RIGHT;
+  }
 
-  return 0;
+  boost::mpi::broadcast(world,file_type,0);
+
+  switch(file_type){
+    case GDT_Unknown:
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      env.abort(-1); //TODO
+    case GDT_Byte:
+      return Producer<uint8_t >(chunks);
+    case GDT_UInt16:
+      return Producer<uint16_t>(chunks);
+    case GDT_Int16:
+      return Producer<int16_t >(chunks);
+    case GDT_UInt32:
+      return Producer<uint32_t>(chunks);
+    case GDT_Int32:
+      return Producer<int32_t >(chunks);
+    case GDT_Float32:
+      return Producer<float   >(chunks);
+    case GDT_Float64:
+      return Producer<double  >(chunks);
+    case GDT_CInt16:
+    case GDT_CInt32:
+    case GDT_CFloat32:
+    case GDT_CFloat64:
+      std::cerr<<"Complex types are not supported. Sorry!"<<std::endl;
+      env.abort(-1); //TODO
+    default:
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      env.abort(-1); //TODO
+  }
 }
 
 
@@ -734,54 +849,79 @@ int main(int argc, char **argv){
   boost::mpi::communicator world;
 
   if(world.rank()==0){
-    if(argc<5){
-      std::cerr<<"Syntax: "<<argv[0]<<" <many> <retain/offload> <dir> <extension>\n";
+    if(  argc<2 ||
+         (std::string(argv[1])=="many" && argc!=4) ||
+         (std::string(argv[1])=="one"  && argc!=6)
+      ){
+      std::cerr<<"Syntax: "<<argv[0]<<" <many> <retain/offload> <layout_file>\n";
       std::cerr<<"Syntax: "<<argv[0]<<" <one>  <retain/offload> <file> <bwidth> <bheight>\n";
-      std::cerr<<"    many      - Implies that the data has already been tiled and all tiles are\n";
-      std::cerr<<"                in <dir> and end with <extension>. Files are assumed to be small\n";
-      std::cerr<<"                enough that each individual file can fit into RAM. File must be\n";
-      std::cerr<<"                non-overlapping square blocks.\n";
-      std::cerr<<"    one       - Implies that the data is in a single file and must be split up\n";
-      std::cerr<<"                into blocks of size <bwidth> and <bheight>\n";
-      std::cerr<<"    retain    - Threads should retain all relevant information in memory\n";
-      std::cerr<<"                throughout the life of the program. Good for smaller datasets or\n";
-      std::cerr<<"                high RAM environments.\n";
-      std::cerr<<"    offload   - Threads will write intermediate products to memory. Good for\n";
-      std::cerr<<"                large datasets, low RAM environments, or unstable environments.\n";
-      std::cerr<<"    file      - Single data file to be processed by <one>\n";
-      std::cerr<<"    extension - Final characters of file name, such as: tif, flt\n";
-      std::cerr<<"    dir       - Directory in which files to be processed by <many> are located\n";
-      std::cerr<<"    bwidth    - Block width in cells. Should be >1000\n";
-      std::cerr<<"    bheight   - Block height in cells. Should be >1000\n";
+      std::cerr<<
+R"(    many        - Implies that the data has already been tiled and the layout of
+                  the files is specified by the <layout_file>. The paths of all
+                  files listed in the <layout_file> are assumed to be relative
+                  from the location of that file. Each individual file is
+                  assumed to be small enough to fit into RAM. Files must be
+                  non-overlapping square blocks.
+
+    one         - Implies that the data is in a single file and must be split up
+                  into blocks of size <bwidth> and <bheight>
+
+    retain      - Threads should retain all relevant information in memory
+                  throughout the life of the program. Good for smaller datasets
+                  or high RAM environments in which the goal is speed rather
+                  than memory management.
+
+    offload     - Threads will write intermediate products to memory. Good for
+                  large datasets, low RAM environments, or unstable
+                  environments.
+
+    file        - Single data file to be processed by <one>
+
+    extension   - Final characters of file name, such as: tif, flt
+
+    bwidth      - Block width in cells. Should be >1000
+
+    bheight     - Block height in cells. Should be >1000
+
+    layout_file - The directory in which the files to be processed by <many> are
+                  located. The <layout_file> specifies a square grid of
+                  filenames whose paths are considered to be relative to the
+                  location of the <layout_file> itself. Filenames must be
+                  comma-delimited. If the files do not form a square grid or
+                  there are holes in the data (missing files), a blank space may
+                  be left between two commas.)"<<std::endl;
       return -1;
     }
 
-    switch(peekGDALType(argv[3])){
-      case GDT_Int16:
-        return Preparer<int16_t, GDT_Int16>(argc,argv);
-      case GDT_Float32:
-        return Preparer<float, GDT_Float32>(argc,argv);
-      default:
-        if(world.rank()==0){
-          std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(argv[3]))<<std::endl;
-          return -1;
-        }
-        break;
-    }
+    Preparer(argc,argv);
 
   } else {
-    if(argc<5)
-      return -1;
-
-    switch(peekGDALType(argv[3])){
-      case GDT_Int16:
-        Consumer<int16_t, GDT_Int16>();
-        break;
-      case GDT_Float32:
-        Consumer<float, GDT_Float32>();
-        break;
-      default:
-        break;
+    if(  argc<2 ||
+         (std::string(argv[1])=="many" && argc!=4) ||
+         (std::string(argv[1])=="one"  && argc!=6)
+      ){
+        return -1;
+    } else {
+      GDALDataType file_type;
+      boost::mpi::broadcast(world, file_type, 0);
+      switch(file_type){
+        case GDT_Byte:
+          Consumer<uint8_t >();
+        case GDT_UInt16:
+          Consumer<uint16_t>();
+        case GDT_Int16:
+          Consumer<int16_t >();
+        case GDT_UInt32:
+          Consumer<uint32_t>();
+        case GDT_Int32:
+          Consumer<int32_t >();
+        case GDT_Float32:
+          Consumer<float   >();
+        case GDT_Float64:
+          Consumer<double  >();
+        default:
+          return -1;
+      }
     }
   }
 
