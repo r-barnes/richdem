@@ -348,8 +348,7 @@ void Consumer(){
 
       Timer time_output;
       time_output.start();
-      std::string output_name = std::string("/z/output")+std::to_string(chunk.id)+std::string(".tif");
-      dem.saveGDAL(output_name, chunk.filename, chunk.x, chunk.y);
+      dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
       time_output.stop();
       std::cerr<<"\tOutput took "<<time_output.accumulated()<<"s."<<std::endl;
 
