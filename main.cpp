@@ -612,7 +612,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   active_nodes=0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
     if(chunks[y][x].nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
