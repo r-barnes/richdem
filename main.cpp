@@ -956,19 +956,19 @@ R"(    many        - Implies that the data has already been tiled and the layout
       boost::mpi::broadcast(world, file_type, 0);
       switch(file_type){
         case GDT_Byte:
-          Consumer<uint8_t >();
+          Consumer<uint8_t >();break;
         case GDT_UInt16:
-          Consumer<uint16_t>();
+          Consumer<uint16_t>();break;
         case GDT_Int16:
-          Consumer<int16_t >();
+          Consumer<int16_t >();break;
         case GDT_UInt32:
-          Consumer<uint32_t>();
+          Consumer<uint32_t>();break;
         case GDT_Int32:
-          Consumer<int32_t >();
+          Consumer<int32_t >();break;
         case GDT_Float32:
-          Consumer<float   >();
+          Consumer<float   >();break;
         case GDT_Float64:
-          Consumer<double  >();
+          Consumer<double  >();break;
         default:
           return -1;
       }
