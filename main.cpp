@@ -316,13 +316,13 @@ void Consumer(){
 
       overall.stop();
       calc.stop();
-
       std::cerr<<"\tCalculation took "<<calc.accumulated()<<"s. Overall="<<overall.accumulated()<<"s."<<std::endl;
       overall.reset();
       calc.reset();
 
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
+      calc.start();
       std::map<label_t, elev_t> graph_elev;
       world.recv(0, TAG_SECOND_DATA, graph_elev);
 
@@ -339,10 +339,20 @@ void Consumer(){
 
       std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
 
+      overall.stop();
+      calc.stop();
+      std::cerr<<"\tCalculation took "<<calc.accumulated()<<"s. Overall="<<overall.accumulated()<<"s."<<std::endl;
+      overall.reset();
+      calc.reset();
+
       //At this point we're done with the calculation! Boo-yeah!
 
+      Timer time_output;
+      time_output.start();
       std::string output_name = std::string("/z/output")+std::to_string(chunk.id)+std::string(".tif");
       dem.saveGDAL(output_name, chunk.filename, chunk.x, chunk.y);
+      time_output.stop();
+      std::cerr<<"\tOutput took "<<time_output.accumulated()<<"s."<<std::endl;
 
       world.send(0, TAG_DONE_SECOND, 0);
     }
