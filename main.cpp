@@ -57,6 +57,7 @@ class ChunkInfo{
     ar & label_offset;
     ar & max_label;
     ar & filename;
+    ar & outputname;
     ar & id;
     ar & nullChunk;
   }
@@ -67,10 +68,11 @@ class ChunkInfo{
   int32_t id;
   bool    nullChunk;
   std::string filename;
+  std::string outputname;
   ChunkInfo(){
     nullChunk = true;
   }
-  ChunkInfo(std::string filename, int32_t id, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(std::string filename, std::string outputname, int32_t id, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
@@ -83,6 +85,7 @@ class ChunkInfo{
     this->max_label    = max_label;
     this->id           = id;
     this->filename     = filename;
+    this->outputname   = outputname;
   }
 };
 
@@ -704,7 +707,12 @@ void Preparer(int argc, char **argv){
 
 
         //Okay, the file exists. Let's check it out.
-        auto         path_and_filename = path / filename;
+        auto path_and_filename = path / filename;
+        auto path_and_filestem = path / path_and_filename.stem();
+        auto outputname        = path_and_filestem.string()+"-fill.tif";
+
+
+        //For retrieving information about the file
         int          this_chunk_width;
         int          this_chunk_height;
         GDALDataType this_chunk_type;
@@ -725,7 +733,7 @@ void Preparer(int argc, char **argv){
           env.abort(-1); //TODO: Set error code
         }
 
-        chunks.back().emplace_back(path_and_filename.string(), chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        chunks.back().emplace_back(path_and_filename.string(), outputname, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
         label_offset+=label_increment;
       }
 
@@ -760,6 +768,9 @@ void Preparer(int argc, char **argv){
 
     filename = argv[3];
 
+    auto filepath   = boost::filesystem::path(filename);
+    filepath        = filepath.parent_path() / filepath.stem();
+
     //Get the total dimensions of the input file
     getGDALDimensions(filename, total_height, total_width);
     file_type = peekGDALType(filename);
@@ -785,7 +796,8 @@ void Preparer(int argc, char **argv){
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        chunks.back().emplace_back(filename, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
+        auto outputname = filepath.string()+"-fill"+std::to_string(chunkid)+".tif";
+        chunks.back().emplace_back(filename, outputname, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
