@@ -519,12 +519,13 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     for(auto const &fkey: jobs1[y][x].graph)
-    for(auto const &skey: fkey.second)
+    for(auto const &skey: fkey.second){
       if(fkey.first>chunks[y][x].max_label || skey.first>chunks[y][x].max_label){
         std::cerr<<"Label exceeded bounds!"<<std::endl;
         env.abort(-1); //TODO
       }
       mastergraph[fkey.first][skey.first] = skey.second;
+    }
     jobs1[y][x].graph.clear();
   }
 
