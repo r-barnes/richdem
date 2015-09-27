@@ -508,21 +508,25 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   //TODO: Note here about how the code above code be incorporated
 
+  //Now look at the chunks around a central chunk c.
+  const int gridwidth  = jobs1.front().size();
+  const int gridheight = jobs1.size();
+
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
   //method is not guaranteed to release space.
   std::map<label_t, std::map<label_t, elev_t> > mastergraph;
-  for(auto &row: jobs1)
-  for(auto &cell: row){
-    for(auto const &fkey: cell.graph)
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
+    for(auto const &fkey: jobs1[y][x].graph)
     for(auto const &skey: fkey.second)
+      if(fkey.first>chunks[y][x].max_label || skey.first>chunks[y][x].max_label){
+        std::cerr<<"Label exceeded bounds!"<<std::endl;
+        env.abort(-1); //TODO
+      }
       mastergraph[fkey.first][skey.first] = skey.second;
-    cell.graph.clear();
+    jobs1[y][x].graph.clear();
   }
-
-  //Now look at the chunks around a central chunk c.
-  const int gridwidth  = jobs1.front().size();
-  const int gridheight = jobs1.size();
 
   for(size_t y=0;y<jobs1.size();y++)
   for(size_t x=0;x<jobs1.front().size();x++){
