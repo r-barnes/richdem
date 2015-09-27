@@ -464,7 +464,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       world.send(active_nodes+1,TAG_CHUNK_DATA,chunks.at(y).at(x));
 
       rank_to_chunk[active_nodes+1] = chunks.at(y).at(x);
-      world.isend(active_nodes+1,TAG_WHICH_JOB,JOB_FIRST);
+      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_FIRST);
       active_nodes++;
 
     //Once all of the consumers are active, wait for them to return results. As
@@ -488,7 +488,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
 
       rank_to_chunk[status.source()] = chunks.at(y).at(x);
-      world.isend (status.source(),TAG_WHICH_JOB,JOB_FIRST);
+      world.send(status.source(),TAG_WHICH_JOB,JOB_FIRST);
     }
   }
 
@@ -627,8 +627,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       world.send(active_nodes+1,TAG_CHUNK_DATA,chunks[y][x]);
 
       rank_to_chunk[active_nodes+1] = chunks[y][x];
-      world.send (active_nodes+1,TAG_WHICH_JOB,JOB_SECOND);
-      world.isend(active_nodes+1,TAG_SECOND_DATA,job2);
+      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_SECOND);
+      world.send(active_nodes+1,TAG_SECOND_DATA,job2);
       active_nodes++;
 
     //Once all of the consumers are active, wait for them to return results. As
@@ -646,8 +646,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
 
       rank_to_chunk[status.source()] = chunks[y][x];
-      world.send (status.source(),TAG_WHICH_JOB,JOB_SECOND);
-      world.isend(status.source(),TAG_SECOND_DATA,job2);
+      world.send(status.source(),TAG_WHICH_JOB,JOB_SECOND);
+      world.send(status.source(),TAG_SECOND_DATA,job2);
     }
   }
 
@@ -664,7 +664,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   for(int i=1;i<world.size();i++)
-    world.isend(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+    world.send(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
 }
 
 
