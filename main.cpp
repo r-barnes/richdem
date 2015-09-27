@@ -278,7 +278,6 @@ void Consumer(){
     //This message indicates that everything is done and the Consumer should shut
     //down.
     if(the_job==SYNC_MSG_KILL){
-      MPI_Finalize();
       return;
 
     } else if (the_job==JOB_CHUNK){
@@ -667,7 +666,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   for(int i=1;i<world.size();i++)
     world.isend(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
-  MPI_Finalize();
 }
 
 
