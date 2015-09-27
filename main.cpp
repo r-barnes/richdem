@@ -529,26 +529,39 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   for(size_t y=0;y<jobs1.size();y++)
   for(size_t x=0;x<jobs1.front().size();x++){
+    if(chunks[y][x].nullChunk)
+      continue;
+
     auto &c = jobs1[y][x];
 
-    if(y>0)
+    if(y>0            && !chunks[y-1][x].nullChunk)
       HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph);
-    if(y<gridheight-1)
+    
+    if(y<gridheight-1 && !chunks[y+1][x].nullChunk)
       HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph);
-    if(x>0)
+    
+    if(x>0            && !chunks[y][x-1].nullChunk)
       HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph);
-    if(x<gridwidth-1)
+    
+    if(x<gridwidth-1  && !chunks[y][x+1].nullChunk)
       HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph);
 
 
     //I wish I had wrote it all in LISP.
-    if(y>0 && x>0)                      //Top left
+    //Top left
+    if(y>0 && x>0                      && !chunks[y-1][x-1].nullChunk)   
       HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph);
-    if(y<gridheight-1 && x<gridwidth-1) //Bottom right
+    
+    //Bottom right
+    if(y<gridheight-1 && x<gridwidth-1 && !chunks[y+1][x+1].nullChunk) 
       HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph);
-    if(y>0 && x<gridwidth-1)            //Top right
+    
+    //Top right
+    if(y>0 && x<gridwidth-1            && !chunks[y-1][x+1].nullChunk)            
       HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph);
-    if(x>0 && y<gridheight-1)           //Bottom left
+    
+    //Bottom left
+    if(x>0 && y<gridheight-1           && !chunks[y+1][x-1].nullChunk) 
       HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph);
   }
 
@@ -598,6 +611,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<y<<"/"<<chunks.size()<<", "<<x<<"/"<<chunks[0].size()<<std::endl;
+    if(chunks[y][x].nullChunk){
+      std::cerr<<"\tNull chunk: skipping."<<std::endl;
+      continue;
+    }
 
     std::map<label_t, elev_t> job2;
     for(const auto &ge: graph_elev)
