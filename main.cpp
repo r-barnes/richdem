@@ -323,6 +323,7 @@ void Consumer(){
     } else if (the_job==JOB_SECOND){
       calc.start();
       std::map<label_t, elev_t> graph_elev;
+
       world.recv(0, TAG_SECOND_DATA, graph_elev);
 
       std::map<label_t, std::map<label_t, elev_t> > graph;
@@ -331,6 +332,7 @@ void Consumer(){
       Array2D<elev_t>   dem(chunk.filename, chunk.x, chunk.y, chunk.width, chunk.height);
       Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
       PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
+
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
         if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev.at(labels(x,y)))
