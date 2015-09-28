@@ -333,8 +333,8 @@ void Consumer(){
       PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
-        if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev[labels(x,y)])
-          dem(x,y)=graph_elev[labels(x,y)];
+        if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev.at(labels(x,y)))
+          dem(x,y) = graph_elev.at(labels(x,y));
 
       std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
 
