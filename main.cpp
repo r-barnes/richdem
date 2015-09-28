@@ -778,6 +778,8 @@ void Preparer(int argc, char **argv){
     //are on the edge of the raster.
     for(int y=0;y<chunks.size();y++)
     for(int x=0;x<chunks[0].size();x++){
+      if(chunks[y][x].nullChunk)
+        continue;
       if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
         chunks[y][x].edge |= GRID_TOP;
       if(y+1<chunks.size() && x>0 && chunks[y+1][x].nullChunk)
