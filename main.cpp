@@ -206,7 +206,8 @@ void PriorityFlood(
       auto ny = c.y+dy[n]; //Neighbour's y-coordinate
 
       //Check to see if the neighbour coordinates are valid
-      if(nx<0 || ny<0 || nx==dem.viewWidth() || ny==dem.viewHeight()) continue;
+      if(!dem.in_grid(nx,ny))
+        continue;
       auto n_label = std::abs(labels(nx,ny)); //Neighbour's label
       //Does the neighbour have a label? If so, it is part of the edge, has
       //already been assigned a label by a parent cell which must be of lower or
