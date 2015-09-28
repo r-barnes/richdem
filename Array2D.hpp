@@ -174,6 +174,15 @@ class Array2D {
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
 
+  void flipVert(){
+    std::reverse(data.begin(),data.end());
+  }
+
+  void flipHorz(){
+    for(auto &row: data)
+      std::reverse(row.begin(),row.end());
+  }
+
   bool in_grid(int x, int y) const {
     return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
   }
