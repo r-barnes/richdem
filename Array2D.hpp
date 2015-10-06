@@ -83,8 +83,6 @@ class Array2D {
   typedef std::vector<Row> InternalArray;
   InternalArray data;
 
-  std::string ram_name;
-
   static const int HEADER_SIZE = 2*sizeof(int);
 
   int total_height;
