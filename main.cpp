@@ -904,6 +904,11 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
       }
     }
 
+    if(retention_base=="@retainall" && chunks.size()*chunks[0].size()>=world.size()-1){
+      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<world.size()<<" are available."<<std::endl;
+      env.abort(-1);
+    }
+
   } else {
     std::cout<<"Unrecognised option! Must be 'many' or 'one'!"<<std::endl;
     env.abort(-1);
