@@ -29,7 +29,8 @@
 #include "common.hpp"
 //#define DEBUG 1
 
-
+//TODO: Is it possible to run this without mpirun if we specify a single node
+//job?
 
 /*
   For reference, this is the definition of the RasterIO() function
