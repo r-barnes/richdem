@@ -826,7 +826,7 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
       if(row_width==-1){ //This is the first row
         row_width = gridx;
       } else if(row_width!=gridx){
-        std::cerr<<"All rows of <layout_file> most specify the same number of files!"<<std::endl;
+        std::cerr<<"All rows of <layout_file> must specify the same number of files!"<<std::endl;
         env.abort(-1); //TODO: Set error code
       }
     }
