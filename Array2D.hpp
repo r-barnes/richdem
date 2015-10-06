@@ -83,7 +83,7 @@ class Array2D {
   typedef std::vector<Row> InternalArray;
   InternalArray data;
 
-  static const int HEADER_SIZE = 2*sizeof(int);
+  static const int HEADER_SIZE = 7*sizeof(int) + sizeof(T);
 
   int total_height;
   int total_width;
@@ -155,8 +155,54 @@ class Array2D {
   }
 
   //Create internal array from a file
-  Array2D(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0) : Array2D() {
-    loadGDAL(filename, xOffset, yOffset, part_width, part_height);
+  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0) : Array2D() {
+    if(native)
+      loadNative(filename);
+    else
+      loadGDAL(filename, xOffset, yOffset, part_width, part_height);
+  }
+
+  void saveNative(const std::string &filename){
+    std::fstream fout;
+
+    fout.open(filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios::trunc);
+    assert(fout.good());
+
+    fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
+    fout.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
+    fout.write(reinterpret_cast<char*>(&view_height),    sizeof(int));
+    fout.write(reinterpret_cast<char*>(&view_width),     sizeof(int));
+    fout.write(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
+    fout.write(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
+    fout.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
+    fout.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+
+    for(int y=0;y<view_height;y++)
+      fout.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+  }
+
+  void loadNative(const std::string &filename){
+    std::ifstream fin(filename, std::ios::in | std::ios::binary);
+    assert(fin.good());
+
+    fin.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
+    fin.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
+    fin.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
+    fin.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
+    fin.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
+    fin.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
+    fin.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
+    fin.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+
+    data = InternalArray(view_height, Row(view_width));
+
+    //TODO: which is right? This or the one below?
+//    for(int y=yOffset;y<yOffset+view_height;y++){
+//      fin.seekg(HEADER_SIZE+(y*total_width+xOffset)*sizeof(T));
+//      fin.read(reinterpret_cast<char*>(data[y-yOffset].data()), view_width*sizeof(T));
+//    }
+    for(int y=0;y<view_height;y++)
+      fin.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
   }
 
   //Note: The following functions return signed integers, which make them

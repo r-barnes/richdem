@@ -47,6 +47,7 @@ class ChunkInfo{
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version){
     ar & edge;
+    ar & flip;
     ar & x;
     ar & y;
     ar & width;
@@ -55,23 +56,26 @@ class ChunkInfo{
     ar & gridy;
     ar & label_offset;
     ar & max_label;
-    ar & filename;
-    ar & outputname;
     ar & id;
     ar & nullChunk;
+    ar & filename;
+    ar & outputname;
+    ar & retention;
   }
  public:
-  uint8_t edge;
-  int32_t x,y,width,height,gridx,gridy;
-  int32_t label_offset,max_label;
-  int32_t id;
-  bool    nullChunk;
+  uint8_t     edge;
+  uint8_t     flip;
+  int32_t     x,y,width,height,gridx,gridy;
+  int32_t     label_offset,max_label;
+  int32_t     id;
+  bool        nullChunk;
   std::string filename;
   std::string outputname;
+  std::string retention;
   ChunkInfo(){
     nullChunk = true;
   }
-  ChunkInfo(std::string filename, std::string outputname, int32_t id, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
@@ -85,6 +89,8 @@ class ChunkInfo{
     this->id           = id;
     this->filename     = filename;
     this->outputname   = outputname;
+    this->retention    = retention;
+    this->flip         = 0;
   }
 };
 
@@ -130,6 +136,9 @@ const uint8_t GRID_LEFT   = 1;
 const uint8_t GRID_TOP    = 2;
 const uint8_t GRID_RIGHT  = 4;
 const uint8_t GRID_BOTTOM = 8;
+
+const uint8_t FLIP_VERT   = 1;
+const uint8_t FLIP_HORZ   = 2;
 
 
 
@@ -269,6 +278,9 @@ void Consumer(){
 
   ChunkInfo chunk;
 
+  Array2D<elev_t>  dem;
+  Array2D<label_t> labels;
+
   //Have the consumer process messages as long as they are coming using a
   //blocking receive to wait.
   while(true){
@@ -291,12 +303,16 @@ void Consumer(){
       Job1<elev_t> job1;
 
       //Read in the data associated with the job
-      Array2D<elev_t>   dem(chunk.filename, chunk.x, chunk.y, chunk.width, chunk.height);
+      dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+      if(chunk.flip & FLIP_VERT)
+        dem.flipVert();
+      if(chunk.flip & FLIP_HORZ)
+        dem.flipHorz();
 
       //These variables are needed by Priority-Flood. The internal
       //interconnections of labeled regions (named "graph") are also needed to
       //solve the problem, but that can be passed directly from the job object.
-      Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
+      labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
@@ -319,6 +335,16 @@ void Consumer(){
       overall.reset();
       calc.reset();
 
+      if(chunk.retention=="@offloadall"){
+        //Nothing to do: it will all get overwritten
+      } else if(chunk.retention=="@retainall"){
+        //Nothing to do: it will all be kept because this process won't get
+        //called again
+      } else {
+        dem.saveNative   (chunk.retention+"dem.dat"   );
+        labels.saveNative(chunk.retention+"labels.dat");
+      }
+
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
       calc.start();
@@ -329,9 +355,21 @@ void Consumer(){
       std::map<label_t, std::map<label_t, elev_t> > graph;
 
       //These use the same logic as the analogous lines above
-      Array2D<elev_t>   dem(chunk.filename, chunk.x, chunk.y, chunk.width, chunk.height);
-      Array2D<label_t>  labels(dem.viewWidth(),dem.viewHeight(),0);
-      PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
+      if(chunk.retention=="@offloadall"){
+        dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+        if(chunk.flip & FLIP_VERT)
+          dem.flipVert();
+        if(chunk.flip & FLIP_HORZ)
+          dem.flipHorz();
+  
+        labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
+        PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
+      } else if(chunk.retention=="@retainall"){
+        //Nothing to do: we have it all in memory
+      } else {
+        dem    = Array2D<elev_t>(chunk.retention+"dem.dat"    ,true); //TODO: There should be an exception if this fails
+        labels = Array2D<label_t>(chunk.retention+"labels.dat",true);
+      }
 
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
@@ -347,6 +385,11 @@ void Consumer(){
       calc.reset();
 
       //At this point we're done with the calculation! Boo-yeah!
+
+      if(chunk.flip & FLIP_HORZ)
+        dem.flipHorz();
+      if(chunk.flip & FLIP_VERT)
+        dem.flipVert();
 
       Timer time_output;
       time_output.start();
@@ -693,7 +736,7 @@ std::string trimStr(std::string const& str){
 //with both. Once assemebled, the collection of jobs is passed off to Producer,
 //which is agnostic as to the original form of the jobs and handles
 //communication and solution assembly.
-void Preparer(int argc, char **argv){
+void Preparer(std::string many_or_one, std::string retention_base, std::string input_file, std::string output_prefix, int bwidth, int bheight, int flipH, int flipV){
   boost::mpi::environment  env;
   boost::mpi::communicator world;
   int chunkid = 0;
@@ -702,7 +745,7 @@ void Preparer(int argc, char **argv){
   std::string  filename;
   GDALDataType file_type;
 
-  if(argv[1]==std::string("many")){
+  if(many_or_one=="many"){
     std::cerr<<"Multi file mode"<<std::endl;
 
     int32_t gridx        = 0;
@@ -713,10 +756,10 @@ void Preparer(int argc, char **argv){
     int32_t chunk_height = -1;
     int32_t label_increment;
     
-    boost::filesystem::path layout_path_and_name = argv[3];
+    boost::filesystem::path layout_path_and_name = input_file;
     auto path = layout_path_and_name.parent_path();
 
-    std::ifstream fin_layout(argv[3]);
+    std::ifstream fin_layout(input_file);
     while(fin_layout.good()){
       gridy++;
       std::string line;
@@ -727,7 +770,7 @@ void Preparer(int argc, char **argv){
       std::stringstream cells(line);
       std::string       filename;
       gridx = -1;
-      while(std::getline(cells,filename,',')){ //Make sure this is reading all of hte file names
+      while(std::getline(cells,filename,',')){ //Make sure this is reading all of the file names
         gridx++;
         filename = trimStr(filename);
         //If the comma delimits only whitespace, then this is a null chunk
@@ -740,8 +783,11 @@ void Preparer(int argc, char **argv){
         //Okay, the file exists. Let's check it out.
         auto path_and_filename = path / filename;
         auto path_and_filestem = path / path_and_filename.stem();
-        auto outputname        = path_and_filestem.string()+"-fill.tif";
+        auto outputname        = output_prefix+path_and_filename.stem().string()+"-fill.tif";
 
+        std::string retention = retention_base;
+        if(retention[0]!='@')
+          retention = (boost::filesystem::path(retention_base)/path_and_filestem.stem()).string()+"-int-";
 
         //For retrieving information about the file
         int          this_chunk_width;
@@ -764,7 +810,15 @@ void Preparer(int argc, char **argv){
           env.abort(-1); //TODO: Set error code
         }
 
-        chunks.back().emplace_back(path_and_filename.string(), outputname, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        std::cerr<<"ChunkID="<<chunkid<<", LabelOffset="<<label_offset<<", MaxLabel="<<(label_offset+label_increment-1)<<std::endl; //TODO: remove
+
+        chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        chunks.back().back().flip |= flipH;
+        chunks.back().back().flip |= flipV;
+        if(std::numeric_limits<int>::max()-label_offset<label_increment){
+          std::cerr<<"Ran out of labels. Cannot proceed."<<std::endl;
+          env.abort(-1); //TODO: Set error code
+        }
         label_offset+=label_increment;
       }
 
@@ -792,14 +846,12 @@ void Preparer(int argc, char **argv){
         chunks[y][x].edge |= GRID_RIGHT;
     }
 
-  } else if(argv[1]==std::string("one")) {
+  } else if(many_or_one=="one") {
     std::cerr<<"Single file mode"<<std::endl;
-    int32_t bwidth  = std::stoi(argv[4]);
-    int32_t bheight = std::stoi(argv[5]);
     int32_t total_height;
     int32_t total_width;
 
-    filename = argv[3];
+    filename = input_file;
 
     auto filepath   = boost::filesystem::path(filename);
     filepath        = filepath.parent_path() / filepath.stem();
@@ -807,7 +859,6 @@ void Preparer(int argc, char **argv){
     //Get the total dimensions of the input file
     getGDALDimensions(filename, total_height, total_width);
     file_type = peekGDALType(filename);
-
 
     //If the user has specified -1, that implies that they want the entire
     //dimension of the raster along the indicated axis to be processed within a
@@ -829,8 +880,11 @@ void Preparer(int argc, char **argv){
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        auto outputname = filepath.string()+"-fill"+std::to_string(chunkid)+".tif";
-        chunks.back().emplace_back(filename, outputname, chunkid++, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
+        auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
+        std::string retention = retention_base;
+        if(retention[0]!='@')
+          retention = retention_base+filepath.stem().string()+"-int-"+std::to_string(chunkid)+"-";
+        chunks.back().emplace_back(chunkid++, filename, outputname, retention, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
@@ -905,79 +959,106 @@ int main(int argc, char **argv){
   boost::mpi::communicator world;
 
   if(world.rank()==0){
-    if(  argc<2 ||
-         (std::string(argv[1])=="many" && argc!=4) ||
-         (std::string(argv[1])=="one"  && argc!=6)
-      ){
-      std::cerr<<"Syntax: "<<argv[0]<<" <many> <retain/offload> <layout_file>\n";
-      std::cerr<<"Syntax: "<<argv[0]<<" <one>  <retain/offload> <file> <bwidth> <bheight>\n";
-      std::cerr<<
-R"(    many        - Implies that the data has already been tiled and the layout of
-                  the files is specified by the <layout_file>. The paths of all
-                  files listed in the <layout_file> are assumed to be relative
-                  from the location of that file. Each individual file is
-                  assumed to be small enough to fit into RAM. Files must be
-                  non-overlapping square blocks.
+    std::string many_or_one;
+    std::string retention;
+    std::string input_file;
+    std::string output_prefix;
+    int         bwidth  = -1;
+    int         bheight = -1;
+    int         flipH   = false;
+    int         flipV   = false;
 
-    one         - Implies that the data is in a single file and must be split up
-                  into blocks of size <bwidth> and <bheight>
+    std::string help=
+    #include "help.txt"
+    ;
 
-    retain      - Threads should retain all relevant information in memory
-                  throughout the life of the program. Good for smaller datasets
-                  or high RAM environments in which the goal is speed rather
-                  than memory management.
+    try{
+      for(int i=1;i<argc;i++){
+        if(strcmp(argv[i],"--bwidth")==0 || strcmp(argv[i],"-w")==0){
+          if(i+1==argc)
+            throw std::invalid_argument("-w followed by no argument.");
+          bwidth = std::stoi(argv[i+1]);
+          if(bwidth<500)
+            throw std::invalid_argument("Width must be at least 500.");
+          i++;
+          continue;
+        } else if(strcmp(argv[i],"--bheight")==0 || strcmp(argv[i],"-h")==0){
+          if(i+1==argc)
+            throw std::invalid_argument("-h followed by no argument.");
+          bheight = std::stoi(argv[i+1]);
+          if(bheight<500)
+            throw std::invalid_argument("Height must be at least 500.");
+          i++;
+          continue;
+        } else if(strcmp(argv[i],"--flipH")==0 || strcmp(argv[i],"-H")==0){
+          flipH = true;
+        } else if(strcmp(argv[i],"--flipV")==0 || strcmp(argv[i],"-V")==0){
+          flipV = true;
+        } else if(argv[i][0]=='-'){
+          throw std::invalid_argument("Unrecognised flag: "+std::string(argv[i]));
+        } else if(many_or_one==""){
+          many_or_one = argv[i];
+        } else if(retention==""){
+          retention = argv[i];
+        } else if(input_file==""){
+          input_file = argv[i];
+        } else if(output_prefix==""){
+          output_prefix = argv[i];
+        } else {
+          throw std::invalid_argument("Too many arguments.");
+        }
+      }
+      if(many_or_one=="" || retention=="" || input_file=="" || output_prefix=="")
+        throw std::invalid_argument("Too few arguments.");
+      if(retention[0]=='@' && !(retention=="@offloadall" || retention=="@retainall"))
+        throw std::invalid_argument("Retention must be @offloadall or @retainall or a path.");
+      if(many_or_one!="many" && many_or_one!="one")
+        throw std::invalid_argument("Must specify many or one.");
+    } catch (const std::invalid_argument &ia){
+      std::string output_err;
+      if(ia.what()==std::string("stoi"))
+        output_err = "Invalid width or height.";
+      else
+        output_err = ia.what();
+      std::cerr<<"###Error: "<<output_err<<std::endl;
+      std::cerr<<help<<std::endl;
+      std::cerr<<"###Error: "<<output_err<<std::endl;
 
-    offload     - Threads will write intermediate products to memory. Good for
-                  large datasets, low RAM environments, or unstable
-                  environments.
+      int good_to_go=0;
+      boost::mpi::broadcast(world,good_to_go,0);
 
-    file        - Single data file to be processed by <one>
-
-    extension   - Final characters of file name, such as: tif, flt
-
-    bwidth      - Block width in cells. Should be >1000
-
-    bheight     - Block height in cells. Should be >1000
-
-    layout_file - The directory in which the files to be processed by <many> are
-                  located. The <layout_file> specifies a square grid of
-                  filenames whose paths are considered to be relative to the
-                  location of the <layout_file> itself. Filenames must be
-                  comma-delimited. If the files do not form a square grid or
-                  there are holes in the data (missing files), a blank space may
-                  be left between two commas.)"<<std::endl;
       return -1;
     }
 
-    Preparer(argc,argv);
+    int good_to_go = 1;
+    boost::mpi::broadcast(world,good_to_go,0);
+    Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
   } else {
-    if(  argc<2 ||
-         (std::string(argv[1])=="many" && argc!=4) ||
-         (std::string(argv[1])=="one"  && argc!=6)
-      ){
+    int good_to_go;
+    boost::mpi::broadcast(world, good_to_go, 0);
+    if(!good_to_go)
+      return -1;
+
+    GDALDataType file_type;
+    boost::mpi::broadcast(world, file_type, 0);
+    switch(file_type){
+      case GDT_Byte:
+        Consumer<uint8_t >();break;
+      case GDT_UInt16:
+        Consumer<uint16_t>();break;
+      case GDT_Int16:
+        Consumer<int16_t >();break;
+      case GDT_UInt32:
+        Consumer<uint32_t>();break;
+      case GDT_Int32:
+        Consumer<int32_t >();break;
+      case GDT_Float32:
+        Consumer<float   >();break;
+      case GDT_Float64:
+        Consumer<double  >();break;
+      default:
         return -1;
-    } else {
-      GDALDataType file_type;
-      boost::mpi::broadcast(world, file_type, 0);
-      switch(file_type){
-        case GDT_Byte:
-          Consumer<uint8_t >();break;
-        case GDT_UInt16:
-          Consumer<uint16_t>();break;
-        case GDT_Int16:
-          Consumer<int16_t >();break;
-        case GDT_UInt32:
-          Consumer<uint32_t>();break;
-        case GDT_Int32:
-          Consumer<int32_t >();break;
-        case GDT_Float32:
-          Consumer<float   >();break;
-        case GDT_Float64:
-          Consumer<double  >();break;
-        default:
-          return -1;
-      }
     }
   }
 
