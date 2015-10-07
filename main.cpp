@@ -766,6 +766,10 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
       std::string line;
       std::getline(fin_layout,line);
 
+      //Stop at a blank row
+      if(line.find_first_not_of("\t\n ")==std::string::npos)
+        break;
+
       chunks.emplace_back(std::vector<ChunkInfo>());
 
       std::stringstream cells(line);
