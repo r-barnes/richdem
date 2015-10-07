@@ -792,7 +792,7 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
 
         std::string retention = retention_base;
         if(retention[0]!='@')
-          retention = (boost::filesystem::path(retention_base)/path_and_filestem.stem()).string()+"-int-";
+          retention = retention_base+path_and_filestem.stem().string()+"-int-";
 
         //For retrieving information about the file
         int          this_chunk_width;
