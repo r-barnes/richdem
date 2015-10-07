@@ -165,8 +165,11 @@ class Array2D {
   void saveNative(const std::string &filename){
     std::fstream fout;
 
-    fout.open(filename, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios::trunc);
-    assert(fout.good());
+    fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
+    if(!fout.good()){
+      std::cerr<<"Failed to open file '"<<filename<<"'."<<std::endl;
+      assert(fout.good());
+    }
 
     fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
     fout.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
