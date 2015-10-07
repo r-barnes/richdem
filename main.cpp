@@ -818,8 +818,10 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
         std::cerr<<"ChunkID="<<chunkid<<", LabelOffset="<<label_offset<<", MaxLabel="<<(label_offset+label_increment-1)<<std::endl; //TODO: remove
 
         chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
-        chunks.back().back().flip |= flipH;
-        chunks.back().back().flip |= flipV;
+        if(flipH)
+          chunks.back().back().flip |= FLIP_HORZ;
+        if(flipV)
+          chunks.back().back().flip |= FLIP_VERT;
         if(std::numeric_limits<int>::max()-label_offset<label_increment){
           std::cerr<<"Ran out of labels. Cannot proceed."<<std::endl;
           env.abort(-1); //TODO: Set error code
