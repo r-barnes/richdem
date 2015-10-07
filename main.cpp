@@ -832,10 +832,12 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
       if(row_width==-1){ //This is the first row
         row_width = gridx;
       } else if(row_width!=gridx){
-        std::cerr<<"All rows of <layout_file> must specify the same number of files!"<<std::endl;
+        std::cerr<<"All rows of <layout_file> must specify the same number of files! First row="<<(row_width+1)<<", this row="<<(gridx+1)<<"."<<std::endl;
         env.abort(-1); //TODO: Set error code
       }
     }
+
+    std::cerr<<"Loaded "<<chunks.size()<<" rows of "<<chunks[0].size()<<" columns."<<std::endl;
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
