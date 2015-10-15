@@ -38,12 +38,6 @@ class GridCellZ : public GridCell {
   bool operator> (const GridCellZ<elev_t>& a) const { return z>a.z; }
 };
 
-typedef int     label_t;
-typedef uint8_t flowdir_t;
-
-
-
-
 
 class Timer{
   private:

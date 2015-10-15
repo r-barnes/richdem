@@ -42,6 +42,10 @@
                                    int nLineSpace )
 */
 
+
+typedef uint32_t label_t;
+
+
 class ChunkInfo{
  private:
   friend class boost::serialization::access;
@@ -117,8 +121,6 @@ class Job1 {
   std::map<label_t, std::map<label_t, elev_t> > graph;
   Job1(){}
 };
-
-typedef int32_t label_t;
 
 
 //TODO: What are these for?
