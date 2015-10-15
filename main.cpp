@@ -168,20 +168,16 @@ void PriorityFlood(
   }
 
   if(edge & GRID_TOP)
-    for(int x=0;x<dem.viewWidth();x++)
-      labels(x,0) = -1;
+    labels.setRow(0,-1);
 
   if(edge & GRID_BOTTOM)
-    for(int x=0;x<dem.viewWidth();x++)
-      labels(x,dem.viewHeight()-1) = -1;
+    labels.setRow(dem.viewHeight()-1,-1);
 
   if(edge & GRID_LEFT)
-    for(int y=0;y<dem.viewHeight();y++)
-      labels(0,y) = -1;
+    labels.setCol(0,-1);
 
   if(edge & GRID_RIGHT)
-    for(int y=0;y<dem.viewHeight();y++)
-      labels(dem.viewWidth()-1,y) = -1;
+    labels.setCol(dem.viewWidth()-1,-1);
 
   while(!pq.empty() || !pit.empty()){
     GridCellZ<elev_t> c;
@@ -231,13 +227,10 @@ void PriorityFlood(
         //make a note of the height of that watershed.
         if(n_label!=my_label){
           auto elev_over = std::max(dem(nx,ny),dem(c.x,c.y)); //TODO: I think this should always be the neighbour.
-          //Haven't seen this watershed before
-          if(my_graph[my_label].count(n_label)==0){
-            my_graph[my_label][n_label] = elev_over;
-            my_graph[n_label][my_label] = elev_over;
-          //We've seen this watershed before, so only make a note of the
-          //spill-over elevation if it is lower than what we've seen before.
-          } else if(elev_over<my_graph[my_label][n_label]){
+          //If count()==0, then we haven't seen this watershed before.
+          //Otherwise, only make a note of the spill-over elevation if it is
+          //lower than what we've seen before.
+          if(my_graph[my_label].count(n_label)==0 || elev_over<my_graph[my_label][n_label]){
             my_graph[my_label][n_label] = elev_over;
             my_graph[n_label][my_label] = elev_over;
           }
@@ -248,10 +241,6 @@ void PriorityFlood(
       //The neighbour is not one we've seen before, so mark it as being part of
       //our watershed and add it as an unprocessed item to the queue.
       labels(nx,ny) = -labels(c.x,c.y);
-
-
-//      if(dem(nx,ny)!=dem.noData())        //The neighbour is part of the DEM's data
-//        my_flowdirs(nx,ny) = d8_inverse[n]; //and flows into this cell
 
       //If the neighbour is lower than this cell, elevate it to the level of
       //this cell so that a depression is not formed. The flow directions will

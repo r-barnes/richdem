@@ -317,13 +317,13 @@ class Array2D {
     std::fill(data[rownum].begin(),data[rownum].end(),val);
   }
 
-  const std::vector<T>& getRowData(int rownum){
-    return data[rownum].data();
+  void setCol(int colnum, const T &val){
+    for(int y=0;y<viewHeight();y++)
+      data[y][colnum] = val;
   }
 
-  void setRow(int rownum, const Row &row){
-    assert(row.size()==(unsigned int)total_width);
-    data[rownum] = row;
+  const std::vector<T>& getRowData(int rownum){
+    return data[rownum].data();
   }
 
   void clear(){
