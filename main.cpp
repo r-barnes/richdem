@@ -158,26 +158,32 @@ void PriorityFlood(
   labels.init(0);
 
   for(int x=0;x<dem.viewWidth();x++){
-    pq.emplace(x,0,dem(x,0));
-    pq.emplace(x,dem.viewHeight()-1,dem(x,dem.viewHeight()-1));
+    const int the_y = dem.viewHeight()-1;
+    pq.emplace(x,0,    dem(x,0    ));
+    pq.emplace(x,the_y,dem(x,the_y));
+    labels(x,0)     = current_label++;
+    labels(x,the_y) = current_label++;
   }
 
   for(int y=1;y<dem.viewHeight()-1;y++){
-    pq.emplace(0,y,dem(0,y));
-    pq.emplace(dem.viewWidth()-1,y,dem(dem.viewWidth()-1,y));
+    const int the_x = dem.viewWidth()-1;
+    pq.emplace(0,    y,dem(0,    y));
+    pq.emplace(the_x,y,dem(the_x,y));
+    labels(0,y)     = current_label++;
+    labels(the_x,y) = current_label++;
   }
 
   if(edge & GRID_TOP)
-    labels.setRow(0,-1);
+    labels.setRow(0,1);
 
   if(edge & GRID_BOTTOM)
-    labels.setRow(dem.viewHeight()-1,-1);
+    labels.setRow(dem.viewHeight()-1,1);
 
   if(edge & GRID_LEFT)
-    labels.setCol(0,-1);
+    labels.setCol(0,1);
 
   if(edge & GRID_RIGHT)
-    labels.setCol(dem.viewWidth()-1,-1);
+    labels.setCol(dem.viewWidth()-1,1);
 
   while(!pq.empty() || !pit.empty()){
     GridCellZ<elev_t> c;
@@ -188,20 +194,6 @@ void PriorityFlood(
       c=pq.top();
       pq.pop();
     }
-
-    //Since labels are inherited from parent cells we need to be able to process
-    //previously labeled cells. But all the edge cells are already in the
-    //my_open queue and may also be added to that queue by a parent cell. So
-    //they could be processed twice! The solution is to assign the negative of a
-    //label and then make the label positive when we actually process the cell.
-    //This way, if we ever see we are processing a cell with a positive label,
-    //we will know it was already processed.
-    if(labels(c.x,c.y)>0)             //Positive label. Cell already processed.
-      continue;
-    else if(labels(c.x,c.y)==0)           //Label=0. Cell has never been seen.
-      labels(c.x,c.y) = current_label++;  //current_label is the next new label.
-    else if(labels(c.x,c.y)<0)            //Cell's parent added it.
-      labels(c.x,c.y) = -labels(c.x,c.y); //Mark cell as visited
 
     //At this point the cell's label is guaranteed to be positive and in the
     //range [1,MAX_INTEGER] (unless we overflow).
@@ -214,7 +206,8 @@ void PriorityFlood(
       //Check to see if the neighbour coordinates are valid
       if(!dem.in_grid(nx,ny))
         continue;
-      auto n_label = std::abs(labels(nx,ny)); //Neighbour's label
+
+      auto n_label = labels(nx,ny); //Neighbour's label
       //Does the neighbour have a label? If so, it is part of the edge, has
       //already been assigned a label by a parent cell which must be of lower or
       //equal elevation to the current cell, or has already been processed, in
@@ -235,22 +228,22 @@ void PriorityFlood(
             my_graph[n_label][my_label] = elev_over;
           }
         }
-        continue;
+      } else {
+        //The neighbour is not one we've seen before, so mark it as being part of
+        //our watershed and add it as an unprocessed item to the queue.
+        labels(nx,ny) = labels(c.x,c.y);
+
+        //If the neighbour is lower than this cell, elevate it to the level of
+        //this cell so that a depression is not formed. The flow directions will
+        //be fixed later, after all the depressions have been filled.
+        if(dem(nx,ny)<=c.z){
+          dem(nx,ny) = c.z;
+          pit.emplace(nx,ny,c.z);
+        //Otherwise, if the neighbour is higher, do not adjust its elevation.
+        } else {
+          pq.emplace(nx,ny,dem(nx,ny));
+        }
       }
-
-      //The neighbour is not one we've seen before, so mark it as being part of
-      //our watershed and add it as an unprocessed item to the queue.
-      labels(nx,ny) = -labels(c.x,c.y);
-
-      //If the neighbour is lower than this cell, elevate it to the level of
-      //this cell so that a depression is not formed. The flow directions will
-      //be fixed later, after all the depressions have been filled.
-      if(dem(nx,ny)<=c.z){
-        dem(nx,ny) = c.z;
-        pit.emplace(nx,ny,c.z);
-      //Otherwise, if the neighbour is higher, do not adjust its elevation.
-      } else
-        pq.emplace(nx,ny,dem(nx,ny));
     }
   }
 
