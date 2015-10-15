@@ -199,11 +199,6 @@ class Array2D {
 
     data = InternalArray(view_height, Row(view_width));
 
-    //TODO: which is right? This or the one below?
-//    for(int y=yOffset;y<yOffset+view_height;y++){
-//      fin.seekg(HEADER_SIZE+(y*total_width+xOffset)*sizeof(T));
-//      fin.read(reinterpret_cast<char*>(data[y-yOffset].data()), view_width*sizeof(T));
-//    }
     for(int y=0;y<view_height;y++)
       fin.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
   }
