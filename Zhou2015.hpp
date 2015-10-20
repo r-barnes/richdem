@@ -19,20 +19,13 @@ class Flag{
     flagArray[y][x] = true;
   }
 
-  int isProcessed(int x, int y){
-    //if the cell is outside the DEM, it is regared as processed
-    if (y<0 || y>=flagArray.size() || x<0 || x>=flagArray[0].size())
-      return true;
-    return flagArray[y][x];
-  }
-
   int isProcessedDirect(int x, int y){
     return flagArray[y][x];
   }
 };
 
 template<class elev_t>
-void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_cellz<elev_t> > &traceQueue, grid_cellz_pq<elev_t> &priorityQueue, int &count){
+void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_cellz<elev_t> > &traceQueue, grid_cellz_pq<elev_t> &priorityQueue, int &count, ProgressBar &progress){
   int  total  = 0;
   int  nPSC   = 0;
   bool bInPQ  = false;
@@ -40,6 +33,8 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_c
     grid_cellz<elev_t> c = traceQueue.front();
     traceQueue.pop();
     total++;
+
+    progress.update(count+total);
 
     bInPQ=false;
     for(int n=1;n<=8;n++){
@@ -81,11 +76,11 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_c
 }
 
 template<class elev_t>
-void ProcessPit_onepass(Array2D<elev_t> &dem, Flag& flag, std::queue<grid_cellz<elev_t> > &depressionQue, std::queue<grid_cellz<elev_t> > &traceQueue, grid_cellz_pq<elev_t> &priorityQueue,int &count){
+void ProcessPit_onepass(Array2D<elev_t> &dem, Flag& flag, std::queue<grid_cellz<elev_t> > &depressionQue, std::queue<grid_cellz<elev_t> > &traceQueue, grid_cellz_pq<elev_t> &priorityQueue,int &count,ProgressBar &progress){
   while (!depressionQue.empty()){
     grid_cellz<elev_t> c = depressionQue.front();
     depressionQue.pop();
-    count++;
+    progress.update(count++);
 
     for(int n=1;n<=8;n++){
       int nx = c.x+dx[n];
@@ -113,6 +108,7 @@ template<class elev_t>
 void Zhou2015_PriorityFlood(Array2D<elev_t> &dem){
   std::queue<grid_cellz<elev_t> > traceQueue;
   std::queue<grid_cellz<elev_t> > depressionQue;
+  ProgressBar progress;
 
   Flag flag(dem.viewWidth(), dem.viewHeight());
 
@@ -140,17 +136,19 @@ void Zhou2015_PriorityFlood(Array2D<elev_t> &dem){
     }
   }
 
+  progress.start( validElementsCount );
+
   while (!priorityQueue.empty()){
     grid_cellz<elev_t> c = priorityQueue.top();
     priorityQueue.pop();
 
-    count++;
+    progress.update(count++);
 
     for(int n=1;n<=8;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
 
-      if (flag.isProcessed(nx,ny))
+      if (!dem.in_grid(nx,ny) || flag.isProcessedDirect(nx,ny))
         continue;
 
       elev_t n_spill = dem(nx,ny);
@@ -159,13 +157,15 @@ void Zhou2015_PriorityFlood(Array2D<elev_t> &dem){
         dem(nx,ny) = c.z;
         flag.set(nx,ny);
         depressionQue.emplace(nx,ny,c.z);
-        ProcessPit_onepass(dem,flag,depressionQue,traceQueue,priorityQueue,count);
+        ProcessPit_onepass(dem,flag,depressionQue,traceQueue,priorityQueue,count,progress);
       } else {
         //slope cell
         flag.set(nx,ny);
         traceQueue.emplace(nx,ny,n_spill);
       }     
-      ProcessTraceQue_onepass(dem,flag,traceQueue,priorityQueue,count);
+      ProcessTraceQue_onepass(dem,flag,traceQueue,priorityQueue,count,progress);
     }
   }
+
+  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
 }
