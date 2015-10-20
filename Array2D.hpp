@@ -216,6 +216,10 @@ class Array2D {
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
 
+  bool isNoData(int x, int y) const {
+    return data[y][x]==no_data;
+  }
+
   void flipVert(){
     std::reverse(data.begin(),data.end());
   }
