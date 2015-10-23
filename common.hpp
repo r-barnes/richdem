@@ -1,4 +1,7 @@
+#ifndef __distpf_common_hpp__
+#define __distpf_common_hpp__
 #include <sys/time.h>
+#include <queue>
 
 #define FLOWDIR_NO_DATA ((uint8_t)255)
 
@@ -37,6 +40,9 @@ class GridCellZ : public GridCell {
   GridCellZ(){}
   bool operator> (const GridCellZ<elev_t>& a) const { return z>a.z; }
 };
+
+template<typename elev_t>
+using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > >;
 
 
 class Timer{
@@ -88,3 +94,5 @@ class Timer{
       running          = false;
     }
 };
+
+#endif

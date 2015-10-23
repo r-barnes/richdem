@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <boost/mpi.hpp>
 #include <boost/serialization/map.hpp>
+#include "ZhouLabels.hpp"
 #include <string>
 #include <queue>
 #include <vector>
@@ -135,10 +136,10 @@ const int JOB_CHUNK     = 1;
 const int JOB_FIRST     = 2;
 const int JOB_SECOND    = 3;
 
-const uint8_t GRID_LEFT   = 1;
-const uint8_t GRID_TOP    = 2;
-const uint8_t GRID_RIGHT  = 4;
-const uint8_t GRID_BOTTOM = 8;
+//const uint8_t GRID_LEFT   = 1;
+//const uint8_t GRID_TOP    = 2;
+//const uint8_t GRID_RIGHT  = 4;
+//const uint8_t GRID_BOTTOM = 8;
 
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
@@ -396,8 +397,7 @@ void HandleEdge(
   const std::vector<elev_t>  &elev_b,
   const std::vector<label_t> &label_a,
   const std::vector<label_t> &label_b,
-  std::map<label_t, std::map<label_t, elev_t> > &mastergraph//,
-  //const elev_t no_data
+  std::map<label_t, std::map<label_t, elev_t> > &mastergraph
 ){
   //Guarantee that all vectors are of the same length
   assert(elev_a.size ()==elev_b.size ());
@@ -407,26 +407,20 @@ void HandleEdge(
   int len = elev_a.size();
 
   for(size_t i=0;i<len;i++){
-    //if(elev_a[i]==no_data) //TODO: Does no_data really matter here?
-    //  continue;
-
-    auto my_label = label_a[i];
+    auto c_l = label_a[i];
 
     for(int ni=i-1;ni<=i+1;ni++){
-      if(ni<0 || ni==len) // || elev_b[ni]==no_data) //TODO: Does no_data really matter here?
+      if(ni<0 || ni==len)
         continue;
-      auto other_label = label_b[ni];
+      auto n_l = label_b[ni];
       //TODO: Does this really matter? We could just ignore these entries
-      if(my_label==other_label) //Only happens when labels are both 1
+      if(c_l==n_l) //Only happens when labels are both 1
         continue;
 
       auto elev_over = std::max(elev_a[i],elev_b[ni]);
-      if(mastergraph[my_label].count(other_label)==0){
-        mastergraph[my_label][other_label] = elev_over;
-        mastergraph[other_label][my_label] = elev_over;
-      } else if(elev_over<mastergraph[my_label][other_label]){
-        mastergraph[my_label][other_label] = elev_over;
-        mastergraph[other_label][my_label] = elev_over;
+      if(mastergraph[c_l].count(n_l)==0 || elev_over<mastergraph[c_l][n_l]){
+        mastergraph[c_l][n_l] = elev_over;
+        mastergraph[n_l][c_l] = elev_over;
       }
     }
   }
@@ -436,21 +430,14 @@ template<class elev_t>
 void HandleCorner(
   const elev_t  elev_a,
   const elev_t  elev_b,
-  const label_t label_a,
-  const label_t label_b,
-  std::map<label_t, std::map<label_t, elev_t> > &mastergraph//,
-  //const elev_t no_data
+  const label_t l_a,
+  const label_t l_b,
+  std::map<label_t, std::map<label_t, elev_t> > &mastergraph
 ){
-//  if(elev_a==no_data || elev_b==no_data)
-//    return;
-
   auto elev_over = std::max(elev_a,elev_b);
-  if(mastergraph[label_a].count(label_b)==0){
-    mastergraph[label_a][label_b] = elev_over;
-    mastergraph[label_b][label_a] = elev_over;
-  } else if(elev_over<mastergraph[label_a][label_b]){
-    mastergraph[label_a][label_b] = elev_over;
-    mastergraph[label_b][label_a] = elev_over;
+  if(mastergraph[l_a].count(l_b)==0 || elev_over<mastergraph[l_a][l_b]){
+    mastergraph[l_a][l_b] = elev_over;
+    mastergraph[l_b][l_a] = elev_over;
   }
 }
 
