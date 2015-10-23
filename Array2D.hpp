@@ -4,6 +4,7 @@
 #include "gdal_priv.h"
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cassert>
 #include <algorithm>
