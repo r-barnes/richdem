@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <boost/mpi.hpp>
 #include <boost/serialization/map.hpp>
-#include "ZhouLabels.hpp"
+#include "Zhou2015pf.hpp"
 #include <string>
 #include <queue>
 #include <vector>
