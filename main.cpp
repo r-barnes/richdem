@@ -116,12 +116,35 @@ class Job1 {
     ar & left_label;
     ar & right_label;
     ar & graph;
+    ar & time_calc;
+    ar & time_overall;
+    ar & time_io;
   }
  public:
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::map<label_t, std::map<label_t, elev_t> > graph;
+  double time_calc, time_overall, time_io;
   Job1(){}
+};
+
+class Job2 {
+ private:
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & time_calc;
+    ar & time_overall;
+    ar & time_io;
+  }
+ public:
+  double time_calc, time_overall, time_io;
+  Job2(){}
+  Job2(double time_calc, double time_overall, double time_io){
+    this->time_calc    = time_calc;
+    this->time_overall = time_overall;
+    this->time_io      = time_io;
+  }
 };
 
 
@@ -147,8 +170,6 @@ void Consumer(){
   boost::mpi::environment env;
   boost::mpi::communicator world;
 
-  Timer calc,overall;
-
   int the_job;   //Which job should consumer perform?
 
   ChunkInfo chunk;
@@ -168,21 +189,24 @@ void Consumer(){
       return;
 
     } else if (the_job==JOB_CHUNK){
-      overall.start();
       world.recv(0, TAG_CHUNK_DATA, chunk);
 
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
-      calc.start();
+      Timer timer_calc,timer_io,timer_overall;
+      timer_overall.start();
+
       Job1<elev_t> job1;
 
       //Read in the data associated with the job
+      timer_io.start();
       dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
       if(chunk.flip & FLIP_VERT)
         dem.flipVert();
       if(chunk.flip & FLIP_HORZ)
         dem.flipHorz();
+      timer_io.stop();
 
       //These variables are needed by Priority-Flood. The internal
       //interconnections of labeled regions (named "graph") are also needed to
@@ -191,7 +215,16 @@ void Consumer(){
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
+      //auto barnes_dem    = dem;
+      //auto barnes_labels = labels;
+      //auto barnes_graph  = job1.graph;
+
+      //PriorityFlood(barnes_dem,barnes_labels,chunk.label_offset,barnes_graph,chunk.edge);
+      timer_calc.start();
       Zhou2015Labels(dem,labels,chunk.label_offset,job1.graph,chunk.edge);
+      timer_calc.stop();
+
+      //std::cerr<<"Barnes=Zhou? "<<(barnes_dem==dem)<<std::endl;
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
       job1.top_elev    = dem.topRow     ();
@@ -204,25 +237,29 @@ void Consumer(){
       job1.left_label  = labels.leftColumn ();
       job1.right_label = labels.rightColumn();
 
-      overall.stop();
-      calc.stop();
-      std::cerr<<"\tCalculation took "<<calc.accumulated()<<"s. Overall="<<overall.accumulated()<<"s."<<std::endl;
-      overall.reset();
-      calc.reset();
-
       if(chunk.retention=="@offloadall"){
         //Nothing to do: it will all get overwritten
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: it will all be kept because this process won't get
         //called again
       } else {
+        timer_io.start();
         dem.saveNative   (chunk.retention+"dem.dat"   );
         labels.saveNative(chunk.retention+"labels.dat");
+        timer_io.stop();
       }
+
+      timer_overall.stop();
+      std::cerr<<"\tCalc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+
+      job1.time_io      = timer_io.accumulated();
+      job1.time_overall = timer_overall.accumulated();
+      job1.time_calc    = timer_calc.accumulated();
 
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
-      calc.start();
+      Timer timer_calc,timer_io,timer_overall;
+      timer_overall.start();
       std::map<label_t, elev_t> graph_elev;
 
       world.recv(0, TAG_SECOND_DATA, graph_elev);
@@ -231,48 +268,53 @@ void Consumer(){
 
       //These use the same logic as the analogous lines above
       if(chunk.retention=="@offloadall"){
+        timer_io.start();
         dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
         if(chunk.flip & FLIP_VERT)
           dem.flipVert();
         if(chunk.flip & FLIP_HORZ)
           dem.flipHorz();
+        timer_io.stop();
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
+        timer_calc.start();
         Zhou2015Labels(dem,labels,chunk.label_offset,graph,chunk.edge);
+        timer_calc.stop();
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: we have it all in memory
       } else {
+        timer_io.start();
         dem    = Array2D<elev_t>(chunk.retention+"dem.dat"    ,true); //TODO: There should be an exception if this fails
         labels = Array2D<label_t>(chunk.retention+"labels.dat",true);
+        timer_io.stop();
       }
 
+      timer_calc.start();
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
         if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev.at(labels(x,y)))
           dem(x,y) = graph_elev.at(labels(x,y));
+      timer_calc.stop();
 
       std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
 
-      overall.stop();
-      calc.stop();
-      std::cerr<<"\tCalculation took "<<calc.accumulated()<<"s. Overall="<<overall.accumulated()<<"s."<<std::endl;
-      overall.reset();
-      calc.reset();
-
       //At this point we're done with the calculation! Boo-yeah!
 
+      timer_io.start();
       if(chunk.flip & FLIP_HORZ)
         dem.flipHorz();
       if(chunk.flip & FLIP_VERT)
         dem.flipVert();
+      timer_io.stop();
 
-      Timer time_output;
-      time_output.start();
+      timer_io.start();
       dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
-      time_output.stop();
-      std::cerr<<"\tOutput took "<<time_output.accumulated()<<"s."<<std::endl;
+      timer_io.stop();
+      timer_overall.stop();
 
-      world.send(0, TAG_DONE_SECOND, 0);
+      std::cerr<<"\tCalc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+
+      world.send(0, TAG_DONE_SECOND, Job2(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
     }
   }
 }
@@ -345,7 +387,18 @@ template<class elev_t>
 void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   boost::mpi::environment env;
   boost::mpi::communicator world;
+  Timer timer_overall,timer_calc;
+  timer_overall.start();
   int active_nodes = 0;
+
+  double time_first_total_calc     = 0;
+  double time_first_total_io       = 0;
+  double time_first_total_overall  = 0;
+  int    time_first_count          = 0;
+  double time_second_total_calc    = 0;
+  double time_second_total_io      = 0;
+  double time_second_total_overall = 0;
+  int    time_second_count         = 0;
 
   std::map<int,ChunkInfo> rank_to_chunk;
 
@@ -422,6 +475,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
   //method is not guaranteed to release space.
+  timer_calc.start();
   std::map<label_t, std::map<label_t, elev_t> > mastergraph;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
@@ -442,6 +496,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       continue;
 
     auto &c = jobs1[y][x];
+
+    time_first_total_overall += c.time_overall;
+    time_first_total_io      += c.time_io;
+    time_first_total_calc    += c.time_calc;
+    time_first_count++;
 
     if(y>0            && !chunks[y-1][x].nullChunk)
       HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph);
@@ -513,6 +572,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       open.emplace(std::max(n_elev,my_elev),n_vertex_num);
     }
   }
+  timer_calc.stop();
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
@@ -525,10 +585,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       continue;
     }
 
+    timer_calc.start();
     std::map<label_t, elev_t> job2;
     for(const auto &ge: graph_elev)
       if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
         job2[ge.first] = ge.second;
+    timer_calc.stop();
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
@@ -546,11 +608,15 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //each Consumer returns a result, pass it the next unfinished Job until
     //there are no jobs left.
     } else {
-      int msg;
-
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
-      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,msg);
+      Job2 temp;
+      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+
+      time_second_total_overall += temp.time_overall;
+      time_second_total_io      += temp.time_io;
+      time_second_total_calc    += temp.time_calc;
+      time_second_count++;
 
       //Delegate new work to that consumer
       world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
@@ -563,11 +629,15 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   while(active_nodes>0){
-    int msg;
+    Job2 temp;
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
-    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,msg);
+    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
 
+    time_second_total_overall += temp.time_overall;
+    time_second_total_io      += temp.time_io;
+    time_second_total_calc    += temp.time_calc;
+    time_second_count++;
 
     //Decrement the number of consumers we are waiting on. When this hits 0 all
     //of the jobs have been completed and we can move on
@@ -576,6 +646,21 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   for(int i=1;i<world.size();i++)
     world.send(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+
+  timer_overall.stop();
+
+  std::cout<<"TimeInfo: First stage total overall time="<<time_first_total_overall<<std::endl;
+  std::cout<<"TimeInfo: First stage total io time="     <<time_first_total_io     <<std::endl;
+  std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
+
+  std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total_overall<<std::endl;
+  std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total_io     <<std::endl;
+  std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
+
+  std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
+  std::cout<<"TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
 }
 
 
