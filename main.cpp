@@ -302,7 +302,7 @@ void Consumer(){
 
       //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
       //faster algorithm by Zhou, Sun, Fu
-      PriorityFlood(dem,labels,chunk.label_offset,job1.graph,chunk.edge);
+      Zhou2015Labels(dem,labels,chunk.label_offset,job1.graph,chunk.edge);
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
       job1.top_elev    = dem.topRow     ();
@@ -349,7 +349,7 @@ void Consumer(){
           dem.flipHorz();
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
-        PriorityFlood(dem,labels,chunk.label_offset,graph,chunk.edge);
+        Zhou2015Labels(dem,labels,chunk.label_offset,graph,chunk.edge);
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: we have it all in memory
       } else {
