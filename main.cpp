@@ -154,8 +154,7 @@ void PriorityFlood(
   std::map<label_t, std::map<label_t, elev_t> > &my_graph,
   uint8_t edge
 ){
-  typedef std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > > GridCellZ_pq;
-  GridCellZ_pq pq;
+  GridCellZ_pq<elev_t> pq;
   std::queue< GridCellZ<elev_t> > pit;
 
   labels.init(0);
@@ -249,7 +248,6 @@ void PriorityFlood(
       }
     }
   }
-
 }
 
 
