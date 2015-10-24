@@ -28,7 +28,6 @@ template<class elev_t>
 void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_cellz<elev_t> > &traceQueue, grid_cellz_pq<elev_t> &priorityQueue, int &count, ProgressBar &progress){
   int  total  = 0;
   int  nPSC   = 0;
-  bool bInPQ  = false;
   while (!traceQueue.empty()){
     grid_cellz<elev_t> c = traceQueue.front();
     traceQueue.pop();
@@ -36,7 +35,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Flag &flag, std::queue<grid_c
 
     progress.update(count+total);
 
-    bInPQ=false;
+    bool bInPQ = false;
     for(int n=1;n<=8;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
@@ -113,7 +112,7 @@ void Zhou2015_PriorityFlood(Array2D<elev_t> &dem){
   Flag flag(dem.viewWidth(), dem.viewHeight());
 
   grid_cellz_pq<elev_t> priorityQueue;
-  int count               = 0;
+  int count = 0;
 
   //Load border cells and cells adjacent to NoData cells into the priority queue
   int validElementsCount = 0;
@@ -152,15 +151,12 @@ void Zhou2015_PriorityFlood(Array2D<elev_t> &dem){
         continue;
 
       elev_t n_spill = dem(nx,ny);
-      if(n_spill<=c.z){
-        //depression cell
+      flag.set(nx,ny);
+      if(n_spill<=c.z){  //depression cell
         dem(nx,ny) = c.z;
-        flag.set(nx,ny);
         depressionQue.emplace(nx,ny,c.z);
         ProcessPit_onepass(dem,flag,depressionQue,traceQueue,priorityQueue,count,progress);
-      } else {
-        //slope cell
-        flag.set(nx,ny);
+      } else {           //slope cell
         traceQueue.emplace(nx,ny,n_spill);
       }     
       ProcessTraceQue_onepass(dem,flag,traceQueue,priorityQueue,count,progress);
