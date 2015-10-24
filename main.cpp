@@ -72,7 +72,7 @@ class ChunkInfo{
   uint8_t     edge;
   uint8_t     flip;
   int32_t     x,y,width,height,gridx,gridy;
-  int32_t     label_offset,max_label;
+  label_t     label_offset,max_label;
   int32_t     id;
   bool        nullChunk;
   std::string filename;
@@ -81,7 +81,7 @@ class ChunkInfo{
   ChunkInfo(){
     nullChunk = true;
   }
-  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t label_offset, int32_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, label_t label_offset, label_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
@@ -855,7 +855,7 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
 
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
-    int32_t label_offset = 2;
+    label_t label_offset = 2;
     const int32_t label_increment = 2*bheight+2*bwidth+1;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
