@@ -686,6 +686,8 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
   boost::mpi::environment  env;
   boost::mpi::communicator world;
   int chunkid = 0;
+  Timer overall;
+  overall.start();
 
   std::vector< std::vector< ChunkInfo > > chunks;
   std::string  filename;
@@ -880,6 +882,8 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
   }
 
   boost::mpi::broadcast(world,file_type,0);
+  overall.stop();
+  std::cerr<<"Preparer took "<<overall.accumulated()<<"s."<<std::endl;
 
   switch(file_type){
     case GDT_Unknown:
