@@ -50,16 +50,12 @@ void WatershedsMeet(
 }
 
 template<class elev_t, class label_t>
-void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &flag, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, int &count, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
-  int  total  = 0;
-  int  nPSC   = 0;
-  bool bInPQ  = false;
+void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &flag, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
   while (!traceQueue.empty()){
     GridCellZ<elev_t> c = traceQueue.front();
     traceQueue.pop();
-    total++;
 
-    bInPQ=false;
+    bool bInPQ = false;
     for(int n=1;n<=8;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
@@ -69,39 +65,37 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Fla
       if (flag.isSet(nx,ny))
         continue;    
       
-      elev_t n_spill = dem(nx,ny);
-      labels(nx,ny)  = labels(c.x,c.y);
       
-      if (n_spill <= c.z) {
-        if (!bInPQ) {
-          //Decide  whether (nx, ny) is a true border cell
-          bool isBoundary = true;
-          for(int nn=1;nn<=8;nn++){
-            int nnx = nx+dx[n];
-            int nny = ny+dy[n];
-            if (flag.isSet(nnx,nny) && dem(nnx,nny)<n_spill){
-              isBoundary = false;
-              break;
-            }
-          }
-          if(isBoundary){
-            priorityQueue.push(c);
-            bInPQ = true;
-            nPSC++;
+      //The neighbour is unprocessed and higher than the central cell
+      if(c.z<dem(nx,ny)){
+        traceQueue.emplace(nx,ny,dem(nx,ny));
+        labels(nx,ny) = labels(c.x,c.y);
+        flag.set(nx,ny);
+        continue;
+      }
+
+      //Decide  whether (nx, ny) is a true border cell
+      if (!bInPQ) {
+        bool isBoundary = true;
+        for(int nn=1;nn<=8;nn++){
+          int nnx = nx+dx[n];
+          int nny = ny+dy[n];
+          if (flag.isSet(nnx,nny) && dem(nnx,nny)<dem(nx,ny)){
+            isBoundary = false;
+            break;
           }
         }
-        continue; 
+        if(isBoundary){
+          priorityQueue.push(c);
+          bInPQ = true;
+        }
       }
-      //Otherwise, the neighbour is unprocessed and higher than the central cell
-      traceQueue.emplace(nx,ny,n_spill);
-      flag.set(nx,ny);    
     }
   }
-  count+=total-nPSC;
 }
 
 template<class elev_t, class label_t>
-void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag& flag, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue,int &count, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
+void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &flag, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
   while (!depressionQue.empty()){
     GridCellZ<elev_t> c = depressionQue.front();
     depressionQue.pop();
@@ -115,15 +109,15 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag& fl
       if (flag.isSet(nx,ny))
         continue;    
 
-      labels(nx,ny)  = labels(c.x,c.y);
-      elev_t n_spill = dem(nx,ny);
-      if (n_spill > c.z) { //Slope cell
-        traceQueue.emplace(nx,ny,n_spill);
-      } else {             //Depression cell
-        dem(nx,ny)    = c.z;
+      labels(nx,ny) = labels(c.x,c.y);
+      flag.set(nx,ny);
+
+      if (dem(nx,ny) > c.z) { //Slope cell
+        traceQueue.emplace(nx,ny,dem(nx,ny));
+      } else {                //Depression cell
+        dem(nx,ny) = c.z;
         depressionQue.emplace(nx,ny,c.z);
       }
-      flag.set(nx,ny);
     }
   }
 }
@@ -144,15 +138,14 @@ void Zhou2015Labels(
   labels.init(0);
 
   GridCellZ_pq<elev_t> priorityQueue;
-  int count = 0;
 
   for(int x=0;x<dem.viewWidth();x++){
     const int height = dem.viewHeight()-1;
-    priorityQueue.emplace(x,0,    dem(x,0    ));
+    priorityQueue.emplace(x,0,     dem(x,0     ));
     priorityQueue.emplace(x,height,dem(x,height));
-    labels(x,0)      = current_label++;
+    labels(x,     0) = current_label++;
     labels(x,height) = current_label++;
-    flag.set(x,0);
+    flag.set(x,     0);
     flag.set(x,height);
   }
 
@@ -160,9 +153,9 @@ void Zhou2015Labels(
     const int width = dem.viewWidth()-1;
     priorityQueue.emplace(0,    y,dem(0,    y));
     priorityQueue.emplace(width,y,dem(width,y));
-    labels(0,y)     = current_label++;
+    labels(0,    y) = current_label++;
     labels(width,y) = current_label++;
-    flag.set(0,y);
+    flag.set(0,    y);
     flag.set(width,y);
   }
 
@@ -186,7 +179,6 @@ void Zhou2015Labels(
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
 
-
       if (!dem.in_grid(nx,ny))
         continue;
 
@@ -196,18 +188,16 @@ void Zhou2015Labels(
         continue;
 
       labels(nx,ny) = labels(c.x,c.y);
+      flag.set(nx,ny);
 
-      elev_t n_spill = dem(nx,ny);
-      if(n_spill<=c.z){ //Depression cell
+      if(dem(nx,ny)<=c.z){ //Depression cell
         dem(nx,ny) = c.z;
-        flag.set(nx,ny);
         depressionQue.emplace(nx,ny,c.z);
-        ProcessPit_onepass(dem,labels,flag,depressionQue,traceQueue,priorityQueue,count,my_graph);
+        ProcessPit_onepass(dem,labels,flag,depressionQue,traceQueue,priorityQueue,my_graph);
       } else {          //Slope cell
-        flag.set(nx,ny);
-        traceQueue.emplace(nx,ny,n_spill);
+        traceQueue.emplace(nx,ny,dem(nx,ny));
       }     
-      ProcessTraceQue_onepass(dem,labels,flag,traceQueue,priorityQueue,count,my_graph);
+      ProcessTraceQue_onepass(dem,labels,flag,traceQueue,priorityQueue,my_graph);
     }
   }
 }
