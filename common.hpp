@@ -5,6 +5,13 @@
 
 #define FLOWDIR_NO_DATA ((uint8_t)255)
 
+//Used for indicating whether a block is on the edge of the larger DEM and which
+//edges it is adjacent to
+const uint8_t GRID_LEFT   = 1;
+const uint8_t GRID_TOP    = 2;
+const uint8_t GRID_RIGHT  = 4;
+const uint8_t GRID_BOTTOM = 8;
+
 //D8 Directions
 ///x offsets of D8 neighbours, from a central cell
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system

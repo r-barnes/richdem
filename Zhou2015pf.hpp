@@ -1,14 +1,9 @@
+#ifndef __distpdf_zhou2015pf_hp__
+#define __distpdf_zhou2015pf_hp__
+
 #include "Array2D.hpp"
 #include "common.hpp"
-#include <iostream>
 #include <queue>
-#include <time.h>
-#include <cstdint>
-
-const uint8_t GRID_LEFT   = 1;
-const uint8_t GRID_TOP    = 2;
-const uint8_t GRID_RIGHT  = 4;
-const uint8_t GRID_BOTTOM = 8;
 
 template<class elev_t, class label_t>
 void WatershedsMeet(
@@ -172,3 +167,5 @@ void Zhou2015Labels(
     }
   }
 }
+
+#endif
