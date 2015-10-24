@@ -217,6 +217,18 @@ class Array2D {
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
 
+  bool operator==(const Array2D<T> &o){
+    if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
+      return false;
+    if(noData()!=o.noData())
+      return false;
+    for(int y=0;y<viewHeight();y++)
+    for(int x=0;x<viewWidth();x++)
+      if(data[y][x]!=o.data[y][x])
+        return false;
+    return true;
+  }
+
   bool isNoData(int x, int y) const {
     return data[y][x]==no_data;
   }
