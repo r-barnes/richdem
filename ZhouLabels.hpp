@@ -10,25 +10,6 @@ const uint8_t GRID_TOP    = 2;
 const uint8_t GRID_RIGHT  = 4;
 const uint8_t GRID_BOTTOM = 8;
 
-class Flag{
- public:
-  std::vector< std::vector<bool> > flagArray;
-
-  Flag(int width, int height){
-    flagArray.resize(height, std::vector<bool>());
-    for(int y=0;y<height;y++)
-      flagArray[y].resize(width,false);
-  }
-
-  void set(int x, int y){
-    flagArray[y][x] = true;
-  }
-
-  int isSet(int x, int y){
-    return flagArray[y][x];
-  }
-};
-
 template<class elev_t, class label_t>
 void WatershedsMeet(
   label_t my_label, label_t n_label, elev_t my_elev, elev_t n_elev,
@@ -50,7 +31,7 @@ void WatershedsMeet(
 }
 
 template<class elev_t, class label_t>
-void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &flag, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
+void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
   while (!traceQueue.empty()){
     GridCellZ<elev_t> c = traceQueue.front();
     traceQueue.pop();
@@ -62,15 +43,13 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Fla
 
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
 
-      if (flag.isSet(nx,ny))
+      if(labels(nx,ny)!=0)
         continue;    
-      
       
       //The neighbour is unprocessed and higher than the central cell
       if(c.z<dem(nx,ny)){
         traceQueue.emplace(nx,ny,dem(nx,ny));
         labels(nx,ny) = labels(c.x,c.y);
-        flag.set(nx,ny);
         continue;
       }
 
@@ -80,7 +59,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Fla
         for(int nn=1;nn<=8;nn++){
           int nnx = nx+dx[n];
           int nny = ny+dy[n];
-          if (flag.isSet(nnx,nny) && dem(nnx,nny)<dem(nx,ny)){
+          if (labels(nnx,nny)!=0 && dem(nnx,nny)<dem(nx,ny)){
             isBoundary = false;
             break;
           }
@@ -95,7 +74,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Fla
 }
 
 template<class elev_t, class label_t>
-void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &flag, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
+void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
   while (!depressionQue.empty()){
     GridCellZ<elev_t> c = depressionQue.front();
     depressionQue.pop();
@@ -106,11 +85,10 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, Flag &fl
 
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
 
-      if (flag.isSet(nx,ny))
+      if(labels(nx,ny)!=0)
         continue;    
 
       labels(nx,ny) = labels(c.x,c.y);
-      flag.set(nx,ny);
 
       if (dem(nx,ny) > c.z) { //Slope cell
         traceQueue.emplace(nx,ny,dem(nx,ny));
@@ -133,8 +111,6 @@ void Zhou2015Labels(
   std::queue<GridCellZ<elev_t> > traceQueue;
   std::queue<GridCellZ<elev_t> > depressionQue;
 
-  Flag flag(dem.viewWidth(), dem.viewHeight());
-
   labels.init(0);
 
   GridCellZ_pq<elev_t> priorityQueue;
@@ -145,8 +121,6 @@ void Zhou2015Labels(
     priorityQueue.emplace(x,height,dem(x,height));
     labels(x,     0) = current_label++;
     labels(x,height) = current_label++;
-    flag.set(x,     0);
-    flag.set(x,height);
   }
 
   for(int y=1;y<dem.viewHeight()-1;y++){
@@ -155,8 +129,6 @@ void Zhou2015Labels(
     priorityQueue.emplace(width,y,dem(width,y));
     labels(0,    y) = current_label++;
     labels(width,y) = current_label++;
-    flag.set(0,    y);
-    flag.set(width,y);
   }
 
   if(edge & GRID_TOP)
@@ -184,20 +156,19 @@ void Zhou2015Labels(
 
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
 
-      if(flag.isSet(nx,ny))
+      if(labels(nx,ny)!=0)
         continue;
 
       labels(nx,ny) = labels(c.x,c.y);
-      flag.set(nx,ny);
 
       if(dem(nx,ny)<=c.z){ //Depression cell
         dem(nx,ny) = c.z;
         depressionQue.emplace(nx,ny,c.z);
-        ProcessPit_onepass(dem,labels,flag,depressionQue,traceQueue,priorityQueue,my_graph);
+        ProcessPit_onepass(dem,labels,depressionQue,traceQueue,priorityQueue,my_graph);
       } else {          //Slope cell
         traceQueue.emplace(nx,ny,dem(nx,ny));
       }     
-      ProcessTraceQue_onepass(dem,labels,flag,traceQueue,priorityQueue,my_graph);
+      ProcessTraceQue_onepass(dem,labels,traceQueue,priorityQueue,my_graph);
     }
   }
 }
