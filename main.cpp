@@ -416,13 +416,13 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
     if(active_nodes<world.size()-1){
-      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks.at(y).at(x));
-
-      rank_to_chunk[active_nodes+1] = chunks.at(y).at(x);
-      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_FIRST);
       active_nodes++;
+      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(active_nodes,TAG_CHUNK_DATA,chunks.at(y).at(x));
+
+      rank_to_chunk[active_nodes] = chunks.at(y).at(x);
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_FIRST);
 
     //Once all of the consumers are active, wait for them to return results. As
     //each Consumer returns a result, pass it the next unfinished Job until
@@ -481,6 +481,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
       std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
+
+    if(chunks[y][x].nullChunk)
+      continue;
+
     for(auto const &fkey: jobs1[y][x].graph)
     for(auto const &skey: fkey.second){
       if(fkey.first>chunks[y][x].max_label || skey.first>chunks[y][x].max_label){
@@ -546,6 +550,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
 
   std::cerr<<"Performing aggregated priority flood"<<std::endl;
+  Timer agg_pflood_timer;
+  agg_pflood_timer.start();
   typedef std::pair<elev_t, label_t>  graph_node;
   std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
   std::map<label_t,bool>              visited;
@@ -558,9 +564,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     open.pop();
     auto my_elev       = c.first;
     auto my_vertex_num = c.second;
-    #ifdef DEBUG
-      std::cerr<<"Popped "<<my_vertex_num<<std::endl;
-    #endif
     if(visited[my_vertex_num])
       continue;
 
@@ -572,12 +575,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       auto n_elev       = n.second;
       if(visited.count(n_vertex_num))
         continue;
-      #ifdef DEBUG
-        std::cerr<<"Proposing going to "<<n_vertex_num<<" with "<<std::max(n_elev,my_elev)<<std::endl;
-      #endif
       open.emplace(std::max(n_elev,my_elev),n_vertex_num);
     }
   }
+  agg_pflood_timer.stop();
+  std::cerr<<"Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
@@ -602,13 +604,13 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //delegate the job to a new Consumer.
     if(active_nodes<world.size()-1){
       // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes+1,TAG_CHUNK_DATA,chunks[y][x]);
-
-      rank_to_chunk[active_nodes+1] = chunks[y][x];
-      world.send(active_nodes+1,TAG_WHICH_JOB,JOB_SECOND);
-      world.send(active_nodes+1,TAG_SECOND_DATA,job2);
       active_nodes++;
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(active_nodes,TAG_CHUNK_DATA,chunks[y][x]);
+
+      rank_to_chunk[active_nodes] = chunks[y][x];
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_SECOND);
+      world.send(active_nodes,TAG_SECOND_DATA,job2);
 
     //Once all of the consumers are active, wait for them to return results. As
     //each Consumer returns a result, pass it the next unfinished Job until
