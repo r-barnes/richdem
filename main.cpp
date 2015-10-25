@@ -554,14 +554,22 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   agg_pflood_timer.start();
   typedef std::pair<elev_t, label_t>  graph_node;
   std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
+  std::queue<graph_node> pit;
   std::map<label_t,bool>              visited;
   std::map<label_t,elev_t>            graph_elev;
 
   open.emplace(std::numeric_limits<elev_t>::lowest(),1);
 
-  while(open.size()>0){
-    graph_node c=open.top();
-    open.pop();
+  while(open.size()>0 || pit.size()>0){
+    graph_node c;
+    if(pit.size()>0){
+      c = pit.front();
+      pit.pop();
+    } else {
+      c = open.top();
+      open.pop();
+    }
+
     auto my_elev       = c.first;
     auto my_vertex_num = c.second;
     if(visited[my_vertex_num])
@@ -575,7 +583,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       auto n_elev       = n.second;
       if(visited.count(n_vertex_num))
         continue;
-      open.emplace(std::max(n_elev,my_elev),n_vertex_num);
+      if(n_elev<=my_elev){
+        pit.emplace(my_elev,n_vertex_num);
+      } else {
+        open.emplace(n_elev,n_vertex_num);
+      }
     }
   }
   agg_pflood_timer.stop();
