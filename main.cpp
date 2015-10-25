@@ -250,7 +250,7 @@ void Consumer(){
       }
 
       timer_overall.stop();
-      std::cerr<<"\tCalc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
       job1.time_io      = timer_io.accumulated();
       job1.time_overall = timer_overall.accumulated();
@@ -296,8 +296,6 @@ void Consumer(){
           dem(x,y) = graph_elev.at(labels(x,y));
       timer_calc.stop();
 
-      std::cerr<<"Finished: "<<chunk.gridx<<" "<<chunk.gridy<<std::endl;
-
       //At this point we're done with the calculation! Boo-yeah!
 
       timer_io.start();
@@ -312,7 +310,7 @@ void Consumer(){
       timer_io.stop();
       timer_overall.stop();
 
-      std::cerr<<"\tCalc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+      std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
       world.send(0, TAG_DONE_SECOND, Job2(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
     }
@@ -475,10 +473,14 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
   //method is not guaranteed to release space.
+  std::cerr<<"Constructing mastergraph..."<<std::endl;
+  std::cerr<<"Merging graphs..."<<std::endl;
   timer_calc.start();
   std::map<label_t, std::map<label_t, elev_t> > mastergraph;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
+    if( (y*gridwidth+x)%10==0 )
+      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
     for(auto const &fkey: jobs1[y][x].graph)
     for(auto const &skey: fkey.second){
       if(fkey.first>chunks[y][x].max_label || skey.first>chunks[y][x].max_label){
@@ -490,8 +492,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     jobs1[y][x].graph.clear();
   }
 
+  std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
   for(size_t y=0;y<jobs1.size();y++)
   for(size_t x=0;x<jobs1.front().size();x++){
+    if( (y*gridwidth+x)%10==0 )
+      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
+
     if(chunks[y][x].nullChunk)
       continue;
 
