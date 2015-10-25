@@ -306,9 +306,13 @@ void Consumer(){
       timer_io.stop();
 
       timer_io.start();
+      Timer timer_save_gdal;
+      timer_save_gdal.start(); //TODO: Remove
       dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
+      timer_save_gdal.stop();
       timer_io.stop();
       timer_overall.stop();
+      std::cerr<<"GDAL save took "<<timer_save_gdal.accumulated()<<"s."<<std::endl;
 
       std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
@@ -606,11 +610,16 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
 
     timer_calc.start();
+    Timer timer_gen_job2;
+    timer_gen_job2.start(); //TODO: Remove
     std::map<label_t, elev_t> job2;
     for(const auto &ge: graph_elev)
       if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
         job2[ge.first] = ge.second;
+    timer_gen_job2.stop();
     timer_calc.stop();
+    std::cerr<<"Gen job2 took "<<timer_gen_job2.accumulated()<<"s."<<std::endl;
+    std::cerr<<"Job 2 size "<<job2.size()<<std::endl;
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
@@ -766,8 +775,14 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
         int          this_chunk_height;
         GDALDataType this_chunk_type;
 
-        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
-        this_chunk_type = peekGDALType(path_and_filename.string());
+	if(chunk_height==-1){ //TODO: Safetyize this
+	        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
+        	this_chunk_type = peekGDALType(path_and_filename.string());
+	} else {
+		this_chunk_height=chunk_height;
+		this_chunk_width=chunk_width;
+		this_chunk_type=file_type;
+	}
 
         if(label_offset==-1){ //We haven't examined any of the files yet
           chunk_height    = this_chunk_height;
