@@ -7,6 +7,35 @@
 #include <vector>
 
 template<class elev_t, class label_t>
+label_t GetNewLabel(int x, int y, label_t &current_label, uint8_t edge, const Array2D<elev_t> &dem, const Array2D<label_t> &labels){
+  if(labels(x,y)!=0)
+    return labels(x,y);
+
+  if((edge & GRID_TOP) && y==0)
+    return 1;
+
+  if((edge & GRID_BOTTOM) && y==dem.viewHeight()-1)
+    return 1;
+
+  if((edge & GRID_LEFT) && x==0)
+    return 1;
+
+  if((edge & GRID_RIGHT) && x==dem.viewWidth()-1)
+    return 1;
+
+  for(int n=1;n<=8;n++){
+    int nx = x+dx[n];
+    int ny = y+dy[n];
+    if(!dem.in_grid(nx,ny))
+      continue;
+    if(labels(nx,ny)!=0 && dem(nx,ny)<=dem(x,y))
+      return labels(nx,ny);
+  }
+
+  return current_label++;
+}
+
+template<class elev_t, class label_t>
 void PriorityFlood(
   Array2D<elev_t>                         &dem,
   Array2D<label_t>                        &labels,
@@ -15,6 +44,8 @@ void PriorityFlood(
 ){
   GridCellZ_pq<elev_t> pq;
   std::queue< GridCellZ<elev_t> > pit;
+  int pitc  = 0;
+  int openc = 0;
 
   label_t current_label = 2;
 
@@ -24,43 +55,33 @@ void PriorityFlood(
     const int the_y = dem.viewHeight()-1;
     pq.emplace(x,0,    dem(x,0    ));
     pq.emplace(x,the_y,dem(x,the_y));
-    labels(x,0)     = current_label++;
-    labels(x,the_y) = current_label++;
+    //labels(x,0)     = 2;    
+    //labels(x,the_y) = 2;
   }
 
   for(int y=1;y<dem.viewHeight()-1;y++){
     const int the_x = dem.viewWidth()-1;
     pq.emplace(0,    y,dem(0,    y));
     pq.emplace(the_x,y,dem(the_x,y));
-    labels(0,y)     = current_label++;
-    labels(the_x,y) = current_label++;
+    //labels(0,    y) = 2;    
+    //labels(the_x,y) = 2;
   }
-
-  if(edge & GRID_TOP)
-    labels.setRow(0,1);
-
-  if(edge & GRID_BOTTOM)
-    labels.setRow(dem.viewHeight()-1,1);
-
-  if(edge & GRID_LEFT)
-    labels.setCol(0,1);
-
-  if(edge & GRID_RIGHT)
-    labels.setCol(dem.viewWidth()-1,1);
 
   while(!pq.empty() || !pit.empty()){
     GridCellZ<elev_t> c;
     if(pit.size()>0){
       c=pit.front();
       pit.pop();
+      pitc++;
     } else {
       c=pq.top();
       pq.pop();
+      openc++;
     }
 
     //At this point the cell's label is guaranteed to be positive and in the
     //range [1,MAX_INTEGER] (unless we overflow).
-    auto my_label = labels(c.x,c.y);
+    auto my_label = labels(c.x,c.y) = GetNewLabel(c.x,c.y,current_label,edge,dem,labels);
 
     for(int n=1;n<=8;n++){
       auto nx = c.x+dx[n]; //Neighbour's x-coordinate
@@ -109,6 +130,9 @@ void PriorityFlood(
       }
     }
   }
+
+  std::cerr<<"PitC="<<pitc<<", OpenC="<<openc<<std::endl;
+  std::cerr<<"current_label="<<current_label<< " of "<<(2*dem.viewWidth()+2*dem.viewHeight())<<std::endl;
 }
 
 #endif
