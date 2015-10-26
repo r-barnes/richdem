@@ -194,7 +194,6 @@ void Zhou2015Labels(
   }
 
   my_graph.resize(current_label);
-  std::cout<<current_label<<" labels used of "<<(2*dem.viewWidth()+2*dem.viewHeight())<<std::endl;
 }
 
 #endif

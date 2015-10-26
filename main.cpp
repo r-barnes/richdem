@@ -194,6 +194,10 @@ void Consumer(){
       timer_overall.start();
 
       Job1<elev_t> job1;
+
+      //The upper limit on unique watersheds is the number of edge cells. Resize
+      //the graph to this number. The Priority-Flood routines will shrink it to
+      //the actual number needed.
       job1.graph.resize(2*chunk.width+2*chunk.height);
 
       //Read in the data associated with the job
@@ -210,18 +214,14 @@ void Consumer(){
       //solve the problem, but that can be passed directly from the job object.
       labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
 
-      //Perform the usual Priority-Flood algorithm on the chunk. TODO: Use the
-      //faster algorithm by Zhou, Sun, Fu
-      //auto barnes_dem    = dem;
-      //auto barnes_labels = labels;
-      //auto barnes_graph  = job1.graph;
+      //Perform the watershed Priority-Flood algorithm on the chunk. The variant
+      //by Zhou, Sun, and Fu (2015) is used for this; however, I have modified
+      //their algorithm to label watersheds similarly to what is described in
+      //Barnes, Lehman, and Mulla (2014).
 
-      //PriorityFlood(barnes_dem,barnes_labels,barnes_graph,chunk.edge);
       timer_calc.start();
-      PriorityFlood(dem,labels,job1.graph,chunk.edge); //TODO
+      Zhou2015Labels(dem,labels,job1.graph,chunk.edge);
       timer_calc.stop();
-
-      //std::cerr<<"Barnes=Zhou? "<<(barnes_dem==dem)<<std::endl;
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
       job1.top_elev    = dem.topRow     ();
@@ -247,7 +247,7 @@ void Consumer(){
       }
 
       timer_overall.stop();
-      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
 
       job1.time_io      = timer_io.accumulated();
       job1.time_overall = timer_overall.accumulated();
@@ -275,7 +275,7 @@ void Consumer(){
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
         timer_calc.start();
-        PriorityFlood(dem,labels,graph,chunk.edge);
+        Zhou2015Labels(dem,labels,graph,chunk.edge);
         timer_calc.stop();
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: we have it all in memory
@@ -492,7 +492,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++)
     maxlabel+=jobs1[y][x].graph.size();
-  std::cerr<<"Labels required: "<<maxlabel<<std::endl;
+  std::cerr<<"Total labels required: "<<maxlabel<<std::endl;
 
   std::vector< std::map<label_t, elev_t> > mastergraph(maxlabel);
 
@@ -500,7 +500,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<std::endl;
+      std::cerr<<"\tcmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<std::endl;
 
     if(chunks[y][x].nullChunk)
       continue;
@@ -526,7 +526,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t y=0;y<gridheight;y++)
   for(size_t x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
+      std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
 
     if(chunks[y][x].nullChunk)
       continue;
