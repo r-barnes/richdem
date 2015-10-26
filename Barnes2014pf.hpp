@@ -4,17 +4,19 @@
 #include "Array2D.hpp"
 #include "common.hpp"
 #include <queue>
+#include <vector>
 
 template<class elev_t, class label_t>
 void PriorityFlood(
-  Array2D<elev_t>                               &dem,
-  Array2D<label_t>                              &labels,
-  label_t                                        current_label, //NOTE: Should start at at least 2 (TODO: Explain why)
-  std::map<label_t, std::map<label_t, elev_t> > &my_graph,
+  Array2D<elev_t>                         &dem,
+  Array2D<label_t>                        &labels,
+  std::vector<std::map<label_t, elev_t> > &my_graph,
   uint8_t edge
 ){
   GridCellZ_pq<elev_t> pq;
   std::queue< GridCellZ<elev_t> > pit;
+
+  label_t current_label = 2;
 
   labels.init(0);
 

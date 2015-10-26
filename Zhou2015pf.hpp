@@ -4,11 +4,12 @@
 #include "Array2D.hpp"
 #include "common.hpp"
 #include <queue>
+#include <vector>
 
 template<class elev_t, class label_t>
 void WatershedsMeet(
   label_t my_label, label_t n_label, elev_t my_elev, elev_t n_elev,
-  std::map<label_t, std::map<label_t, elev_t> > &my_graph
+  std::vector<std::map<label_t, elev_t> > &my_graph
 ){
   if(n_label==0)
     return;
@@ -26,7 +27,7 @@ void WatershedsMeet(
 }
 
 template<class elev_t, class label_t>
-void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
+void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::vector<std::map<label_t, elev_t> > &my_graph){
   while (!traceQueue.empty()){
     GridCellZ<elev_t> c = traceQueue.front();
     traceQueue.pop();
@@ -69,7 +70,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
 }
 
 template<class elev_t, class label_t>
-void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::map<label_t, std::map<label_t, elev_t> > &my_graph){
+void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<GridCellZ<elev_t> > &depressionQue, std::queue<GridCellZ<elev_t> > &traceQueue, GridCellZ_pq<elev_t> &priorityQueue, std::vector<std::map<label_t, elev_t> > &my_graph){
   while (!depressionQue.empty()){
     GridCellZ<elev_t> c = depressionQue.front();
     depressionQue.pop();
@@ -97,14 +98,15 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::que
 
 template<class elev_t, class label_t>
 void Zhou2015Labels(
-  Array2D<elev_t>                               &dem,
-  Array2D<label_t>                              &labels,
-  label_t                                        current_label, //NOTE: Should start at at least 2 (TODO: Explain why)
-  std::map<label_t, std::map<label_t, elev_t> > &my_graph,
+  Array2D<elev_t>                         &dem,
+  Array2D<label_t>                        &labels,
+  std::vector<std::map<label_t, elev_t> > &my_graph,
   uint8_t edge
 ){
   std::queue<GridCellZ<elev_t> > traceQueue;
   std::queue<GridCellZ<elev_t> > depressionQue;
+
+  label_t current_label = 2;
 
   labels.init(0);
 

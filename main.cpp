@@ -61,8 +61,6 @@ class ChunkInfo{
     ar & height;
     ar & gridx;
     ar & gridy;
-    ar & label_offset;
-    ar & max_label;
     ar & id;
     ar & nullChunk;
     ar & filename;
@@ -73,7 +71,6 @@ class ChunkInfo{
   uint8_t     edge;
   uint8_t     flip;
   int32_t     x,y,width,height,gridx,gridy;
-  label_t     label_offset,max_label;
   int32_t     id;
   bool        nullChunk;
   std::string filename;
@@ -82,7 +79,7 @@ class ChunkInfo{
   ChunkInfo(){
     nullChunk = true;
   }
-  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, label_t label_offset, label_t max_label, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
     this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
@@ -91,8 +88,6 @@ class ChunkInfo{
     this->height       = height;   
     this->gridx        = gridx;
     this->gridy        = gridy;
-    this->label_offset = label_offset;
-    this->max_label    = max_label;
     this->id           = id;
     this->filename     = filename;
     this->outputname   = outputname;
@@ -123,7 +118,8 @@ class Job1 {
  public:
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
-  std::map<label_t, std::map<label_t, elev_t> > graph;
+  std::vector< std::map<label_t, elev_t> > graph;
+  label_t label_offset; //For convenience in Producer()
   double time_calc, time_overall, time_io;
   Job1(){}
 };
@@ -198,6 +194,7 @@ void Consumer(){
       timer_overall.start();
 
       Job1<elev_t> job1;
+      job1.graph.resize(2*chunk.width+2*chunk.height);
 
       //Read in the data associated with the job
       timer_io.start();
@@ -219,9 +216,9 @@ void Consumer(){
       //auto barnes_labels = labels;
       //auto barnes_graph  = job1.graph;
 
-      //PriorityFlood(barnes_dem,barnes_labels,chunk.label_offset,barnes_graph,chunk.edge);
+      //PriorityFlood(barnes_dem,barnes_labels,barnes_graph,chunk.edge);
       timer_calc.start();
-      Zhou2015Labels(dem,labels,chunk.label_offset,job1.graph,chunk.edge);
+      Zhou2015Labels(dem,labels,job1.graph,chunk.edge); //TODO
       timer_calc.stop();
 
       //std::cerr<<"Barnes=Zhou? "<<(barnes_dem==dem)<<std::endl;
@@ -260,11 +257,11 @@ void Consumer(){
     } else if (the_job==JOB_SECOND){
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
-      std::map<label_t, elev_t> graph_elev;
+      std::vector<elev_t> graph_elev; //TODO
 
       world.recv(0, TAG_SECOND_DATA, graph_elev);
 
-      std::map<label_t, std::map<label_t, elev_t> > graph;
+      std::vector<std::map<label_t, elev_t> > graph(2*chunk.width+2*chunk.height); //TODO
 
       //These use the same logic as the analogous lines above
       if(chunk.retention=="@offloadall"){
@@ -278,7 +275,7 @@ void Consumer(){
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
         timer_calc.start();
-        Zhou2015Labels(dem,labels,chunk.label_offset,graph,chunk.edge);
+        Zhou2015Labels(dem,labels,graph,chunk.edge);
         timer_calc.stop();
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: we have it all in memory
@@ -292,7 +289,7 @@ void Consumer(){
       timer_calc.start();
       for(int y=0;y<dem.viewHeight();y++)
       for(int x=0;x<dem.viewWidth();x++)
-        if(graph_elev.count(labels(x,y)) && dem(x,y)<graph_elev.at(labels(x,y)))
+        if(labels(x,y)>1 && dem(x,y)<graph_elev.at(labels(x,y)))
           dem(x,y) = graph_elev.at(labels(x,y));
       timer_calc.stop();
 
@@ -330,7 +327,9 @@ void HandleEdge(
   const std::vector<elev_t>  &elev_b,
   const std::vector<label_t> &label_a,
   const std::vector<label_t> &label_b,
-  std::map<label_t, std::map<label_t, elev_t> > &mastergraph
+  std::vector< std::map<label_t, elev_t> > &mastergraph,
+  const label_t label_a_offset,
+  const label_t label_b_offset
 ){
   //Guarantee that all vectors are of the same length
   assert(elev_a.size ()==elev_b.size ());
@@ -341,11 +340,13 @@ void HandleEdge(
 
   for(size_t i=0;i<len;i++){
     auto c_l = label_a[i];
+    if(c_l>1) c_l+=label_a_offset;
 
     for(int ni=i-1;ni<=i+1;ni++){
       if(ni<0 || ni==len)
         continue;
       auto n_l = label_b[ni];
+      if(n_l>1) n_l+=label_b_offset;
       //TODO: Does this really matter? We could just ignore these entries
       if(c_l==n_l) //Only happens when labels are both 1
         continue;
@@ -363,10 +364,14 @@ template<class elev_t>
 void HandleCorner(
   const elev_t  elev_a,
   const elev_t  elev_b,
-  const label_t l_a,
-  const label_t l_b,
-  std::map<label_t, std::map<label_t, elev_t> > &mastergraph
+  label_t       l_a,
+  label_t       l_b,
+  std::vector< std::map<label_t, elev_t> > &mastergraph,
+  const label_t l_a_offset,
+  const label_t l_b_offset
 ){
+  if(l_a>1) l_a += l_a_offset;
+  if(l_b>1) l_b += l_b_offset;
   auto elev_over = std::max(elev_a,elev_b);
   if(mastergraph[l_a].count(l_b)==0 || elev_over<mastergraph[l_a][l_b]){
     mastergraph[l_a][l_b] = elev_over;
@@ -470,7 +475,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   //TODO: Note here about how the code above code be incorporated
 
-  //Now look at the chunks around a central chunk c.
   const int gridwidth  = jobs1.front().size();
   const int gridheight = jobs1.size();
 
@@ -480,29 +484,53 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"Constructing mastergraph..."<<std::endl;
   std::cerr<<"Merging graphs..."<<std::endl;
   timer_calc.start();
-  std::map<label_t, std::map<label_t, elev_t> > mastergraph;
+  Timer timer_mg_construct;
+  timer_mg_construct.start();
+  
+  //Get a chunk size so we can calculate the max label
+  label_t label_increment = 0; //This will helpfully make things explode if we don't set it below
+  for(int y=0;y<gridheight;y++){
+    for(int x=0;x<gridwidth;x++){
+      if(!chunks[y][x].nullChunk){
+        label_increment = 2*chunks[y][x].width+2*chunks[y][x].height;
+        break;
+      }
+    }
+    if(label_increment!=0)
+      break;
+  }
+
+  label_t label_offset   = 0;
+  const label_t maxlabel = gridwidth*gridheight*label_increment;
+  std::vector< std::map<label_t, elev_t> > mastergraph(maxlabel);
+  std::cout<<"Maxlabel: "<<maxlabel<<std::endl;
+
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
+      std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<std::endl;
 
     if(chunks[y][x].nullChunk)
       continue;
 
-    for(auto const &fkey: jobs1[y][x].graph)
-    for(auto const &skey: fkey.second){
-      if(fkey.first>chunks[y][x].max_label || skey.first>chunks[y][x].max_label){
-        std::cerr<<"Label exceeded bounds!"<<std::endl;
-        env.abort(-1); //TODO
-      }
-      mastergraph[fkey.first][skey.first] = skey.second;
+    jobs1[y][x].label_offset = label_offset;
+
+    std::cerr<<"Label offset: "<<label_offset<<std::endl;
+    for(int l=0;l<jobs1[y][x].graph.size();l++)
+    for(auto const &skey: jobs1[y][x].graph[l]){
+      label_t first_label  = l;
+      label_t second_label = skey.first;
+      if(first_label >1) first_label +=label_offset;
+      if(second_label>1) second_label+=label_offset;
+      mastergraph.at(first_label)[second_label] = skey.second;
     }
+    label_offset += label_increment;
     jobs1[y][x].graph.clear();
   }
 
   std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
-  for(size_t y=0;y<jobs1.size();y++)
-  for(size_t x=0;x<jobs1.front().size();x++){
+  for(size_t y=0;y<gridheight;y++)
+  for(size_t x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
       std::cerr<<"\tmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
 
@@ -517,40 +545,42 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     time_first_count++;
 
     if(y>0            && !chunks[y-1][x].nullChunk)
-      HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph);
+      HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, c.label_offset, jobs1[y-1][x].label_offset);
     
     if(y<gridheight-1 && !chunks[y+1][x].nullChunk)
-      HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph);
+      HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, c.label_offset, jobs1[y+1][x].label_offset);
     
     if(x>0            && !chunks[y][x-1].nullChunk)
-      HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph);
+      HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph, c.label_offset, jobs1[y][x-1].label_offset);
     
     if(x<gridwidth-1  && !chunks[y][x+1].nullChunk)
-      HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph);
+      HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph, c.label_offset, jobs1[y][x+1].label_offset);
 
 
     //I wish I had wrote it all in LISP.
     //Top left
     if(y>0 && x>0                      && !chunks[y-1][x-1].nullChunk)   
-      HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph);
+      HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph, c.label_offset, jobs1[y-1][x-1].label_offset);
     
     //Bottom right
     if(y<gridheight-1 && x<gridwidth-1 && !chunks[y+1][x+1].nullChunk) 
-      HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph);
+      HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph, c.label_offset, jobs1[y+1][x+1].label_offset);
     
     //Top right
     if(y>0 && x<gridwidth-1            && !chunks[y-1][x+1].nullChunk)            
-      HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph);
+      HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph, c.label_offset, jobs1[y-1][x+1].label_offset);
     
     //Bottom left
     if(x>0 && y<gridheight-1           && !chunks[y+1][x-1].nullChunk) 
-      HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph);
+      HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph, c.label_offset, jobs1[y+1][x-1].label_offset);
   }
+  timer_mg_construct.stop();
+
+  std::cerr<<"Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
 
   jobs1.clear();
   jobs1.shrink_to_fit();
 
-  std::cerr<<"Mastergraph constructed!"<<std::endl;
 
 
   std::cerr<<"Performing aggregated priority flood"<<std::endl;
@@ -559,8 +589,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   typedef std::pair<elev_t, label_t>  graph_node;
   std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
   std::queue<graph_node> pit;
-  std::map<label_t,bool>              visited;
-  std::map<label_t,elev_t>            graph_elev;
+  std::vector<bool>   visited   (maxlabel,false); //TODO
+  std::vector<elev_t> graph_elev(maxlabel);       //TODO
 
   open.emplace(std::numeric_limits<elev_t>::lowest(),1);
 
@@ -585,13 +615,14 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     for(auto &n: mastergraph[my_vertex_num]){
       auto n_vertex_num = n.first;
       auto n_elev       = n.second;
-      if(visited.count(n_vertex_num))
+      if(visited[n_vertex_num])
         continue;
-      if(n_elev<=my_elev){
-        pit.emplace(my_elev,n_vertex_num);
-      } else {
-        open.emplace(n_elev,n_vertex_num);
-      }
+      open.emplace(std::max(my_elev,n_elev),n_vertex_num);
+      // if(n_elev<=my_elev){
+      //   pit.emplace(my_elev,n_vertex_num);
+      // } else {
+      //   open.emplace(n_elev,n_vertex_num);
+      // }
     }
   }
   agg_pflood_timer.stop();
@@ -600,7 +631,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
-  active_nodes=0;
+  active_nodes = 0;
+  label_offset = 0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
@@ -612,11 +644,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     timer_calc.start();
     Timer timer_gen_job2;
     timer_gen_job2.start(); //TODO: Remove
-    std::map<label_t, elev_t> job2;
-    for(const auto &ge: graph_elev)
-      if(chunks[y][x].label_offset<=ge.first && ge.first<=chunks[y][x].max_label)
-        job2[ge.first] = ge.second;
+    std::vector<elev_t> job2(graph_elev.begin()+label_offset,graph_elev.begin()+label_offset+label_increment);
     timer_gen_job2.stop();
+    label_offset += label_increment;
+//    for(int i=label_offset;i<label_offset+label_increment;i++)
+//      job2[i-label_offset] = graph_elev[i];
     timer_calc.stop();
     std::cerr<<"Gen job2 took "<<timer_gen_job2.accumulated()<<"s."<<std::endl;
     std::cerr<<"Job 2 size "<<job2.size()<<std::endl;
@@ -714,7 +746,7 @@ std::string trimStr(std::string const& str){
 void Preparer(std::string many_or_one, std::string retention_base, std::string input_file, std::string output_prefix, int bwidth, int bheight, int flipH, int flipV){
   boost::mpi::environment  env;
   boost::mpi::communicator world;
-  int chunkid = 0;
+  int chunkid             = 0;
   Timer overall;
   overall.start();
 
@@ -728,10 +760,8 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
     int32_t gridx        = 0;
     int32_t gridy        = -1;
     int32_t row_width    = -1;
-    int32_t label_offset = -1;
     int32_t chunk_width  = -1;
     int32_t chunk_height = -1;
-    int32_t label_increment;
     
     boost::filesystem::path layout_path_and_name = input_file;
     auto path = layout_path_and_name.parent_path();
@@ -773,7 +803,7 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
         //For retrieving information about the file
         int          this_chunk_width;
         int          this_chunk_height;
-        GDALDataType this_chunk_type;
+        GDALDataType this_chunk_type;  //TODO: Set an option to load these only once
 
 	if(chunk_height==-1){ //TODO: Safetyize this
 	        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
@@ -784,12 +814,10 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
 		this_chunk_type=file_type;
 	}
 
-        if(label_offset==-1){ //We haven't examined any of the files yet
+        if(chunk_height==-1){ //We haven't examined any of the files yet
           chunk_height    = this_chunk_height;
           chunk_width     = this_chunk_width;
           file_type       = this_chunk_type;
-          label_increment = 2*chunk_height+2*chunk_width+1;
-          label_offset    = 2;
         } else if( chunk_height!=this_chunk_height || 
                    chunk_width!=this_chunk_width   ||
                    file_type!=this_chunk_type){
@@ -797,18 +825,11 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
           env.abort(-1); //TODO: Set error code
         }
 
-        std::cerr<<"ChunkID="<<chunkid<<", LabelOffset="<<label_offset<<", MaxLabel="<<(label_offset+label_increment-1)<<std::endl; //TODO: remove
-
-        chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, label_offset, label_offset+label_increment-1, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, gridx, gridy, 0, 0, chunk_width, chunk_height);
         if(flipH)
           chunks.back().back().flip |= FLIP_HORZ;
         if(flipV)
           chunks.back().back().flip |= FLIP_VERT;
-        if(std::numeric_limits<int>::max()-label_offset<label_increment){
-          std::cerr<<"Ran out of labels. Cannot proceed."<<std::endl;
-          env.abort(-1); //TODO: Set error code
-        }
-        label_offset+=label_increment;
       }
 
       if(row_width==-1){ //This is the first row
@@ -866,8 +887,6 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
 
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
-    label_t label_offset = 2;
-    const int32_t label_increment = 2*bheight+2*bwidth+1;
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
@@ -875,7 +894,7 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
         std::string retention = retention_base;
         if(retention[0]!='@')
           retention = retention_base+filepath.stem().string()+"-int-"+std::to_string(chunkid)+"-";
-        chunks.back().emplace_back(chunkid++, filename, outputname, retention, label_offset, label_offset+label_increment-1, gridx, gridy, x, y, bwidth, bheight);
+        chunks.back().emplace_back(chunkid++, filename, outputname, retention, gridx, gridy, x, y, bwidth, bheight);
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
@@ -887,11 +906,6 @@ void Preparer(std::string many_or_one, std::string retention_base, std::string i
         //section obviously correct. Although we do not expect to run out of
         //labels, it is possible to rigorously check for this condition here,
         //before we have used much time or I/O.
-        if(std::numeric_limits<int>::max()-label_offset<label_increment){
-          std::cerr<<"Ran out of labels. Cannot proceed."<<std::endl;
-          env.abort(-1); //TODO: Set error code
-        }
-        label_offset += label_increment;
       }
     }
 
