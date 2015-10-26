@@ -515,7 +515,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     jobs1[y][x].label_offset = label_offset;
 
-    std::cerr<<"Label offset: "<<label_offset<<std::endl;
     for(int l=0;l<jobs1[y][x].graph.size();l++)
     for(auto const &skey: jobs1[y][x].graph[l]){
       label_t first_label  = l;
@@ -650,8 +649,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 //    for(int i=label_offset;i<label_offset+label_increment;i++)
 //      job2[i-label_offset] = graph_elev[i];
     timer_calc.stop();
-    std::cerr<<"Gen job2 took "<<timer_gen_job2.accumulated()<<"s."<<std::endl;
-    std::cerr<<"Job 2 size "<<job2.size()<<std::endl;
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
