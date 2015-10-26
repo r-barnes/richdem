@@ -131,6 +131,7 @@ void PriorityFlood(
     }
   }
 
+  my_graph.resize(current_label);
   std::cerr<<"PitC="<<pitc<<", OpenC="<<openc<<std::endl;
   std::cerr<<"current_label="<<current_label<< " of "<<(2*dem.viewWidth()+2*dem.viewHeight())<<std::endl;
 }

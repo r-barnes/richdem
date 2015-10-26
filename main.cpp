@@ -73,6 +73,7 @@ class ChunkInfo{
   int32_t     x,y,width,height,gridx,gridy;
   int32_t     id;
   bool        nullChunk;
+  label_t     label_offset,label_increment; //Used for convenience in Producer()
   std::string filename;
   std::string outputname;
   std::string retention;
@@ -119,7 +120,6 @@ class Job1 {
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::vector< std::map<label_t, elev_t> > graph;
-  label_t label_offset; //For convenience in Producer()
   double time_calc, time_overall, time_io;
   Job1(){}
 };
@@ -218,7 +218,7 @@ void Consumer(){
 
       //PriorityFlood(barnes_dem,barnes_labels,barnes_graph,chunk.edge);
       timer_calc.start();
-      Zhou2015Labels(dem,labels,job1.graph,chunk.edge); //TODO
+      PriorityFlood(dem,labels,job1.graph,chunk.edge); //TODO
       timer_calc.stop();
 
       //std::cerr<<"Barnes=Zhou? "<<(barnes_dem==dem)<<std::endl;
@@ -275,7 +275,7 @@ void Consumer(){
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
         timer_calc.start();
-        Zhou2015Labels(dem,labels,graph,chunk.edge);
+        PriorityFlood(dem,labels,graph,chunk.edge);
         timer_calc.stop();
       } else if(chunk.retention=="@retainall"){
         //Nothing to do: we have it all in memory
@@ -488,23 +488,15 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   timer_mg_construct.start();
   
   //Get a chunk size so we can calculate the max label
-  label_t label_increment = 0; //This will helpfully make things explode if we don't set it below
-  for(int y=0;y<gridheight;y++){
-    for(int x=0;x<gridwidth;x++){
-      if(!chunks[y][x].nullChunk){
-        label_increment = 2*chunks[y][x].width+2*chunks[y][x].height;
-        break;
-      }
-    }
-    if(label_increment!=0)
-      break;
-  }
+  label_t maxlabel = 0;
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++)
+    maxlabel+=jobs1[y][x].graph.size();
+  std::cerr<<"Labels required: "<<maxlabel<<std::endl;
 
-  label_t label_offset   = 0;
-  const label_t maxlabel = gridwidth*gridheight*label_increment;
   std::vector< std::map<label_t, elev_t> > mastergraph(maxlabel);
-  std::cout<<"Maxlabel: "<<maxlabel<<std::endl;
 
+  label_t label_offset = 0;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
@@ -513,18 +505,21 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(chunks[y][x].nullChunk)
       continue;
 
-    jobs1[y][x].label_offset = label_offset;
+    Job1<elev_t> &this_job = jobs1[y][x];
 
-    for(int l=0;l<jobs1[y][x].graph.size();l++)
-    for(auto const &skey: jobs1[y][x].graph[l]){
+    chunks[y][x].label_offset = label_offset;
+
+    for(int l=0;l<this_job.graph.size();l++)
+    for(auto const &skey: this_job.graph[l]){
       label_t first_label  = l;
       label_t second_label = skey.first;
       if(first_label >1) first_label +=label_offset;
       if(second_label>1) second_label+=label_offset;
       mastergraph.at(first_label)[second_label] = skey.second;
     }
-    label_offset += label_increment;
-    jobs1[y][x].graph.clear();
+    chunks[y][x].label_increment = this_job.graph.size();
+    label_offset                += this_job.graph.size();
+    this_job.graph.clear();
   }
 
   std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
@@ -544,42 +539,42 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     time_first_count++;
 
     if(y>0            && !chunks[y-1][x].nullChunk)
-      HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, c.label_offset, jobs1[y-1][x].label_offset);
+      HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, chunks[y][x].label_offset, chunks[y-1][x].label_offset);
     
     if(y<gridheight-1 && !chunks[y+1][x].nullChunk)
-      HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, c.label_offset, jobs1[y+1][x].label_offset);
+      HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, chunks[y][x].label_offset, chunks[y+1][x].label_offset);
     
     if(x>0            && !chunks[y][x-1].nullChunk)
-      HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph, c.label_offset, jobs1[y][x-1].label_offset);
+      HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph, chunks[y][x].label_offset, chunks[y][x-1].label_offset);
     
     if(x<gridwidth-1  && !chunks[y][x+1].nullChunk)
-      HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph, c.label_offset, jobs1[y][x+1].label_offset);
+      HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph, chunks[y][x].label_offset, chunks[y][x+1].label_offset);
 
 
     //I wish I had wrote it all in LISP.
     //Top left
     if(y>0 && x>0                      && !chunks[y-1][x-1].nullChunk)   
-      HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph, c.label_offset, jobs1[y-1][x-1].label_offset);
+      HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph, chunks[y][x].label_offset, chunks[y-1][x-1].label_offset);
     
     //Bottom right
     if(y<gridheight-1 && x<gridwidth-1 && !chunks[y+1][x+1].nullChunk) 
-      HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph, c.label_offset, jobs1[y+1][x+1].label_offset);
+      HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph, chunks[y][x].label_offset, chunks[y+1][x+1].label_offset);
     
     //Top right
     if(y>0 && x<gridwidth-1            && !chunks[y-1][x+1].nullChunk)            
-      HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph, c.label_offset, jobs1[y-1][x+1].label_offset);
+      HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph, chunks[y][x].label_offset, chunks[y-1][x+1].label_offset);
     
     //Bottom left
     if(x>0 && y<gridheight-1           && !chunks[y+1][x-1].nullChunk) 
-      HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph, c.label_offset, jobs1[y+1][x-1].label_offset);
+      HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph, chunks[y][x].label_offset, chunks[y+1][x-1].label_offset);
   }
   timer_mg_construct.stop();
 
   std::cerr<<"Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
 
+
   jobs1.clear();
   jobs1.shrink_to_fit();
-
 
 
   std::cerr<<"Performing aggregated priority flood"<<std::endl;
@@ -631,7 +626,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
   active_nodes = 0;
-  label_offset = 0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
@@ -643,9 +637,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     timer_calc.start();
     Timer timer_gen_job2;
     timer_gen_job2.start(); //TODO: Remove
-    std::vector<elev_t> job2(graph_elev.begin()+label_offset,graph_elev.begin()+label_offset+label_increment);
+    std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
     timer_gen_job2.stop();
-    label_offset += label_increment;
 //    for(int i=label_offset;i<label_offset+label_increment;i++)
 //      job2[i-label_offset] = graph_elev[i];
     timer_calc.stop();
