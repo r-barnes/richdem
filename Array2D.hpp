@@ -130,7 +130,7 @@ class Array2D {
     std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     data = InternalArray(view_height, Row(view_width));
     for(int y=yOffset;y<yOffset+view_height;y++)
-      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 );
+      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
 
     GDALClose(fin);
   }
@@ -385,7 +385,7 @@ class Array2D {
     GDALClose(fintempl);
 
     for(int y=0;y<view_height;y++)
-      oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0);
+      oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
 
     GDALClose(fout);
   }
