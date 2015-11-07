@@ -19,18 +19,6 @@ label_t GetNewLabelZhou(
   if(labels(x,y)!=0)
     return labels(x,y);
 
-  if((edge & GRID_TOP) && y==0)
-    return 1;
-
-  if((edge & GRID_BOTTOM) && y==dem.viewHeight()-1)
-    return 1;
-
-  if((edge & GRID_LEFT) && x==0)
-    return 1;
-
-  if((edge & GRID_RIGHT) && x==dem.viewWidth()-1)
-    return 1;
-
   for(int n=1;n<=8;n++){
     int nx = x+dx[n];
     int ny = y+dy[n];
@@ -201,6 +189,26 @@ void Zhou2015Labels(
       }     
       ProcessTraceQue_onepass(dem,labels,traceQueue,priorityQueue,my_graph);
     }
+  }
+
+  if(edge & GRID_TOP)
+    for(int x=0;x<labels.viewWidth();x++)
+      WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);
+
+  if(edge & GRID_BOTTOM){
+    int bottom_row = labels.viewHeight()-1;
+    for(int x=0;x<labels.viewWidth();x++)
+      WatershedsMeet(labels(x,bottom_row),(label_t)1,dem(x,bottom_row),dem(x,bottom_row),my_graph);
+  }
+
+  if(edge & GRID_LEFT)
+    for(int y=0;y<labels.viewHeight();y++)
+      WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
+
+  if(edge & GRID_RIGHT){
+    int right_col = labels.viewWidth()-1;
+    for(int y=0;y<labels.viewHeight();y++)
+      WatershedsMeet(labels(right_col,y),(label_t)1,dem(right_col,y),dem(right_col,y),my_graph);
   }
 
   my_graph.resize(current_label);
