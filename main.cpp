@@ -34,15 +34,14 @@
 //TODO: Is it possible to run this without mpirun if we specify a single node
 //job?
 
-/*
-  For reference, this is the definition of the RasterIO() function
-  CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
-                                   int nXOff, int nYOff, int nXSize, int nYSize,
-                                   void * pData, int nBufXSize, int nBufYSize,
-                                   GDALDataType eBufType,
-                                   int nPixelSpace,
-                                   int nLineSpace )
-*/
+//For reference, this is the definition of the RasterIO() function
+//CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
+//                                 int nXOff, int nYOff, int nXSize, int nYSize,
+//                                 void * pData, int nBufXSize, int nBufYSize,
+//                                 GDALDataType eBufType,
+//                                 int nPixelSpace,
+//                                 int nLineSpace )
+//
 
 
 typedef uint32_t label_t;
@@ -733,7 +732,16 @@ std::string trimStr(std::string const& str){
 //with both. Once assemebled, the collection of jobs is passed off to Producer,
 //which is agnostic as to the original form of the jobs and handles
 //communication and solution assembly.
-void Preparer(std::string many_or_one, std::string retention_base, std::string input_file, std::string output_prefix, int bwidth, int bheight, int flipH, int flipV){
+void Preparer(
+  std::string many_or_one,
+  std::string retention_base,
+  std::string input_file,
+  std::string output_prefix,
+  int bwidth,
+  int bheight,
+  int flipH,
+  int flipV
+){
   boost::mpi::environment  env;
   boost::mpi::communicator world;
   int chunkid             = 0;

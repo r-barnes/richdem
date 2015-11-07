@@ -7,7 +7,14 @@
 #include <vector>
 
 template<class elev_t, class label_t>
-label_t GetNewLabel(int x, int y, label_t &current_label, uint8_t edge, const Array2D<elev_t> &dem, const Array2D<label_t> &labels){
+label_t GetNewLabel(
+  int x,
+  int y,
+  label_t &current_label,
+  uint8_t edge,
+  const Array2D<elev_t> &dem,
+  const Array2D<label_t> &labels
+){
   if(labels(x,y)!=0)
     return labels(x,y);
 

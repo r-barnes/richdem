@@ -24,7 +24,13 @@ GDALDataType peekGDALType(const std::string &filename) {
 }
 
 template<class T>
-void getGDALHeader(const std::string &filename, int &height, int &width, T &no_data, double *geotrans){
+void getGDALHeader(
+  const std::string &filename,
+  int    &height,
+  int    &width,
+  T      &no_data,
+  double *geotrans
+){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
   assert(fin!=NULL);

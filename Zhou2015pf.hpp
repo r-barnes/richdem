@@ -8,7 +8,14 @@
 #include <iostream> //TODO
 
 template<class elev_t, class label_t>
-label_t GetNewLabelZhou(int x, int y, label_t &current_label, uint8_t edge, const Array2D<elev_t> &dem, const Array2D<label_t> &labels){
+label_t GetNewLabelZhou(
+  int x,
+  int y,
+  label_t &current_label,
+  uint8_t edge,
+  const Array2D<elev_t> &dem,
+  const Array2D<label_t> &labels
+){
   if(labels(x,y)!=0)
     return labels(x,y);
 
@@ -38,7 +45,10 @@ label_t GetNewLabelZhou(int x, int y, label_t &current_label, uint8_t edge, cons
 
 template<class elev_t, class label_t>
 void WatershedsMeet(
-  label_t my_label, label_t n_label, elev_t my_elev, elev_t n_elev,
+  label_t my_label,
+  label_t n_label,
+  elev_t my_elev,
+  elev_t n_elev,
   std::vector<std::map<label_t, elev_t> > &my_graph
 ){
   if(n_label==0)
