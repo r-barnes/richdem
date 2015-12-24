@@ -807,9 +807,9 @@ void Preparer(
 	        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
         	this_chunk_type = peekGDALType(path_and_filename.string());
 	} else {
-		this_chunk_height=chunk_height;
-		this_chunk_width=chunk_width;
-		this_chunk_type=file_type;
+		this_chunk_height = chunk_height;
+		this_chunk_width  = chunk_width;
+		this_chunk_type   = file_type;
 	}
 
         if(chunk_height==-1){ //We haven't examined any of the files yet
