@@ -888,6 +888,9 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
+        if(total_height-y<100 || total_width-x<100){
+          throw std::logic_error("At least one tile is <100 cells in at least one dimensions. Please change rectangle size to avoid this!");
+        }
         auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
         std::string retention = retention_base;
         if(retention[0]!='@')
@@ -988,7 +991,7 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-w followed by no argument.");
           bwidth = std::stoi(argv[i+1]);
-          if(bwidth<500)
+          if(bwidth<300)
             throw std::invalid_argument("Width must be at least 500.");
           i++;
           continue;
@@ -996,7 +999,7 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-h followed by no argument.");
           bheight = std::stoi(argv[i+1]);
-          if(bheight<500)
+          if(bheight<300)
             throw std::invalid_argument("Height must be at least 500.");
           i++;
           continue;
