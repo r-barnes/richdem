@@ -22,7 +22,7 @@ def GetFilenames(the_glob):
   #print('Globbing {0}'.format(the_glob))
   return ' '.join(glob.glob(the_glob))
 
-def FillAndTest(authoritative,inpfile,width,height,intermed,tempglob,n=4):
+def FillAndTestSingle(authoritative,inpfile,width,height,intermed,tempglob,n=4):
   strat = intermed
   if strat=='@saveall':
     intermed = 'temp/s{width}_{height}'.format(width=width,height=height)
@@ -56,6 +56,14 @@ if not os.path.exists('temp'):
 
 print('Generating authoritative copy')
 
+
+
+
+
+
+
+
+
 sizes = [500,600,700]
 name  = os.path.splitext(os.path.basename(sys.argv[1]))[0]
 
@@ -66,7 +74,7 @@ for width in sizes:
     for intermed in ['@offloadall','@retainall','@saveall']:
       outglob = "{width}_{height}{file}-*-fill.tif".format(width=width,height=height,file=name)
 
-      ret = FillAndTest(
+      ret = FillAndTestSingle(
         authoritative = 'out/singlecore-{file}-0-fill.tif'.format(file=name),
         inpfile       = sys.argv[1],
         width         = width,
