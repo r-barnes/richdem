@@ -803,22 +803,22 @@ void Preparer(
         int          this_chunk_height;
         GDALDataType this_chunk_type;  //TODO: Set an option to load these only once
 
-	if(chunk_height==-1){ //TODO: Safetyize this
-	        getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
+        if(chunk_height==-1){ //TODO: Safetyize this
+          getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
         	this_chunk_type = peekGDALType(path_and_filename.string());
-	} else {
-		this_chunk_height = chunk_height;
-		this_chunk_width  = chunk_width;
-		this_chunk_type   = file_type;
-	}
+        } else {
+        	this_chunk_height = chunk_height;
+        	this_chunk_width  = chunk_width;
+        	this_chunk_type   = file_type;
+        }
 
         if(chunk_height==-1){ //We haven't examined any of the files yet
-          chunk_height    = this_chunk_height;
-          chunk_width     = this_chunk_width;
-          file_type       = this_chunk_type;
+          chunk_height = this_chunk_height;
+          chunk_width  = this_chunk_width;
+          file_type    = this_chunk_type;
         } else if( chunk_height!=this_chunk_height || 
-                   chunk_width!=this_chunk_width   ||
-                   file_type!=this_chunk_type){
+                   chunk_width !=this_chunk_width  ||
+                   file_type   !=this_chunk_type){
           std::cerr<<"All of the files specified by <layout_file> must be the same size and type!"<<std::endl;
           env.abort(-1); //TODO: Set error code
         }
