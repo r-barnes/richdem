@@ -67,14 +67,14 @@ DESCRIPTION
                 their names with "prefix".
 
   --bwidth    - Block width in cells. Used with <one>. Should be >500. If this
-  or -w         is not specified than the entire width is assumed. If <bheight> 
-                is also not specified than the entire operation runs
-                on a single node. This is ignored in <many> mode.
+  or -w         is not specified or set to -1 than the entire width is assumed.
+                If <bheight> is also not specified than the entire operation
+                runs on a single node. This is ignored in <many> mode.
 
   --bheight   - Block height in cells. Used with <one>. Should be >500. If this
-  or -h         is not specified than the entire height is assumed. If <bwidth>
-                is also not specified than the entire operation runs on a single
-                node. This is ignored in <many> mode.
+  or -h         is not specified or set to -1 than the entire height is assumed.
+                If <bwidth> is also not specified than the entire operation runs
+                on a single node. This is ignored in <many> mode.
 
   --flipV     - Used with <many>. Flip each chunk vertically before combining
   or -V         their results. This can be useful if the algorithm produces

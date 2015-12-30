@@ -991,7 +991,7 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-w followed by no argument.");
           bwidth = std::stoi(argv[i+1]);
-          if(bwidth<300)
+          if(bwidth<300 && bwidth!=-1)
             throw std::invalid_argument("Width must be at least 500.");
           i++;
           continue;
@@ -999,7 +999,7 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-h followed by no argument.");
           bheight = std::stoi(argv[i+1]);
-          if(bheight<300)
+          if(bheight<300 && bheight!=-1)
             throw std::invalid_argument("Height must be at least 500.");
           i++;
           continue;
