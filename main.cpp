@@ -750,44 +750,48 @@ void Preparer(
 
   std::vector< std::vector< ChunkInfo > > chunks;
   std::string  filename;
-  GDALDataType file_type;
+  GDALDataType file_type; //All chunks must have a common file_type
 
   if(many_or_one=="many"){
     std::cerr<<"Multi file mode"<<std::endl;
 
-    int32_t gridx        = 0;
-    int32_t gridy        = -1;
-    int32_t row_width    = -1;
-    int32_t chunk_width  = -1;
-    int32_t chunk_height = -1;
+    int32_t gridx        =  0; //Current x coordinate in the chunk grid
+    int32_t gridy        = -1; //Current y coordinate in the chunk grid
+    int32_t row_width    = -1; //Width of 1st row. All rows must equal this
+    int32_t chunk_width  = -1; //Width of 1st chunk. All chunks must equal this
+    int32_t chunk_height = -1; //Height of 1st chunk, all chunks must equal this
     
     boost::filesystem::path layout_path_and_name = input_file;
     auto path = layout_path_and_name.parent_path();
 
+    //Read each line of the layout file
     std::ifstream fin_layout(input_file);
     while(fin_layout.good()){
       gridy++;
       std::string line;
-      std::getline(fin_layout,line);
+      std::getline(fin_layout,line); //Read layout file line
 
-      //Stop at a blank row
+      //If this line is a blank row, we're done
       if(line.find_first_not_of("\t\n ")==std::string::npos)
         break;
 
+      //Add a row to the grid of chunks
       chunks.emplace_back(std::vector<ChunkInfo>());
 
       std::stringstream cells(line);
       std::string       filename;
       gridx = -1;
-      while(std::getline(cells,filename,',')){ //Make sure this is reading all of the file names
+
+      //Split the row of file names at the commas
+      while(std::getline(cells,filename,',')){
         gridx++;
         filename = trimStr(filename);
+
         //If the comma delimits only whitespace, then this is a null chunk
         if(filename==""){
           chunks.back().emplace_back();
           continue;
         }
-
 
         //Okay, the file exists. Let's check it out.
         auto path_and_filename = path / filename;
@@ -798,36 +802,55 @@ void Preparer(
         if(retention[0]!='@')
           retention = retention_base+path_and_filestem.stem().string()+"-int-";
 
-        //For retrieving information about the file
+        //Place to store information about this chunk
         int          this_chunk_width;
         int          this_chunk_height;
-        GDALDataType this_chunk_type;  //TODO: Set an option to load these only once
+        GDALDataType this_chunk_type;
+        double       this_geotransform[6];
 
-        if(chunk_height==-1){ //TODO: Safetyize this
-          getGDALDimensions(path_and_filename.string(), this_chunk_height, this_chunk_width);
-        	this_chunk_type = peekGDALType(path_and_filename.string());
-        } else {
-        	this_chunk_height = chunk_height;
-        	this_chunk_width  = chunk_width;
-        	this_chunk_type   = file_type;
+        //Retrieve information about this chunk
+        if(getGDALDimensions(
+            path_and_filename.string(),
+            this_chunk_height,
+            this_chunk_width,
+            this_chunk_type,
+            this_geotransform
+        )!=0){
+          std::cerr<<"Error getting file information from '"<<path_and_filename.string()<<"'!"<<std::endl;
+          env.abort(-1); //TODO
         }
 
-        if(chunk_height==-1){ //We haven't examined any of the files yet
+        //If this is the first chunk we've seen, it determines what every other
+        //chunk should be. Note it.
+        if(chunk_height==-1){
           chunk_height = this_chunk_height;
           chunk_width  = this_chunk_width;
           file_type    = this_chunk_type;
-        } else if( chunk_height!=this_chunk_height || 
-                   chunk_width !=this_chunk_width  ||
-                   file_type   !=this_chunk_type){
-          std::cerr<<"All of the files specified by <layout_file> must be the same size and type!"<<std::endl;
+        }
+
+        //Check that this chunk conforms to what we've seen previously so that
+        //all chunks are the same.
+        if( this_chunk_height!=chunk_height || 
+            this_chunk_width !=chunk_width  ||
+            this_chunk_type  !=file_type   ){
+          std::cerr<<"All of the files specified by <layout_file> must be the same dimensions and type!"<<std::endl;
           env.abort(-1); //TODO: Set error code
         }
 
+        //Add the chunk to the grid
         chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, gridx, gridy, 0, 0, chunk_width, chunk_height);
+
+        //Flip tiles if the geotransform demands it
+        if(this_geotransform[0]<0)
+          chunks.back().back().flip ^= FLIP_HORZ;
+        if(this_geotransform[5]<0)
+          chunks.back().back().flip ^= FLIP_VERT;
+
+        //Flip (or reverse the above flip!) if the user demands it
         if(flipH)
-          chunks.back().back().flip |= FLIP_HORZ;
+          chunks.back().back().flip ^= FLIP_HORZ;
         if(flipV)
-          chunks.back().back().flip |= FLIP_VERT;
+          chunks.back().back().flip ^= FLIP_VERT;
       }
 
       if(row_width==-1){ //This is the first row
@@ -867,8 +890,10 @@ void Preparer(
     filepath        = filepath.parent_path() / filepath.stem();
 
     //Get the total dimensions of the input file
-    getGDALDimensions(filename, total_height, total_width);
-    file_type = peekGDALType(filename);
+    if(getGDALDimensions(filename, total_height, total_width, file_type, NULL)!=0){
+      std::cerr<<"Error getting file information from '"<<filename<<"'!"<<std::endl;
+      env.abort(-1); //TODO
+    }
 
     //If the user has specified -1, that implies that they want the entire
     //dimension of the raster along the indicated axis to be processed within a

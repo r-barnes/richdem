@@ -46,17 +46,32 @@ void getGDALHeader(
   GDALClose(fin);
 }
 
-void getGDALDimensions(const std::string &filename, int &height, int &width){
+int getGDALDimensions(
+  const std::string &filename,
+  int &height,
+  int &width,
+  GDALDataType &dtype,
+  double geotransform[6]
+){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
   assert(fin!=NULL);
 
   GDALRasterBand *band = fin->GetRasterBand(1);
+  
+  dtype = band->GetRasterDataType();
+
+  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None){
+    std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
+    return -1; //TODO: Set error code
+  }
 
   height  = band->GetYSize();
   width   = band->GetXSize();
 
   GDALClose(fin);
+
+  return 0;
 }
 
 
