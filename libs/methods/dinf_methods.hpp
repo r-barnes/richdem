@@ -1,33 +1,5 @@
-#include "data_structures.hpp"
-#include "utility.hpp"
-#include "dinf_methods.hpp"
-#include "interface.hpp"
-#include "debug.hpp"
-#include <cmath>
-#include <queue>
-#include <cassert>
-#ifdef _OPENMP
-  #include <omp.h>
-#endif
-
-/*
-@inproceedings{Wallis2009,
-address = {Las Vegas, Nevada, USA},
-author = {Wallis, Chase and Watson, Dan and Tarboton, David and Wallace, Robert},
-booktitle = {International Conference on Parallel and Distributed Processing Techniques and Applications},
-file = {:home/rick/projects/watershed/papers/dinf\_refs/10.1.1.158.2864.pdf:pdf},
-pages = {1--5},
-title = {{Parallel Flow-Direction and Contributing Area Calculation for Hydrology Analysis in Digital Elevation Models}},
-year = {2009}
-}
-
-Also:
-@article{wallaceparallel,
-  title={Parallel Algorithms for Processing Hydrologic Properties from Digital Terrain},
-  author={Wallace, RM and Tarboton, DG and Watson, DW and Schreuders, KAT and Tesfa, TK}
-}
-*/
-
+#ifndef _richdem_dinf_methods_hpp_
+#define _richdem_dinf_methods_hpp_
 
 /*
 We must convert the Dinf angle system to cells within the D8 system
@@ -60,14 +32,14 @@ static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
   //of flow is directed to the one we leave out).
   assert(flowdir>=0 && flowdir<=2*M_PI+1e-6);
 
-  flowdir/=(M_PI/4.);
+  flowdir /= (M_PI/4.);
 
   if(fabs(flowdir-(int)flowdir)<1e-6){
-    nlow=-1;
-    nhigh=(int)round(flowdir);
+    nlow  = -1;
+    nhigh = (int)round(flowdir);
   } else {
-    nlow=(int)flowdir;
-    nhigh=nlow+1;
+    nlow  = (int)flowdir;
+    nhigh = nlow+1;
   }
 
   //8 is not technically a direction, but, since things move in a circle,
@@ -78,11 +50,11 @@ static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 //This reacts correctly if the flow direction wedge number exceeds 7.
 static void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, float &plow){
   if(nlow==-1){
-    phigh=1;
-    plow=0;
+    phigh = 1;
+    plow  = 0;
   } else {
-    phigh=(nhigh*(M_PI/4.0)-flowdir)/(M_PI/4.0);
-    plow=1-phigh;
+    phigh = (nhigh*(M_PI/4.0)-flowdir)/(M_PI/4.0);
+    plow  = 1-phigh;
   }
 
   assert(phigh+plow==1);  //TODO: This isn't necessarily so in floating-point... or is it?
@@ -130,8 +102,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
     progress.update( x*flowdirs.height() );
     for(int y=0;y<flowdirs.height();y++){
       if(flowdirs(x,y)==flowdirs.no_data){
-        area(x,y)=area.no_data;
-        dependency(x,y)=9;  //Note: This is an unnecessary safety precaution
+        area(x,y)       = area.no_data;
+        dependency(x,y) = 9;  //Note: This is an unnecessary safety precaution
         continue;
       }
       if(flowdirs(x,y)==NO_FLOW){
@@ -143,8 +115,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
       where_do_i_flow(flowdirs(x,y),n_high,n_low);
       nhx=x+dinf_dx[n_high],nhy=y+dinf_dy[n_high];
       if(n_low!=-1){
-        nlx=x+dinf_dx[n_low];
-        nly=y+dinf_dy[n_low];
+        nlx = x+dinf_dx[n_low];
+        nly = y+dinf_dy[n_low];
       }
       if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data )
         dependency(nlx,nly)++;
@@ -190,7 +162,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
     int n_high,n_low,nhx,nhy,nlx,nly;
     where_do_i_flow(flowdirs(c.x,c.y),n_high,n_low);
-    nhx=c.x+dinf_dx[n_high],nhy=c.y+dinf_dy[n_high];
+    nhx = c.x+dinf_dx[n_high];
+    nhy = c.y+dinf_dy[n_high];
 
     float phigh,plow;
     area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
@@ -198,8 +171,8 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
       area(nhx,nhy)+=area(c.x,c.y)*phigh;
 
     if(n_low!=-1){
-      nlx=c.x+dinf_dx[n_low];
-      nly=c.y+dinf_dy[n_low];
+      nlx = c.x+dinf_dx[n_low];
+      nly = c.y+dinf_dy[n_low];
       if(flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data){
         area(nlx,nly)+=area(c.x,c.y)*plow;
         if((--dependency(nlx,nly))==0)
@@ -218,70 +191,6 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
 static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
 
-static float dinf_masked_FlowDir(const int_2d &flat_resolution_mask, const int_2d &groups, const int x, const int y){
-  double smax=0;
-  int nmax=-1;
-  double rmax=0;
 
-  double e0,e1,e2,d1,d2,s1,s2,r,s;
 
-  //Yes, this should be 0-8, this is the Tarboton neighbour system
-  for(int n=0;n<8;n++){
-    //TODO: Can these ever give !IN_GRID errors?
-    if(groups(x+dx_e1[n],y+dy_e1[n])!=groups(x,y)) continue;
-    if(groups(x+dx_e2[n],y+dy_e2[n])!=groups(x,y)) continue;
-
-    e0=flat_resolution_mask(x,y);
-    e1=flat_resolution_mask(x+dx_e1[n],y+dy_e1[n]);
-    e2=flat_resolution_mask(x+dx_e2[n],y+dy_e2[n]);
-    d1=1;
-    d2=1;
-    s1=(e0-e1)/d1;
-    s2=(e1-e2)/d2;
-    r=atan2(s2,s1);
-    s=sqrt(s1*s1+s2*s2);
-    if(r<0){
-      r=0;
-      s=s1;
-    } else if(r>atan2(d2,d1)){
-      r=atan2(d2,d1);
-      s=(e0-e2)/sqrt(d1*d1+d2*d2);
-    }
-    if(s>smax){
-      smax=s;
-      nmax=n;
-      rmax=r;
-    }
-  }
-
-  double rg=NO_FLOW;
-  if(nmax!=-1)
-    rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
-  else
-    for(int n=1;n<=8;n++)  //TODO: I have a feeling this is potentially unsafe as it may create dependency loops. Does it? TODO: Switch this to dinf_dx
-      if(groups(x+dx[n],y+dy[n])==groups(x,y) && flat_resolution_mask(x+dx[n],y+dy[n])<flat_resolution_mask(x,y)){
-        rg=d8_to_dinf[n];
-        break;
-      }
-
-  return rg;
-}
-
-void dinf_flow_flats(const int_2d &flat_resolution_mask, const int_2d &groups, float_2d &flowdirs){
-  ProgressBar progress;
-
-  diagnostic("\n###Dinf Flow Flats\n");
-
-  diagnostic("%%Calculating Dinf flow directions using flat mask...\n");
-  progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
-  #pragma omp parallel for
-  for(int x=1;x<flat_resolution_mask.width()-1;x++){
-    progress.update( x*flat_resolution_mask.height() );
-    for(int y=1;y<flat_resolution_mask.height()-1;y++)
-      if(flat_resolution_mask(x,y)==flat_resolution_mask.no_data)
-        continue;
-      else if(flowdirs(x,y)==NO_FLOW)
-        flowdirs(x,y)=dinf_masked_FlowDir(flat_resolution_mask,groups,x,y);
-  }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
-}
+#endif

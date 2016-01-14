@@ -7,9 +7,10 @@
 #ifndef _utility_included
 #define _utility_included
 
+
+
 #include <string>
 #include <cmath>
-#include "data_structures.hpp"
 #include <sys/time.h>
 //Neighbour directions
 //234
@@ -20,6 +21,14 @@
 //678
 //501
 //432
+
+#ifdef _OPENMP
+  #include <omp.h>
+#else
+  #define omp_get_thread_num()  0
+  #define omp_get_num_threads() 1
+#endif
+
 
 ///Value used to indicate that a flow direction cell has no data
 #define d8_NO_DATA    -100
@@ -46,8 +55,6 @@ const int inverse_flow[9]={0,5,6,7,8,1,2,3,4}; //Inverse of a given n from chart
 //234
 //105
 //876
-
-void print_dem(const float_2d &elevations, int mark_x=-1, int mark_y=-1, int colour=91);
 
 template <class T>
 T angdiff_deg(T a, T b){
@@ -96,6 +103,12 @@ T round(T val) {
   return floor(val+0.5);
 }
 
+
+
+
+
+
+
 class Timer{
   private:
     timeval start_time; ///<Last time the timer was started
@@ -141,5 +154,53 @@ class Timer{
       return timediff(start_time,lap_time);
     }
 };
+
+
+
+
+#define PROGRESS_BAR "=================================================="
+
+class ProgressBar{
+  private:
+    long total_work;
+    int old_percent;
+    Timer timer;
+  public:
+    void start(long total_work0){
+      timer.start();
+      total_work=total_work0;
+      old_percent=0;
+      //This ANSI code clears the entire line
+      fprintf(stderr,"\r\033[2K");
+    }
+    void update(long work_done){
+      if(omp_get_thread_num()!=0)
+        return;
+
+      int percent;
+      percent=(int)(work_done*omp_get_num_threads()*100/total_work);
+      if(percent>100)
+        percent=100;
+      if(percent==old_percent)
+        return;
+      old_percent=percent;
+
+      fprintf(stderr,"\r\033[2K[%-50.*s] (%d%% - %.1lfs left - %d thread)", percent/2, PROGRESS_BAR, percent, timer.lap()/percent*(100-percent),omp_get_num_threads());
+    }
+    double stop(){
+      //This ANSI code clears the entire line
+      fprintf(stderr,"\r\033[2K");
+
+      timer.stop();
+      return timer.accumulated();
+    }
+    double time_it_took(){
+      return timer.accumulated();
+    }
+};
+
+
+
+
 
 #endif

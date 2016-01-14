@@ -11,17 +11,15 @@
 #define _flat_resolution_included
 
 #include "utility.hpp"
-#include "interface.hpp"
 #include "data_structures.hpp"
 #include <deque>
 #include <vector>
 #include <queue>
-#include "debug.hpp"
+#include <cmath>
+#include <limits>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
-
-
 
 //Procedure: BuildAwayGradient
 /**
@@ -63,9 +61,13 @@ static void BuildAwayGradient(
   const array2d<T> &flowdirs, int_2d &flat_mask, std::deque<grid_cell> edges,
   std::vector<int> &flat_height, const int_2d &labels
 ){
+  Timer timer;
+  timer.start();
+
   int x,y,nx,ny;
   int loops=1;
   grid_cell iteration_marker(-1,-1);
+
 
   diagnostic("Performing Barnes flat resolution's away gradient...");
 
@@ -88,16 +90,17 @@ static void BuildAwayGradient(
     flat_mask(x,y)=loops;
     flat_height[labels(x,y)]=loops;
     for(int n=1;n<=8;n++){
-      nx=x+dx[n];  
+      nx=x+dx[n];
       ny=y+dy[n];
-      if(labels.in_grid(nx,ny) 
-          && labels(nx,ny)==labels(x,y) 
+      if(labels.in_grid(nx,ny)
+          && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
     }
   }
 
-  diagnostic("succeeded!\n");
+  timer.stop();
+  diagnostic_arg("succeeded in %fs!\n",timer.accumulated());
 }
 
 
@@ -147,9 +150,13 @@ static void BuildTowardsCombinedGradient(
   const array2d<T> &flowdirs, int_2d &flat_mask, std::deque<grid_cell> edges,
   std::vector<int> &flat_height, const int_2d &labels
 ){
+  Timer timer;
+  timer.start();
+
   int x,y,nx,ny;
   int loops=1;
   grid_cell iteration_marker(-1,-1);
+
 
   diagnostic("Barnes flat resolution: toward and combined gradients...");
 
@@ -182,16 +189,17 @@ static void BuildTowardsCombinedGradient(
       flat_mask(x,y)=2*loops;
 
     for(int n=1;n<=8;n++){
-      nx=x+dx[n];  
+      nx=x+dx[n];
       ny=y+dy[n];
-      if(labels.in_grid(nx,ny) 
-          && labels(nx,ny)==labels(x,y) 
+      if(labels.in_grid(nx,ny)
+          && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
     }
   }
 
-  diagnostic("succeeded!\n");
+  timer.stop();
+  diagnostic_arg("succeeded in %fs!\n",timer.accumulated());
 }
 
 
@@ -345,6 +353,9 @@ void resolve_flats_barnes(
   int_2d &flat_mask,
   int_2d &labels
 ){
+  Timer timer;
+  timer.start();
+
   std::deque<grid_cell> low_edges,high_edges;  //TODO: Need estimate of size
 
   diagnostic("\n###Barnes Flat Resolution\n");
@@ -403,45 +414,168 @@ void resolve_flats_barnes(
   BuildTowardsCombinedGradient(
     flowdirs, flat_mask, low_edges, flat_height, labels
   );
+
+  timer.stop();
+  diagnostic_arg("Calculation time for Barnes algorithm: %fs\n", timer.accumulated());
 }
 
 
-
-
-
-//Procedure: flat_mask
+//234
+//105
+//876
+//d8_masked_FlowDir
 /**
-  @brief  Creates binary mask indicating cells with undefined flow direction
+  @brief  Helper function to d8_flow_flats()
   @author Richard Barnes (rbarnes@umn.edu)
 
-  Primarily for use in debugging (TODO).
+  This determines a cell's flow direction, taking into account flat membership.
+  It is a helper function to d8_flow_flats()
 
-  @param[in]  &flowdirs 2D array indicating flow direction for each cell
-  @param[out] &fmask    2D binary array indicating whether cell is in a flat
+  @param[in]  &flat_mask      A mask from resolve_flats_barnes()
+  @param[in]  &labels         The labels output from resolve_flats_barnes()
+  @param[in]  x               x coordinate of cell
+  @param[in]  y               y coordinate of cell
+
+  @returns    The flow direction of the cell
+*/
+static int d8_masked_FlowDir(
+  const int_2d &flat_mask,
+  const int_2d &labels,
+  const int x,
+  const int y
+){
+  int minimum_elevation=flat_mask(x,y);
+  int flowdir=NO_FLOW;
+
+  //It is safe to do this without checking to see that (nx,ny) is within
+  //the grid because we only call this function on interior cells
+  for(int n=1;n<=8;n++){
+    int nx=x+dx[n];
+    int ny=y+dy[n];
+    if( labels(nx,ny)!=labels(x,y))
+      continue;
+    if(  flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
+      minimum_elevation=flat_mask(nx,ny);
+      flowdir=n;
+    }
+  }
+
+  return flowdir;
+}
+
+//d8_flow_flats
+/**
+  @brief  Calculates flow directions in flats
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  This determines flow directions within flats which have been resolved
+  using resolve_flats_barnes().
+
+  Uses the helper function d8_masked_FlowDir()
+
+  @param[in]  &flat_mask      A mask from resolve_flats_barnes()
+  @param[in]  &labels         The labels output from resolve_flats_barnes()
+  @param[out] &flowdirs       Returns flat-resolved flow directions
+
+  @pre
+    1. **flat_mask** contains the number of increments to be applied to each
+       cell to form a gradient which will drain the flat it is a part of.
+    2. Any cell without a local gradient has a value of #NO_FLOW in
+       **flowdirs**; all other cells have defined flow directions.
+    3. If a cell is part of a flat, it has a value greater than zero in
+       **labels** indicating which flat it is a member of; otherwise, it has a
+       value of 0.
 
   @post
-  The 2D array fmask is modified such that the value 3 represents
-  cells with a NO_DATA value in flowdirs, 1 represents cells without
-  a defined flow direction, and 0 represents cells with a defined
-  flow direction.
+    1. Every cell whose flow direction could be resolved by this algorithm
+       (all drainable flats) will have a defined flow direction in
+       **flowdirs**. Any cells which could not be resolved (non-drainable
+       flats) will still be marked #NO_FLOW.
 */
-template <class T>
-void flat_mask(const array2d<T> &flowdirs, uint_2d &fmask){
-  diagnostic("Locating pits based on undefined flow directions...");
-  fmask.copyprops(flowdirs);
-  fmask.init(0);
-  fmask.no_data=3;
-  int cells_without_flow=0;
-  #pragma omp parallel for reduction(+:cells_without_flow)
-  for(int x=0;x<flowdirs.width();x++)
-  for(int y=0;y<flowdirs.height();y++)
-    if(flowdirs(x,y)==flowdirs.no_data)
-      fmask(x,y)=fmask.no_data;
-    else{
-      fmask(x,y)=(flowdirs(x,y)==NO_FLOW);
-      cells_without_flow+=(flowdirs(x,y)==NO_FLOW);
-    }
-  diagnostic("succeeded!\n");
-  diagnostic_arg("%d cells found without flow.\n",cells_without_flow);
+template<class U>
+void d8_flow_flats(
+  const int_2d &flat_mask,
+  const int_2d &labels,
+  array2d<U> &flowdirs
+){
+  ProgressBar progress;
+
+  diagnostic("%%Calculating D8 flow directions using flat mask...\n");
+  progress.start( flat_mask.width()*flat_mask.height() );
+  #pragma omp parallel for
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++)
+      if(flat_mask(x,y)==flat_mask.no_data)
+        continue;
+      else if (flowdirs(x,y)==NO_FLOW)
+        flowdirs(x,y)=d8_masked_FlowDir(flat_mask,labels,x,y);
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
 }
+
+
+//d8_flats_alter_dem
+/**
+  @brief  Alters the elevations of the DEM so that all flats drain
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  This alters elevations within the DEM so that flats which have been
+  resolved using resolve_flats_barnes() will drain.
+
+  @param[in]     &flat_mask   A mask from resolve_flats_barnes()
+  @param[in]     &labels      A grouping from resolve_flats_barnes()
+  @param[in,out] &elevations  2D array of elevations
+
+  @pre
+    1. **flat_mask** contains the number of increments to be applied to each
+       cell to form a gradient which will drain the flat it is a part of.
+    2. If a cell is part of a flat, it has a value greater than zero in
+       **labels** indicating which flat it is a member of; otherwise, it has a
+       value of 0.
+
+  @post
+    1. Every cell whose part of a flat which could be drained will have its
+       elevation altered in such a way as to guarantee that its flat does
+       drain.
+*/
+template<class U>
+void d8_flats_alter_dem(
+  const int_2d &flat_mask,
+  const int_2d &labels,
+  array2d<U> &elevations
+){
+  ProgressBar progress;
+
+  diagnostic("%%Calculating D8 flow directions using flat mask...\n");
+  progress.start( flat_mask.width()*flat_mask.height() );
+  #pragma omp parallel for
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++){
+      if(labels(x,y)==0)
+        continue;
+
+      bool higher[9];
+      for(int n=1;n<=8;++n)
+        higher[n]=elevations(x,y)>elevations(x+dx[n],y+dy[n]);
+      //TODO: nextafterf is the floating point version; should use an
+      //overloaded version instead to be able to handle both double and float
+      for(int i=0;i<flat_mask(x,y);++i)
+        elevations(x,y)=nextafterf(elevations(x,y),std::numeric_limits<U>::infinity());
+      for(int n=1;n<=8;++n){
+        int nx=x+dx[n];
+        int ny=y+dy[n];
+        if(labels(nx,ny)==labels(x,y))
+          continue;
+        if(elevations(x,y)<elevations(nx,ny))
+          continue;
+        if(!higher[n])
+          diagnostic_arg("Attempting to raise (%d,%d) resulted in an invalid alteration of the DEM!\n",x,y);
+      }
+    }
+  }
+  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+}
+
 #endif
