@@ -449,12 +449,11 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   h *= zscale;
   i *= zscale;
 
-  double dzdx,dzdy;
   //Aspect calculation in the manner of Horn 1981
   //ArcGIS doesn't use cell size fo aspect calculations.
-  dzdx   = ( (c+2*f+i) - (a+2*d+g) ) / 8;
-  dzdy   = ( (g+2*h+i) - (a+2*b+c) ) / 8;
-  aspect = 180.0/M_PI*atan2(dzdy,-dzdx);
+  double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8;
+  double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8;
+  aspect      = 180.0/M_PI*atan2(dzdy,-dzdx);
   if(aspect<0)
     aspect = 90-aspect;
   else if(aspect>90.0)
