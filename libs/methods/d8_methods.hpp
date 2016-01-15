@@ -289,7 +289,7 @@ void d8_SPI(
       if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
         result(x,y)=result.noData();
       else
-        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize) * (riserun_slope(x,y)+0.001) );
+        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.getCellArea()) * (riserun_slope(x,y)+0.001) );
   std::cerr<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
 }
 
@@ -346,7 +346,7 @@ void d8_CTI(
       if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
         result(x,y)=result.noData();
       else
-        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize) / (riserun_slope(x,y)+0.001) );
+        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.getCellArea()) / (riserun_slope(x,y)+0.001) );
   std::cerr<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
 }
 
@@ -464,8 +464,8 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
 
   //Slope calculation in the manner of Horn 1981
   //But cellsize is accounted for in slope
-  dzdx /= elevations.cellsize;
-  dzdy /= elevations.cellsize;
+  dzdx /= elevations.getCellArea();
+  dzdy /= elevations.getCellArea();
 
   rise_over_run = sqrt(dzdx*dzdx+dzdy*dzdy);
 
@@ -486,7 +486,7 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   //Z4 Z5 Z6   d e f
   //Z7 Z8 Z9   g h i
   //Curvatures in the manner of Zevenbergen and Thorne 1987
-  double L  = elevations.cellsize;     //TODO: Should be in the same units as z
+  double L  = elevations.getCellArea();     //TODO: Should be in the same units as z
   double D  = ( (d+f)/2 - e) / L / L;  //D = [(Z4 + Z6) /2 - Z5] / L^2
   double E  = ( (b+h)/2 - e) / L / L;  //E = [(Z2 + Z8) /2 - Z5] / L^2
   double F  = (-a+c+g-i)/4/L/L;        //F=(-Z1+Z3+Z7-Z9)/(4L^2)

@@ -10,7 +10,6 @@ template<class T>
 int PerformAlgorithm(std::string filename, std::string output_prefix){
 
   Array2D<T> elevations(filename,false);
-  elevations.cellsize = 1;
 
   improved_priority_flood(elevations);
 
@@ -39,7 +38,6 @@ int PerformAlgorithm(std::string filename, std::string output_prefix){
   area.saveGDAL(output_prefix+"-area.tif",filename,0,0);
 
   Array2D<float> cti;
-  area.cellsize = 1;
   d8_CTI(area, slope, cti);
 
   cti.saveGDAL(output_prefix+"-cti.tif",filename,0,0);

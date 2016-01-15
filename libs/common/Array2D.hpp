@@ -101,8 +101,9 @@ template<class T>
 class Array2D {
  public:
   typedef std::vector<T>   Row;
-  int cellsize; //TODO
  private:
+  template<typename> friend class Array2D;
+
   typedef std::vector<Row> InternalArray;
   InternalArray data;
 
@@ -115,6 +116,7 @@ class Array2D {
   int view_xoff;
   int view_yoff;
   int num_data_cells = -1;
+  double geotransform[6];
 
   T   no_data;
 
@@ -128,6 +130,9 @@ class Array2D {
 
     GDALRasterBand *band = fin->GetRasterBand(1);
     auto data_type       = band->GetRasterDataType();
+
+    if(fin->GetGeoTransform(geotransform)!=CE_None)
+      throw std::runtime_error("Could not fetch geotransform!");
 
     total_width  = band->GetXSize();
     total_height = band->GetYSize();
@@ -291,6 +296,8 @@ class Array2D {
   template<class U>
   void resize(const Array2D<U> &other, const T& val = T()){
     resize(other.viewWidth(), other.viewHeight(), val);
+    for(int i=0;i<6;i++)
+      geotransform[i] = other.geotransform[i];
   }
 
   void countDataCells(){
@@ -423,6 +430,10 @@ class Array2D {
 
   bool isEdgeCell(int x, int y) const {
     return (x==0 || y==0 || x==(int)(data[0].size()-1) || y==(int)(data.size()-1));
+  }
+
+  double getCellArea() const {
+    return geotransform[1]*geotransform[5];
   }
 };
 
