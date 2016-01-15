@@ -1,0 +1,142 @@
+#include <deque>
+#include <cstdint>
+#include <iostream>
+#include "../common/Array2D.hpp"
+#include "../common/grid_cell.hpp"
+#include "../flowdirs/d8_flowdirs.hpp"
+
+typedef std::deque<grid_cell> flat_type;
+
+void FindFlats(
+	const Array2D<int8_t> &flowdirs,
+	flat_type &flats
+){
+	for(int x=0;x<flowdirs.viewWidth();++x)
+	for(int y=0;y<flowdirs.viewHeight();++y)
+		if(flowdirs(x,y)==NO_FLOW)
+			flats.push_back(grid_cell(x,y));
+}
+
+template<class T>
+void GradientTowardsLower(
+	const Array2D<T>      &elevations,
+	const Array2D<int8_t> &flowdirs,
+	flat_type &flats,
+	Array2D<int32_t>      &inc1
+){
+	int loops              = 0;
+	int number_incremented = -1;
+	std::cerr<<"Setting up the inc1 matrix..."<<std::flush;
+  inc1.resize(elevations);
+  inc1.init(0);
+  std::cerr<<"succeeded."<<std::endl;
+	while(number_incremented!=0){
+		number_incremented=0;
+		for(int i=0;i<(int)flats.size();i++){
+			bool increment_elevation=true;
+			int x=flats[i].x;
+			int y=flats[i].y;
+			for(int n=1;n<=8;n++){
+				if(	elevations(x+dx[n],y+dy[n])<elevations(x,y) && 
+					flowdirs(x+dx[n],y+dy[n])!=NO_FLOW && flowdirs(x+dx[n],y+dy[n])!=flowdirs.noData()
+				){
+					increment_elevation=false;
+					break;
+				}
+				else if(inc1(x+dx[n],y+dy[n])<loops && 
+						elevations(x+dx[n],y+dy[n])==elevations(x,y)
+				){
+					increment_elevation=false;
+					break;
+				}	
+			}
+			if(increment_elevation){
+				inc1(x,y)++;
+				number_incremented++;
+			}
+		}
+		loops++;
+	}
+}
+
+template<class T>
+void GradientAwayFromHigher(
+	const Array2D<T>      &elevations,
+	const Array2D<int8_t> &flowdirs,
+	flat_type             &flats,
+	Array2D<int32_t>      &inc2
+){
+	int loops                       = 0;
+	unsigned int number_incremented = 0;
+  std::cerr<<"Setting up the inc2 matrix..."<<std::flush;
+  inc2.resize(elevations);
+  inc2.init(0);
+  std::cerr<<"succeeded."<<std::endl;
+	while(number_incremented<flats.size()){
+		for(int i=0;i<(int)flats.size();i++){
+			int x=flats[i].x;
+			int y=flats[i].y;
+			if(inc2(x,y)>0){
+				inc2(x,y)++;
+				continue;
+			}
+		}
+		for(int i=0;i<(int)flats.size();i++){
+			bool has_higher=false,has_lower=false;
+			int x=flats[i].x;
+			int y=flats[i].y;
+			if(inc2(x,y)>0) continue;
+			for(int n=1;n<=8;n++){
+				if( !has_higher &&
+					(elevations(x+dx[n],y+dy[n])>elevations(x,y) ||
+					inc2(x+dx[n],y+dy[n])==2)
+				)
+					has_higher=true;
+				else if( !has_lower &&
+						elevations(x+dx[n],y+dy[n])<elevations(x,y)
+				)
+					has_lower=true;
+			}
+			if(has_higher && !has_lower){
+				inc2(x,y)++;
+				number_incremented++;
+			}
+		}
+		loops++;
+	}
+}
+
+template<class T>
+void CombineGradients(
+	Array2D<T>             &elevations,
+	const Array2D<int32_t> &inc1,
+	const Array2D<int32_t> &inc2, 
+	float epsilon //TODO
+){
+  std::cerr<<"Combining the gradients..."<<std::flush;
+	for(int x=0;x<elevations.viewWidth();++x)
+	for(int y=0;y<elevations.viewHeight();++y)
+		elevations(x,y)+=(inc1(x,y)+inc2(x,y))*epsilon;
+  std::cerr<<"succeeded."<<std::endl;
+}
+
+
+
+template<class T>
+void GarbrechtAlg(Array2D<T> &elevations, Array2D<int8_t> &flowdirs){
+  Timer flat_resolution_timer;
+
+  flat_resolution_timer.start();
+  flat_type flats;
+  FindFlats(flowdirs,flats);
+
+  Array2D<int32_t> inc1, inc2;
+  GradientTowardsLower  (elevations, flowdirs, flats, inc1);
+  GradientAwayFromHigher(elevations, flowdirs, flats, inc2);
+  CombineGradients(elevations, inc1, inc2, 0.001);
+  flat_resolution_timer.stop();
+
+  d8_flow_directions(elevations,flowdirs);
+
+  std::cout<<flat_resolution_timer.accumulated()<<" seconds were used to resolve flats."<<std::endl;
+}

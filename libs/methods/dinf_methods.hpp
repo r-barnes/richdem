@@ -1,6 +1,8 @@
 #ifndef _richdem_dinf_methods_hpp_
 #define _richdem_dinf_methods_hpp_
 
+#include <cmath>
+
 /*
 We must convert the Dinf angle system to cells within the D8 system
 I use the following grid for the D8 system
@@ -19,6 +21,25 @@ To convert Dinf to this, take
       7                5,6
 */
 //These arrays have a 9th element which repeats the 8th element because floating point rounding errors occassionally result in the 9th element being accessed.
+
+
+//round
+/**
+  @brief  Rounds floating value to the nearest integer
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  val  Input value
+
+  @return val rounded to the nearest integer
+*/
+template <class T>
+T round(T val) {
+  return floor(val+0.5);
+}
+
+
+
+
 
 //321
 //4 0

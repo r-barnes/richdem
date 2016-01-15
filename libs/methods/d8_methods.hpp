@@ -34,6 +34,26 @@
 #define TATTRIB_SLOPE_DEGREE        9
 
 
+//sgn
+/**
+  @brief  Returns the sign (+1, -1, 0) of a number. Branchless.
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  val  Input value
+
+  @return
+    -1 for a negative input, +1 for a positive input, and 0 for a zero input
+*/
+template <class T>
+T sgn(T val){
+  return (T(0) < val) - (val < T(0));
+}
+
+
+
+
+
+
 //d8_upslope_area
 /**
   @brief  Calculates the D8 up-slope area, given the D8 flow directions

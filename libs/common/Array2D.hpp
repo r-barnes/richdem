@@ -287,6 +287,11 @@ class Array2D {
     total_width  = view_width  = width;
   }
 
+  template<class U>
+  void resize(const Array2D<U> &other, const T& val = T()){
+    resize(other.viewWidth(), other.viewHeight(), val);
+  }
+
   void countDataCells(){
     num_data_cells = 0;
     for(int y=0;y<viewHeight();y++)
@@ -409,6 +414,10 @@ class Array2D {
       oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
 
     GDALClose(fout);
+  }
+
+  bool isEdgeCell(int x, int y) const {
+    return (x==0 || y==0 || x==(int)(data[0].size()-1) || y==(int)(data.size()-1));
   }
 };
 
