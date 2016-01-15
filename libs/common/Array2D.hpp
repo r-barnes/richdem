@@ -101,6 +101,7 @@ template<class T>
 class Array2D {
  public:
   typedef std::vector<T>   Row;
+  int cellsize; //TODO
  private:
   typedef std::vector<Row> InternalArray;
   InternalArray data;
@@ -303,6 +304,10 @@ class Array2D {
   int numDataCells(){
     if(num_data_cells==-1)
       countDataCells();
+    return num_data_cells;
+  }
+
+  int numDataCells() const {
     return num_data_cells;
   }
 

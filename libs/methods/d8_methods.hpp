@@ -68,36 +68,35 @@ T sgn(T val){
 */
 template<class T, class U>
 void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
-  char_2d dependency;
+  Array2D<int8_t> dependency;
   std::queue<grid_cell> sources;
   ProgressBar progress;
 
-  diagnostic("\n###D8 Upslope Area\n");
+  std::cerr<<"\n###D8 Upslope Area"<<std::endl;
 
-  diagnostic_arg(
-    "The sources queue will require at most approximately %ldMB of RAM.\n",
-    flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024
-  );
+  std::cerr<<"The sources queue will require at most approximately "
+           <<(flowdirs.viewWidth()*flowdirs.viewHeight()*((long)sizeof(grid_cell))/1024/1024)
+           <<"MB of RAM."<<std::endl;
 
-  diagnostic("Resizing dependency matrix...");
-  dependency.copyprops(flowdirs);
-  diagnostic("succeeded.\n");
+  std::cerr<<"Resizing dependency matrix..."<<std::flush;
+  dependency.resize(flowdirs);
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic("Setting up the area matrix...");
-  area.copyprops(flowdirs);
+  std::cerr<<"Setting up the area matrix..."<<std::flush;
+  area.resize(flowdirs);
   area.init(0);
-  area.no_data=d8_NO_DATA;
-  diagnostic("succeeded.\n");
+  area.noData()=d8_NO_DATA;
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-  progress.start( flowdirs.width()*flowdirs.height() );
+  std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
+  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
   #pragma omp parallel for
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++){
+  for(int x=0;x<flowdirs.viewWidth();x++){
+    progress.update( x*flowdirs.viewHeight() );
+    for(int y=0;y<flowdirs.viewHeight();y++){
       dependency(x,y)=0;
-      if(flowdirs(x,y)==flowdirs.no_data){
-        area(x,y)=area.no_data;
+      if(flowdirs(x,y)==flowdirs.noData()){
+        area(x,y)=area.noData();
         continue;
       }
       for(int n=1;n<=8;n++)
@@ -105,28 +104,28 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
           continue;
         else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
           continue;
-        else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.no_data)
+        else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.noData())
           continue;
         else if(n==inverse_flow[(int)flowdirs(x+dx[n],y+dy[n])])
           ++dependency(x,y);
     }
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
 
-  diagnostic("%%Locating source cells...\n");
-  progress.start( flowdirs.width()*flowdirs.height() );
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++)
-      if(flowdirs(x,y)==flowdirs.no_data)
+  std::cerr<<"%%Locating source cells..."<<std::endl;
+  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
+  for(int x=0;x<flowdirs.viewWidth();x++){
+    progress.update( x*flowdirs.viewHeight() );
+    for(int y=0;y<flowdirs.viewHeight();y++)
+      if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(dependency(x,y)==0)
         sources.push(grid_cell(x,y));
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
 
-  diagnostic("%%Calculating up-slope areas...\n");
-  progress.start(flowdirs.data_cells);
+  std::cerr<<"%%Calculating up-slope areas..."<<std::endl;
+  progress.start(flowdirs.numDataCells());
   long int ccount=0;
   while(sources.size()>0){
     grid_cell c=sources.front();
@@ -142,13 +141,13 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
 
     int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
     int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
-    if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.no_data){
+    if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.noData()){
       area(nx,ny)+=area(c.x,c.y);
       if((--dependency(nx,ny))==0)
         sources.push(grid_cell(nx,ny));
     }
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"Succeded in "<<progress.stop()<<std::endl;
 }
 
 
@@ -163,7 +162,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   which cells ultimately flow into the indicated cell.
   1=Upslope cell
   2=Member of initializing line
-  All other cells have a no_data value
+  All other cells have a noData() value
 
   @param[in]  &flowdirs  A D8 flowdir grid from d8_flow_directions()
   @param[out] &area      Returns the up-slope area of each cell
@@ -177,11 +176,11 @@ void d8_upslope_cells(
   const Array2D<T> &flowdirs,
   Array2D<U>       &upslope_cells
 ){
-  diagnostic("Setting up the upslope_cells matrix...");
-  upslope_cells.copyprops(flowdirs);
+  std::cerr<<"Setting up the upslope_cells matrix..."<<std::flush;
+  upslope_cells.resize(flowdirs);
   upslope_cells.init(d8_NO_DATA);
-  upslope_cells.no_data=d8_NO_DATA;
-  diagnostic("succeeded.\n");
+  upslope_cells.noData()=d8_NO_DATA;
+  std::cerr<<"succeeded."<<std::endl;
   ProgressBar progress;
 
   std::queue<grid_cell> expansion;
@@ -200,7 +199,7 @@ void d8_upslope_cells(
   if (deltaerr<0)
     deltaerr = -deltaerr;
 
-  diagnostic_arg("Line slope is %f\n",deltaerr);
+  std::cerr<<"Line slope is "<<deltaerr<<std::endl;
   int y=y0;
   for(int x=x0;x<=x1;x++){
     expansion.push(grid_cell(x,y));
@@ -227,15 +226,15 @@ void d8_upslope_cells(
         continue;
       else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
         continue;
-      else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.no_data)
+      else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.noData())
         continue;
-      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.no_data && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
+      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.noData() && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
         expansion.push(grid_cell(c.x+dx[n],c.y+dy[n]));
         upslope_cells(c.x+dx[n],c.y+dy[n])=1;
       }
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
-  diagnostic_arg("Found %ld up-slope cells.\n",ccount);
+  std::cerr<<"Succeeded in "<<progress.stop()<<std::endl;
+  std::cerr<<"Found "<<ccount<<" up-slope cells."<<std::endl;
 }
 
 
@@ -265,33 +264,33 @@ void d8_upslope_cells(
 template<class T, class U, class V>
 void d8_SPI(
   const Array2D<T> &flow_accumulation,
-  const Array2D<U> &percent_slope,
+  const Array2D<U> &riserun_slope,
         Array2D<V> &result
 ){
   Timer timer;
 
-  diagnostic("\n###d8_SPI\n");
+  std::cerr<<"\n###d8_SPI"<<std::endl;
 
-  if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
-    diagnostic("Couldn't calculate SPI! The input matricies were of unequal dimensions!\n");
+  if(flow_accumulation.viewWidth()!=riserun_slope.viewWidth() || flow_accumulation.viewHeight()!=riserun_slope.viewHeight()){
+    std::cerr<<"Couldn't calculate SPI! The input matricies were of unequal dimensions!"<<std::endl;
     exit(-1);
   }
 
-  diagnostic("Setting up the SPI matrix...");
-  result.copyprops(flow_accumulation);
-  result.no_data=-1;  //Log(x) can't take this value of real inputs, so we're good
-  diagnostic("succeeded.\n");
+  std::cerr<<"Setting up the SPI matrix..."<<std::flush;
+  result.resize(flow_accumulation);
+  result.noData()=-1;  //Log(x) can't take this value of real inputs, so we're good
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic("Calculating SPI...\n");
+  std::cerr<<"Calculating SPI..."<<std::endl;
   timer.start();
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<flow_accumulation.width();x++)
-    for(int y=0;y<flow_accumulation.height();y++)
-      if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
-        result(x,y)=result.no_data;
+  for(int x=0;x<flow_accumulation.viewWidth();x++)
+    for(int y=0;y<flow_accumulation.viewHeight();y++)
+      if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
+        result(x,y)=result.noData();
       else
-        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize + 0.001) * (percent_slope(x,y)/100+0.001) );
-  diagnostic_arg("succeeded in %lfs.\n",timer.lap());
+        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize) * (riserun_slope(x,y)+0.001) );
+  std::cerr<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
 }
 
 
@@ -322,33 +321,33 @@ void d8_SPI(
 template<class T, class U, class V>
 void d8_CTI(
   const Array2D<T> &flow_accumulation,
-  const Array2D<U> &percent_slope,
+  const Array2D<U> &riserun_slope,
         Array2D<V> &result
 ){
   Timer timer;
 
-  diagnostic("\n###d8_CTI\n");
+  std::cerr<<"\n###d8_CTI"<<std::endl;
 
-  if(flow_accumulation.width()!=percent_slope.width() || flow_accumulation.height()!=percent_slope.height()){
-    diagnostic("Couldn't calculate CTI! The input matricies were of unequal dimensions!\n");
+  if(flow_accumulation.viewWidth()!=riserun_slope.viewWidth() || flow_accumulation.viewHeight()!=riserun_slope.viewHeight()){
+    std::cerr<<"Couldn't calculate CTI! The input matricies were of unequal dimensions!"<<std::endl;
     exit(-1);
   }
 
-  diagnostic("Setting up the CTI matrix...");
-  result.copyprops(flow_accumulation);
-  result.no_data=-1;  //Log(x) can't take this value of real inputs, so we're good
-  diagnostic("succeeded.\n");
+  std::cerr<<"Setting up the CTI matrix..."<<std::flush;
+  result.resize(flow_accumulation);
+  result.setNoData(-1);  //Log(x) can't take this value of real inputs, so we're good
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic("Calculating CTI...");
+  std::cerr<<"Calculating CTI..."<<std::flush;
   timer.start();
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<flow_accumulation.width();x++)
-    for(int y=0;y<flow_accumulation.height();y++)
-      if(flow_accumulation(x,y)==flow_accumulation.no_data || percent_slope(x,y)==percent_slope.no_data)
-        result(x,y)=result.no_data;
+  for(int x=0;x<flow_accumulation.viewWidth();x++)
+    for(int y=0;y<flow_accumulation.viewHeight();y++)
+      if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
+        result(x,y)=result.noData();
       else
-        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize + 0.001) / (percent_slope(x,y)/100+0.001) );
-  diagnostic_arg("succeeded in %lfs.\n",timer.lap());
+        result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.cellsize) / (riserun_slope(x,y)+0.001) );
+  std::cerr<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
 }
 
 
@@ -430,14 +429,14 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   if(elevations.in_grid(x0+1,y0-1))  c = elevations(x0+1,y0-1);
   if(elevations.in_grid(x0+1,y0))    f = elevations(x0+1,y0);
   if(elevations.in_grid(x0+1,y0+1))  i = elevations(x0+1,y0+1);
-  if(a==elevations.no_data)          a = e;
-  if(b==elevations.no_data)          b = e;
-  if(c==elevations.no_data)          c = e;
-  if(d==elevations.no_data)          d = e;
-  if(f==elevations.no_data)          f = e;
-  if(g==elevations.no_data)          g = e;
-  if(h==elevations.no_data)          h = e;
-  if(i==elevations.no_data)          i = e;
+  if(a==elevations.noData())          a = e;
+  if(b==elevations.noData())          b = e;
+  if(c==elevations.noData())          c = e;
+  if(d==elevations.noData())          d = e;
+  if(f==elevations.noData())          f = e;
+  if(g==elevations.noData())          g = e;
+  if(h==elevations.noData())          h = e;
+  if(i==elevations.noData())          i = e;
 
   //TODO: Convert elevations to meters? (1ft=0.3048m)
   a *= zscale;
@@ -547,19 +546,19 @@ void d8_terrain_attribute(
 ){
   ProgressBar progress;
 
-  diagnostic_arg("Setting up the attribute #%d matrix...", attrib);
-  attribs.copyprops(elevations);
-  attribs.no_data=-99999;  //TODO: Should push this out to the calling helper functions
-  diagnostic("succeeded.\n");
+  std::cerr<<"Setting up the attribute #"<<attrib<<" matrix..."<<std::endl;
+  attribs.resize(elevations);
+  attribs.setNoData(-99999);  //TODO: Should push this out to the calling helper functions
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic_arg("%%Calculating terrain attribute #%d...\n",attrib);
-  progress.start( elevations.width()*elevations.height() );
+  std::cerr<<"%%Calculating terrain attribute #"<<attrib<<"..."<<std::endl;
+  progress.start( elevations.viewWidth()*elevations.viewHeight() );
   #pragma omp parallel for
-  for(int x=0;x<elevations.width();x++){
-    progress.update( x*elevations.height() );
-    for(int y=0;y<elevations.height();y++){
-      if(elevations(x,y)==elevations.no_data){
-        attribs(x,y)=attribs.no_data;
+  for(int x=0;x<elevations.viewWidth();x++){
+    progress.update( x*elevations.viewHeight() );
+    for(int y=0;y<elevations.viewHeight();y++){
+      if(elevations(x,y)==elevations.noData()){
+        attribs(x,y)=attribs.noData();
         continue;
       }
       float rise_over_run, aspect, curvature;
@@ -596,7 +595,7 @@ void d8_terrain_attribute(
       }
     }
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"succeded in "<<progress.stop()<<"s."<<std::endl;
 }
 
 
@@ -627,7 +626,7 @@ void d8_slope(
   int slope_type,
   float zscale
 ){
-  diagnostic("\n###Slope attribute calculation\n");
+  std::cerr<<"\n###Slope attribute calculation"<<std::endl;
   d8_terrain_attribute(elevations, slopes, slope_type, zscale);
 }
 
@@ -637,16 +636,17 @@ void d8_aspect(
   Array2D<float>   &aspects,
   float zscale
 ){
-  diagnostic("\n###Aspect attribute calculation\n");
+  std::cerr<<"\n###Aspect attribute calculation"<<std::endl;
   d8_terrain_attribute(elevations, aspects, TATTRIB_ASPECT, zscale);
 }
 
+template<class T>
 void d8_curvature(
   const Array2D<T> &elevations, 
   Array2D<float>   &curvatures, 
   float zscale
 ){
-  diagnostic("\n###Curvature attribute calculation\n");
+  std::cerr<<"\n###Curvature attribute calculation"<<std::endl;
   d8_terrain_attribute(elevations, curvatures, TATTRIB_CURVATURE, zscale);
 }
 
@@ -656,7 +656,7 @@ void d8_planform_curvature(
   Array2D<float>   &planform_curvatures,
   float zscale
 ){
-  diagnostic("\n###Planform curvature attribute calculation\n");
+  std::cerr<<"\n###Planform curvature attribute calculation"<<std::endl;
   d8_terrain_attribute(elevations, planform_curvatures,  TATTRIB_PLANFORM_CURVATURE, zscale);
 }
 
@@ -666,7 +666,7 @@ void d8_profile_curvature(
   Array2D<float>   &profile_curvatures,
   float zscale
 ){
-  diagnostic("\n###Profile curvature attribute calculation\n");
+  std::cerr<<"\n###Profile curvature attribute calculation"<<std::endl;
   d8_terrain_attribute(elevations, profile_curvatures,  TATTRIB_PROFILE_CURVATURE, zscale);
 }
 

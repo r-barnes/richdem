@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <queue>
+#include <cmath>
 
 /// Stores the (x,y) coordinates of a grid cell
 class grid_cell {

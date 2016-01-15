@@ -2,6 +2,12 @@
 #define _richdem_dinf_methods_hpp_
 
 #include <cmath>
+#include "../common/Array2D.hpp"
+
+///Definition of x offsets of D-inf neighbours
+static const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
+///Definition of y offsets of D-inf neighbours
+static const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
 
 /*
 We must convert the Dinf angle system to cells within the D8 system
@@ -84,7 +90,7 @@ static void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, fl
 /*//TODO: Debugging code used for checking for loops. Since loops should not occur in the output of the production code, this is not needed.
 bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
   int nh,nl;
-  if(! flowdirs.in_grid(c2x, c2y) || flowdirs(c2x,c2y)==flowdirs.no_data || flowdirs(c2x,c2y)==NO_FLOW)
+  if(! flowdirs.in_grid(c2x, c2y) || flowdirs(c2x,c2y)==flowdirs.noData() || flowdirs(c2x,c2y)==NO_FLOW)
     return false;
   where_do_i_flow(flowdirs(c2x,c2y),nh,nl);
   if(n==dinf_d8_inverse[nh] || (nl!=-1 && n==dinf_d8_inverse[nl])){
@@ -95,35 +101,40 @@ bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
   return false;
 }*/
 
-void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
-  char_2d dependency;
+void dinf_upslope_area(
+  const Array2D<float> &flowdirs,
+  Array2D<float> &area
+){
+  Array2D<int8_t> dependency;
   std::queue<grid_cell> sources;
   ProgressBar progress;
 
-  diagnostic("\n###Dinf Upslope Area\n");
+  std::cerr<<"\n###Dinf Upslope Area"<<std::endl;
 
-  diagnostic_arg("The sources queue will require at most approximately %ldMB of RAM.\n",flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024);
+  std::cerr<<"The sources queue will require at most approximately "
+           <<(flowdirs.viewWidth()*flowdirs.viewHeight()*((long)sizeof(grid_cell))/1024/1024)
+           <<"MB of RAM."<<std::endl;
 
-  diagnostic("Setting up the dependency matrix...");
-  dependency.copyprops(flowdirs);
+  std::cerr<<"Setting up the dependency matrix..."<<std::flush;
+  dependency.resize(flowdirs);
   dependency.init(0);
-  diagnostic("succeeded.\n");
+  std::cerr<<"succeeded."<<std::endl;
 
-  diagnostic("Setting up the area matrix...");
-  area.copyprops(flowdirs);
+  std::cerr<<"Setting up the area matrix..."<<std::flush;
+  area.resize(flowdirs);
   area.init(0);
-  area.no_data=dinf_NO_DATA;
-  diagnostic("succeeded.\n");
+  area.setNoData(dinf_NO_DATA);
+  std::cerr<<"succeeded."<<std::endl;
 
   bool has_cells_without_flow_directions=false;
-  diagnostic("%%Calculating dependency matrix & setting no_data cells...\n");
-  progress.start( flowdirs.width()*flowdirs.height() );
+  std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
+  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
   #pragma omp parallel for reduction(|:has_cells_without_flow_directions)
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++){
-      if(flowdirs(x,y)==flowdirs.no_data){
-        area(x,y)       = area.no_data;
+  for(int x=0;x<flowdirs.viewWidth();x++){
+    progress.update( x*flowdirs.viewHeight() );
+    for(int y=0;y<flowdirs.viewHeight();y++){
+      if(flowdirs(x,y)==flowdirs.noData()){
+        area(x,y)       = area.noData();
         dependency(x,y) = 9;  //Note: This is an unnecessary safety precaution
         continue;
       }
@@ -139,32 +150,32 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
         nlx = x+dinf_dx[n_low];
         nly = y+dinf_dy[n_low];
       }
-      if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data )
+      if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData() )
         dependency(nlx,nly)++;
-      if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data )
+      if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() )
         dependency(nhx,nhy)++;
     }
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
   if(has_cells_without_flow_directions)
-    diagnostic("\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m\n");
+    std::cerr<<"\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
 
-  diagnostic("%%Locating source cells...\n");
-  progress.start( flowdirs.width()*flowdirs.height() );
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++)
-      if(flowdirs(x,y)==flowdirs.no_data)
+  std::cerr<<"%%Locating source cells..."<<std::endl;
+  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
+  for(int x=0;x<flowdirs.viewWidth();x++){
+    progress.update( x*flowdirs.viewHeight() );
+    for(int y=0;y<flowdirs.viewHeight();y++)
+      if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(flowdirs(x,y)==NO_FLOW)
         continue;
       else if(dependency(x,y)==0)
         sources.push(grid_cell(x,y));
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
 
-  diagnostic("%%Calculating up-slope areas...\n");
-  progress.start( flowdirs.data_cells );
+  std::cerr<<"%%Calculating up-slope areas..."<<std::endl;
+  progress.start( flowdirs.numDataCells() );
   long int ccount=0;
   while(sources.size()>0){
     grid_cell c=sources.front();
@@ -173,7 +184,7 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
     ccount++;
     progress.update(ccount);
 
-    if(flowdirs(c.x,c.y)==flowdirs.no_data)  //TODO: This line shouldn't be necessary since NoData's do not get added below
+    if(flowdirs(c.x,c.y)==flowdirs.noData())  //TODO: This line shouldn't be necessary since NoData's do not get added below
       continue;
 
     area(c.x,c.y)+=1;
@@ -188,30 +199,23 @@ void dinf_upslope_area(const float_2d &flowdirs, float_2d &area){
 
     float phigh,plow;
     area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
-    if(flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data)
+    if(flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData())
       area(nhx,nhy)+=area(c.x,c.y)*phigh;
 
     if(n_low!=-1){
       nlx = c.x+dinf_dx[n_low];
       nly = c.y+dinf_dy[n_low];
-      if(flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.no_data){
+      if(flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData()){
         area(nlx,nly)+=area(c.x,c.y)*plow;
         if((--dependency(nlx,nly))==0)
           sources.push(grid_cell(nlx,nly));
       }
     }
 
-    if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.no_data && (--dependency(nhx,nhy))==0)
+    if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
       sources.push(grid_cell(nhx,nhy));
   }
-  diagnostic_arg(SUCCEEDED_IN,progress.stop());
+  std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
 }
-
-
-
-
-static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
-
-
 
 #endif

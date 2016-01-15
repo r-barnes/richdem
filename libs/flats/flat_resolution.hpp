@@ -148,8 +148,9 @@ void d8_flow_flats(
        to each cell to form a gradient away from higher terrain; cells not in a
        flat will have a value of 0.
 */
+template<class U>
 static void BuildAwayGradient(
-  const Array2D<uint8_t> &flowdirs,
+  const Array2D<U>       &flowdirs,
   Array2D<int32_t>       &flat_mask,
   std::deque<grid_cell>  edges,
   std::vector<int>       &flat_height,
@@ -237,8 +238,9 @@ static void BuildAwayGradient(
        terrain with the gradient towards lower terrain; cells not in a flat
        have a value of 0.
 */
+template<class U>
 static void BuildTowardsCombinedGradient(
-  const Array2D<uint8_t> &flowdirs,
+  const Array2D<U>       &flowdirs,
   Array2D<int32_t>       &flat_mask,
   std::deque<grid_cell>  edges,
   std::vector<int>       &flat_height,
@@ -375,12 +377,12 @@ static void label_this(
     2. **low_edges** will contain, in no particular order, all the low edge
        cells of the DEM: those flat cells adjacent to lower terrain.
 */
-template <class T>
+template <class T, class U>
 static void find_flat_edges(
-  std::deque<grid_cell>  &low_edges,
-  std::deque<grid_cell>  &high_edges,
-  const Array2D<uint8_t> &flowdirs,
-  const Array2D<T>       &elevations
+  std::deque<grid_cell> &low_edges,
+  std::deque<grid_cell> &high_edges,
+  const Array2D<U>      &flowdirs,
+  const Array2D<T>      &elevations
 ){
   int cells_without_flow=0;
   ProgressBar progress;
@@ -441,16 +443,15 @@ static void find_flat_edges(
        which is in a flat. Each flat's cells will bear a label unique to that
        flat.
 */
-template <class T>
+template <class T, class U>
 void resolve_flats_barnes(
-  Array2D<T>       &elevations,
-  Array2D<uint8_t> &flowdirs,
-  bool alter
+  const Array2D<T> &elevations,
+  const Array2D<U> &flowdirs,
+  Array2D<int32_t> &flat_mask,
+  Array2D<int32_t> &labels
 ){
   Timer timer;
   timer.start();
-
-  Array2D<int32_t> flat_mask, labels; //TODO: resize
 
   std::deque<grid_cell> low_edges,high_edges;  //TODO: Need estimate of size
 
@@ -513,18 +514,8 @@ void resolve_flats_barnes(
     flowdirs, flat_mask, low_edges, flat_height, labels
   );
 
-
-  if(alter){  
-    flowdirs.init(-4);
-    d8_flats_alter_dem(flat_mask, labels, elevations);
-    d8_flow_directions(elevations,flowdirs);
-  } else {
-    d8_flow_flats(flat_mask,labels,flowdirs);
-  }
-
   std::cerr<<"Calculation time for Barnes Flat Resolution algorithm: "<<timer.stop()<<"s."<<std::endl;
 }
-
 
 
 
@@ -589,6 +580,25 @@ void d8_flats_alter_dem(
     }
   }
   std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+}
+
+
+template<class T, class U>
+void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, bool alter){
+  d8_flow_directions(elevations,flowdirs);
+
+  Array2D<int32_t> flat_mask, labels;
+
+  resolve_flats_barnes(elevations,flowdirs,flat_mask,labels);
+
+  if(alter){  
+    //NOTE: If this value appears anywhere an error's occurred
+    flowdirs.init(155);
+    d8_flats_alter_dem(flat_mask, labels, elevations);
+    d8_flow_directions(elevations,flowdirs);
+  } else {
+    d8_flow_flats(flat_mask,labels,flowdirs);
+  }
 }
 
 #endif
