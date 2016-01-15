@@ -8,6 +8,7 @@
 #define _richdem_utility_hpp_
 
 #include <string>
+#include <iostream>
 #include <iomanip>
 #include <sys/time.h>
 #include <exception>

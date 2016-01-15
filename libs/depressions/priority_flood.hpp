@@ -2,6 +2,7 @@
 #define pit_fill_include
 #include "../common/Array2D.hpp"
 #include "../common/grid_cell.hpp"
+#include "../flowdirs/d8_flowdirs.hpp"
 #include <queue>
 #include <limits>
 #include <iostream>
