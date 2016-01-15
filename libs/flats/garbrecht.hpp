@@ -8,7 +8,7 @@
 typedef std::deque<grid_cell> flat_type;
 
 void FindFlats(
-	const Array2D<int8_t> &flowdirs,
+	const Array2D<uint8_t> &flowdirs,
 	flat_type &flats
 ){
 	for(int x=0;x<flowdirs.viewWidth();++x)
@@ -19,10 +19,10 @@ void FindFlats(
 
 template<class T>
 void GradientTowardsLower(
-	const Array2D<T>      &elevations,
-	const Array2D<int8_t> &flowdirs,
-	flat_type &flats,
-	Array2D<int32_t>      &inc1
+	const Array2D<T>       &elevations,
+	const Array2D<uint8_t> &flowdirs,
+	flat_type              &flats,
+	Array2D<int32_t>       &inc1
 ){
 	int loops              = 0;
 	int number_incremented = -1;
@@ -61,10 +61,10 @@ void GradientTowardsLower(
 
 template<class T>
 void GradientAwayFromHigher(
-	const Array2D<T>      &elevations,
-	const Array2D<int8_t> &flowdirs,
-	flat_type             &flats,
-	Array2D<int32_t>      &inc2
+	const Array2D<T>       &elevations,
+	const Array2D<uint8_t> &flowdirs,
+	flat_type              &flats,
+	Array2D<int32_t>       &inc2
 ){
 	int loops                       = 0;
 	unsigned int number_incremented = 0;
@@ -123,7 +123,7 @@ void CombineGradients(
 
 
 template<class T>
-void GarbrechtAlg(Array2D<T> &elevations, Array2D<int8_t> &flowdirs){
+void GarbrechtAlg(Array2D<T> &elevations, Array2D<uint8_t> &flowdirs){
   Timer flat_resolution_timer;
 
   flat_resolution_timer.start();

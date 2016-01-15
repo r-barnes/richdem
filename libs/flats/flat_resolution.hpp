@@ -148,9 +148,8 @@ void d8_flow_flats(
        to each cell to form a gradient away from higher terrain; cells not in a
        flat will have a value of 0.
 */
-template <class T>
 static void BuildAwayGradient(
-  const Array2D<T>       &flowdirs,
+  const Array2D<uint8_t> &flowdirs,
   Array2D<int32_t>       &flat_mask,
   std::deque<grid_cell>  edges,
   std::vector<int>       &flat_height,
@@ -238,9 +237,8 @@ static void BuildAwayGradient(
        terrain with the gradient towards lower terrain; cells not in a flat
        have a value of 0.
 */
-template <class T>
 static void BuildTowardsCombinedGradient(
-  const Array2D<T>       &flowdirs,
+  const Array2D<uint8_t> &flowdirs,
   Array2D<int32_t>       &flat_mask,
   std::deque<grid_cell>  edges,
   std::vector<int>       &flat_height,
@@ -377,12 +375,12 @@ static void label_this(
     2. **low_edges** will contain, in no particular order, all the low edge
        cells of the DEM: those flat cells adjacent to lower terrain.
 */
-template <class T, class U>
+template <class T>
 static void find_flat_edges(
-  std::deque<grid_cell> &low_edges,
-  std::deque<grid_cell> &high_edges,
-  const Array2D<T> &flowdirs,
-  const Array2D<U> &elevations
+  std::deque<grid_cell>  &low_edges,
+  std::deque<grid_cell>  &high_edges,
+  const Array2D<uint8_t> &flowdirs,
+  const Array2D<T>       &elevations
 ){
   int cells_without_flow=0;
   ProgressBar progress;
@@ -445,8 +443,8 @@ static void find_flat_edges(
 */
 template <class T>
 void resolve_flats_barnes(
-  Array2D<T>      &elevations,
-  Array2D<int8_t> &flowdirs,
+  Array2D<T>       &elevations,
+  Array2D<uint8_t> &flowdirs,
   bool alter
 ){
   Timer timer;
@@ -524,8 +522,7 @@ void resolve_flats_barnes(
     d8_flow_flats(flat_mask,labels,flowdirs);
   }
 
-  timer.stop();
-  std::cerr<<"Calculation time for Barnes algorithm: "<<timer.accumulated()<<"s."<<std::endl;
+  std::cerr<<"Calculation time for Barnes Flat Resolution algorithm: "<<timer.stop()<<"s."<<std::endl;
 }
 
 

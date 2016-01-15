@@ -10,7 +10,7 @@ int PerformAlgorithm(std::string alg, std::string filename, std::string output){
   Timer overall;
   overall.start();
 
-  Array2D<int8_t> flowdirs;
+  Array2D<uint8_t> flowdirs;
   Array2D<T> elevations(filename,false);
   d8_flow_directions(elevations,flowdirs);
 
@@ -27,7 +27,7 @@ int PerformAlgorithm(std::string alg, std::string filename, std::string output){
 
   flowdirs.saveGDAL(output, filename, 0, 0);
 
-  std::cout<<"Algorithm took "<<overall.accumulated()<<" seconds overall."<<std::endl;
+  std::cout<<"Algorithm took "<<overall.stop()<<" seconds overall."<<std::endl;
 
   return 0;
 }

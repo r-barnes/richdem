@@ -8,7 +8,9 @@
 #define _richdem_utility_hpp_
 
 #include <string>
+#include <iomanip>
 #include <sys/time.h>
+#include <exception>
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -36,27 +38,29 @@ class Timer{
     }
     void start(){
       if(running)
-        throw "Timer was already started!";
+        std::logic_error("Timer was already started!");
       running=true;
       gettimeofday(&start_time, NULL);
     }
-    void stop(){
+    double stop(){
       if(!running)
-        throw "Timer was already stopped!";
+        std::logic_error("Timer was already stopped!");
       running=false;
       timeval end_time;
       gettimeofday(&end_time, NULL);
 
       accumulated_time+=timediff(start_time,end_time);
+
+      return accumulated_time;
     }
     double accumulated(){
       if(running)
-        throw "Timer is still running!";
+        std::logic_error("Timer is still running!");
       return accumulated_time;
     }
     double lap(){
       if(!running)
-        throw "Timer was not started!";
+        std::logic_error("Timer was not started!");
       timeval lap_time;
       gettimeofday(&lap_time, NULL);
       return timediff(start_time,lap_time);
@@ -91,9 +95,11 @@ class ProgressBar{
       old_percent=percent;
 
       std::cerr<<"\r\033[2K["
-               <<std::string(percent/2, '=')
+               <<std::string(percent/2, '=')<<std::string(50-percent/2, ' ')
                <<"] ("
-               <<percent<<"% - "<<timer.lap()/percent*(100-percent)
+               <<percent<<"% - "
+               <<std::setprecision(1)<<timer.lap()/percent*(100-percent)
+               <<"s - "
                <<omp_get_num_threads()<< " threads)"<<std::flush;
     }
     double stop(){
