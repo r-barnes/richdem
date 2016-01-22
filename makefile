@@ -1,4 +1,4 @@
-export OMPI_CXX=clang++
+export OMPI_CXX=g++
 
 compile: main.cpp
 	mpic++ -o parallel_pit_fill.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system #-Wextra #-fsanitize=undefined #-Wextra -Wconversion
