@@ -128,81 +128,83 @@ def FillAndTest(
 
 
 
+def main():
+  if len(sys.argv)!=3:
+    print('Syntax: {0} <many/one> <Test DEM or Layout File>'.format(sys.argv[0]))
+    sys.exit(-1)
+
+  if not sys.argv[1] in ['many','one']:
+    print("Must specify 'many' or 'one'")
+    sys.exit(-1)
+
+  if not os.path.exists(sys.argv[2]):
+    print("Input file '{0}' does not exist!".format(sys.argv[2]))
+    sys.exit(-1)
+
+  print('Ensuring directories "out" and "temp" exist')
+  if not os.path.exists('out'):
+    os.makedirs('out')
+  if not os.path.exists('temp'):
+    os.makedirs('temp')
 
 
-
-if len(sys.argv)!=3:
-  print('Syntax: {0} <many/one> <Test DEM or Layout File>'.format(sys.argv[0]))
-  sys.exit(-1)
-
-if not sys.argv[1] in ['many','one']:
-  print("Must specify 'many' or 'one'")
-  sys.exit(-1)
-
-if not os.path.exists(sys.argv[2]):
-  print("Input file '{0}' does not exist!".format(sys.argv[2]))
-  sys.exit(-1)
-
-print('Ensuring directories "out" and "temp" exist')
-if not os.path.exists('out'):
-  os.makedirs('out')
-if not os.path.exists('temp'):
-  os.makedirs('temp')
+  basename = os.path.basename(sys.argv[2])
+  filename = os.path.splitext(os.path.basename(sys.argv[2]))[0]
 
 
-basename = os.path.basename(sys.argv[2])
-filename = os.path.splitext(os.path.basename(sys.argv[2]))[0]
+  if sys.argv[1]=='many' and not os.path.exists('out/{filename}_merged.tif'.format(filename=filename)):
+    print('Merging tile files to make dataset for authoritative answer')
+    #Merge the many files into one to create an authoritative copy
+    with open(sys.argv[2]) as fin:
+      filetiles = fin.read()
+      filetiles = filetiles.replace(',',' ').replace('\n',' ').replace('\r',' ')
+      filetiles = filetiles.split(' ')
+      filetiles = [os.path.dirname(sys.argv[2])+'/'+x for x in filetiles]
+
+      nodata,dtype = FileInfo(filetiles[0])
+
+      #Merge all of the file tiles together
+      a = doRaw("""gdal_merge.py -o out/{filename}_merged.tif -of GTiff \\
+                             -ot {dtype} -n {nodata} -a_nodata {nodata} \\
+                             {filetiles}""".format(
+                              filename  = filename,
+                              dtype     = dtype,
+                              nodata    = nodata,
+                              filetiles = ' '.join(filetiles)))
+      if a.returncode!=0:
+        print('Error merging!')
+        sys.exit(-1)
+
+    auth_input = "out/{filename}_merged.tif".format(filename=filename)
+  else:
+    auth_input = sys.argv[2]
 
 
-if sys.argv[1]=='many' and not os.path.exists('out/{filename}_merged.tif'.format(filename=filename)):
-  print('Merging tile files to make dataset for authoritative answer')
-  #Merge the many files into one to create an authoritative copy
-  with open(sys.argv[2]) as fin:
-    filetiles = fin.read()
-    filetiles = filetiles.replace(',',' ').replace('\n',' ').replace('\r',' ')
-    filetiles = filetiles.split(' ')
-    filetiles = [os.path.dirname(sys.argv[2])+'/'+x for x in filetiles]
+  if sys.argv[1]=='many':
+    filename  += '_merged'
+    sizes = [-1]
+  else:
+    sizes = [500,600,700]
 
-    nodata,dtype = FileInfo(filetiles[0])
 
-    #Merge all of the file tiles together
-    a = doRaw("""gdal_merge.py -o out/{filename}_merged.tif -of GTiff \\
-                           -ot {dtype} -n {nodata} -a_nodata {nodata} \\
-                           {filetiles}""".format(
-                            filename  = filename,
-                            dtype     = dtype,
-                            nodata    = nodata,
-                            filetiles = ' '.join(filetiles)))
-    if a.returncode!=0:
-      print('Error merging!')
-      sys.exit(-1)
+  print('Generating authoritative answer')
+  doRaw('mpirun -n 4 ./parallel_pit_fill.exe one @offloadall {file} out/singlecore-'.format(file=auth_input))
 
-  auth_input = "out/{filename}_merged.tif".format(filename=filename)
-else:
-  auth_input = sys.argv[2]
+  print('Authoritative: '+'out/singlecore-{filename}-0-fill.tif'.format(filename=filename))
 
-if sys.argv[1]=='many':
-  filename  += '_merged'
-  sizes = [-1]
-else:
-  sizes = [500,600,700]
+  for width in sizes:
+    for height in sizes:
+      for strat in ['@offloadall','@retainall','@saveall']:
+        ret = FillAndTest(
+          authoritative = 'out/singlecore-{filename}-0-fill.tif'.format(filename=filename),
+          n             = 100 if strat=='@retainall' else 3,
+          many          = (sys.argv[1]=='many'),
+          strat         = strat,
+          inpfile       = sys.argv[2],
+          width         = width,
+          height        = height,
+          flipV         = False,
+          flipH         = False
+        )
 
-print('Generating authoritative answer')
-doRaw('mpirun -n 4 ./parallel_pit_fill.exe one @offloadall {file} out/singlecore-'.format(file=auth_input))
-
-print('Authoritative: '+'out/singlecore-{filename}-0-fill.tif'.format(filename=filename))
-
-for width in sizes:
-  for height in sizes:
-    for strat in ['@offloadall','@retainall','@saveall']:
-      ret = FillAndTest(
-        authoritative = 'out/singlecore-{filename}-0-fill.tif'.format(filename=filename),
-        n             = 100 if strat=='@retainall' else 3,
-        many          = (sys.argv[1]=='many'),
-        strat         = strat,
-        inpfile       = sys.argv[2],
-        width         = width,
-        height        = height,
-        flipV         = False,
-        flipH         = False
-      )
+main()
