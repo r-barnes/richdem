@@ -49,7 +49,7 @@ def FillAndTest(
   flipH = '--flipH' if flipH  else ''
 
   #Do the stuff
-  a = doRaw("""time mpirun -n {n} ./parallel_pit_fill.exe {manyone} {intermed} \\
+  a = doRaw("""time mpirun -n {n} ./parallel_pf.exe {manyone} {intermed} \\
     {inpfile} temp/{strat}_{width}_{height}_{filename}_ -w {width} -h {height} {flipV}     \\
     {flipH}""".format(
       n        = n,
@@ -188,7 +188,7 @@ def main():
 
 
   print('Generating authoritative answer')
-  doRaw('mpirun -n 4 ./parallel_pit_fill.exe one @offloadall {file} out/singlecore-'.format(file=auth_input))
+  doRaw('mpirun -n 4 ./parallel_pf.exe one @offloadall {file} out/singlecore-'.format(file=auth_input))
 
   print('Authoritative: '+'out/singlecore-{filename}-0-fill.tif'.format(filename=filename))
 
