@@ -3,6 +3,8 @@
 
 //Are all serials unique?
 //    ./test.exe | awk '{print $1}' | sort -n | uniq -c | sed 's/^\s*//' | sort -n -k 1
+//Do all serials have a good bidirectional mapping?
+//    ./test.exe | sort -n -k 1 | awk '{print $5}' | sort -r
 
 template<class T>
 int xyToSerial(const int x, const int y, const Array2D<T> &grid){
