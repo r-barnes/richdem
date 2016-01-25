@@ -1,2 +1,3 @@
 a.out
 test_output*.log
+*.exe
