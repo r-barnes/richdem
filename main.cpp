@@ -71,7 +71,6 @@ class ChunkInfo{
   int32_t     x,y,width,height,gridx,gridy;
   int32_t     id;
   bool        nullChunk;
-  label_t     label_offset,label_increment; //Used for convenience in Producer()
   std::string filename;
   std::string outputname;
   std::string retention;
