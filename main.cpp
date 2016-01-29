@@ -1,101 +1,177 @@
-//Parallel D8 Flow Accumulation
-//Author: Richard Barnes (rbarnes@umn.edu)
-//Date:   2015-02-21
+//Compile with
+// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system
+// mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
+// TODO: MPI abort
+// TODO: See optimization notes at "http://www.boost.org/doc/libs/1_56_0/doc/html/mpi/tutorial.html"
+// For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
+// abs("single_proc@1"-"merged@1")>0
+// SRTM data: https://dds.cr.usgs.gov/srtm/version2_1/SRTM1/Region_03/
 #include "gdal_priv.h"
 #include <iostream>
-#include <queue>
+#include <iomanip>
 #include <boost/mpi.hpp>
+#include <boost/serialization/map.hpp>
+#include "Zhou2015pf.hpp"
+#include "Barnes2014pf.hpp"
 #include <string>
-#include <limits>
-#include <cstdint>
+#include <queue>
 #include <vector>
+#include <limits>
+#include <fstream> //For reading layout files
+#include <sstream> //Used for parsing the <layout_file>
+#include <boost/filesystem.hpp>
+
+//We use the cstdint library here to ensure that the program behaves as expected
+//across platforms, especially with respect to the expected limits of operation
+//for data set sizes and labels. For instance, in C++, a signed integer must be
+//at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
+//this is, after all, for use with large datasets.
+#include <cstdint>
+#include "Array2D.hpp"
+#include "common.hpp"
 //#define DEBUG 1
 
-#ifdef DEBUG
-  #include <fstream>
-#endif
+//TODO: Is it possible to run this without mpirun if we specify a single node
+//job?
 
-//These tags are used to identify the data being sent around by MPI. Each piece
-//of information being sent should have a unique code.
-#define TOP_LINKS_TAG        1
-#define BOT_LINKS_TAG        2
-#define TOP_ACCUMULATION_TAG 3
-#define BOT_ACCUMULATION_TAG 4
-#define TOP_FLOWDIRS_TAG     5
-#define BOT_FLOWDIRS_TAG     6
-#define SYNC_SIG             7
+//For reference, this is the definition of the RasterIO() function
+//CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
+//                                 int nXOff, int nYOff, int nXSize, int nYSize,
+//                                 void * pData, int nBufXSize, int nBufYSize,
+//                                 GDALDataType eBufType,
+//                                 int nPixelSpace,
+//                                 int nLineSpace )
+//
 
 
-//This program assumes its input is in the form of a D8 flow direction matrix.
-//Each cell's accumulated flow will be directed to one neighbouring cell. That
-//neighbouring cell is identified with a neighbour code. If no flow is sent to
-//any neighbouring cell, then the code `0` is used. The following codes are used
-//to identify the eight neighbours:
-//    234
-//    105
-//    876
+typedef uint32_t label_t;
 
-//Using the above definition of neighbours, we can generate an x- and y-offset
-//for each neighbour allowing us to succinctly address neighbours using:
-//    x0+dx[n]
-//    y0+dy[n]
-//Note that the neighbours will be in the range [1,8] whereas index 0 refers to
-//the central cell.
+typedef uint8_t dependency_t;
+typedef Array2D<depenency_t> Dependencies;
 
-///x offsets of D8 neighbours, from a central cell
-const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
-///y offsets of D8 neighbours, from a central cell
-const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
-
-//Later in the program we will generate queues of grid cells to visit. The
-//GridCell class is used to store the x and y values of these cells.
-class GridCell{
+class ChunkInfo{
+ private:
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & edge;
+    ar & flip;
+    ar & x;
+    ar & y;
+    ar & width;
+    ar & height;
+    ar & gridx;
+    ar & gridy;
+    ar & id;
+    ar & nullChunk;
+    ar & filename;
+    ar & outputname;
+    ar & retention;
+  }
  public:
-  int x,y;
-  GridCell(int x, int y) : x(x), y(y) {}
+  uint8_t     edge;
+  uint8_t     flip;
+  int32_t     x,y,width,height,gridx,gridy;
+  int32_t     id;
+  bool        nullChunk;
+  label_t     label_offset,label_increment; //Used for convenience in Producer()
+  std::string filename;
+  std::string outputname;
+  std::string retention;
+  ChunkInfo(){
+    nullChunk = true;
+  }
+  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+    this->nullChunk    = false;
+    this->edge         = 0;
+    this->x            = x;
+    this->y            = y;
+    this->width        = width;
+    this->height       = height;   
+    this->gridx        = gridx;
+    this->gridy        = gridy;
+    this->id           = id;
+    this->filename     = filename;
+    this->outputname   = outputname;
+    this->retention    = retention;
+    this->flip         = 0;
+  }
 };
 
-//The flow directions matrix stores the flow directions, as defined above. Since
-//valid flow directions are in the range [0,8] with an additional value for
-//no_data, we can store everything in the space of a single byte.
-typedef int8_t flowdir_t;
-typedef std::vector<flowdir_t> FlowdirsRow;
-typedef std::vector< FlowdirsRow > Flowdirs;
+template<class elev_t>
+class Job1 {
+ private:
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & links;
+    ar & accum;
+    ar & flowdirs;
+    ar & dependencies;
 
-//Since each cell drains entirely into a neighbouring cell, the flow
-//accumulation is an integer. In the worst case, the maximal accumulation may be
-//width*height of the entire input. This calls for at least a 32-bit integer. At
-//the time of writing this usually permits values up to 2,147,483,647.
-typedef int32_t accum_t;
-typedef std::vector<accum_t> AccumRow;
-typedef std::vector< AccumRow > Accum;
+    ar & time_calc;
+    ar & time_overall;
+    ar & time_io;
+  }
+ public:
+  std::vector<link_t   >    links;
+  std::vector<accum_t  >    accum;
+  std::vector<flowdir_t>    flowdirs;
+  std::vector<dependency_t> dependencies;
+  double time_calc, time_overall, time_io;
+  Job1(){}
+};
 
-//Most cells flow into another cell. The number of cells flow into a cell
-//represent its dependency count, which can be a value in the range [0,8]. Thus,
-//a single byte is appropriate for storing dependency information.
-typedef int8_t dependency_t;
-typedef std::vector<dependency_t> DependenciesRow;
-typedef std::vector< DependenciesRow > Dependencies;
+//TODO: What are these for?
+const int TAG_WHICH_JOB   = 0;
+const int TAG_CHUNK_DATA  = 1;
+const int TAG_DONE_FIRST  = 2;
+const int TAG_SECOND_DATA = 3;
+const int TAG_DONE_SECOND = 4;
 
-//The links array maps the originating cells of flow paths that begin on a top
-//or bottom edge of a segment to their terminal cells. It does this by storing
-//the x-location of the terminal cell and using the integer value's negative
-//sign to indicate whether the terminal cell is in the top or bottom row. Hence,
-//a signed integer capable of storing values up to the width of the input is
-//necessary.
-typedef int32_t links_t;
-typedef std::vector<links_t> LinksRow;
-typedef std::vector< LinksRow > Links;
+const int SYNC_MSG_KILL = 0;
+const int JOB_CHUNK     = 1;
+const int JOB_FIRST     = 2;
+const int JOB_SECOND    = 3;
 
-//When we are following flow paths sometimes a flow path will terminate in a
-//place which guarnatees its flow cannot reach another segment and, therefore,
-//that no other segment can be dependent on that flow path for its processing.
-//We mark all such flow paths with the FLOW_TERMINATES value.
-#define FLOW_TERMINATES std::numeric_limits<int>::max()
+const uint8_t FLIP_VERT   = 1;
+const uint8_t FLIP_HORZ   = 2;
+
+int xyToSerial(const int x, const int y, const int width, const int height){
+  assert((x==0 || x==width-1) && (y==0 || y==height-1));
+
+  if(y==0)                                         //Top row
+    return x;
+
+  if(x==width-1)                        //Right hand side
+    return width+y;
+
+  if(y==height-1)      
+    return width+height+x;   //Bottom-row
+
+  return 2*width+height+y;   //Left-hand side
+}
+
+void serialToXY(const int serial, int &x, int &y, const int width, const int height){
+  if(serial<width){                            //Top row
+    x = serial;
+    y = 0;
+  } else if(serial<width+height){   //Right-hand side
+    x = width-1;
+    y = serial-width;
+  } else if(serial<2*width+height){ //Bottom row
+    x = serial-width-height;
+    y = height-1;
+  } else {                                                //Left-hand side
+    x = 0;
+    y = serial-2*width-height; 
+  }
+
+  assert((x==0 || x==width-1) && (y==0 || y==height-1));
+}
 
 
-
-
+//TODO: Check this description
 //This function takes a matrix of flow directions and an initial cell (x0,y0).
 //Starting at the initial cell, it follows the path described by the flow
 //direction matrix until it reaches an edge of the grid, a no_data cell, or a
@@ -109,73 +185,49 @@ typedef std::vector< LinksRow > Links;
 //After running this function on all the top and bottom edge cells, we can
 //quickly determine the ultimate destination of any initial cell.
 void FollowPath(
-  const int x0,              //x-coordinate of initial cell
-  const int y0,              //y-coordinate of initial cell
-  const Flowdirs &flowdirs,  //Flow directions matrix
-  const flowdir_t no_data,   //no_data value for flow directions matrix
-  LinksRow &top_row_links,   //Output! Where the top initial cells go
-  LinksRow &bottom_row_links //Output! Where the bottom initial cells go
+  const int x0,                       //x-coordinate of initial cell
+  const int y0,                       //y-coordinate of initial cell
+  const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+  std::vector<link_t>      &links
 ){
-  const int width  = flowdirs[0].size();
-  const int height = flowdirs.size();
-  int x            = x0;
-  int y            = y0;
+  int x = x0;
+  int y = y0;
 
   while(true){                     //Follow the flow path until we reach its end
-    int n  = flowdirs[y][x];       //Neighbour the current cell flows towards
+    int n = flowdirs(x,y);         //Neighbour the current cell flows towards
 
-    int nx,ny;                     //Neighbour's coordinates
-    if(n<=0 || n==no_data){        //n<=0 indicates internal drainage or an
-      n = 0;                       //invalid flow direction. Make a note of this
-    } else {                       //with n=0.
-      nx = x+dx[n];       //Valid flow direction. Mark neighbour's x-coordinate.
-      ny = y+dy[n];       //Valid flow direction. Mark neighbour's y-coordinate.
+    //If the neighbour this cell flows into is a no_data cell or this cell does
+    //not flow into any neighbour, then mark the initial cell from which we
+    //began this flow path as terminating somewhere unimportant: its flow cannot
+    //pass to neighbouring segments/nodes for further processing.
+    if(flowdirs.isNoData(x,y) || n==NO_FLOW){
+      links[xyToSerial(x0,y0,flowdirs)] = FLOW_TERMINATES;
+      return;
     }
 
-    //If the neighbour this cell flows into is off one of the sides of the grid,
-    //or a no_data cell, or this cell does not flow into any neighbour, then
-    //mark the initial cell from which we began this flow path as terminating
-    //somewhere unimportant: its flow cannot pass to neighbouring segments/nodes
-    //for further processing.
-    if(n==0 || nx<0 || nx==width){
-      if(y0==0) //Initial cell was on the top row of the segment
-        top_row_links[x0]    = FLOW_TERMINATES;
-      else      //Initial cell was on the bottom row of the segment
-        bottom_row_links[x0] = FLOW_TERMINATES;
+    //Flow direction was valid. Where does it lead?
+    int nx = x+dx[n]; //Get neighbour's x-coordinate.
+    int ny = y+dy[n]; //Get neighbour's y-coordinate.
 
+    //The neighbour cell is off one of the sides of the tile. Therefore, its
+    //flow may be passed on to a neighbouring tile. Thus, we need to link this
+    //flow path's initial cell to this terminal cell.
+    if(!flowdirs.in_grid(nx,ny)) {
+      //This is still the first cell. The flow was never directed into the grid
+      //to begin with, so we mark this as a termination cell: it potentially
+      //gives flow to other tiles, but does not receive flow.
+      if(x==x0 && y==y0) 
+        links[xyToSerial(x0,y0,flowdirs)] = FLOW_EXTERNAL;
+      else
+        links[xyToSerial(x0,y0,flowdirs)] = xyToSerial(x,y);
       return;
-
-    //The neighbour cell is off the top or bottom of the segment. Therefore, its
-    //flow may be passed on to a neighbouring segment. Thus, we need to link
-    //this flow path's initial cell to this terminal cell. We want to minimize
-    //data storage and transfer requirements, so we wish to indicate where the
-    //terminal cell is using a single integer. Therefore, we store the terminal
-    //cell's x-coordinate and use the negative sign to indicate that the
-    //terminal cell was in the top row and the positive sign to indicate the
-    //terminal cell was in the bottom row.
-    } else if(ny<0 || ny==height){
-      if(ny<0)  //If ny<0, the terminal cell is in the top row.
-        x = -x; //Indicate this by making the x-coordinate negative.
-      else      //If ny==height, terminal cell is in bottom row. Take x+1.
-        x++;    //Thus (-Inf,0] implies ny<0 while [1,Inf) implies ny==height.
-                //Ignoring the value INT_MAX that we use to indicate a terminal
-                //flow path.
-
-      if(y0==0) //Initial cell was in the top row
-        top_row_links[x0]    = x;
-      else      //Initial cell was in the bottom row
-        bottom_row_links[x0] = x;
-
-      return;
+    }
 
     //The flow path has not yet terminated. Continue following it.
-    } else {
-      x = nx;
-      y = ny;
-    }
+    x = nx;
+    y = ny;
   }
 }
-
 
 //As in the function above, we will start at an initial cell and follow its flow
 //direction to its neighbour. Then we will follow the neighbour's flow direction
@@ -188,139 +240,77 @@ void FollowPath(
 void FollowPathAdd(
   int x,                     //Initial x-coordinate
   int y,                     //Initial y-coordinate
-  const Flowdirs &flowdirs,  //Flow directions matrix
-  const flowdir_t no_data,   //no_data value for  the flow directions matrix
-  Accum &accum,              //Flow accumulation matrix
-  const int additional_accum //Accumulation to add to each cell on the flow path
+  const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+  Array2D<accum_t>         &accum,
+  const accum_t additional_accum
 ){
-  int height = flowdirs.size();
-  int width  = flowdirs[0].size();
-
-  //Break when we reach a no_data cell
-  if(flowdirs[y][x]==no_data)
-    return;
-
   //Follow the flow path until it terminates
   while(true){
+    //Break when we reach a no_data cell
+    if(flowdirs.isNoData(x,y))
+      return;
+    
     //Add additional flow accumulation to this cell
-    accum[y][x] += additional_accum;
+    accum(x,y) += additional_accum;
 
-    int n = flowdirs[y][x];  //Get neighbour
-    if(n<=0 || n==no_data)   //This cell doesn't flow to a neighbour or is a
-      return;                //no_data cell
+    int n = flowdirs(x,y); //Get neighbour
+    if(n==NO_FLOW)         //This cell doesn't flow to a neighbour
+      return;              
 
     //Move to neighbour
     x += dx[n];
     y += dy[n];
 
     //The neighbour is off the edge of the grid. Flow path has terminated
-    if(x<0 || x==width || y<0 || y==height)
+    if(!flowdirs.in_grid(x,y))
       return;
   }
 }
 
-
-
-
-//This function handles all the functions of non-master nodes. The non-master
-//nodes are labeled [0,total_number_of_nodes). Input is the name of the flow
-//directions file to be read and processed.
-
-//Each non-master node reads in a portion of the total input data and performs
-//as many calculations with it as it can. It then passes a small amount of data
-//to the master node which returns a small amount of data that enables each
-//non-master node to complete the calculation as though everything had been done
-//on a single node.
-void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
-  GDALAllRegister();              //Load GDAL drivers so we can read and write
-  boost::mpi::communicator world; //Open MPI communication line
-
-  //Open dataset
-  GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
-  if(fin==NULL){
-    std::cerr<<"Could not open file: "<<flowdir_fname<<std::endl;
-    return;
-  }
-
-  //The first band is assumed to contain the flow directions
-  GDALRasterBand *flowband = fin->GetRasterBand(1);
-  flowdir_t no_data        = flowband->GetNoDataValue();
-  int width                = flowband->GetXSize();
-  int height               = flowband->GetYSize();
-
-  //Each non-master node reads in a segment of the total input data. Here we
-  //figure out what segment is assigned to this node.
-  int segment_first_line = (height/total_number_of_nodes)*my_node_number;
-  int segment_last_line  = (height/total_number_of_nodes)*(my_node_number+1);
-
-  //If this is the last node, then read in all of the reamining data
-  if(my_node_number==total_number_of_nodes-1)
-    segment_last_line = height;
-  int segment_height = segment_last_line - segment_first_line;
-
-  auto data_type = flowband->GetRasterDataType();
-
-  if(data_type!=GDT_Int32 && data_type!=GDT_Byte){
-    std::cerr<<"Bad datatype. Got "<<GDALGetDataTypeName(data_type)<<std::endl;
-    return;
-  }
-
-  //Read in the D8 flow directions data, one row at a time
-  Flowdirs flowdirs(segment_height, FlowdirsRow(width));
-  for(int y=segment_first_line;y<segment_last_line;y++){
-    //Read data using its native format and cast it data into our internal flowdir_t format.
-    //Using `y-segment_first_line` converts from where we are reading in the
-    //data to where that data is stored internally.
-    if(data_type==GDT_Byte){
-      std::vector<int8_t> temp(width);
-      flowband -> RasterIO(GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Byte, 0, 0);
-      flowdirs[y-segment_first_line] = FlowdirsRow(temp.begin(),temp.end());
-    } else if (data_type==GDT_Int32){
-      std::vector<int32_t> temp(width);
-      flowband -> RasterIO(GF_Read, 0, y, width, 1, temp.data(), width, 1, GDT_Int32, 0, 0);
-      flowdirs[y-segment_first_line] = FlowdirsRow(temp.begin(),temp.end());
-    }
-  }
-
-
-  //Each cell that flows points to a neighbouring cell. But not every cell is
-  //pointed at. Cells which are not pointed at are the peaks from which flow
-  //originates. In order to calculate the flow accumulation we begin at peaks
-  //and pass flow downwards. Once flow has been passed downwards, the cell
-  //receiving the flow no longer needs to wait for the cell which passed the
-  //flow. When the receiving cell has no cells on which it is waiting, it then
-  //becomes a peak itself. The number of cells pointing at a cell is its
-  //"dependency count". In this section of the code we find each cell's
-  //dependency count.
+void FlowAccumulation(
+  const Array2D<flowdir_t> &flowdirs,
+  Array2D<accum_t>         &accum
+){
+  //Each cell that flows points to a neighbouring cell. But not every cell
+  //is pointed at. Cells which are not pointed at are the peaks from which
+  //flow originates. In order to calculate the flow accumulation we begin at
+  //peaks and pass flow downwards. Once flow has been passed downwards, the
+  //cell receiving the flow no longer needs to wait for the cell which
+  //passed the flow. When the receiving cell has no cells on which it is
+  //waiting, it then becomes a peak itself. The number of cells pointing at
+  //a cell is its "dependency count". In this section of the code we find
+  //each cell's dependency count.
   std::cerr<<"Calculating dependencies..."<<std::endl;
-  Dependencies dependencies(segment_height, DependenciesRow(width,0));
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++){
-    int n = flowdirs[y][x]; //The neighbour this cell flows into
+  Dependencies dependencies;
+  dependencies.resize(flowdirs,0);
+  for(int y=0;y<viewHeight();y++)
+  for(int x=0;x<viewWidth();x++){
+    int n = flowdirs(x,y); //The neighbour this cell flows into
 
-    if(n<=0 || n==no_data)  //This cell does not flow into a neighbour
-      continue;             //Or this cell is a no_data cell
+    //TODO "n<=0"?
+    if(n<=0 || flowdirs.isNoData(x,y))  //This cell does not flow into a neighbour
+      continue;                         //Or this cell is a no_data cell
 
     int nx = x+dx[n];       //x-coordinate of the neighbour
     int ny = y+dy[n];       //y-coordinate of the neighbour
 
     //Neighbour is not on the grid
-    if(nx<0 || ny<0 || nx==width || ny==segment_height)
+    if(!flowdirs.in_grid(nx,ny))
       continue;
 
     //Neighbour is valid and is part of the grid. The neighbour depends on this
     //cell, so increment its dependency count.
-    dependencies[ny][nx]++;
+    dependencies(nx,ny)++;
   }
 
   //Now that we know how many dependencies each cell has, we can determine which
   //cells are the peaks: the sources of flow. We make a note of where the peaks
   //are for later use.
   std::queue<GridCell> sources;
-  for(int y=0;y<segment_height;y++)
-  for(int x=0;x<width;x++)
+  for(int y=0;y<dependencies.viewHeight();y++)
+  for(int x=0;x<dependencies.viewWidth();x++)
     //Valid cell with no dependencies: a peak!
-    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data)
+    if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
       sources.emplace(x,y);
 
   //Now that we know where the sources of flow are, we can start at this. Each
@@ -328,18 +318,21 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
   //and any other accumulation it has gathered along its flow path to its
   //neighbour and decrements the neighbours dependency count. When a neighbour
   //has no more dependencies, it becomes a source.
-  Accum accum(segment_height,AccumRow(width,0));
+  accum.resize(flowdirs,0);
   while(!sources.empty()){         //There are sources remaining
     GridCell c = sources.front();  //Grab a source. Order is not important here.
     sources.pop();                 //We've visited this source. Discard it.
 
-    int n = flowdirs[c.y][c.x];    //Who is this source's neighbour?
-    if(n==no_data)                 //Oh snap! This isn't a real cell!
+    if(flowdirs.isNoData(c.x,c.y)) //Oh snap! This isn't a real cell!
       continue;
 
-    accum[c.y][c.x]++;             //This is a real cell, and it accumulates one
-                                   //cell's worth of flow automatically.
 
+    accum(c.x,c.y)++;              //This is a real cell, and it accumulates
+                                   //one cell's worth of flow automatically.
+
+    int n = flowdirs(c.x,c.y);     //Who is this source's neighbour?
+
+    //TODO: NO_FLOW
     if(n<=0)                       //This cell doesn't flow anywhere.
       continue;                    //Move on to the next source.
 
@@ -347,173 +340,260 @@ void doNode(int my_node_number, int total_number_of_nodes, char *flowdir_fname){
     int ny = c.y+dy[n];            //Make a note of where
 
     //This cell flows of the edge of the grid. Move on to next source.
-    if(nx<0 || nx==width || ny<0 || ny==segment_height)
+    if(!flowdirs.in_grid(nx,ny))
       continue;
     //This cell flows into a no_data cell. Move on to next source.
-    if(flowdirs[ny][nx]==no_data)
+    if(flowdirs.isNoData(nx,ny))
       continue;
 
     //This cell has a neighbour it flows into. Add to its accumulation.
-    accum[ny][nx] += accum[c.y][c.x];
+    accum(nx,ny) += accum(c.x,c.y);
     //Decrement the neighbour's dependencies.
-    dependencies[ny][nx]--;
+    dependencies(nx,ny)--;
 
     //The neighbour has no more dependencies, so it has become a source
-    if(dependencies[ny][nx]==0)
+    if(dependencies(nx,ny)==0)
       sources.emplace(nx,ny);
   }
-
-  //Some flow paths originate at the top and bottom of the segment this node is
-  //processing. These arrays indicate where flow paths beginning at the top or
-  //bottom of the segment terminate.
-  LinksRow top_row_links   (width,FLOW_TERMINATES);
-  LinksRow bottom_row_links(width,FLOW_TERMINATES);
-
-  //If we are the top segment, nothing can flow into us, so we do not need to
-  //know where flow paths originating at the top go to. On the otherhand, if we
-  //are not the top segment, then consider each cell of the top row and find out
-  //where its flow goes to.
-  if(my_node_number!=0)
-    for(int x=0;x<width;x++)
-      //Only consider cells whose flow is directed down into the segment
-      if( (5<=flowdirs[0][x] && flowdirs[0][x]<=8) || flowdirs[0][x]==1)
-        FollowPath(x,0,flowdirs,no_data,top_row_links,bottom_row_links);
-
-  //If we are the bottom segment, nothing can flow into us, so we do not need to
-  //know where flow paths originating at the bottom go to. On the otherhand, if
-  //we are not the bottom segment, then consider each cell of the bottom row and
-  //find out where its flow goes to.
-  if(my_node_number!=total_number_of_nodes-1)
-    for(int x=0;x<width;x++)
-      //Only consider cells whose flow is directed up into the segment
-      if(1<=flowdirs[segment_height-1][x] && flowdirs[segment_height-1][x]<=5)
-        FollowPath(x,segment_height-1,flowdirs,no_data,top_row_links,bottom_row_links);
-
-  //Send our partial computation to the master node
-  world.send(0, TOP_LINKS_TAG,        top_row_links);
-  world.send(0, BOT_LINKS_TAG,        bottom_row_links);
-  world.send(0, TOP_ACCUMULATION_TAG, accum.front());
-  world.send(0, BOT_ACCUMULATION_TAG, accum.back());
-  world.send(0, TOP_FLOWDIRS_TAG,     flowdirs.front());
-  world.send(0, BOT_FLOWDIRS_TAG,     flowdirs.back());
-
-  //Receive results of master node's computation. The master node will return
-  //two arrays indicating how much additional flow must be added to each flow
-  //cell's flow path.
-  AccumRow accum_top(width), accum_bot(width);
-  world.recv(0, TOP_ACCUMULATION_TAG, accum_top);
-  world.recv(0, BOT_ACCUMULATION_TAG, accum_bot);
-
-  //If we are not the top segment, considering each cell in the top row. If that
-  //cell and its flow path should have additional accumulation, add it.
-  if(my_node_number!=0)
-    for(int x=0;x<width;x++)
-      if(accum_top[x])
-        FollowPathAdd(x, 0, flowdirs, no_data, accum, accum_top[x]);
-
-  //If we are not the bottom segment, considering each cell in the bottom row.
-  //If that cell and its flow path should have additional accumulation, add it.
-  if(my_node_number!=total_number_of_nodes-1)
-    for(int x=0;x<width;x++)
-      if(accum_bot[x])
-        FollowPathAdd(x, segment_height-1, flowdirs, no_data, accum, accum_bot[x]);
-
-
-  //At this point we're done with the calculation! Boo-yeah!
-
-  //Load an output driver
-  GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-  if(poDriver==NULL){
-    std::cerr<<"Could not open GDAL driver."<<std::endl;
-    return;
-  }
-
-  //Open an output file
-  std::string output_name = std::string("output")+std::to_string(my_node_number)+std::string(".tif");
-  GDALDataset *fout       = poDriver->Create(output_name.c_str(), width, segment_height, 1, GDT_Int32, NULL);
-  if(fout==NULL){
-    std::cerr<<"could not create output file."<<std::endl;
-    return;
-  }
-
-  //The geotransform maps each grid cell to a point in an affine-transformed
-  //projection of the actual terrain. The geostransform is specified as follows:
-  //    Xgeo = GT(0) + Xpixel*GT(1) + Yline*GT(2)
-  //    Ygeo = GT(3) + Xpixel*GT(4) + Yline*GT(5)
-  //In case of north up images, the GT(2) and GT(4) coefficients are zero, and
-  //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
-  //position is the top left corner of the top left pixel of the raster.
-  double geotrans[6];
-  fin->GetGeoTransform(geotrans);
-
-  //We shift the top-left pixel of the image southward to the appropriate
-  //coordinate
-  geotrans[3] += my_node_number*segment_height*geotrans[5];
-  fout->SetGeoTransform(geotrans);
-
-  //Copy the projection from the input file
-  const char* projection_string=fin->GetProjectionRef();
-  fout->SetProjection(projection_string);
-
-  //We will write all of the data to the first raster band
-  GDALRasterBand *oband = fout->GetRasterBand(1);
-
-  //Since each real cell will have an accumulation of at least one, a no_data
-  //value of zero is perfectly appropriate.
-  oband->SetNoDataValue(0);
-
-  std::cerr<<"Writing out."<<std::endl;
-  //Debugging mode prints an ASCII file suitable for reviewing by hand if the
-  //input is small
-  #ifdef DEBUG
-    std::ofstream foutasc( std::string("output") + std::to_string(my_node_number) + std::string(".asc") );
-  #endif
-  for(int y=0;y<segment_height;y++){
-    oband->RasterIO(GF_Write, 0, y, width, 1, accum[y].data(), width, 1, GDT_Int32, 0, 0);
-    #ifdef DEBUG
-      for(int x=0;x<width;x++)
-        foutasc<<accum[y][x]<<" ";
-      foutasc<<std::endl;
-    #endif
-  }
-
-  GDALClose(fin);
-  GDALClose(fout);
 }
 
 
+template<class T>
+void GridPerimToArray(const Array2D<T> &grid, std::vector<T> &vec){
+  assert(vec.size()==0); //Ensure receiving array is empty
 
+  std::vector<T> vec2copy;
 
+  vec2copy = grid.getRowData(0);                         //Top
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
 
-//In the master node, each set of two rows represents an entire segment's worth
-//of cells. Moving up or down within this representation of a segment means that
-//we are not going to a neighbouring cell, but, rather, we are going to the
-//terminal cell of a flow path originating at the cell we are currently
-//considering.
-void StripAdjust(
-  const int x,        //x-coordinate of cell which may begin a flow path
-  const int y,        //y-coordinate of cell which may begin a flow path
-  const Links &links, //Links between initial and terminal flow path cells
-  int &nx,            //Output! The flow path's terminal cell's x-coordinate
-                      //This may be FLOW_TERMINATES
-  int &ny             //Output! The flow path's terminal cell's y-coordinate
+  vec2copy = grid.getColData(grid.viewWidth()-1);        //Right
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  
+  vec2copy = grid.getRowData(grid.viewHeight()-1);       //Bottom
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  
+  vec2copy = grid.getColData(0);                         //Left
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+}
+
+void DownstreamCell(
+  const std::vector<link_t>    &links,
+  const std::vector<flowdir_t> &flowdirs,
+  const int gridwidth,
+  const int gridheight,
+  const int width,
+  const int height,
+  const int s,
+  int &ns,
+  int &gnx,
+  int &gny,
 ){
-  if(y/2==ny/2){      //These cells are part of the same segment
-    nx = links[y][x]; //Find the x-coordinate of the flow path's terminal cell
+  ns=gnx=gny=-1;
 
-    if(nx==FLOW_TERMINATES) //This cell is the initial cell of a flow path which
-      return;               //terminates internally within the segment.
-                            //Therefore, move on to the next cell.
+  //Flow ends somewhere internal to the tile or this particular cell has no
+  //flow direction
+  if(c.links[s]==FLOW_TERMINATE){
+    return;
+  } else if(c.links[s]==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+    int x,y;
+    serialToXY(s,x,y,links);
 
-    //In this case, we have used `y` to find out what segment we are on. To
-    //locate the flow path's terminal cell, begin by setting `ny` to the top
-    //y-coordinate of the segment.
-    ny = (ny%2==0)?ny:ny-1;
-    if(nx<=0){       //This path ends on the top of the segment
-      nx = -nx;      //Map (-Inf,0] to [0,Inf]
-    } else {         //This path ends on the bottom of the segment
-      ny++;          //ny will now point to the bottom of the segment
-      nx--;          //Map [1,Inf) to [0,Inf)
+    int nx = x+flowdirs[s];
+    int ny = y+flowdirs[s];
+
+    if(nx>0){
+      gnx += 1;
+      nx   = 0;
+    } else {
+      gnx -= 1;
+      nx   = width-1;
+    }
+
+    if(ny>0){
+      gny += 1;
+      ny   = 0;
+    } else {
+      gny -= 1;
+      ny   = height-1;
+    }
+
+    if(gnx<0 || gny<0 || gnx==gridwidth || gny==gridheight){
+      gnx=gny=ns=-1;
+      return;
+    }
+
+    ns = xyToSerial(nx,ny,width,height);
+  } else { //Flow goes to somewhere else on the perimeter of the same tile
+    gnx = 0;
+    gny = 0;
+    ns = links[s];
+  }
+}
+
+
+template<class elev_t>
+void Consumer(){
+  boost::mpi::environment env;
+  boost::mpi::communicator world;
+
+  int the_job;   //Which job should consumer perform?
+
+  ChunkInfo chunk;
+
+  Array2D<flowdir_t> flowdirs;
+  Array2D<accum_t  > accum;
+
+  //Have the consumer process messages as long as they are coming using a
+  //blocking receive to wait.
+  while(true){
+    world.recv(0, TAG_WHICH_JOB, the_job); //Blocking wait
+
+
+    //This message indicates that everything is done and the Consumer should shut
+    //down.
+    if(the_job==SYNC_MSG_KILL){
+      return;
+
+    } else if (the_job==JOB_CHUNK){
+      world.recv(0, TAG_CHUNK_DATA, chunk);
+
+    //This message indicates that the consumer should prepare to perform the
+    //first part of the distributed Priority-Flood algorithm on an incoming job
+    } else if (the_job==JOB_FIRST){
+      Timer timer_calc,timer_io,timer_overall;
+      timer_overall.start();
+
+      Job1<elev_t> job1;
+
+      //Read in the data associated with the job
+      timer_io.start();
+      flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+      if(chunk.flip & FLIP_VERT)
+        dem.flipVert();
+      if(chunk.flip & FLIP_HORZ)
+        dem.flipHorz();
+      timer_io.stop();
+
+
+      timer_calc.start();
+      FlowAccumulation(flowdirs,accum);
+
+      job1.links.resize(2*flowdirs.viewWidth()+2*flowdirs.viewHeight(), FLOW_TERMINATE);
+
+      //If we are the top segment, nothing can flow into us, so we do not need to
+      //know where flow paths originating at the top go to. On the otherhand, if we
+      //are not the top segment, then consider each cell of the top row and find out
+      //where its flow goes to.
+      if(!(chunk.edge & GRID_TOP))
+        for(int x=0;x<grid.viewWidth();x++)
+          FollowPath(x,0,flowdirs,links);
+
+      //If we are the bottom segment, nothing can flow into us, so we do not need to
+      //know where flow paths originating at the bottom go to. On the otherhand, if
+      //we are not the bottom segment, then consider each cell of the bottom row and
+      //find out where its flow goes to.
+      if(!(chunk.edge & GRID_BOTTOM))
+        for(int x=0;x<grid.viewWidth();x++)
+          FollowPath(x,segment_height-1,flowdirs,links);
+
+      if(!(chunk.edge & GRID_LEFT))
+        for(int y=0;y<grid.viewHeight();y++)
+          FollowPath(0,y,flowdirs,links);
+
+      if(!(chunk.edge & GRID_RIGHT))
+        for(int y=0;y<grid.viewHeight();y++)
+          FollowPath(grid.viewWidth()-1,y,flowdirs,links);
+
+      //Construct output arrays
+      std::vector<flowdir_t> out_flowdirs;
+      std::vector<accum_t>   out_accum;
+      GridPerimToArray(flowdirs, job1.flowidrs);
+      GridPerimToArray(accum,    job1.accum   );
+
+      timer_calc.stop();
+
+      if(chunk.retention=="@offloadall"){
+        //Nothing to do: it will all get overwritten
+      } else if(chunk.retention=="@retainall"){
+        //Nothing to do: it will all be kept because this process won't get
+        //called again
+      } else {
+        timer_io.start();
+        flowdirs.saveNative(chunk.retention+"dem.dat"   );
+        accum.saveNative   (chunk.retention+"labels.dat");
+        timer_io.stop();
+      }
+
+      timer_overall.stop();
+      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
+
+      job1.time_io      = timer_io.accumulated();
+      job1.time_overall = timer_overall.accumulated();
+      job1.time_calc    = timer_calc.accumulated();
+
+      world.send(0, TAG_DONE_FIRST, job1);
+    } else if (the_job==JOB_SECOND){
+      Timer timer_calc,timer_io,timer_overall;
+      timer_overall.start();
+      std::vector<accum_t> accum_offset; //TODO
+
+      world.recv(0, TAG_SECOND_DATA, accum_offset);
+
+      std::vector<std::map<label_t, elev_t> > graph(2*chunk.width+2*chunk.height); //TODO
+
+      //These use the same logic as the analogous lines above
+      if(chunk.retention=="@offloadall"){
+        //Read in the data associated with the job
+        timer_io.start();
+        flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+        if(chunk.flip & FLIP_VERT)
+          dem.flipVert();
+        if(chunk.flip & FLIP_HORZ)
+          dem.flipHorz();
+        timer_io.stop();
+
+        timer_calc.start();
+        FlowAccumulation(flowdirs,accum);
+        timer_calc.stop();
+      } else if(chunk.retention=="@retainall"){
+        //Nothing to do: we have it all in memory
+      } else {
+        timer_io.start();
+        flowdirs = Array2D<flowdir_t>(chunk.retention+"dem.dat"    ,true); //TODO: There should be an exception if this fails
+        accum    = Array2D<accum_t  >(chunk.retention+"labels.dat",true);
+        timer_io.stop();
+      }
+
+      for(int s=0;s<accum_offset.size();s++){
+        if(accum_offset[s]==0)
+          continue;
+        int x,y;
+        serialToXY(s, x, y, accum.viewWidth(), accum.viewHeight());
+        FollowPathAdd(x,y,flowdirs,accum,accum_offset[s]);
+      }
+
+      //At this point we're done with the calculation! Boo-yeah!
+
+      timer_io.start();
+      if(chunk.flip & FLIP_HORZ)
+        dem.flipHorz();
+      if(chunk.flip & FLIP_VERT)
+        dem.flipVert();
+      timer_io.stop();
+
+      timer_io.start();
+      Timer timer_save_gdal;
+      timer_save_gdal.start(); //TODO: Remove
+      dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
+      timer_save_gdal.stop();
+      timer_io.stop();
+      timer_overall.stop();
+      std::cerr<<"GDAL save took "<<timer_save_gdal.accumulated()<<"s."<<std::endl;
+
+      std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+
+      world.send(0, TAG_DONE_SECOND, Job2(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
     }
   }
 }
@@ -522,212 +602,644 @@ void StripAdjust(
 
 
 
-//The master node receives the flow accumulations of the top and bottom rows of
-//each segment, along with the flow directions of these rows and an array
-//indicating whether those rows pass their flow between each other or if the
-//flow terminates somewhere within the segment. From this information, the
-//master node generates a return to each non-master node which allows those
-//nodes to finish their computation as though everything had been done on one
-//node.
-void DoMaster(int total_number_of_nodes, char *flowdir_fname){
-  GDALAllRegister();              //Load GDAL drivers so we can read and write
-  boost::mpi::communicator world; //Open MPI communication line
 
-  //Open D8 flow directions raster so that we can get its essential properties
-  GDALDataset *fin = (GDALDataset*)GDALOpen(flowdir_fname, GA_ReadOnly);
-  if(fin==NULL){
-    std::cerr<<"Could not open file: "<<flowdir_fname<<std::endl;
-    return;
+
+
+//Producer takes a collection of Jobs and delegates them to Consumers. Once all
+//of the jobs have received their initial processing, it uses that information
+//to compute the global properties necessary to the solution. Each Job, suitably
+//modified, is then redelegated to a Consumer which ultimately finishes the
+//processing.
+template<class elev_t>
+void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
+  boost::mpi::environment env;
+  boost::mpi::communicator world;
+  Timer timer_overall,timer_calc;
+  timer_overall.start();
+  int active_nodes = 0;
+
+  double time_first_total_calc     = 0;
+  double time_first_total_io       = 0;
+  double time_first_total_overall  = 0;
+  int    time_first_count          = 0;
+  double time_second_total_calc    = 0;
+  double time_second_total_io      = 0;
+  double time_second_total_overall = 0;
+  int    time_second_count         = 0;
+
+  std::map<int,ChunkInfo> rank_to_chunk;
+
+  std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
+
+
+  //Loop through all of the jobs, delegating them to Consumers
+  active_nodes=0;
+  for(size_t y=0;y<chunks.size();y++)
+  for(size_t x=0;x<chunks[0].size();x++){
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    if(chunks[y][x].nullChunk){
+      std::cerr<<"\tNull chunk: skipping."<<std::endl;
+      continue;
+    }
+
+    //If fewer jobs have been delegated than there are Consumers available,
+    //delegate the job to a new Consumer.
+    if(active_nodes<world.size()-1){
+      active_nodes++;
+      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(active_nodes,TAG_CHUNK_DATA,chunks.at(y).at(x));
+
+      rank_to_chunk[active_nodes] = chunks.at(y).at(x);
+      world.send(active_nodes,TAG_WHICH_JOB,JOB_FIRST);
+
+    //Once all of the consumers are active, wait for them to return results. As
+    //each Consumer returns a result, pass it the next unfinished Job until
+    //there are no jobs left.
+    } else {
+      Job1<elev_t> finished_job;
+
+      //TODO: Note here about how the code below could be incorporated
+
+      //Execute a blocking receive until some consumer finishes its work.
+      //Receive that work.
+      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+
+      //NOTE: This could be used to implement more robust handling of lost nodes
+      ChunkInfo received_chunk = rank_to_chunk[status.source()];
+      jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
+
+      //Delegate new work to that consumer
+      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
+      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
+
+      rank_to_chunk[status.source()] = chunks.at(y).at(x);
+      world.send(status.source(),TAG_WHICH_JOB,JOB_FIRST);
+    }
   }
 
-  //Get the essential properties
-  GDALRasterBand *flowband = fin->GetRasterBand(1);
-  flowdir_t no_data        = flowband->GetNoDataValue();
-  int width                = flowband->GetXSize();
-  GDALClose(fin);
+  while(active_nodes>0){
+    Job1<elev_t> finished_job;
 
-  Links         links       (total_number_of_nodes*2,LinksRow       (width  ));
-  Accum         accum       (total_number_of_nodes*2,AccumRow       (width  ));
-  Accum         accum_orig;
-  Flowdirs      flowdirs    (total_number_of_nodes*2,FlowdirsRow    (width  ));
-  Dependencies  dependencies(total_number_of_nodes*2,DependenciesRow(width,0));
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+    ChunkInfo received_chunk = rank_to_chunk[status.source()];
+    jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
 
-  //Receive data from each non-master node
-  for(int noden=1;noden<=total_number_of_nodes;noden++){
-    //Since the master node is #0, we need to shift each incoming node's data so
-    //it fits in our zero-based internal storage arrays
-    int datan = noden-1;
-    world.recv(noden, TOP_LINKS_TAG,        links   [2*datan]);
-    world.recv(noden, BOT_LINKS_TAG,        links   [2*datan+1]);
-    world.recv(noden, TOP_ACCUMULATION_TAG, accum   [2*datan]);
-    world.recv(noden, BOT_ACCUMULATION_TAG, accum   [2*datan+1]);
-    world.recv(noden, TOP_FLOWDIRS_TAG,     flowdirs[2*datan]);
-    world.recv(noden, BOT_FLOWDIRS_TAG,     flowdirs[2*datan+1]);
-  }
-
-
-  //Each cell that flows points to a neighbouring cell. But not every cell is
-  //pointed at. Cells which are not pointed at are the peaks from which flow
-  //originates. In order to calculate the flow accumulation we begin at peaks
-  //and pass flow downwards. Once flow has been passed downwards, the cell
-  //receiving the flow no longer needs to wait for the cell which passed the
-  //flow. When the receiving cell has no cells on which it is waiting, it then
-  //becomes a peak itself. The number of cells pointing at a cell is its
-  //"dependency count". In this section of the code we find each cell's
-  //dependency count. In contradistinction to the homologous code in DoNode(),
-  //our neighbours here may be at the other ends of flow paths.
-  for(int y=0;y<links.size();y++)
-  for(int x=0;x<width;x++){
-    int n = flowdirs[y][x];  //Which direction does this cell flow?
-
-    if(n<=0 || n==no_data)   //This cell doesn't flow, or the cell is a no_data.
-      continue;              //Move on to the next cell.
-
-    int nx = x+dx[n];        //The cell does flow. Make a note of the
-    int ny = y+dy[n];        //coordinates of its neighbour.
-
-    //The cell flows off the edge of the grid. Move on to next cell.
-    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
-      continue;
-
-    StripAdjust(x,y,links,nx,ny);
-    if(nx==FLOW_TERMINATES)
-      continue;
-
-    //Decrement the dependencies of the "neighbouring" cell
-    dependencies[ny][nx]++;
-  }
-
-
-  //Cells which receive flow from another segment have already propagated their
-  //flow to the terminal cells of their flow paths in DoNode(). Therefore, we
-  //should set the accumulation of these initial cells to zero to avoid having
-  //it be propagated to the terminal cell twice.
-  for(size_t y=0;y<links.size();y++)
-  for(int x=0;x<width;x++){
-    int fd = flowdirs[y][x]; //Flow direction of this cell
-    //This cell goes nowhere or is on the bottom of a segment going up into the
-    //segment
-    if( y%2==1 && (fd==1 || fd==2 || fd==3 || fd==4 || fd==5 || fd<=0) )
-      accum[y][x] = 0;
-    //This cell gos nowhere or is on the top of a segment going down into the
-    //segement
-    else if( y%2==0 && (fd==1 || fd==5 || fd==8 || fd==7 || fd==6 || fd<=0) )
-      accum[y][x] = 0;
-  }
-
-  //We save a copy of the accumulation grid as it stands now. All cells which
-  //receive flow and pass it into their segments have accumulation values of
-  //zero. All cells which pass flow out of their segments have positive values.
-  //Later, we will want an output where only the cells passing flow into the
-  //segments have positive values and all other cells are zero. This is used to
-  //help generate that output.
-  accum_orig = accum;
-
-  //Cells which have no dependencies are the sources of flow.
-  std::queue<GridCell> sources;
-  //The top row of the top segment and the bottom row of the bottom segment
-  //cannot be the source of flow, so ignore them
-  for(size_t y=1;y<links.size()-1;y++)
-  for(int x=0;x<width;x++)
-    //A real cell with no dependencies is a source
-    if(dependencies[y][x]==0 && flowdirs[y][x]!=no_data)
-      sources.emplace(x,y);
-
-  //Now that we have identified sources of flow, visit each of them and pass
-  //their flow on to their neighbours.
-  while(!sources.empty()){        //Are their sources left?
-    GridCell c = sources.front(); //Yes! Get the next source, order unimportant.
-    sources.pop();                //We're done with this source now.
-
-    int n = flowdirs[c.y][c.x];   //Where does this cell flow to?
-    if(n<=0 || n==no_data)        //This cell doesn't flow, or is not a real
-      continue;                   //cell. Move on to the next source.
-
-    int nx = c.x+dx[n];           //This cell does flow somewhere and is real,
-    int ny = c.y+dy[n];           //make a note of where it flows to
-
-    //This cell flows off the edge of the grid. Move on to the next source.
-    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
-      continue;
-
-    StripAdjust(c.x,c.y,links,nx,ny);
-    if(nx==FLOW_TERMINATES)
-      continue;
-
-    //Add accumulation to the "neighbouring cell"
-    accum[ny][nx] += accum[c.y][c.x];
-    //Decrement the dependencies of the "neighbouring" cell
-    dependencies[ny][nx]--;
-
-    //If the "neigbouring" cell has no dependencies, it becomes a source
-    if(dependencies[ny][nx]==0)
-      sources.emplace(nx,ny);
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_nodes--;
   }
 
 
-  //We now need to calculate how much accumulation should be added to the inputs
-  //of each flow path. Therefore, we need the terminal cells of flow paths to
-  //have zero accumulation. But, a segment may pass flow directly to a terminal
-  //cell without going through a flow path. Therefore, for each cell, we
-  //subtract the flow passed to that cell from any flow paths which terminate at
-  //it. We also subtract any flow the cell had originally because it was the
-  //terminal cell of a flow path.
-  for(int y=0;y<links.size();y++)
-  for(int x=0;x<width;x++){
-    //This cell had no accumulation, so it cannot need correcting
-    if(accum[y][x]==0)
+  //TODO: Note here about how the code above code be incorporated
+
+  const int gridwidth  = jobs1.front().size();
+  const int gridheight = jobs1.size();
+
+  //Set initial values for all dependencies to zero
+  for(size_t y=0;y<gridheight;y++)
+  for(size_t x=0;x<gridwidth;x++)
+    jobs1[y][x].dependencies.resize(jobs1[y][x].links.size(),0);
+
+  for(size_t y=0;y<gridheight;y++)
+  for(size_t x=0;x<gridwidth;x++){
+    if( (y*gridwidth+x)%10==0 )
+      std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
+
+    if(chunks[y][x].nullChunk)
       continue;
 
-    //Which cell does this cell flow to?
-    int n = flowdirs[y][x];
+    auto &c = jobs1[y][x];
 
-    //This cell has no flow or is a no_data cell. Ignore it
-    if(n<=0 || n==no_data)
-      continue;
+    time_first_total_overall += c.time_overall;
+    time_first_total_io      += c.time_io;
+    time_first_total_calc    += c.time_calc;
+    time_first_count++;
 
-    //TODO: Should this maybe go above the `n<=0||n==no_data` check?
-    accum[y][x] -= accum_orig[y][x];
+    for(int s=0;s<c.flowdirs.size();s++){
+      int ns,gnx,gny;
+      DownstreamCell(c.links,c.flowdirs,gridwidth,gridheight,chunks[y][x].width,chunks[y][x].height,s,ns,gnx,gny);
+      if(ns==-1)
+        continue;
+      if(chunks[gny][gnx].nullChunk) 
+        continue;
 
-    //This is a real cell and its pointing somewhere. Make a note of where.
-    int nx = x+dx[n];
-    int ny = y+dy[n];
+      jobs1[gny][gnx].dependencies[ns]++;
 
-    //The flow goes off the edge of the grid. Move on to the next cell.
-    if(nx<0 || ny<0 || nx==width || ny==flowdirs.size())
-      continue;
-
-    StripAdjust(x,y,links,nx,ny);
-    if(nx==FLOW_TERMINATES){
-      continue;
-    } else if(y/2==ny/2){           //If the cells were part of the same segment
-      accum[ny][nx] -= accum[y][x]; //then we need to subtract initial
-    }                               //accumulation from the terminal
+    }
   }
 
-  //Send information to each of the non-master nodes so they can complete their
-  //calculations.
-  for(int i=1;i<=total_number_of_nodes;i++){
-    int n=i-1;
-    world.send(i, TOP_ACCUMULATION_TAG, accum[2*n]);
-    world.send(i, BOT_ACCUMULATION_TAG, accum[2*n+1]);
+  typedef struct {int gx;int gy;int s;} atype;
+  std::queue<atype> q;
+
+  //Search for cells without dependencies
+  for(size_t y=0;y<gridheight;y++)
+  for(size_t x=0;x<gridwidth;x++){
+    if(chunks[y][x].nullChunk)
+      continue;
+
+    for(int s=0;s<jobs1[y][x].dependencies.size();s++){
+      if(jobs1[y][x].dependencies[s]==0)
+        q.emplace_back(x,y,s);
+
+      //Accumulated flow at an input will be transfered to an output resulting
+      //in double-counting
+      if(jobs1[y][x].links[s]!=FLOW_EXTERNAL) //TODO: NO_FLOW
+        jobs1[y][x].accum[s] = 0;
+    }
+  }
+
+  while(!q.empty()){
+    atype      c  = q.front();
+    Job1      &j  = jobs1[c.gy][c.gx];
+    ChunkInfo &ci = chunks[c.gy][c.gx]; 
+    q.pop();
+
+    int ns, gnx, gny;
+    DownstreamCell(j.links,j.flowdirs,gridwidth,gridheight,ci.width,ci.height,c.s,ns,gnx,gny);
+    if(ns==-1)
+      continue;
+
+    jobs1[gny][gnx].accum[ns] += j.accum[c.s];
+
+    if( (--jobs1[gny][gnx].dependencies[ns])==0 )
+      q.emplace_back(ns,gnx,gny);
+  }
+
+  for(size_t y=0;y<gridheight;y++)
+  for(size_t x=0;x<gridwidth;x++){
+    if(chunks[y][x].nullChunk)
+      continue;
+
+    for(int s=0;s<jobs1[y][x].accum.size();s++) //TODO: NO_FLOW
+      if(jobs1[y][x].links[s]==FLOW_EXTERNAL)
+        jobs1[y][x].accum[s] = 0;
+
+    //TODO: Could start clearing memory here
+  }
+
+  std::cerr<<"Sending out final jobs..."<<std::endl;
+  //Loop through all of the jobs, delegating them to Consumers
+  active_nodes = 0;
+  for(size_t y=0;y<chunks.size();y++)
+  for(size_t x=0;x<chunks[0].size();x++){
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    if(chunks[y][x].nullChunk){
+      std::cerr<<"\tNull chunk: skipping."<<std::endl;
+      continue;
+    }
+
+    int destination_node = -1;
+    if(active_nodes<world.size()-1){
+      //If fewer jobs have been delegated than there are Consumers available,
+      //delegate the job to a new Consumer
+      destination_node = active_nodes++;
+    } else {
+      //Once all of the consumers are active, wait for them to return results.
+      //As each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left.
+      Job2 temp;
+      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+
+      time_second_total_overall += temp.time_overall;
+      time_second_total_io      += temp.time_io;
+      time_second_total_calc    += temp.time_calc;
+      time_second_count++;
+
+      destination_node = status.source();
+    }
+
+    world.send(destination_node,TAG_WHICH_JOB,JOB_CHUNK);
+    world.send(destination_node,TAG_CHUNK_DATA,chunks[y][x]);
+
+    rank_to_chunk[destination_node] = chunks[y][x];
+    world.send(destination_node,TAG_WHICH_JOB,JOB_SECOND);
+    world.send(destination_node,TAG_SECOND_DATA,jobs1[y][x].accum);
+  }
+
+  while(active_nodes>0){
+    Job2 temp;
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+
+    time_second_total_overall += temp.time_overall;
+    time_second_total_io      += temp.time_io;
+    time_second_total_calc    += temp.time_calc;
+    time_second_count++;
+
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_nodes--;
+  }
+
+  for(int i=1;i<world.size();i++)
+    world.send(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+
+  timer_overall.stop();
+
+  std::cout<<"TimeInfo: First stage total overall time="<<time_first_total_overall<<std::endl;
+  std::cout<<"TimeInfo: First stage total io time="     <<time_first_total_io     <<std::endl;
+  std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
+
+  std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total_overall<<std::endl;
+  std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total_io     <<std::endl;
+  std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
+
+  std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
+  std::cout<<"TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
+}
+
+
+
+std::string trimStr(std::string const& str){
+  if(str.empty())
+      return str;
+
+  std::size_t firstScan = str.find_first_not_of(' ');
+  std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
+  std::size_t last      = str.find_last_not_of(' ');
+  return str.substr(first, last-first+1);
+}
+
+
+//Preparer divides up the input raster file into chunks which can be processed
+//independently by the Consumers. Since the chunking may be done on-the-fly or
+//rely on preparation the user has done, the Preparer routine knows how to deal
+//with both. Once assemebled, the collection of jobs is passed off to Producer,
+//which is agnostic as to the original form of the jobs and handles
+//communication and solution assembly.
+void Preparer(
+  std::string many_or_one,
+  std::string retention_base,
+  std::string input_file,
+  std::string output_prefix,
+  int bwidth,
+  int bheight,
+  int flipH,
+  int flipV
+){
+  boost::mpi::environment  env;
+  boost::mpi::communicator world;
+  int chunkid             = 0;
+  Timer overall;
+  overall.start();
+
+  std::vector< std::vector< ChunkInfo > > chunks;
+  std::string  filename;
+  GDALDataType file_type; //All chunks must have a common file_type
+
+  if(many_or_one=="many"){
+    std::cerr<<"Multi file mode"<<std::endl;
+
+    int32_t gridx        =  0; //Current x coordinate in the chunk grid
+    int32_t gridy        = -1; //Current y coordinate in the chunk grid
+    int32_t row_width    = -1; //Width of 1st row. All rows must equal this
+    int32_t chunk_width  = -1; //Width of 1st chunk. All chunks must equal this
+    int32_t chunk_height = -1; //Height of 1st chunk, all chunks must equal this
+    
+    boost::filesystem::path layout_path_and_name = input_file;
+    auto path = layout_path_and_name.parent_path();
+
+    //Read each line of the layout file
+    std::ifstream fin_layout(input_file);
+    while(fin_layout.good()){
+      gridy++;
+      std::string line;
+      std::getline(fin_layout,line); //Read layout file line
+
+      //If this line is a blank row, we're done
+      if(line.find_first_not_of("\t\n ")==std::string::npos)
+        break;
+
+      //Add a row to the grid of chunks
+      chunks.emplace_back(std::vector<ChunkInfo>());
+
+      std::stringstream cells(line);
+      std::string       filename;
+      gridx = -1;
+
+      //Split the row of file names at the commas
+      while(std::getline(cells,filename,',')){
+        gridx++;
+        filename = trimStr(filename);
+
+        //If the comma delimits only whitespace, then this is a null chunk
+        if(filename==""){
+          chunks.back().emplace_back();
+          continue;
+        }
+
+        //Okay, the file exists. Let's check it out.
+        auto path_and_filename = path / filename;
+        auto path_and_filestem = path / path_and_filename.stem();
+        auto outputname        = output_prefix+path_and_filename.stem().string()+"-fill.tif";
+
+        std::string retention = retention_base;
+        if(retention[0]!='@')
+          retention = retention_base+path_and_filestem.stem().string()+"-int-";
+
+        //Place to store information about this chunk
+        int          this_chunk_width;
+        int          this_chunk_height;
+        GDALDataType this_chunk_type;
+        double       this_geotransform[6];
+
+        //Retrieve information about this chunk
+        if(getGDALDimensions(
+            path_and_filename.string(),
+            this_chunk_height,
+            this_chunk_width,
+            this_chunk_type,
+            this_geotransform
+        )!=0){
+          std::cerr<<"Error getting file information from '"<<path_and_filename.string()<<"'!"<<std::endl;
+          env.abort(-1); //TODO
+        }
+
+        //If this is the first chunk we've seen, it determines what every other
+        //chunk should be. Note it.
+        if(chunk_height==-1){
+          chunk_height = this_chunk_height;
+          chunk_width  = this_chunk_width;
+          file_type    = this_chunk_type;
+        }
+
+        //Check that this chunk conforms to what we've seen previously so that
+        //all chunks are the same.
+        if( this_chunk_height!=chunk_height || 
+            this_chunk_width !=chunk_width  ||
+            this_chunk_type  !=file_type   ){
+          std::cerr<<"All of the files specified by <layout_file> must be the same dimensions and type!"<<std::endl;
+          env.abort(-1); //TODO: Set error code
+        }
+
+        //Add the chunk to the grid
+        chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, gridx, gridy, 0, 0, chunk_width, chunk_height);
+
+        //Flip tiles if the geotransform demands it
+        if(this_geotransform[0]<0)
+          chunks.back().back().flip ^= FLIP_HORZ;
+        if(this_geotransform[5]<0)
+          chunks.back().back().flip ^= FLIP_VERT;
+
+        //Flip (or reverse the above flip!) if the user demands it
+        if(flipH)
+          chunks.back().back().flip ^= FLIP_HORZ;
+        if(flipV)
+          chunks.back().back().flip ^= FLIP_VERT;
+      }
+
+      if(row_width==-1){ //This is the first row
+        row_width = gridx;
+      } else if(row_width!=gridx){
+        std::cerr<<"All rows of <layout_file> must specify the same number of files! First row="<<(row_width+1)<<", this row="<<(gridx+1)<<"."<<std::endl;
+        env.abort(-1); //TODO: Set error code
+      }
+    }
+
+    std::cerr<<"Loaded "<<chunks.size()<<" rows of "<<chunks[0].size()<<" columns."<<std::endl;
+
+    //nullChunks imply that the chunks around them have edges, as though they
+    //are on the edge of the raster.
+    for(int y=0;y<chunks.size();y++)
+    for(int x=0;x<chunks[0].size();x++){
+      if(chunks[y][x].nullChunk)
+        continue;
+      if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
+        chunks[y][x].edge |= GRID_TOP;
+      if(y+1<chunks.size() && x>0 && chunks[y+1][x].nullChunk)
+        chunks[y][x].edge |= GRID_BOTTOM;
+      if(y>0 && x-1>0 && chunks[y][x-1].nullChunk)
+        chunks[y][x].edge |= GRID_LEFT;
+      if(y>0 && x+1<chunks[0].size() && chunks[y][x+1].nullChunk)
+        chunks[y][x].edge |= GRID_RIGHT;
+    }
+
+  } else if(many_or_one=="one") {
+    std::cerr<<"Single file mode"<<std::endl;
+    int32_t total_height;
+    int32_t total_width;
+
+    filename = input_file;
+
+    auto filepath   = boost::filesystem::path(filename);
+    filepath        = filepath.parent_path() / filepath.stem();
+
+    //Get the total dimensions of the input file
+    if(getGDALDimensions(filename, total_height, total_width, file_type, NULL)!=0){
+      std::cerr<<"Error getting file information from '"<<filename<<"'!"<<std::endl;
+      env.abort(-1); //TODO
+    }
+
+    //If the user has specified -1, that implies that they want the entire
+    //dimension of the raster along the indicated axis to be processed within a
+    //single job.
+    if(bwidth==-1)
+      bwidth  = total_width;
+    if(bheight==-1)
+      bheight = total_height;
+
+    std::cerr<<"Total width:  "<<total_width <<"\n";
+    std::cerr<<"Total height: "<<total_height<<"\n";
+    std::cerr<<"Block width:  "<<bwidth      <<"\n";
+    std::cerr<<"Block height: "<<bheight     <<std::endl;
+
+    //Create a grid of jobs
+    //TODO: Avoid creating extremely narrow or small strips
+    for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
+      chunks.emplace_back(std::vector<ChunkInfo>());
+      for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
+        if(total_height-y<100 || total_width-x<100){
+          throw std::logic_error("At least one tile is <100 cells in at least one dimensions. Please change rectangle size to avoid this!");
+        }
+        auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
+        std::string retention = retention_base;
+        if(retention[0]!='@')
+          retention = retention_base+filepath.stem().string()+"-int-"+std::to_string(chunkid)+"-";
+        chunks.back().emplace_back(chunkid++, filename, outputname, retention, gridx, gridy, x, y, bwidth, bheight);
+        //Adjust the label_offset by the total number of perimeter cells of this
+        //chunk plus one (to avoid another chunk's overlapping the last label of
+        //this chunk). Obviously, the right and bottom edges of the global grid
+        //may not be a perfect multiple of bwidth and bheight; therefore, labels
+        //could be dolled out more conservatively. But this would require a
+        //correctness proof and introduces the potential for truly serious bugs
+        //into the code. Since we are unlikely to run out of labels (see
+        //associated manuscript), it is better to waste a few and make this
+        //section obviously correct. Although we do not expect to run out of
+        //labels, it is possible to rigorously check for this condition here,
+        //before we have used much time or I/O.
+      }
+    }
+
+    if(retention_base=="@retainall" && chunks.size()*chunks[0].size()>=world.size()-1){
+      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<world.size()<<" are available."<<std::endl;
+      env.abort(-1);
+    }
+
+  } else {
+    std::cout<<"Unrecognised option! Must be 'many' or 'one'!"<<std::endl;
+    env.abort(-1);
+  }
+
+  //If a job is on the edge of the raster, mark it as having this property so
+  //that it can be handled with elegance later.
+  for(auto &e: chunks.front())
+    e.edge |= GRID_TOP;
+  for(auto &e: chunks.back())
+    e.edge |= GRID_BOTTOM;
+  for(size_t y=0;y<chunks.size();y++){
+    chunks[y].front().edge |= GRID_LEFT;
+    chunks[y].back().edge  |= GRID_RIGHT;
+  }
+
+  boost::mpi::broadcast(world,file_type,0);
+  overall.stop();
+  std::cerr<<"Preparer took "<<overall.accumulated()<<"s."<<std::endl;
+
+  switch(file_type){
+    case GDT_Unknown:
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      env.abort(-1); //TODO
+    case GDT_Byte:
+      return Producer<uint8_t >(chunks);
+    case GDT_UInt16:
+      return Producer<uint16_t>(chunks);
+    case GDT_Int16:
+      return Producer<int16_t >(chunks);
+    case GDT_UInt32:
+      return Producer<uint32_t>(chunks);
+    case GDT_Int32:
+      return Producer<int32_t >(chunks);
+    case GDT_Float32:
+      return Producer<float   >(chunks);
+    case GDT_Float64:
+      return Producer<double  >(chunks);
+    case GDT_CInt16:
+    case GDT_CInt32:
+    case GDT_CFloat32:
+    case GDT_CFloat64:
+      std::cerr<<"Complex types are not supported. Sorry!"<<std::endl;
+      env.abort(-1); //TODO
+    default:
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      env.abort(-1); //TODO
   }
 }
 
+
+
 int main(int argc, char **argv){
-  boost::mpi::environment  env;
+  boost::mpi::environment env;
   boost::mpi::communicator world;
 
-  if(argc!=2){
-    std::cerr<<"Syntax: "<<argv[0]<<" <DEM>"<<std::endl;
-    MPI_Finalize();
-    return -1;
-  }
+  if(world.rank()==0){
+    std::string many_or_one;
+    std::string retention;
+    std::string input_file;
+    std::string output_prefix;
+    int         bwidth  = -1;
+    int         bheight = -1;
+    int         flipH   = false;
+    int         flipV   = false;
 
-  if(world.rank()>0)
-    doNode(world.rank()-1,world.size()-1,argv[1]);
-  else
-    DoMaster(world.size()-1,argv[1]);
+    std::string help=
+    #include "help.txt"
+    ;
+
+    try{
+      for(int i=1;i<argc;i++){
+        if(strcmp(argv[i],"--bwidth")==0 || strcmp(argv[i],"-w")==0){
+          if(i+1==argc)
+            throw std::invalid_argument("-w followed by no argument.");
+          bwidth = std::stoi(argv[i+1]);
+          if(bwidth<300 && bwidth!=-1)
+            throw std::invalid_argument("Width must be at least 500.");
+          i++;
+          continue;
+        } else if(strcmp(argv[i],"--bheight")==0 || strcmp(argv[i],"-h")==0){
+          if(i+1==argc)
+            throw std::invalid_argument("-h followed by no argument.");
+          bheight = std::stoi(argv[i+1]);
+          if(bheight<300 && bheight!=-1)
+            throw std::invalid_argument("Height must be at least 500.");
+          i++;
+          continue;
+        } else if(strcmp(argv[i],"--flipH")==0 || strcmp(argv[i],"-H")==0){
+          flipH = true;
+        } else if(strcmp(argv[i],"--flipV")==0 || strcmp(argv[i],"-V")==0){
+          flipV = true;
+        } else if(argv[i][0]=='-'){
+          throw std::invalid_argument("Unrecognised flag: "+std::string(argv[i]));
+        } else if(many_or_one==""){
+          many_or_one = argv[i];
+        } else if(retention==""){
+          retention = argv[i];
+        } else if(input_file==""){
+          input_file = argv[i];
+        } else if(output_prefix==""){
+          output_prefix = argv[i];
+        } else {
+          throw std::invalid_argument("Too many arguments.");
+        }
+      }
+      if(many_or_one=="" || retention=="" || input_file=="" || output_prefix=="")
+        throw std::invalid_argument("Too few arguments.");
+      if(retention[0]=='@' && !(retention=="@offloadall" || retention=="@retainall"))
+        throw std::invalid_argument("Retention must be @offloadall or @retainall or a path.");
+      if(many_or_one!="many" && many_or_one!="one")
+        throw std::invalid_argument("Must specify many or one.");
+    } catch (const std::invalid_argument &ia){
+      std::string output_err;
+      if(ia.what()==std::string("stoi"))
+        output_err = "Invalid width or height.";
+      else
+        output_err = ia.what();
+      std::cerr<<"###Error: "<<output_err<<std::endl;
+      std::cerr<<help<<std::endl;
+      std::cerr<<"###Error: "<<output_err<<std::endl;
+
+      int good_to_go=0;
+      boost::mpi::broadcast(world,good_to_go,0);
+
+      return -1;
+    }
+
+    int good_to_go = 1;
+    boost::mpi::broadcast(world,good_to_go,0);
+    Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
+
+  } else {
+    int good_to_go;
+    boost::mpi::broadcast(world, good_to_go, 0);
+    if(!good_to_go)
+      return -1;
+
+    GDALDataType file_type;
+    boost::mpi::broadcast(world, file_type, 0);
+    switch(file_type){
+      case GDT_Byte:
+        Consumer<uint8_t >();break;
+      case GDT_UInt16:
+        Consumer<uint16_t>();break;
+      case GDT_Int16:
+        Consumer<int16_t >();break;
+      case GDT_UInt32:
+        Consumer<uint32_t>();break;
+      case GDT_Int32:
+        Consumer<int32_t >();break;
+      case GDT_Float32:
+        Consumer<float   >();break;
+      case GDT_Float64:
+        Consumer<double  >();break;
+      default:
+        return -1;
+    }
+  }
 
   return 0;
 }
