@@ -11,8 +11,6 @@
 #include <iomanip>
 #include <boost/mpi.hpp>
 #include <boost/serialization/map.hpp>
-#include "Zhou2015pf.hpp"
-#include "Barnes2014pf.hpp"
 #include <string>
 #include <queue>
 #include <vector>
