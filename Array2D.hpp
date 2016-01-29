@@ -370,6 +370,13 @@ class Array2D {
     return data[rownum].data();
   }
 
+  std::vector<T> getColData(int colnum){
+    std::vector<T> col(viewHeight());
+    for(int y=0;y<viewHeight();y++)
+      col[y] = data[y][colnum];
+    return col;
+  }
+
   void clear(){
     data.clear();
     data.shrink_to_fit();
