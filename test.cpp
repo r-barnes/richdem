@@ -1,5 +1,6 @@
 #include "Array2D.hpp"
 #include <iostream>
+#include <cassert>
 
 //Are all serials unique?
 //    ./test.exe | awk '{print $1}' | sort -n | uniq -c | sed 's/^\s*//' | sort -n -k 1
@@ -48,6 +49,25 @@ void testCombo(const int x, const int y, const Array2D<T> &grid){
 }
 
 template<class T>
+void GridPerimToArray(const Array2D<T> &grid, std::vector<T> &vec){
+  assert(vec.size()==0); //Ensure receiving array is empty
+
+  std::vector<T> vec2copy;
+
+  vec2copy = grid.getRowData(0);                         //Top
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+
+  vec2copy = grid.getColData(grid.viewWidth()-1);        //Right
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  
+  vec2copy = grid.getRowData(grid.viewHeight()-1);       //Bottom
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  
+  vec2copy = grid.getColData(0);                         //Left
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+}
+
+template<class T>
 void testXYserialization(const Array2D<T> &grid){
   for(int x=0;x<grid.viewWidth();x++){
     testCombo(x,0,grid);
@@ -62,5 +82,24 @@ void testXYserialization(const Array2D<T> &grid){
 
 int main(){
   Array2D<char> dem(3617,3301); //Prime numbers
-  testXYserialization(dem);
+  //testXYserialization(dem);
+
+  std::vector<int> link_arr;
+  for(int x=0;x<dem.viewWidth();x++)
+    link_arr.push_back(xyToSerial(x,0,dem));
+  for(int y=0;y<dem.viewHeight();y++)
+    link_arr.push_back(xyToSerial(dem.viewWidth()-1,y,dem));
+  for(int x=0;x<dem.viewWidth();x++)
+    link_arr.push_back(xyToSerial(x,dem.viewHeight()-1,dem));
+  for(int y=0;y<dem.viewHeight();y++)
+    link_arr.push_back(xyToSerial(0,y,dem));
+
+  for(int i=0;i<link_arr.size();i++){
+    int xr,yr;
+    serialToXY(link_arr[i],xr,yr,dem);
+    std::cout<<link_arr[i]
+             <<" "<<xr<<","<<yr<<" "
+             <<xyToSerial(xr,yr,dem)<<" "
+             <<((link_arr[i]==xyToSerial(xr,yr,dem))?"MATCHES":"NOPE")<<std::endl;
+  }
 }
