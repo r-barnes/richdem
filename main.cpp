@@ -10,7 +10,6 @@
 #include <iostream>
 #include <iomanip>
 #include <boost/mpi.hpp>
-#include <boost/serialization/map.hpp>
 #include <string>
 #include <queue>
 #include <vector>
@@ -40,6 +39,10 @@
 //                                 int nPixelSpace,
 //                                 int nLineSpace )
 //
+
+#define NO_FLOW 37 //TODO
+#define FLOW_TERMINATES -3 //TODO
+#define FLOW_EXTERNAL   -4 //TODO
 
 
 typedef uint8_t dependency_t;
@@ -94,7 +97,7 @@ class ChunkInfo{
   }
 };
 
-template<class elev_t>
+template<class flowdir_t>
 class Job1 {
  private:
   friend class boost::serialization::access;
@@ -180,6 +183,7 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 
 //After running this function on all the top and bottom edge cells, we can
 //quickly determine the ultimate destination of any initial cell.
+template<class flowdir_t>
 void FollowPath(
   const int x0,                       //x-coordinate of initial cell
   const int y0,                       //y-coordinate of initial cell
@@ -215,7 +219,7 @@ void FollowPath(
       if(x==x0 && y==y0) 
         links[xyToSerial(x0,y0,flowdirs)] = FLOW_EXTERNAL;
       else
-        links[xyToSerial(x0,y0,flowdirs)] = xyToSerial(x,y);
+        links[xyToSerial(x0,y0,flowdirs)] = xyToSerial(x,y,flowdirs);
       return;
     }
 
@@ -233,6 +237,7 @@ void FollowPath(
 
 //However, at this point we know how much flow accumulation to add to each cell.
 //Therefore, we add this additional accumulation to each cell as we pass it.
+template<class flowdir_t>
 void FollowPathAdd(
   int x,                     //Initial x-coordinate
   int y,                     //Initial y-coordinate
@@ -263,6 +268,7 @@ void FollowPathAdd(
   }
 }
 
+template<class flowdir_t>
 void FlowAccumulation(
   const Array2D<flowdir_t> &flowdirs,
   Array2D<accum_t>         &accum
@@ -279,8 +285,8 @@ void FlowAccumulation(
   std::cerr<<"Calculating dependencies..."<<std::endl;
   Array2D<dependency_t> dependencies;
   dependencies.resize(flowdirs,0);
-  for(int y=0;y<viewHeight();y++)
-  for(int x=0;x<viewWidth();x++){
+  for(int y=0;y<flowdirs.viewHeight();y++)
+  for(int x=0;x<flowdirs.viewWidth();x++){
     int n = flowdirs(x,y); //The neighbour this cell flows into
 
     //TODO "n<=0"?
@@ -373,6 +379,7 @@ void GridPerimToArray(const Array2D<T> &grid, std::vector<T> &vec){
   vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
 }
 
+template<class flowdir_t>
 void DownstreamCell(
   const std::vector<link_t>    &links,
   const std::vector<flowdir_t> &flowdirs,
@@ -383,15 +390,15 @@ void DownstreamCell(
   const int s,
   int &ns,
   int &gnx,
-  int &gny,
+  int &gny
 ){
   ns=gnx=gny=-1;
 
   //Flow ends somewhere internal to the tile or this particular cell has no
   //flow direction
-  if(c.links[s]==FLOW_TERMINATE){
+  if(links[s]==FLOW_TERMINATES){
     return;
-  } else if(c.links[s]==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+  } else if(links[s]==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
     int x,y;
     serialToXY(s,x,y,links);
 
@@ -460,51 +467,51 @@ void Consumer(){
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
 
-      Job1<elev_t> job1;
+      Job1<flowdir_t> job1;
 
       //Read in the data associated with the job
       timer_io.start();
       flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
       if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
+        flowdirs.flipVert();
       if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
+        flowdirs.flipHorz();
       timer_io.stop();
 
 
       timer_calc.start();
       FlowAccumulation(flowdirs,accum);
 
-      job1.links.resize(2*flowdirs.viewWidth()+2*flowdirs.viewHeight(), FLOW_TERMINATE);
+      job1.links.resize(2*flowdirs.viewWidth()+2*flowdirs.viewHeight(), FLOW_TERMINATES);
 
       //If we are the top segment, nothing can flow into us, so we do not need to
       //know where flow paths originating at the top go to. On the otherhand, if we
       //are not the top segment, then consider each cell of the top row and find out
       //where its flow goes to.
       if(!(chunk.edge & GRID_TOP))
-        for(int x=0;x<grid.viewWidth();x++)
-          FollowPath(x,0,flowdirs,links);
+        for(int x=0;x<flowdirs.viewWidth();x++)
+          FollowPath(x,0,flowdirs,job1.links);
 
       //If we are the bottom segment, nothing can flow into us, so we do not need to
       //know where flow paths originating at the bottom go to. On the otherhand, if
       //we are not the bottom segment, then consider each cell of the bottom row and
       //find out where its flow goes to.
       if(!(chunk.edge & GRID_BOTTOM))
-        for(int x=0;x<grid.viewWidth();x++)
-          FollowPath(x,segment_height-1,flowdirs,links);
+        for(int x=0;x<flowdirs.viewWidth();x++)
+          FollowPath(x,flowdirs.viewHeight()-1,flowdirs,job1.links);
 
       if(!(chunk.edge & GRID_LEFT))
-        for(int y=0;y<grid.viewHeight();y++)
-          FollowPath(0,y,flowdirs,links);
+        for(int y=0;y<flowdirs.viewHeight();y++)
+          FollowPath(0,y,flowdirs,job1.links);
 
       if(!(chunk.edge & GRID_RIGHT))
-        for(int y=0;y<grid.viewHeight();y++)
-          FollowPath(grid.viewWidth()-1,y,flowdirs,links);
+        for(int y=0;y<flowdirs.viewHeight();y++)
+          FollowPath(flowdirs.viewWidth()-1,y,flowdirs,job1.links);
 
       //Construct output arrays
       std::vector<flowdir_t> out_flowdirs;
       std::vector<accum_t>   out_accum;
-      GridPerimToArray(flowdirs, job1.flowidrs);
+      GridPerimToArray(flowdirs, job1.flowdirs);
       GridPerimToArray(accum,    job1.accum   );
 
       timer_calc.stop();
@@ -522,7 +529,7 @@ void Consumer(){
       }
 
       timer_overall.stop();
-      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
+      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
       job1.time_io      = timer_io.accumulated();
       job1.time_overall = timer_overall.accumulated();
@@ -536,17 +543,15 @@ void Consumer(){
 
       world.recv(0, TAG_SECOND_DATA, accum_offset);
 
-      std::vector<std::map<label_t, elev_t> > graph(2*chunk.width+2*chunk.height); //TODO
-
       //These use the same logic as the analogous lines above
       if(chunk.retention=="@offloadall"){
         //Read in the data associated with the job
         timer_io.start();
         flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
         if(chunk.flip & FLIP_VERT)
-          dem.flipVert();
+          flowdirs.flipVert();
         if(chunk.flip & FLIP_HORZ)
-          dem.flipHorz();
+          flowdirs.flipHorz();
         timer_io.stop();
 
         timer_calc.start();
@@ -573,15 +578,15 @@ void Consumer(){
 
       timer_io.start();
       if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
+        accum.flipHorz();
       if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
+        accum.flipVert();
       timer_io.stop();
 
       timer_io.start();
       Timer timer_save_gdal;
       timer_save_gdal.start(); //TODO: Remove
-      dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
+      accum.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
       timer_save_gdal.stop();
       timer_io.stop();
       timer_overall.stop();
@@ -625,7 +630,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   std::map<int,ChunkInfo> rank_to_chunk;
 
-  std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
+  std::vector< std::vector< Job1<flowdir_t> > > jobs1(chunks.size(), std::vector< Job1<flowdir_t> >(chunks[0].size()));
 
 
   //Loop through all of the jobs, delegating them to Consumers
@@ -675,7 +680,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   while(active_nodes>0){
-    Job1<elev_t> finished_job;
+    Job1<flowdir_t> finished_job;
 
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
@@ -727,7 +732,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
   }
 
-  typedef struct {int gx;int gy;int s;} atype;
+  class atype {
+   public:
+    int gx,gy,s;
+    atype(int gx, int gy, int s) : gx(gx),gy(gy),s(s) {};
+  };
+
   std::queue<atype> q;
 
   //Search for cells without dependencies
@@ -738,7 +748,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     for(int s=0;s<jobs1[y][x].dependencies.size();s++){
       if(jobs1[y][x].dependencies[s]==0)
-        q.emplace_back(x,y,s);
+        q.emplace(x,y,s);
 
       //Accumulated flow at an input will be transfered to an output resulting
       //in double-counting
@@ -748,9 +758,9 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   while(!q.empty()){
-    atype      c  = q.front();
-    Job1      &j  = jobs1[c.gy][c.gx];
-    ChunkInfo &ci = chunks[c.gy][c.gx]; 
+    atype            c  = q.front();
+    Job1<flowdir_t> &j  = jobs1[c.gy][c.gx];
+    ChunkInfo       &ci = chunks[c.gy][c.gx]; 
     q.pop();
 
     int ns, gnx, gny;
@@ -761,7 +771,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     jobs1[gny][gnx].accum[ns] += j.accum[c.s];
 
     if( (--jobs1[gny][gnx].dependencies[ns])==0 )
-      q.emplace_back(ns,gnx,gny);
+      q.emplace(ns,gnx,gny);
   }
 
   for(size_t y=0;y<gridheight;y++)
@@ -1220,7 +1230,8 @@ int main(int argc, char **argv){
     switch(file_type){
       case GDT_Byte:
         Consumer<uint8_t >();break;
-      case GDT_UInt16:
+        //TODO: Add these all back in
+/*      case GDT_UInt16:
         Consumer<uint16_t>();break;
       case GDT_Int16:
         Consumer<int16_t >();break;
@@ -1231,7 +1242,7 @@ int main(int argc, char **argv){
       case GDT_Float32:
         Consumer<float   >();break;
       case GDT_Float64:
-        Consumer<double  >();break;
+        Consumer<double  >();break;*/
       default:
         return -1;
     }
