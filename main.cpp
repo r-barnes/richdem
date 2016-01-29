@@ -42,10 +42,9 @@
 //
 
 
-typedef uint32_t label_t;
-
 typedef uint8_t dependency_t;
-typedef Array2D<depenency_t> Dependencies;
+typedef int32_t link_t;
+typedef int32_t accum_t;
 
 class ChunkInfo{
  private:
@@ -279,7 +278,7 @@ void FlowAccumulation(
   //a cell is its "dependency count". In this section of the code we find
   //each cell's dependency count.
   std::cerr<<"Calculating dependencies..."<<std::endl;
-  Dependencies dependencies;
+  Array2D<dependency_t> dependencies;
   dependencies.resize(flowdirs,0);
   for(int y=0;y<viewHeight();y++)
   for(int x=0;x<viewWidth();x++){
@@ -430,7 +429,7 @@ void DownstreamCell(
 }
 
 
-template<class elev_t>
+template<class flowdir_t>
 void Consumer(){
   boost::mpi::environment env;
   boost::mpi::communicator world;
@@ -608,7 +607,7 @@ void Consumer(){
 //to compute the global properties necessary to the solution. Each Job, suitably
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
-template<class elev_t>
+template<class flowdir_t>
 void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   boost::mpi::environment env;
   boost::mpi::communicator world;
@@ -655,7 +654,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     //each Consumer returns a result, pass it the next unfinished Job until
     //there are no jobs left.
     } else {
-      Job1<elev_t> finished_job;
+      Job1<flowdir_t> finished_job;
 
       //TODO: Note here about how the code below could be incorporated
 
