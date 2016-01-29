@@ -86,11 +86,11 @@ DESCRIPTION
 
 AUTHOR NOTES
 
-    This algorithm and program as developed by
+    This algorithm and program was developed by
       Richard Barnes (rbarnes@umn.edu, richard.barnes@berkeley.edu)
 
     The source code is available at
-      https://TODO
+      https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood
 
     There is a manuscript available at TODO
 
