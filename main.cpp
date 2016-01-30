@@ -804,7 +804,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(active_nodes<world.size()-1){
       //If fewer jobs have been delegated than there are Consumers available,
       //delegate the job to a new Consumer
-      destination_node = active_nodes++;
+      destination_node = ++active_nodes;
     } else {
       //Once all of the consumers are active, wait for them to return results.
       //As each Consumer returns a result, pass it the next unfinished Job until
