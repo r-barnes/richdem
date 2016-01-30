@@ -152,10 +152,10 @@ class Job1 {
 int xyToSerial(const int x, const int y, const int width, const int height){
   assert((x==0 || x==width-1) && (y==0 || y==height-1));
 
-  if(y==0)                                         //Top row
+  if(y==0)                   //Top row
     return x;
 
-  if(x==width-1)                        //Right hand side
+  if(x==width-1)             //Right hand side
     return width+y;
 
   if(y==height-1)      
