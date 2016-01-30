@@ -222,7 +222,7 @@ void FollowPath(
     //began this flow path as terminating somewhere unimportant: its flow cannot
     //pass to neighbouring segments/nodes for further processing.
     if(flowdirs.isNoData(x,y) || n==NO_FLOW){
-      links[xyToSerial(x0,y0,flowdirs)] = FLOW_TERMINATES;
+      links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = FLOW_TERMINATES;
       return;
     }
 
@@ -238,9 +238,9 @@ void FollowPath(
       //to begin with, so we mark this as a termination cell: it potentially
       //gives flow to other tiles, but does not receive flow.
       if(x==x0 && y==y0) 
-        links[xyToSerial(x0,y0,flowdirs)] = FLOW_EXTERNAL;
+        links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = FLOW_EXTERNAL;
       else
-        links[xyToSerial(x0,y0,flowdirs)] = xyToSerial(x,y,flowdirs);
+        links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = xyToSerial(x,y,flowdirs.viewWidth(),flowdirs.viewHeight());
       return;
     }
 
@@ -421,7 +421,7 @@ void DownstreamCell(
     return;
   } else if(links[s]==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
     int x,y;
-    serialToXY(s,x,y,links);
+    serialToXY(s,x,y,width,height);
 
     int nx = x+flowdirs[s];
     int ny = y+flowdirs[s];
