@@ -1240,8 +1240,7 @@ int main(int argc, char **argv){
     switch(file_type){
       case GDT_Byte:
         Consumer<uint8_t >();break;
-        //TODO: Add these all back in
-/*      case GDT_UInt16:
+      case GDT_UInt16:
         Consumer<uint16_t>();break;
       case GDT_Int16:
         Consumer<int16_t >();break;
@@ -1252,7 +1251,7 @@ int main(int argc, char **argv){
       case GDT_Float32:
         Consumer<float   >();break;
       case GDT_Float64:
-        Consumer<double  >();break;*/
+        Consumer<double  >();break;
       default:
         return -1;
     }
