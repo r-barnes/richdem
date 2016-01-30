@@ -35,6 +35,20 @@
 #define FLOW_TERMINATES -3 //TODO
 #define FLOW_EXTERNAL   -4 //TODO
 
+//TODO: What are these for?
+const int TAG_WHICH_JOB   = 0;
+const int TAG_CHUNK_DATA  = 1;
+const int TAG_DONE_FIRST  = 2;
+const int TAG_SECOND_DATA = 3;
+const int TAG_DONE_SECOND = 4;
+
+const int SYNC_MSG_KILL = 0;
+const int JOB_CHUNK     = 1;
+const int JOB_FIRST     = 2;
+const int JOB_SECOND    = 3;
+
+const uint8_t FLIP_VERT   = 1;
+const uint8_t FLIP_HORZ   = 2;
 
 typedef uint8_t dependency_t;
 typedef int32_t link_t;
@@ -132,21 +146,6 @@ class Job1 {
   TimeInfo time_info;
   Job1(){}
 };
-
-//TODO: What are these for?
-const int TAG_WHICH_JOB   = 0;
-const int TAG_CHUNK_DATA  = 1;
-const int TAG_DONE_FIRST  = 2;
-const int TAG_SECOND_DATA = 3;
-const int TAG_DONE_SECOND = 4;
-
-const int SYNC_MSG_KILL = 0;
-const int JOB_CHUNK     = 1;
-const int JOB_FIRST     = 2;
-const int JOB_SECOND    = 3;
-
-const uint8_t FLIP_VERT   = 1;
-const uint8_t FLIP_HORZ   = 2;
 
 int xyToSerial(const int x, const int y, const int width, const int height){
   assert((x==0 || x==width-1) && (y==0 || y==height-1));
