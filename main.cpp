@@ -603,7 +603,8 @@ void Consumer(){
 
       std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
-      world.send(0, TAG_DONE_SECOND, TimeInfo(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
+      TimeInfo temp(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated());
+      WorldSend(0, TAG_DONE_SECOND, temp);
     }
   }
 }
