@@ -302,13 +302,9 @@ void Consumer(){
       timer_io.stop();
 
       timer_io.start();
-      Timer timer_save_gdal;
-      timer_save_gdal.start(); //TODO: Remove
       dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
-      timer_save_gdal.stop();
       timer_io.stop();
       timer_overall.stop();
-      std::cerr<<"GDAL save took "<<timer_save_gdal.accumulated()<<"s."<<std::endl;
 
       std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
@@ -628,12 +624,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
 
     timer_calc.start();
-    Timer timer_gen_job2;
-    timer_gen_job2.start(); //TODO: Remove
     std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
-    timer_gen_job2.stop();
-//    for(int i=label_offset;i<label_offset+label_increment;i++)
-//      job2[i-label_offset] = graph_elev[i];
     timer_calc.stop();
 
     //If fewer jobs have been delegated than there are Consumers available,
