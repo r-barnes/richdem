@@ -586,7 +586,7 @@ void Consumer(){
         timer_io.stop();
       }
 
-      for(int s=0;s<accum_offset.size();s++){
+      for(int s=0;s<(int)accum_offset.size();s++){
         if(accum_offset[s]==0)
           continue;
         int x,y;
@@ -716,12 +716,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   const int gridheight = jobs1.size();
 
   //Set initial values for all dependencies to zero
-  for(size_t y=0;y<gridheight;y++)
-  for(size_t x=0;x<gridwidth;x++)
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++)
     jobs1[y][x].dependencies.resize(jobs1[y][x].links.size(),0);
 
-  for(size_t y=0;y<gridheight;y++)
-  for(size_t x=0;x<gridwidth;x++){
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
       std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
 
@@ -733,7 +733,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     time_first_total += c.time_info;
     time_first_count++;
 
-    for(int s=0;s<c.flowdirs.size();s++){
+    for(int s=0;s<(int)c.flowdirs.size();s++){
       int ns,gnx,gny;
       DownstreamCell(c.links,c.flowdirs,gridwidth,gridheight,chunks[y][x].width,chunks[y][x].height,s,ns,gnx,gny);
       if(ns==-1)
@@ -755,12 +755,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::queue<atype> q;
 
   //Search for cells without dependencies
-  for(size_t y=0;y<gridheight;y++)
-  for(size_t x=0;x<gridwidth;x++){
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
     if(chunks[y][x].nullChunk)
       continue;
 
-    for(int s=0;s<jobs1[y][x].dependencies.size();s++){
+    for(size_t s=0;s<jobs1[y][x].dependencies.size();s++){
       if(jobs1[y][x].dependencies[s]==0)
         q.emplace(x,y,s);
 
@@ -788,12 +788,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       q.emplace(ns,gnx,gny);
   }
 
-  for(size_t y=0;y<gridheight;y++)
-  for(size_t x=0;x<gridwidth;x++){
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
     if(chunks[y][x].nullChunk)
       continue;
 
-    for(int s=0;s<jobs1[y][x].accum.size();s++) //TODO: NO_FLOW
+    for(size_t s=0;s<jobs1[y][x].accum.size();s++) //TODO: NO_FLOW
       if(jobs1[y][x].links[s]==FLOW_EXTERNAL)
         jobs1[y][x].accum[s] = 0;
 
@@ -1022,17 +1022,17 @@ void Preparer(
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
-    for(int y=0;y<chunks.size();y++)
-    for(int x=0;x<chunks[0].size();x++){
+    for(int y=0;y<(int)chunks.size();y++)
+    for(int x=0;x<(int)chunks[0].size();x++){
       if(chunks[y][x].nullChunk)
         continue;
       if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
         chunks[y][x].edge |= GRID_TOP;
-      if(y+1<chunks.size() && x>0 && chunks[y+1][x].nullChunk)
+      if(y+1<(int)chunks.size() && x>0 && chunks[y+1][x].nullChunk)
         chunks[y][x].edge |= GRID_BOTTOM;
       if(y>0 && x-1>0 && chunks[y][x-1].nullChunk)
         chunks[y][x].edge |= GRID_LEFT;
-      if(y>0 && x+1<chunks[0].size() && chunks[y][x+1].nullChunk)
+      if(y>0 && x+1<(int)chunks[0].size() && chunks[y][x+1].nullChunk)
         chunks[y][x].edge |= GRID_RIGHT;
     }
 
@@ -1092,7 +1092,7 @@ void Preparer(
       }
     }
 
-    if(retention_base=="@retainall" && chunks.size()*chunks[0].size()>=world.size()-1){
+    if(retention_base=="@retainall" && (int)(chunks.size()*chunks[0].size())>=(int)(world.size()-1)){
       std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<world.size()<<" are available."<<std::endl;
       env.abort(-1);
     }
