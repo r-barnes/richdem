@@ -50,6 +50,8 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
+const int ACCUM_NO_DATA = -1;
+
 typedef uint8_t dependency_t;
 typedef int32_t link_t;
 typedef int32_t accum_t;
@@ -293,6 +295,10 @@ void FlowAccumulation(
   //waiting, it then becomes a peak itself. The number of cells pointing at
   //a cell is its "dependency count". In this section of the code we find
   //each cell's dependency count.
+
+  accum.resize(flowdirs,0);
+  accum.setNoData(ACCUM_NO_DATA);
+
   std::cerr<<"Calculating dependencies..."<<std::endl;
   Array2D<dependency_t> dependencies;
   dependencies.resize(flowdirs,0);
@@ -300,9 +306,13 @@ void FlowAccumulation(
   for(int x=0;x<flowdirs.viewWidth();x++){
     int n = flowdirs(x,y); //The neighbour this cell flows into
 
-    //TODO "n<=0"?
-    if(n<=0 || flowdirs.isNoData(x,y))  //This cell does not flow into a neighbour
-      continue;                         //Or this cell is a no_data cell
+    
+    if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
+      accum(x,y) = ACCUM_NO_DATA;
+      continue;                
+    }         
+    if(n<=0) //TODO "n<=0"?   //This cell does not flow into a neighbour
+      continue;
 
     int nx = x+dx[n];       //x-coordinate of the neighbour
     int ny = y+dy[n];       //y-coordinate of the neighbour
@@ -331,7 +341,6 @@ void FlowAccumulation(
   //and any other accumulation it has gathered along its flow path to its
   //neighbour and decrements the neighbours dependency count. When a neighbour
   //has no more dependencies, it becomes a source.
-  accum.resize(flowdirs,0);
   while(!sources.empty()){         //There are sources remaining
     GridCell c = sources.front();  //Grab a source. Order is not important here.
     sources.pop();                 //We've visited this source. Discard it.
