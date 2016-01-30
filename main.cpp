@@ -31,15 +31,6 @@
 //TODO: Is it possible to run this without mpirun if we specify a single node
 //job?
 
-//For reference, this is the definition of the RasterIO() function
-//CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
-//                                 int nXOff, int nYOff, int nXSize, int nYSize,
-//                                 void * pData, int nBufXSize, int nBufYSize,
-//                                 GDALDataType eBufType,
-//                                 int nPixelSpace,
-//                                 int nLineSpace )
-//
-
 #define NO_FLOW 37 //TODO
 #define FLOW_TERMINATES -3 //TODO
 #define FLOW_EXTERNAL   -4 //TODO
