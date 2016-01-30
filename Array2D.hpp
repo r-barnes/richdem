@@ -102,6 +102,8 @@ class Array2D {
  public:
   typedef std::vector<T>   Row;
  private:
+  template<typename> friend class Array2D;
+
   typedef std::vector<Row> InternalArray;
   InternalArray data;
 
@@ -366,11 +368,11 @@ class Array2D {
       data[y][colnum] = val;
   }
 
-  const std::vector<T>& getRowData(int rownum){
-    return data[rownum].data();
+  const std::vector<T>& getRowData(int rownum) const {
+    return data[rownum];
   }
 
-  std::vector<T> getColData(int colnum){
+  std::vector<T> getColData(int colnum) const {
     std::vector<T> col(viewHeight());
     for(int y=0;y<viewHeight();y++)
       col[y] = data[y][colnum];
