@@ -173,7 +173,7 @@ int xyToSerial(const int x, const int y, const int width, const int height){
 }
 
 void serialToXY(const int serial, int &x, int &y, const int width, const int height){
-  if(serial<width){                            //Top row
+  if(serial<width){                 //Top row
     x = serial;
     y = 0;
   } else if(serial<width+height){   //Right-hand side
@@ -182,7 +182,7 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
   } else if(serial<2*width+height){ //Bottom row
     x = serial-width-height;
     y = height-1;
-  } else {                                                //Left-hand side
+  } else {                          //Left-hand side
     x = 0;
     y = serial-2*width-height; 
   }
