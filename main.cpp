@@ -96,6 +96,30 @@ class ChunkInfo{
   }
 };
 
+class TimeInfo {
+ private:
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version){
+    ar & calc;
+    ar & overall;
+    ar & io;
+  }
+ public:
+  double calc, overall, io;
+  TimeInfo() {
+    calc=overall=io=0;
+  }
+  TimeInfo(double calc, double overall, double io) :
+      calc(calc), overall(overall), io(io) {}
+  TimeInfo& operator+=(const TimeInfo& o){
+    calc    += o.calc;
+    overall += o.overall;
+    io      += o.io;
+    return *this;
+  }
+};
+
 template<class elev_t>
 class Job1 {
  private:
@@ -111,37 +135,15 @@ class Job1 {
     ar & left_label;
     ar & right_label;
     ar & graph;
-    ar & time_calc;
-    ar & time_overall;
-    ar & time_io;
+    ar & time_info;
   }
  public:
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::vector< std::map<label_t, elev_t> > graph;
-  double time_calc, time_overall, time_io;
+  TimeInfo time_info;
   Job1(){}
 };
-
-class Job2 {
- private:
-  friend class boost::serialization::access;
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version){
-    ar & time_calc;
-    ar & time_overall;
-    ar & time_io;
-  }
- public:
-  double time_calc, time_overall, time_io;
-  Job2(){}
-  Job2(double time_calc, double time_overall, double time_io){
-    this->time_calc    = time_calc;
-    this->time_overall = time_overall;
-    this->time_io      = time_io;
-  }
-};
-
 
 //TODO: What are these for?
 const int TAG_WHICH_JOB   = 0;
@@ -248,9 +250,7 @@ void Consumer(){
       timer_overall.stop();
       std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
 
-      job1.time_io      = timer_io.accumulated();
-      job1.time_overall = timer_overall.accumulated();
-      job1.time_calc    = timer_calc.accumulated();
+      job1.time_info = TimeInfo(timer_calc.accumulated(),timer_overall.accumulated(),timer_io.accumulated());
 
       world.send(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
@@ -312,7 +312,7 @@ void Consumer(){
 
       std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
-      world.send(0, TAG_DONE_SECOND, Job2(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
+      world.send(0, TAG_DONE_SECOND, TimeInfo(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
     }
   }
 }
@@ -397,14 +397,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   timer_overall.start();
   int active_nodes = 0;
 
-  double time_first_total_calc     = 0;
-  double time_first_total_io       = 0;
-  double time_first_total_overall  = 0;
-  int    time_first_count          = 0;
-  double time_second_total_calc    = 0;
-  double time_second_total_io      = 0;
-  double time_second_total_overall = 0;
-  int    time_second_count         = 0;
+  TimeInfo time_first_total;
+  TimeInfo time_second_total;
+  int      time_first_count  = 0;
+  int      time_second_count = 0;
 
   std::map<int,ChunkInfo> rank_to_chunk;
 
@@ -532,9 +528,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     auto &c = jobs1[y][x];
 
-    time_first_total_overall += c.time_overall;
-    time_first_total_io      += c.time_io;
-    time_first_total_calc    += c.time_calc;
+    time_first_total += c.time_info;
     time_first_count++;
 
     if(y>0            && !chunks[y-1][x].nullChunk)
@@ -660,12 +654,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     } else {
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
-      Job2 temp;
+      TimeInfo temp;
       boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
 
-      time_second_total_overall += temp.time_overall;
-      time_second_total_io      += temp.time_io;
-      time_second_total_calc    += temp.time_calc;
+      time_second_total += temp;
       time_second_count++;
 
       //Delegate new work to that consumer
@@ -679,14 +671,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   while(active_nodes>0){
-    Job2 temp;
+    TimeInfo temp;
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
     world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
 
-    time_second_total_overall += temp.time_overall;
-    time_second_total_io      += temp.time_io;
-    time_second_total_calc    += temp.time_calc;
+    time_second_total += temp;
     time_second_count++;
 
     //Decrement the number of consumers we are waiting on. When this hits 0 all
@@ -699,14 +689,14 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   timer_overall.stop();
 
-  std::cout<<"TimeInfo: First stage total overall time="<<time_first_total_overall<<std::endl;
-  std::cout<<"TimeInfo: First stage total io time="     <<time_first_total_io     <<std::endl;
-  std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
+  std::cout<<"TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
+  std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
   std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
 
-  std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total_overall<<std::endl;
-  std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total_io     <<std::endl;
-  std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total_calc   <<std::endl;
+  std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
+  std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
+  std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
   std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
 
   std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
