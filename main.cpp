@@ -801,8 +801,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
 
-    if( (--jobs1[gny][gnx].dependencies[ns])==0 )
-      q.emplace(ns,gnx,gny);
+    if( (--jobs1.at(gny).at(gnx).dependencies.at(ns))==0 )
+      q.emplace(gnx,gny,ns);
   }
 
   for(int y=0;y<gridheight;y++)
