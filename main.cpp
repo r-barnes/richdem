@@ -792,9 +792,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     ChunkInfo       &ci = chunks.at(c.gy).at(c.gx);
     q.pop();
 
+    assert(!ci.nullChunk);
+
     int ns, gnx, gny;
     DownstreamCell(j.links,j.flowdirs,gridwidth,gridheight,ci.width,ci.height,c.s,ns,gnx,gny);
-    if(ns==-1)
+    if(ns==-1 || chunks.at(gny).at(gnx).nullChunk)
       continue;
 
     jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
