@@ -764,7 +764,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   class atype {
    public:
     int gx,gy,s;
-    atype(int gx, int gy, int s) : gx(gx),gy(gy),s(s) {};
+    atype(int gx, int gy, int s) : gx(gx), gy(gy), s(s) {};
   };
 
   std::queue<atype> q;
