@@ -206,7 +206,10 @@ void FollowPath(
   int x = x0;
   int y = y0;
 
-  while(true){                     //Follow the flow path until we reach its end
+  int path_len = 0;
+
+  //Follow the flow path until it terminates
+  while(path_len++<10000000){      //Follow the flow path until we reach its end
     int n = flowdirs(x,y);         //Neighbour the current cell flows towards
 
     //If the neighbour this cell flows into is a no_data cell or this cell does
@@ -240,6 +243,9 @@ void FollowPath(
     x = nx;
     y = ny;
   }
+
+  //The loop breaks with a return, so this is only reached for very long paths
+  throw std::logic_error("A flow path was more than 10M cells long - there's probably a loop!");
 }
 
 //As in the function above, we will start at an initial cell and follow its flow
@@ -258,8 +264,10 @@ void FollowPathAdd(
   Array2D<accum_t>         &accum,
   const accum_t additional_accum
 ){
+  int count = 0;
+
   //Follow the flow path until it terminates
-  while(true){
+  while(count++<10000000){
     //Break when we reach a no_data cell
     if(flowdirs.isNoData(x,y))
       return;
@@ -279,6 +287,9 @@ void FollowPathAdd(
     if(!flowdirs.in_grid(x,y))
       return;
   }
+
+  //The loop breaks with a return, so this is only reached for very long paths
+  throw std::logic_error("A flow path was more than 10M cells long - there's probably a loop!");
 }
 
 template<class flowdir_t>
