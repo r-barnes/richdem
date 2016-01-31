@@ -217,7 +217,7 @@ void FollowPath(
     //began this flow path as terminating somewhere unimportant: its flow cannot
     //pass to neighbouring segments/nodes for further processing.
     if(flowdirs.isNoData(x,y) || n==NO_FLOW){
-      links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = FLOW_TERMINATES;
+      links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = FLOW_TERMINATES;
       return;
     }
 
@@ -233,9 +233,9 @@ void FollowPath(
       //to begin with, so we mark this as a termination cell: it potentially
       //gives flow to other tiles, but does not receive flow.
       if(x==x0 && y==y0) 
-        links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = FLOW_EXTERNAL;
+        links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = FLOW_EXTERNAL;
       else
-        links[xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())] = xyToSerial(x,y,flowdirs.viewWidth(),flowdirs.viewHeight());
+        links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = xyToSerial(x,y,flowdirs.viewWidth(),flowdirs.viewHeight());
       return;
     }
 
@@ -427,14 +427,14 @@ void DownstreamCell(
 
   //Flow ends somewhere internal to the tile or this particular cell has no
   //flow direction
-  if(links[s]==FLOW_TERMINATES){
+  if(links.at(s)==FLOW_TERMINATES){
     return;
-  } else if(links[s]==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+  } else if(links.at(s)==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
     int x,y;
     serialToXY(s,x,y,width,height);
 
-    int nx = x+flowdirs[s];
-    int ny = y+flowdirs[s];
+    int nx = x+flowdirs.at(s);
+    int ny = y+flowdirs.at(s);
 
     if(nx>0){
       gnx += 1;
@@ -461,7 +461,7 @@ void DownstreamCell(
   } else { //Flow goes to somewhere else on the perimeter of the same tile
     gnx = 0;
     gny = 0;
-    ns = links[s];
+    ns = links.at(s);
   }
 }
 
@@ -663,7 +663,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    if(chunks[y][x].nullChunk){
+    if(chunks.at(y).at(x).nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
     }
@@ -727,17 +727,17 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   //Set initial values for all dependencies to zero
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++)
-    jobs1[y][x].dependencies.resize(jobs1[y][x].links.size(),0);
+    jobs1.at(y).at(x).dependencies.resize(jobs1.at(y).at(x).links.size(),0);
 
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
       std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
 
-    if(chunks[y][x].nullChunk)
+    if(chunks.at(y).at(x).nullChunk)
       continue;
 
-    auto &c = jobs1[y][x];
+    auto &c = jobs1.at(y).at(x);
 
     time_first_total += c.time_info;
     time_first_count++;
@@ -750,7 +750,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       if(chunks[gny][gnx].nullChunk) 
         continue;
 
-      jobs1[gny][gnx].dependencies[ns]++;
+      jobs1[gny][gnx].dependencies.at(ns)++;
 
     }
   }
@@ -766,24 +766,24 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   //Search for cells without dependencies
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
-    if(chunks[y][x].nullChunk)
+    if(chunks.at(y).at(x).nullChunk)
       continue;
 
-    for(size_t s=0;s<jobs1[y][x].dependencies.size();s++){
-      if(jobs1[y][x].dependencies[s]==0)
+    for(size_t s=0;s<jobs1.at(y).at(x).dependencies.size();s++){
+      if(jobs1.at(y).at(x).dependencies.at(s)==0)
         q.emplace(x,y,s);
 
       //Accumulated flow at an input will be transfered to an output resulting
       //in double-counting
-      if(jobs1[y][x].links[s]!=FLOW_EXTERNAL) //TODO: NO_FLOW
-        jobs1[y][x].accum[s] = 0;
+      if(jobs1.at(y).at(x).links.at(s)!=FLOW_EXTERNAL) //TODO: NO_FLOW
+        jobs1.at(y).at(x).accum.at(s) = 0;
     }
   }
 
   while(!q.empty()){
     atype            c  = q.front();
-    Job1<flowdir_t> &j  = jobs1[c.gy][c.gx];
-    ChunkInfo       &ci = chunks[c.gy][c.gx]; 
+    Job1<flowdir_t> &j  = jobs1.at(c.gy).at(c.gx);
+    ChunkInfo       &ci = chunks.at(c.gy).at(c.gx);
     q.pop();
 
     int ns, gnx, gny;
@@ -791,7 +791,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(ns==-1)
       continue;
 
-    jobs1[gny][gnx].accum[ns] += j.accum[c.s];
+    jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
 
     if( (--jobs1[gny][gnx].dependencies[ns])==0 )
       q.emplace(ns,gnx,gny);
@@ -799,12 +799,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
-    if(chunks[y][x].nullChunk)
+    if(chunks.at(y).at(x).nullChunk)
       continue;
 
-    for(size_t s=0;s<jobs1[y][x].accum.size();s++) //TODO: NO_FLOW
-      if(jobs1[y][x].links[s]==FLOW_EXTERNAL)
-        jobs1[y][x].accum[s] = 0;
+    for(size_t s=0;s<jobs1.at(y).at(x).accum.size();s++) //TODO: NO_FLOW
+      if(jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL)
+        jobs1.at(y).at(x).accum.at(s) = 0;
 
     //TODO: Could start clearing memory here
   }
@@ -815,7 +815,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
     std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    if(chunks[y][x].nullChunk){
+    if(chunks.at(y).at(x).nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
     }
@@ -1033,16 +1033,16 @@ void Preparer(
     //are on the edge of the raster.
     for(int y=0;y<(int)chunks.size();y++)
     for(int x=0;x<(int)chunks[0].size();x++){
-      if(chunks[y][x].nullChunk)
+      if(chunks.at(y).at(x).nullChunk)
         continue;
       if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
-        chunks[y][x].edge |= GRID_TOP;
+        chunks.at(y).at(x).edge |= GRID_TOP;
       if(y+1<(int)chunks.size() && x>0 && chunks[y+1][x].nullChunk)
-        chunks[y][x].edge |= GRID_BOTTOM;
+        chunks.at(y).at(x).edge |= GRID_BOTTOM;
       if(y>0 && x-1>0 && chunks[y][x-1].nullChunk)
-        chunks[y][x].edge |= GRID_LEFT;
+        chunks.at(y).at(x).edge |= GRID_LEFT;
       if(y>0 && x+1<(int)chunks[0].size() && chunks[y][x+1].nullChunk)
-        chunks[y][x].edge |= GRID_RIGHT;
+        chunks.at(y).at(x).edge |= GRID_RIGHT;
     }
 
   } else if(many_or_one=="one") {
