@@ -8,12 +8,10 @@
 // SRTM data: https://dds.cr.usgs.gov/srtm/version2_1/SRTM1/Region_03/
 #include "gdal_priv.h"
 #include <iostream>
-#include <iomanip>
 #include <boost/mpi.hpp>
 #include <string>
 #include <queue>
 #include <vector>
-#include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
 #include <boost/filesystem.hpp>
