@@ -752,10 +752,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     for(int s=0;s<(int)c.flowdirs.size();s++){
       int ns,gnx,gny;
-      DownstreamCell(c.links,c.flowdirs,gridwidth,gridheight,chunks[y][x].width,chunks[y][x].height,s,ns,gnx,gny);
-      if(ns==-1)
-        continue;
-      if(chunks[gny][gnx].nullChunk) 
+      DownstreamCell(c.links,c.flowdirs,gridwidth,gridheight,chunks.at(y).at(x).width,chunks.at(y).at(x).height,s,ns,gnx,gny);
+      if(ns==-1 || chunks[gny][gnx].nullChunk) 
         continue;
 
       jobs1[gny][gnx].dependencies.at(ns)++;
