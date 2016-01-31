@@ -423,6 +423,8 @@ void DownstreamCell(
   int &gnx,
   int &gny
 ){
+  assert(links.size()==flowdirs.size());
+
   ns=gnx=gny=-1;
 
   //Flow ends somewhere internal to the tile or this particular cell has no
