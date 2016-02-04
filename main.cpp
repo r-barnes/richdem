@@ -353,7 +353,7 @@ void FlowAccumulation(
       accum(x,y) = ACCUM_NO_DATA;
       continue;                
     }         
-    if(n<=0) //TODO "n<=0"?   //This cell does not flow into a neighbour
+    if(n==NO_FLOW)               //This cell does not flow into a neighbour
       continue;
 
     int nx = x+dx[n];            //x-coordinate of the neighbour
@@ -396,8 +396,7 @@ void FlowAccumulation(
 
     int n = flowdirs(c.x,c.y);     //Who is this source's neighbour?
 
-    //TODO: NO_FLOW
-    if(n<=0)                       //This cell doesn't flow anywhere.
+    if(n==NO_FLOW)                 //This cell doesn't flow anywhere.
       continue;                    //Move on to the next source.
 
     int nx = c.x+dx[n];            //Okay, this cell is going somewhere.
