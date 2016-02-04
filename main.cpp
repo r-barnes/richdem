@@ -234,7 +234,7 @@ void FollowPath(
 
   //Follow the flow path until it terminates
   while(path_len++<10000000){      //Follow the flow path until we reach its end
-    int n = flowdirs(x,y);         //Neighbour the current cell flows towards
+    const int n = flowdirs(x,y);   //Neighbour the current cell flows towards
 
     //Show the final part of the loop path
     if(path_len>10000000-200)
@@ -250,8 +250,8 @@ void FollowPath(
     }
 
     //Flow direction was valid. Where does it lead?
-    int nx = x+dx[n]; //Get neighbour's x-coordinate.
-    int ny = y+dy[n]; //Get neighbour's y-coordinate.
+    const int nx = x+dx[n]; //Get neighbour's x-coordinate.
+    const int ny = y+dy[n]; //Get neighbour's y-coordinate.
 
     //The neighbour cell is off one of the sides of the tile. Therefore, its
     //flow may be passed on to a neighbouring tile. Thus, we need to link this
@@ -463,8 +463,10 @@ void DownstreamCell(
     int x,y;
     serialToXY(s,x,y,width,height);
 
-    int nx = x+flowdirs.at(s);
-    int ny = y+flowdirs.at(s);
+    const int nfd = j.flowdirs.at(s);
+    int nx        = x+dx[nfd];
+    int ny        = y+dy[nfd];
+
 
     if(nx>0){
       gnx += 1;
