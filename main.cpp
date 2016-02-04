@@ -123,6 +123,9 @@ class ChunkInfo{
   }
 };
 
+typedef std::vector< std::vector< ChunkInfo > > ChunkGrid;
+
+
 class TimeInfo {
  private:
   friend class boost::serialization::access;
@@ -674,7 +677,7 @@ void Consumer(){
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
 template<class flowdir_t>
-void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
+void Producer(ChunkGrid &chunks){
   boost::mpi::environment env;
   boost::mpi::communicator world;
   Timer timer_overall,timer_calc;
@@ -946,7 +949,7 @@ void Preparer(
   Timer overall;
   overall.start();
 
-  std::vector< std::vector< ChunkInfo > > chunks;
+  ChunkGrid chunks;
   std::string  filename;
   GDALDataType file_type; //All chunks must have a common file_type
 
