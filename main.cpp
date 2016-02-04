@@ -844,6 +844,16 @@ void Producer(ChunkGrid &chunks){
       q.emplace(gnx,gny,ns);
   }
 
+
+  //TODO: Remove this block as this should always be zero once I have things
+  //right.
+  int unprocessed_dependencies=0;
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++)
+  for(size_t s=0;s<jobs1[y][x].dependencies.size();s++)
+    unprocessed_dependencies+=jobs1[y][x].dependencies[s];
+  std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
+
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if(chunks.at(y).at(x).nullChunk)
