@@ -40,6 +40,8 @@ const int TAG_DONE_FIRST  = 2;
 const int TAG_SECOND_DATA = 3;
 const int TAG_DONE_SECOND = 4;
 
+std::vector<std::string> tag_trans = {{"TAG_WHICH_JOB","TAG_CHUNK_DATA","TAG_DONE_FIRST","TAG_SECOND_DATA","TAG_DONE_SECOND"}};
+
 const int SYNC_MSG_KILL = 0;
 const int JOB_CHUNK     = 1;
 const int JOB_FIRST     = 2;
@@ -49,6 +51,25 @@ const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
 const int ACCUM_NO_DATA = -1;
+
+//TODO
+template<typename T> boost::mpi::status WorldRecv(int source, int tag, T & value) {
+  boost::mpi::communicator world;
+  assert(world.rank()!=source);
+  //std::cerr<<"I am "<<world.rank()<<" receiving from "<<source<<" with tag "<<tag_trans[tag]<<std::endl;
+  boost::mpi::status status = world.recv(source,tag,value);
+  //std::cerr<<"Received."<<std::endl;
+  return status;
+}
+
+//TODO
+template<typename T> void WorldSend(int dest, int tag, const T & value) {
+  boost::mpi::communicator world;
+  assert(world.rank()!=dest);
+  //std::cerr<<"I am "<<world.rank()<<" sending to "<<dest<<" with tag "<<tag_trans[tag]<<std::endl;
+  world.send(dest,tag,value);
+  //std::cerr<<"Sent"<<std::endl;
+}
 
 typedef uint8_t dependency_t;
 typedef int32_t link_t;
@@ -487,8 +508,7 @@ void Consumer(){
   //Have the consumer process messages as long as they are coming using a
   //blocking receive to wait.
   while(true){
-    world.recv(0, TAG_WHICH_JOB, the_job); //Blocking wait
-
+    WorldRecv(0, TAG_WHICH_JOB, the_job); //Blocking wait
 
     //This message indicates that everything is done and the Consumer should shut
     //down.
@@ -496,7 +516,7 @@ void Consumer(){
       return;
 
     } else if (the_job==JOB_CHUNK){
-      world.recv(0, TAG_CHUNK_DATA, chunk);
+      WorldRecv(0, TAG_CHUNK_DATA, chunk);
 
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
@@ -576,13 +596,13 @@ void Consumer(){
 
       job1.time_info = TimeInfo(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated());
 
-      world.send(0, TAG_DONE_FIRST, job1);
+      WorldSend(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
       std::vector<accum_t> accum_offset; //TODO
 
-      world.recv(0, TAG_SECOND_DATA, accum_offset);
+      WorldRecv(0, TAG_SECOND_DATA, accum_offset);
 
       //These use the same logic as the analogous lines above
       if(chunk.retention=="@offloadall"){
@@ -685,11 +705,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(active_nodes<world.size()-1){
       active_nodes++;
       // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes,TAG_CHUNK_DATA,chunks.at(y).at(x));
+      WorldSend(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
+      WorldSend(active_nodes,TAG_CHUNK_DATA,chunks.at(y).at(x));
 
       rank_to_chunk[active_nodes] = chunks.at(y).at(x);
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_FIRST);
+      WorldSend(active_nodes,TAG_WHICH_JOB,JOB_FIRST);
 
     //Once all of the consumers are active, wait for them to return results. As
     //each Consumer returns a result, pass it the next unfinished Job until
@@ -701,18 +721,18 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
-      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+      boost::mpi::status status = WorldRecv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
 
       //NOTE: This could be used to implement more robust handling of lost nodes
       ChunkInfo received_chunk = rank_to_chunk[status.source()];
       jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
 
       //Delegate new work to that consumer
-      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
+      WorldSend(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
+      WorldSend(status.source(),TAG_CHUNK_DATA,chunks.at(y).at(x));
 
       rank_to_chunk[status.source()] = chunks.at(y).at(x);
-      world.send(status.source(),TAG_WHICH_JOB,JOB_FIRST);
+      WorldSend(status.source(),TAG_WHICH_JOB,JOB_FIRST);
     }
   }
 
@@ -721,7 +741,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
-    boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
+    boost::mpi::status status = WorldRecv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
     ChunkInfo received_chunk = rank_to_chunk[status.source()];
     jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
 
@@ -842,7 +862,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       //As each Consumer returns a result, pass it the next unfinished Job until
       //there are no jobs left.
       TimeInfo temp;
-      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+      boost::mpi::status status = WorldRecv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
 
       time_second_total += temp;
       time_second_count++;
@@ -850,19 +870,19 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       destination_node = status.source();
     }
 
-    world.send(destination_node,TAG_WHICH_JOB,JOB_CHUNK);
-    world.send(destination_node,TAG_CHUNK_DATA,chunks[y][x]);
+    WorldSend(destination_node,TAG_WHICH_JOB,JOB_CHUNK);
+    WorldSend(destination_node,TAG_CHUNK_DATA,chunks.at(y).at(x));
 
-    rank_to_chunk[destination_node] = chunks[y][x];
-    world.send(destination_node,TAG_WHICH_JOB,JOB_SECOND);
-    world.send(destination_node,TAG_SECOND_DATA,jobs1[y][x].accum);
+    rank_to_chunk[destination_node] = chunks.at(y).at(x);
+    WorldSend(destination_node,TAG_WHICH_JOB,JOB_SECOND);
+    WorldSend(destination_node,TAG_SECOND_DATA,jobs1.at(y).at(x).accum);
   }
 
   while(active_nodes>0){
     TimeInfo temp;
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
-    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+    WorldRecv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
 
     time_second_total += temp;
     time_second_count++;
@@ -873,7 +893,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   for(int i=1;i<world.size();i++)
-    world.send(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+    WorldSend(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
 
   timer_overall.stop();
 
