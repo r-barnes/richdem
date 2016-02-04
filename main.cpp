@@ -175,31 +175,31 @@ int xyToSerial(const int x, const int y, const int width, const int height){
   //Ensure cell is on the perimeter
   assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
 
-  if(y==0)                   //Top row
+  if(y==0)                         //Top row
     return x;
 
-  if(x==width-1)             //Right hand side
-    return width+y;
+  if(x==width-1)                   //Right hand side
+    return (width-1)+y;
 
-  if(y==height-1)      
-    return width+height+x;   //Bottom-row
+  if(y==height-1)                  //Bottom-row
+    return (width-1)+(height)+x;   
 
-  return 2*width+height+y;   //Left-hand side
+  return 2*(width-1)+(height-1)+y; //Left-hand side
 }
 
 void serialToXY(const int serial, int &x, int &y, const int width, const int height){
-  if(serial<width){                 //Top row
+  if(serial<width){                        //Top row
     x = serial;
     y = 0;
-  } else if(serial<width+height){   //Right-hand side
+  } else if(serial<(width-1)+height){     //Right-hand side
     x = width-1;
-    y = serial-width;
-  } else if(serial<2*width+height){ //Bottom row
-    x = serial-width-height;
+    y = serial-(width-1);
+  } else if(serial<2*(width-1)+(height)){ //Bottom row
+    x = serial-(width-1)-(height-1)-1;
     y = height-1;
-  } else {                          //Left-hand side
+  } else {                                //Left-hand side
     x = 0;
-    y = serial-2*width-height; 
+    y = serial-2*(width-1)-(height-1);
   }
 
   //Ensure cell is on the perimeter
