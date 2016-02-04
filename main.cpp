@@ -450,8 +450,8 @@ void DownstreamCell(
   const int height,
   const int s,
   int &ns,
-  int &gnx,
-  int &gny
+  int &gnx, //Input is the tile of this cell
+  int &gny  //Input is the tile of this cell
 ){
   assert(links.size()==flowdirs.size());
 
