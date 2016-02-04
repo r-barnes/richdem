@@ -771,8 +771,10 @@ void Producer(ChunkGrid &chunks){
 
   //Set initial values for all dependencies to zero
   for(int y=0;y<gridheight;y++)
-  for(int x=0;x<gridwidth;x++)
-    jobs1.at(y).at(x).dependencies.resize(jobs1.at(y).at(x).links.size(),0);
+  for(int x=0;x<gridwidth;x++){
+    auto &this_job = jobs1.at(y).at(x);
+    this_job.dependencies.resize(this_job.links.size(),0);
+  }
 
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
