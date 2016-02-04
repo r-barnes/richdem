@@ -257,13 +257,16 @@ void FollowPath(
     //flow may be passed on to a neighbouring tile. Thus, we need to link this
     //flow path's initial cell to this terminal cell.
     if(!flowdirs.in_grid(nx,ny)) {
-      //This is still the first cell. The flow was never directed into the grid
-      //to begin with, so we mark this as a termination cell: it potentially
-      //gives flow to other tiles, but does not receive flow.
-      if(x==x0 && y==y0) 
+      if(x==x0 && y==y0) {
+        //If (x,y)==(x0,y0), then this is the first cell and it points off of
+        //the grid. Mark it as being FLOW_EXTERNAL.
         links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = FLOW_EXTERNAL;
-      else
+      } else {
+        //The flow path entered the grid one place and left another. We mark
+        //only the start of the flow path since the end of the flow path will be
+        //handled by another call to this function
         links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = xyToSerial(x,y,flowdirs.viewWidth(),flowdirs.viewHeight());
+      }
       return;
     }
 
@@ -286,11 +289,11 @@ void FollowPath(
 //Therefore, we add this additional accumulation to each cell as we pass it.
 template<class flowdir_t>
 void FollowPathAdd(
-  int x,                     //Initial x-coordinate
-  int y,                     //Initial y-coordinate
+  int x,                              //Initial x-coordinate
+  int y,                              //Initial y-coordinate
   const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
-  Array2D<accum_t>         &accum,
-  const accum_t additional_accum
+  Array2D<accum_t>         &accum,    //Output: Accumulation matrix
+  const accum_t additional_accum      //Add this to every cell in the flow path
 ){
   int count = 0;
 
@@ -343,7 +346,7 @@ void FlowAccumulation(
   dependencies.resize(flowdirs,0);
   for(int y=0;y<flowdirs.viewHeight();y++)
   for(int x=0;x<flowdirs.viewWidth();x++){
-    int n = flowdirs(x,y); //The neighbour this cell flows into
+    int n = flowdirs(x,y);       //The neighbour this cell flows into
 
     
     if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
@@ -353,9 +356,9 @@ void FlowAccumulation(
     if(n<=0) //TODO "n<=0"?   //This cell does not flow into a neighbour
       continue;
 
-    int nx = x+dx[n];       //x-coordinate of the neighbour
-    int ny = y+dy[n];       //y-coordinate of the neighbour
-
+    int nx = x+dx[n];            //x-coordinate of the neighbour
+    int ny = y+dy[n];            //y-coordinate of the neighbour
+      
     //Neighbour is not on the grid
     if(!flowdirs.in_grid(nx,ny))
       continue;
