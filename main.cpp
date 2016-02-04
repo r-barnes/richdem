@@ -550,18 +550,22 @@ void Consumer(){
 
       job1.links.resize(2*flowdirs.viewWidth()+2*flowdirs.viewHeight(), FLOW_TERMINATES);
 
-      //If we are the top segment, nothing can flow into us, so we do not need to
-      //know where flow paths originating at the top go to. On the otherhand, if we
-      //are not the top segment, then consider each cell of the top row and find out
-      //where its flow goes to.
+      //TODO: Although the following may consider a cell more than once, the
+      //repeated effort merely produces the same results in the same places
+      //twice, so it's okay.
+
+      //If we are the top segment, nothing can flow into us, so we do not need
+      //to know where flow paths originating at the top go to. On the otherhand,
+      //if we are not the top segment, then consider each cell of the top row
+      //and find out where its flow goes to.
       if(!(chunk.edge & GRID_TOP))
         for(int x=0;x<flowdirs.viewWidth();x++)
           FollowPath(x,0,flowdirs,job1.links);
 
-      //If we are the bottom segment, nothing can flow into us, so we do not need to
-      //know where flow paths originating at the bottom go to. On the otherhand, if
-      //we are not the bottom segment, then consider each cell of the bottom row and
-      //find out where its flow goes to.
+      //If we are the bottom segment, nothing can flow into us, so we do not
+      //need to know where flow paths originating at the bottom go to. On the
+      //otherhand, if we are not the bottom segment, then consider each cell of
+      //the bottom row and find out where its flow goes to.
       if(!(chunk.edge & GRID_BOTTOM))
         for(int x=0;x<flowdirs.viewWidth();x++)
           FollowPath(x,flowdirs.viewHeight()-1,flowdirs,job1.links);
