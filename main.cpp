@@ -432,13 +432,13 @@ void GridPerimToArray(const Array2D<T> &grid, std::vector<T> &vec){
   vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
 
   vec2copy = grid.getColData(grid.viewWidth()-1);        //Right
-  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end());
   
   vec2copy = grid.getRowData(grid.viewHeight()-1);       //Bottom
-  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end()-1);
   
   vec2copy = grid.getColData(0);                         //Left
-  vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+  vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end()-1);
 }
 
 template<class flowdir_t>
