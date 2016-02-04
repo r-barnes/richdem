@@ -173,7 +173,7 @@ class Job1 {
 
 int xyToSerial(const int x, const int y, const int width, const int height){
   //Ensure cell is on the perimeter
-  assert(x==0 || x==width-1 || y==0 || y==height-1);
+  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
 
   if(y==0)                   //Top row
     return x;
@@ -203,7 +203,7 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
   }
 
   //Ensure cell is on the perimeter
-  assert(x==0 || x==width-1 || y==0 || y==height-1);
+  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
 }
 
 
