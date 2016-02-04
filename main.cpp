@@ -29,9 +29,9 @@
 //TODO: Is it possible to run this without mpirun if we specify a single node
 //job?
 
-#define NO_FLOW 37 //TODO
-#define FLOW_TERMINATES -3 //TODO
-#define FLOW_EXTERNAL   -4 //TODO
+#define NO_FLOW         37 //TODO: Expalin and ensure it fits in flowdir_t
+#define FLOW_TERMINATES -3 //TODO: Expalin and ensure it fits in flowdir_t
+#define FLOW_EXTERNAL   -4 //TODO: Expalin and ensure it fits in flowdir_t
 
 //TODO: What are these for?
 const int TAG_WHICH_JOB   = 0;
