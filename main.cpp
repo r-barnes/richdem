@@ -552,7 +552,9 @@ void Consumer(){
       timer_calc.start();
       FlowAccumulation(flowdirs,accum);
 
-      job1.links.resize(2*flowdirs.viewWidth()+2*flowdirs.viewHeight(), FLOW_TERMINATES);
+      //-2 removes duplicate cells on vertical edges which would otherwise
+      //overlap horizontal edges
+      job1.links.resize(2*flowdirs.viewWidth()+2*(flowdirs.viewHeight()-2), FLOW_TERMINATES);
 
       //TODO: Although the following may consider a cell more than once, the
       //repeated effort merely produces the same results in the same places
