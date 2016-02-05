@@ -273,6 +273,10 @@ class Array2D {
     return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
   }
 
+  bool edge_grid(int x, int y) const {
+    return x==0 || y==0 || x==viewWidth()-1 || y==viewHeight()-1;
+  }
+
   void setNoData(const T &ndval){
     no_data = ndval;
   }
