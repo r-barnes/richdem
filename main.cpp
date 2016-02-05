@@ -585,8 +585,6 @@ void Consumer(){
           FollowPath(flowdirs.viewWidth()-1,y,flowdirs,job1.links);
 
       //Construct output arrays
-      std::vector<flowdir_t> out_flowdirs;
-      std::vector<accum_t>   out_accum;
       GridPerimToArray(flowdirs, job1.flowdirs);
       GridPerimToArray(accum,    job1.accum   );
 
