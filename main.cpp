@@ -442,60 +442,68 @@ void GridPerimToArray(const Array2D<T> &grid, std::vector<T> &vec){
 
 template<class flowdir_t>
 void DownstreamCell(
-  const std::vector<link_t>    &links,
-  const std::vector<flowdir_t> &flowdirs,
-  const int gridwidth,
-  const int gridheight,
-  const int width,
-  const int height,
+  const std::vector< std::vector< Job1<flowdir_t> > > &jobs,
+  const ChunkGrid &chunks,
+  const int gx,
+  const int gy,
   const int s,
   int &ns,
   int &gnx, //Input is the tile of this cell
   int &gny  //Input is the tile of this cell
 ){
-  assert(links.size()==flowdirs.size());
+  const auto &j = jobs.at(gy).at(gx);
 
-  ns=gnx=gny=-1;
+  assert(j.links.size()==j.flowdirs.size());
+
+  ns=-1;
+
+  gnx = gx;
+  gny = gy;
 
   //Flow ends somewhere internal to the tile or this particular cell has no
-  //flow direction
-  if(links.at(s)==FLOW_TERMINATES){
+  //flow direction. The TERMINATES should also take care of NoData flowdirs
+  if(j.links.at(s)==FLOW_TERMINATES || j.flowdirs.at(s)==NO_FLOW){
     return;
-  } else if(links.at(s)==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+  } else if(j.links.at(s)==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+    const auto &c = chunks.at(gy).at(gx);
+
     int x,y;
-    serialToXY(s,x,y,width,height);
+    serialToXY(s,x,y,c.width,c.height);
 
     const int nfd = j.flowdirs.at(s);
     int nx        = x+dx[nfd];
     int ny        = y+dy[nfd];
 
+    //Since this is a FLOW_EXTERNAL, this cell must point off of the grid
+    assert(nx<0 || ny<0 || nx==c.width || ny==c.height);
 
-    if(nx>0){
+    if(nx==c.width){
       gnx += 1;
       nx   = 0;
-    } else {
+    } else if(nx==-1){
       gnx -= 1;
-      nx   = width-1;
-    }
-
-    if(ny>0){
+      nx   = c.width-1;
+    } 
+    
+    if(ny==c.height){
       gny += 1;
       ny   = 0;
-    } else {
+    } else if(ny==-1) {
       gny -= 1;
-      ny   = height-1;
+      ny   = c.height-1;
     }
 
-    if(gnx<0 || gny<0 || gnx==gridwidth || gny==gridheight){
+    //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
+    if(gnx<0 || gny<0 || gnx==(int)jobs.front().size() || gny==(int)jobs.size()){
       gnx=gny=ns=-1;
       return;
     }
 
-    ns = xyToSerial(nx,ny,width,height);
+    const auto &nc = chunks.at(gny).at(gnx);
+
+    ns = xyToSerial(nx,ny,nc.width,nc.height);
   } else { //Flow goes to somewhere else on the perimeter of the same tile
-    gnx = 0;
-    gny = 0;
-    ns = links.at(s);
+    ns = j.links.at(s);
   }
 }
 
@@ -776,25 +784,24 @@ void Producer(ChunkGrid &chunks){
 
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
-    if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
-
-    if(chunks.at(y).at(x).nullChunk)
+    auto &this_chunk = chunks.at(y).at(x);
+    if(this_chunk.nullChunk)
       continue;
 
-    auto &c = jobs1.at(y).at(x);
+    auto &this_job = jobs1.at(y).at(x);
 
-    time_first_total += c.time_info;
+    time_first_total += this_job.time_info;
     time_first_count++;
 
-    for(int s=0;s<(int)c.flowdirs.size();s++){
-      int ns,gnx,gny;
-      DownstreamCell(c.links,c.flowdirs,gridwidth,gridheight,chunks.at(y).at(x).width,chunks.at(y).at(x).height,s,ns,gnx,gny);
-      if(ns==-1 || chunks[gny][gnx].nullChunk) 
+    for(int s=0;s<(int)this_job.flowdirs.size();s++){
+      int ns  = -1; //Initial values designed to cause devastation if misused
+      int gnx = -1;
+      int gny = -1;
+      DownstreamCell(jobs1, chunks, x, y, s, ns, gnx, gny);
+      if(ns==-1 || chunks.at(gny).at(gnx).nullChunk) 
         continue;
 
-      jobs1[gny][gnx].dependencies.at(ns)++;
-
+      jobs1.at(gny).at(gnx).dependencies.at(ns)++;
     }
   }
 
@@ -806,33 +813,46 @@ void Producer(ChunkGrid &chunks){
 
   std::queue<atype> q;
 
+  int accum_to_dist=0; //TODO
   //Search for cells without dependencies
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if(chunks.at(y).at(x).nullChunk)
       continue;
 
-    for(size_t s=0;s<jobs1.at(y).at(x).dependencies.size();s++){
-      if(jobs1.at(y).at(x).dependencies.at(s)==0)
+    auto &this_job = jobs1.at(y).at(x);
+
+    for(size_t s=0;s<this_job.dependencies.size();s++){
+      if(this_job.dependencies.at(s)==0) // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
         q.emplace(x,y,s);
 
       //Accumulated flow at an input will be transfered to an output resulting
       //in double-counting
-      if(jobs1.at(y).at(x).links.at(s)!=FLOW_EXTERNAL) //TODO: NO_FLOW
-        jobs1.at(y).at(x).accum.at(s) = 0;
+      if(this_job.links.at(s)!=FLOW_EXTERNAL) //TODO: NO_FLOW
+        this_job.accum.at(s) = 0;
+      else
+        accum_to_dist += this_job.accum.at(s); //TODO
     }
   }
 
+  std::cerr<<accum_to_dist<<" accumulation to distribute."<<std::endl;
+
+  std::cerr<<q.size()<<" peaks founds in aggregated problem."<<std::endl;
+
+  int processed_peaks = 0;
   while(!q.empty()){
     atype            c  = q.front();
     Job1<flowdir_t> &j  = jobs1.at(c.gy).at(c.gx);
     ChunkInfo       &ci = chunks.at(c.gy).at(c.gx);
     q.pop();
+    processed_peaks++;
 
     assert(!ci.nullChunk);
 
-    int ns, gnx, gny;
-    DownstreamCell(j.links,j.flowdirs,gridwidth,gridheight,ci.width,ci.height,c.s,ns,gnx,gny);
+    int ns  = -1; //Initial value designed to cause devastation if misused
+    int gnx = -1; //Initial value designed to cause devastation if misused
+    int gny = -1; //Initial value designed to cause devastation if misused
+    DownstreamCell(jobs1, chunks, c.gx, c.gy, c.s, ns, gnx, gny);
     if(ns==-1 || chunks.at(gny).at(gnx).nullChunk)
       continue;
 
@@ -842,6 +862,7 @@ void Producer(ChunkGrid &chunks){
       q.emplace(gnx,gny,ns);
   }
 
+  std::cerr<<processed_peaks<<" peaks processed."<<std::endl;
 
   //TODO: Remove this block as this should always be zero once I have things
   //right.
