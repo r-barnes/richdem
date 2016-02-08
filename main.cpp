@@ -481,18 +481,14 @@ void DownstreamCell(
 
     if(nx==c.width){
       gnx += 1;
-      nx   = 0;
     } else if(nx==-1){
       gnx -= 1;
-      nx   = c.width-1;
     } 
     
     if(ny==c.height){
       gny += 1;
-      ny   = 0;
     } else if(ny==-1) {
       gny -= 1;
-      ny   = c.height-1;
     }
 
     //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
@@ -503,7 +499,21 @@ void DownstreamCell(
 
     const auto &nc = chunks.at(gny).at(gnx);
 
+    if(nx==c.width){
+      nx = 0;
+    } else if(nx==-1){
+      nx = nc.width-1;
+    } 
+    
+    if(ny==c.height){
+      ny = 0;
+    } else if(ny==-1) {
+      ny = nc.height-1;
+    }
+
     ns = xyToSerial(nx,ny,nc.width,nc.height);
+
+    assert(ns<(int)jobs.at(gny).at(gnx).flowdirs.size());
   } else { //Flow goes to somewhere else on the perimeter of the same tile
     ns = j.links.at(s);
   }
