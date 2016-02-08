@@ -455,16 +455,18 @@ void DownstreamCell(
 
   assert(j.links.size()==j.flowdirs.size());
 
-  ns=-1;
+  ns = -1;
 
   gnx = gx;
   gny = gy;
 
-  //Flow ends somewhere internal to the tile or this particular cell has no
-  //flow direction. The TERMINATES should also take care of NoData flowdirs
   if(j.links.at(s)==FLOW_TERMINATES || j.flowdirs.at(s)==NO_FLOW){
+    //Flow ends somewhere internal to the tile or this particular cell has no
+    //flow direction. The TERMINATES should also take care of NoData flowdirs
     return;
-  } else if(j.links.at(s)==FLOW_EXTERNAL){ //Flow goes into a valid neighbouring tile
+
+  } else if(j.links.at(s)==FLOW_EXTERNAL){
+    //Flow goes into a valid neighbouring tile
     const auto &c = chunks.at(gy).at(gx);
 
     int x,y;
