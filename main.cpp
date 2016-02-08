@@ -562,6 +562,9 @@ void Consumer(){
         flowdirs.flipHorz();
       timer_io.stop();
 
+      assert(flowdirs.viewWidth ()==chunk.width );
+      assert(flowdirs.viewHeight()==chunk.height);
+
       //Let's double-check that the flowdirs are valid
       for(int y=0;y<flowdirs.viewHeight();y++)
       for(int x=0;x<flowdirs.viewWidth();x++)
