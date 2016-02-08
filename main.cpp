@@ -1162,7 +1162,8 @@ void Preparer(
         std::string retention = retention_base;
         if(retention[0]!='@')
           retention = retention_base+filepath.stem().string()+"-int-"+std::to_string(chunkid)+"-";
-        chunks.back().emplace_back(chunkid++, filename, outputname, retention, gridx, gridy, x, y, bwidth, bheight);
+
+        chunks.back().emplace_back(chunkid++, filename, outputname, retention, gridx, gridy, x, y, ((x+bwidth>total_width)?(total_width-x):bwidth), ((y+bheight>total_height)?(total_height-y):bheight) );
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
