@@ -797,6 +797,7 @@ void Producer(ChunkGrid &chunks){
     this_job.dependencies.resize(this_job.links.size(),0);
   }
 
+  std::cerr<<"Calculating dependencies..."<<std::endl;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     auto &this_chunk = chunks.at(y).at(x);
