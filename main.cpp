@@ -236,7 +236,7 @@ void FollowPath(
   while(path_len++<10000000){      //Follow the flow path until we reach its end
     const int n = flowdirs(x,y);   //Neighbour the current cell flows towards
 
-    //Show the final part of the loop path
+    //Show the final part of the loop path (TODO)
     if(path_len>10000000-200)
       std::cerr<<"Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
 
