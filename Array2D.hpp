@@ -138,10 +138,16 @@ class Array2D {
     total_height = band->GetYSize();
     no_data      = band->GetNoDataValue();
 
-    if(xOffset+part_width>=total_width)
+    if(xOffset+part_width>=total_width){
+      std::cerr<<"Warning! A tile width of "<<part_width<<" was specified, but the actual width was ";
       part_width  = total_width-xOffset;
-    if(yOffset+part_height>=total_height)
+      std::cerr<<part_width<<std::endl;
+    }
+    if(yOffset+part_height>=total_height){
+      std::cerr<<"Warning! A tile height of "<<part_height<<" was specified, but the actual height was ";
       part_height = total_height-yOffset;
+      std::cerr<<part_height<<std::endl;
+    }
 
     if(part_width==0)
       part_width = total_width;
