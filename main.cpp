@@ -6,6 +6,11 @@
 // For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
 // abs("single_proc@1"-"merged@1")>0
 // SRTM data: https://dds.cr.usgs.gov/srtm/version2_1/SRTM1/Region_03/
+//
+// gdal_merge.py -o merged.tif -n -1 outtestdem1-*tif //TODO: Remove
+
+//TODO: If specified block size is larger than the DEM, this shouldn't break
+//things
 #include "gdal_priv.h"
 #include <iostream>
 #include <boost/mpi.hpp>
@@ -15,6 +20,7 @@
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
 #include <boost/filesystem.hpp>
+#include <iomanip> //TODO: Remove
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -205,6 +211,44 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
   //Ensure cell is on the perimeter
   assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
 }
+
+
+//TODO: Remove
+template<class T>
+void print2d(const Array2D<T> &arr){
+  return;
+  for(int y=0;y<arr.viewHeight();y++){
+    for(int x=0;x<arr.viewWidth();x++)
+      std::cerr<<std::setw(5)<<arr(x,y);
+    std::cerr<<std::endl;
+  }
+}
+
+//TODO: Remove
+template<class T>
+void print1d(const std::vector<T> &v){
+  return;
+  for(int x=0;x<(int)v.size();x++)
+    std::cerr<<std::setw(5)<<v[x];
+  std::cerr<<std::endl;
+}
+
+//TODO: Remove
+template<class T>
+void print1das2d(const std::vector<T> &v, const int width, const int height){
+  return;
+  for(int y=0;y<height;y++){
+    for(int x=0;x<width;x++){
+      if(! (x==0 || y==0 || x==width-1 || y==height-1))
+        std::cerr<<std::setw(5)<<" ";
+      else
+        std::cerr<<std::setw(5)<<(int)v.at(xyToSerial(x,y,width,height));
+    }
+    std::cerr<<std::endl;
+  }
+}
+
+
 
 
 //TODO: Check this description
@@ -545,6 +589,8 @@ void Consumer(){
     } else if (the_job==JOB_CHUNK){
       WorldRecv(0, TAG_CHUNK_DATA, chunk);
 
+      std::cerr<<"Let's process chunk ("<<chunk.gridx<<","<<chunk.gridy<<")"<<std::endl; //TODO: Remove
+
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
@@ -587,7 +633,7 @@ void Consumer(){
       //to know where flow paths originating at the top go to. On the otherhand,
       //if we are not the top segment, then consider each cell of the top row
       //and find out where its flow goes to.
-      if(!(chunk.edge & GRID_TOP))
+      // if(!(chunk.edge & GRID_TOP)) //TODO
         for(int x=0;x<flowdirs.viewWidth();x++)
           FollowPath(x,0,flowdirs,job1.links);
 
@@ -595,15 +641,15 @@ void Consumer(){
       //need to know where flow paths originating at the bottom go to. On the
       //otherhand, if we are not the bottom segment, then consider each cell of
       //the bottom row and find out where its flow goes to.
-      if(!(chunk.edge & GRID_BOTTOM))
+      // if(!(chunk.edge & GRID_BOTTOM)) //TODO
         for(int x=0;x<flowdirs.viewWidth();x++)
           FollowPath(x,flowdirs.viewHeight()-1,flowdirs,job1.links);
 
-      if(!(chunk.edge & GRID_LEFT))
+      // if(!(chunk.edge & GRID_LEFT)) //TODO
         for(int y=0;y<flowdirs.viewHeight();y++)
           FollowPath(0,y,flowdirs,job1.links);
 
-      if(!(chunk.edge & GRID_RIGHT))
+      // if(!(chunk.edge & GRID_RIGHT)) //TODO
         for(int y=0;y<flowdirs.viewHeight();y++)
           FollowPath(flowdirs.viewWidth()-1,y,flowdirs,job1.links);
 
@@ -629,6 +675,18 @@ void Consumer(){
       std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
       job1.time_info = TimeInfo(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated());
+
+      //TODO: Remove
+      std::cerr<<"Flowdirs: "<<std::endl;
+      print2d(flowdirs);
+      std::cerr<<"Accum: "<<std::endl;
+      print2d(accum);
+      std::cerr<<"Flowdirs Perim: "<<std::endl;
+      print1d(job1.flowdirs);
+      std::cerr<<"Accum perim: "<<std::endl;
+      print1das2d(job1.accum,flowdirs.viewWidth(),flowdirs.viewHeight());
+      std::cerr<<"Links: "<<std::endl;
+      print1das2d(job1.links,flowdirs.viewWidth(),flowdirs.viewHeight());
 
       WorldSend(0, TAG_DONE_FIRST, job1);
     } else if (the_job==JOB_SECOND){
@@ -669,6 +727,10 @@ void Consumer(){
         FollowPathAdd(x,y,flowdirs,accum,accum_offset[s]);
       }
 
+      //TODO: Remove
+      std::cerr<<"Final accumulation"<<std::endl;
+      print2d(accum);
+
       //At this point we're done with the calculation! Boo-yeah!
 
       timer_io.start();
@@ -694,13 +756,6 @@ void Consumer(){
     }
   }
 }
-
-
-
-
-
-
-
 
 //Producer takes a collection of Jobs and delegates them to Consumers. Once all
 //of the jobs have received their initial processing, it uses that information
@@ -819,6 +874,13 @@ void Producer(ChunkGrid &chunks){
 
       jobs1.at(gny).at(gnx).dependencies.at(ns)++;
     }
+  }
+
+  //TODO: Remove
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
+    std::cerr<<"Dependencies of chunk ("<<x<<","<<y<<")"<<std::endl;
+    print1das2d(jobs1.at(y).at(x).dependencies,chunks.at(y).at(x).width,chunks.at(y).at(x).height);
   }
 
   class atype {
@@ -1171,9 +1233,9 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        if(total_height-y<100 || total_width-x<100){
-          throw std::logic_error("At least one tile is <100 cells in at least one dimensions. Please change rectangle size to avoid this!");
-        }
+        //if(total_height-y<100 || total_width-x<100){ //TODO: Add back in
+        //  throw std::logic_error("At least one tile is <100 cells in at least one dimensions. Please change rectangle size to avoid this!");
+        //}
         auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
         std::string retention = retention_base;
         if(retention[0]!='@')
@@ -1275,16 +1337,16 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-w followed by no argument.");
           bwidth = std::stoi(argv[i+1]);
-          if(bwidth<300 && bwidth!=-1)
-            throw std::invalid_argument("Width must be at least 500.");
+          // if(bwidth<300 && bwidth!=-1) //TODO
+          //   throw std::invalid_argument("Width must be at least 500.");
           i++;
           continue;
         } else if(strcmp(argv[i],"--bheight")==0 || strcmp(argv[i],"-h")==0){
           if(i+1==argc)
             throw std::invalid_argument("-h followed by no argument.");
           bheight = std::stoi(argv[i+1]);
-          if(bheight<300 && bheight!=-1)
-            throw std::invalid_argument("Height must be at least 500.");
+          // if(bheight<300 && bheight!=-1) //TODO
+          //   throw std::invalid_argument("Height must be at least 500.");
           i++;
           continue;
         } else if(strcmp(argv[i],"--flipH")==0 || strcmp(argv[i],"-H")==0){
@@ -1332,6 +1394,8 @@ int main(int argc, char **argv){
     Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
   } else {
+    std::cerr<<"I am a consumer!"<<std::endl; //TODO
+
     int good_to_go;
     boost::mpi::broadcast(world, good_to_go, 0);
     if(!good_to_go)
