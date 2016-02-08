@@ -725,7 +725,7 @@ void Producer(ChunkGrid &chunks){
   active_nodes=0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" (x="<<(x+1)<<"/"<<chunks[0].size()<<", y="<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
     if(chunks.at(y).at(x).nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
@@ -902,7 +902,7 @@ void Producer(ChunkGrid &chunks){
   active_nodes = 0;
   for(size_t y=0;y<chunks.size();y++)
   for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" (x="<<(x+1)<<"/"<<chunks[0].size()<<", y="<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
     if(chunks.at(y).at(x).nullChunk){
       std::cerr<<"\tNull chunk: skipping."<<std::endl;
       continue;
