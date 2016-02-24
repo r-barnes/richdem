@@ -9,8 +9,9 @@
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
-#include <boost/mpi.hpp>
-#include <boost/serialization/map.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/archives/binary.hpp>
 #include "Zhou2015pf.hpp"
 #include "Barnes2014pf.hpp"
 #include <string>
@@ -38,9 +39,9 @@ typedef uint32_t label_t;
 
 class ChunkInfo{
  private:
-  friend class boost::serialization::access;
+  friend class cereal::access;
   template<class Archive>
-  void serialize(Archive & ar, const unsigned int version){
+  void serialize(Archive & ar){
     ar & edge;
     ar & flip;
     ar & x;
@@ -87,9 +88,9 @@ class ChunkInfo{
 
 class TimeInfo {
  private:
-  friend class boost::serialization::access;
+  friend class cereal::access;
   template<class Archive>
-  void serialize(Archive & ar, const unsigned int version){
+  void serialize(Archive & ar){
     ar & calc;
     ar & overall;
     ar & io;
@@ -112,9 +113,9 @@ class TimeInfo {
 template<class elev_t>
 class Job1 {
  private:
-  friend class boost::serialization::access;
+  friend class cereal::access;
   template<class Archive>
-  void serialize(Archive & ar, const unsigned int version){
+  void serialize(Archive & ar){
     ar & top_elev;
     ar & bot_elev;
     ar & left_elev;
