@@ -9,8 +9,10 @@
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
+#include <mpi.h>
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
 #include <cereal/types/map.hpp>
-#include <cereal/types/memory.hpp>
 #include <cereal/archives/binary.hpp>
 #include "Zhou2015pf.hpp"
 #include "Barnes2014pf.hpp"
@@ -21,6 +23,8 @@
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
 #include <boost/filesystem.hpp>
+
+#define _unused(x) ((void)x) //Used for asserts
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -35,6 +39,97 @@
 //TODO: Is it possible to run this without mpirun if we specify a single node
 //job?
 
+template<class T, class U>
+void CommSend(const T* a, const U* b, int dest, int tag){
+  std::vector<uint8_t> omsg;
+  {
+    std::ostringstream oss;
+    cereal::BinaryOutputArchive archive(oss);
+    archive(*a);
+    if(b!=nullptr)
+      archive(*b);
+    std::copy(omsg.begin(), omsg.end(), std::ostream_iterator<char>(oss));
+  }
+
+  int ret = MPI_Send(omsg.data(), omsg.size(), MPI_BYTE, dest, tag, MPI_COMM_WORLD);
+  assert(ret==MPI_SUCCESS);
+  _unused(ret);
+}
+
+template<class T>
+void CommSend(const T* a, nullptr_t, int dest, int tag){
+  CommSend(a, (int*)nullptr, dest, tag);
+}
+
+int CommGetTag(int from){
+  MPI_Status status;
+  MPI_Probe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+  return status.MPI_TAG;
+}
+
+int CommGetSource(){
+  MPI_Status status;
+  MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+  return status.MPI_SOURCE;
+}
+
+int CommRank(){
+  int rank;
+  int ret = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  assert(ret==MPI_SUCCESS);
+  _unused(ret);
+  return rank;
+}
+
+int CommSize(){
+  int size;
+  int ret = MPI_Comm_size (MPI_COMM_WORLD, &size);
+  assert(ret==MPI_SUCCESS);
+  _unused(ret);
+  return size;
+}
+
+void CommAbort(int errorcode){
+  MPI_Abort(MPI_COMM_WORLD, errorcode);
+}
+
+template<class T, class U>
+void CommRecv(T* a, U* b, int from){
+  MPI_Status status;
+  MPI_Probe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+  int msg_size;
+  MPI_Get_count(&status, MPI_BYTE, &msg_size);
+
+  std::istringstream iss;
+
+  // Allocate a buffer to hold the incoming data
+  char* buf = (char*)malloc(msg_size);
+  assert(buf!=NULL);
+
+  MPI_Recv(buf, msg_size, MPI_BYTE, from, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    
+  iss.read(buf,msg_size);
+  free(buf);
+
+  {
+    cereal::BinaryInputArchive archive(iss);
+    archive(*a);
+    if(b!=nullptr)
+      archive(*b);
+  }
+}
+
+template<class T>
+void CommRecv(T* a, nullptr_t, int from){
+  CommRecv(a, (int*)nullptr, from);
+}
+
+template<class T>
+void CommBroadcast(T *datum, int root){
+  MPI_Bcast(&datum, 1, MPI_INT, root, MPI_COMM_WORLD);
+}
+
 typedef uint32_t label_t;
 
 class ChunkInfo{
@@ -42,19 +137,19 @@ class ChunkInfo{
   friend class cereal::access;
   template<class Archive>
   void serialize(Archive & ar){
-    ar & edge;
-    ar & flip;
-    ar & x;
-    ar & y;
-    ar & width;
-    ar & height;
-    ar & gridx;
-    ar & gridy;
-    ar & id;
-    ar & nullChunk;
-    ar & filename;
-    ar & outputname;
-    ar & retention;
+    ar(edge,
+       flip,
+       x,
+       y,
+       width,
+       height,
+       gridx,
+       gridy,
+       id,
+       nullChunk,
+       filename,
+       outputname,
+       retention);
   }
  public:
   uint8_t     edge;
@@ -91,9 +186,7 @@ class TimeInfo {
   friend class cereal::access;
   template<class Archive>
   void serialize(Archive & ar){
-    ar & calc;
-    ar & overall;
-    ar & io;
+    ar(calc,overall,io);
   }
  public:
   double calc, overall, io;
@@ -116,16 +209,16 @@ class Job1 {
   friend class cereal::access;
   template<class Archive>
   void serialize(Archive & ar){
-    ar & top_elev;
-    ar & bot_elev;
-    ar & left_elev;
-    ar & right_elev;
-    ar & top_label;
-    ar & bot_label;
-    ar & left_label;
-    ar & right_label;
-    ar & graph;
-    ar & time_info;
+    ar(top_elev,
+       bot_elev,
+       left_elev,
+       right_elev,
+       top_label,
+       bot_label,
+       left_label,
+       right_label,
+       graph,
+       time_info);
   }
  public:
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
@@ -151,14 +244,8 @@ const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
 
-
 template<class elev_t>
 void Consumer(){
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
-
-  int the_job;   //Which job should consumer perform?
-
   ChunkInfo chunk;
 
   Array2D<elev_t>  dem;
@@ -167,8 +254,9 @@ void Consumer(){
   //Have the consumer process messages as long as they are coming using a
   //blocking receive to wait.
   while(true){
-    world.recv(0, TAG_WHICH_JOB, the_job); //Blocking wait
-
+    // When probe returns, the status object has the size and other attributes
+    // of the incoming message. Get the message size. TODO
+    int the_job = CommGetTag(0);
 
     //This message indicates that everything is done and the Consumer should shut
     //down.
@@ -176,11 +264,12 @@ void Consumer(){
       return;
 
     } else if (the_job==JOB_CHUNK){
-      world.recv(0, TAG_CHUNK_DATA, chunk);
-
+      assert(false);
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
+      CommRecv(&chunk, nullptr, 0);
+
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
 
@@ -238,17 +327,17 @@ void Consumer(){
       }
 
       timer_overall.stop();
-      std::cerr<<"Node "<<world.rank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
+      std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
 
       job1.time_info = TimeInfo(timer_calc.accumulated(),timer_overall.accumulated(),timer_io.accumulated());
 
-      world.send(0, TAG_DONE_FIRST, job1);
+      CommSend(&job1,nullptr,0,TAG_DONE_FIRST);
     } else if (the_job==JOB_SECOND){
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
       std::vector<elev_t> graph_elev; //TODO
 
-      world.recv(0, TAG_SECOND_DATA, graph_elev);
+      CommRecv(&chunk, &graph_elev, 0);
 
       std::vector<std::map<label_t, elev_t> > graph(2*chunk.width+2*chunk.height); //TODO
 
@@ -296,9 +385,10 @@ void Consumer(){
       timer_io.stop();
       timer_overall.stop();
 
-      std::cerr<<"Node "<<world.rank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+      std::cerr<<"Node "<<CommRank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
-      world.send(0, TAG_DONE_SECOND, TimeInfo(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated()));
+      TimeInfo temp(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated());
+      CommSend(&temp, nullptr, 0, TAG_DONE_SECOND);
     }
   }
 }
@@ -323,7 +413,7 @@ void HandleEdge(
 
   int len = elev_a.size();
 
-  for(size_t i=0;i<len;i++){
+  for(int i=0;i<len;i++){
     auto c_l = label_a[i];
     if(c_l>1) c_l+=label_a_offset;
 
@@ -377,11 +467,11 @@ void HandleCorner(
 //processing.
 template<class elev_t>
 void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
   Timer timer_overall,timer_calc;
   timer_overall.start();
   int active_nodes = 0;
+
+  std::string omsg;
 
   TimeInfo time_first_total;
   TimeInfo time_second_total;
@@ -405,48 +495,34 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
-    if(active_nodes<world.size()-1){
+    if(active_nodes<CommSize()-1){
       active_nodes++;
-      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes,TAG_CHUNK_DATA,chunks.at(y).at(x));
 
       rank_to_chunk[active_nodes] = chunks.at(y).at(x);
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_FIRST);
+      CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
 
     //Once all of the consumers are active, wait for them to return results. As
     //each Consumer returns a result, pass it the next unfinished Job until
     //there are no jobs left.
     } else {
-      Job1<elev_t> finished_job;
-
-      //TODO: Note here about how the code below could be incorporated
-
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
-      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
-
-      //NOTE: This could be used to implement more robust handling of lost nodes
-      ChunkInfo received_chunk = rank_to_chunk[status.source()];
-      jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
+      int source = CommGetSource();
+      ChunkInfo received_chunk = rank_to_chunk[source];
+      CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
 
       //Delegate new work to that consumer
-      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
-
-      rank_to_chunk[status.source()] = chunks.at(y).at(x);
-      world.send(status.source(),TAG_WHICH_JOB,JOB_FIRST);
+      rank_to_chunk[source] = chunks.at(y).at(x);
+      CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
     }
   }
 
   while(active_nodes>0){
-    Job1<elev_t> finished_job;
-
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
-    boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_FIRST,finished_job);
-    ChunkInfo received_chunk = rank_to_chunk[status.source()];
-    jobs1.at(received_chunk.gridy).at(received_chunk.gridx) = finished_job;
+    int source = CommGetSource();
+    ChunkInfo received_chunk = rank_to_chunk[source];
+    CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
 
     //Decrement the number of consumers we are waiting on. When this hits 0 all
     //of the jobs have been completed and we can move on
@@ -490,7 +566,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     chunks[y][x].label_offset = label_offset;
 
-    for(int l=0;l<this_job.graph.size();l++)
+    for(int l=0;l<(int)this_job.graph.size();l++)
     for(auto const &skey: this_job.graph[l]){
       label_t first_label  = l;
       label_t second_label = skey.first;
@@ -504,8 +580,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
 
   std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
-  for(size_t y=0;y<gridheight;y++)
-  for(size_t x=0;x<gridwidth;x++){
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
     if( (y*gridwidth+x)%10==0 )
       std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
 
@@ -619,15 +695,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     //If fewer jobs have been delegated than there are Consumers available,
     //delegate the job to a new Consumer.
-    if(active_nodes<world.size()-1){
+    if(active_nodes<CommSize()-1){
       // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
       active_nodes++;
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(active_nodes,TAG_CHUNK_DATA,chunks[y][x]);
-
-      rank_to_chunk[active_nodes] = chunks[y][x];
-      world.send(active_nodes,TAG_WHICH_JOB,JOB_SECOND);
-      world.send(active_nodes,TAG_SECOND_DATA,job2);
+      CommSend(&chunks.at(y).at(x), &job2, active_nodes, JOB_SECOND);
 
     //Once all of the consumers are active, wait for them to return results. As
     //each Consumer returns a result, pass it the next unfinished Job until
@@ -635,27 +706,26 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     } else {
       //Execute a blocking receive until some consumer finishes its work.
       //Receive that work.
-      TimeInfo temp;
-      boost::mpi::status status = world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+      int source = CommGetSource();
 
+      TimeInfo temp;
+      CommRecv(&temp, nullptr, source);
+      
       time_second_total += temp;
       time_second_count++;
 
       //Delegate new work to that consumer
-      world.send(status.source(),TAG_WHICH_JOB,JOB_CHUNK);
-      world.send(status.source(),TAG_CHUNK_DATA,chunks[y][x]);
-
-      rank_to_chunk[status.source()] = chunks[y][x];
-      world.send(status.source(),TAG_WHICH_JOB,JOB_SECOND);
-      world.send(status.source(),TAG_SECOND_DATA,job2);
+      CommSend(&chunks.at(y).at(x), &job2, source, JOB_SECOND);
     }
   }
 
   while(active_nodes>0){
-    TimeInfo temp;
     //Execute a blocking receive until some consumer finishes its work.
     //Receive that work
-    world.recv(boost::mpi::any_source,TAG_DONE_SECOND,temp);
+    int source = CommGetSource();
+
+    TimeInfo temp;
+    CommRecv(&temp, nullptr, source);
 
     time_second_total += temp;
     time_second_count++;
@@ -665,8 +735,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     active_nodes--;
   }
 
-  for(int i=1;i<world.size();i++)
-    world.send(i,TAG_WHICH_JOB,SYNC_MSG_KILL);
+  for(int i=1;i<CommSize();i++){
+    int temp;
+    CommSend(&temp,nullptr,i,SYNC_MSG_KILL);
+  }
 
   timer_overall.stop();
 
@@ -713,8 +785,6 @@ void Preparer(
   int flipH,
   int flipV
 ){
-  boost::mpi::environment  env;
-  boost::mpi::communicator world;
   int chunkid             = 0;
   Timer overall;
   overall.start();
@@ -788,7 +858,7 @@ void Preparer(
             this_geotransform
         )!=0){
           std::cerr<<"Error getting file information from '"<<path_and_filename.string()<<"'!"<<std::endl;
-          env.abort(-1); //TODO
+          CommAbort(-1); //TODO
         }
 
         //If this is the first chunk we've seen, it determines what every other
@@ -805,7 +875,7 @@ void Preparer(
             this_chunk_width !=chunk_width  ||
             this_chunk_type  !=file_type   ){
           std::cerr<<"All of the files specified by <layout_file> must be the same dimensions and type!"<<std::endl;
-          env.abort(-1); //TODO: Set error code
+          CommAbort(-1); //TODO: Set error code
         }
 
         //Add the chunk to the grid
@@ -828,7 +898,7 @@ void Preparer(
         row_width = gridx;
       } else if(row_width!=gridx){
         std::cerr<<"All rows of <layout_file> must specify the same number of files! First row="<<(row_width+1)<<", this row="<<(gridx+1)<<"."<<std::endl;
-        env.abort(-1); //TODO: Set error code
+        CommAbort(-1); //TODO: Set error code
       }
     }
 
@@ -836,17 +906,17 @@ void Preparer(
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
-    for(int y=0;y<chunks.size();y++)
-    for(int x=0;x<chunks[0].size();x++){
+    for(int y=0;y<(int)chunks.size();y++)
+    for(int x=0;x<(int)chunks[0].size();x++){
       if(chunks[y][x].nullChunk)
         continue;
       if(y-1>0 && x>0 && chunks[y-1][x].nullChunk)
         chunks[y][x].edge |= GRID_TOP;
-      if(y+1<chunks.size() && x>0 && chunks[y+1][x].nullChunk)
+      if(y+1<(int)chunks.size() && x>0 && chunks[y+1][x].nullChunk)
         chunks[y][x].edge |= GRID_BOTTOM;
       if(y>0 && x-1>0 && chunks[y][x-1].nullChunk)
         chunks[y][x].edge |= GRID_LEFT;
-      if(y>0 && x+1<chunks[0].size() && chunks[y][x+1].nullChunk)
+      if(y>0 && x+1<(int)chunks[0].size() && chunks[y][x+1].nullChunk)
         chunks[y][x].edge |= GRID_RIGHT;
     }
 
@@ -863,7 +933,7 @@ void Preparer(
     //Get the total dimensions of the input file
     if(getGDALDimensions(filename, total_height, total_width, file_type, NULL)!=0){
       std::cerr<<"Error getting file information from '"<<filename<<"'!"<<std::endl;
-      env.abort(-1); //TODO
+      CommAbort(-1); //TODO
     }
 
     //If the user has specified -1, that implies that they want the entire
@@ -906,14 +976,14 @@ void Preparer(
       }
     }
 
-    if(retention_base=="@retainall" && chunks.size()*chunks[0].size()>=world.size()-1){
-      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<world.size()<<" are available."<<std::endl;
-      env.abort(-1);
+    if(retention_base=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=CommSize()-1){
+      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<CommSize()<<" are available."<<std::endl;
+      CommAbort(-1);
     }
 
   } else {
     std::cout<<"Unrecognised option! Must be 'many' or 'one'!"<<std::endl;
-    env.abort(-1);
+    CommAbort(-1);
   }
 
   //If a job is on the edge of the raster, mark it as having this property so
@@ -927,14 +997,14 @@ void Preparer(
     chunks[y].back().edge  |= GRID_RIGHT;
   }
 
-  boost::mpi::broadcast(world,file_type,0);
+  CommBroadcast(&file_type,0);
   overall.stop();
   std::cerr<<"Preparer took "<<overall.accumulated()<<"s."<<std::endl;
 
   switch(file_type){
     case GDT_Unknown:
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
-      env.abort(-1); //TODO
+      CommAbort(-1); //TODO
     case GDT_Byte:
       return Producer<uint8_t >(chunks);
     case GDT_UInt16:
@@ -954,20 +1024,17 @@ void Preparer(
     case GDT_CFloat32:
     case GDT_CFloat64:
       std::cerr<<"Complex types are not supported. Sorry!"<<std::endl;
-      env.abort(-1); //TODO
+      CommAbort(-1); //TODO
     default:
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
-      env.abort(-1); //TODO
+      CommAbort(-1); //TODO
   }
 }
 
 
 
 int main(int argc, char **argv){
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
-
-  if(world.rank()==0){
+  if(CommRank()==0){
     std::string many_or_one;
     std::string retention;
     std::string input_file;
@@ -1034,23 +1101,23 @@ int main(int argc, char **argv){
       std::cerr<<"###Error: "<<output_err<<std::endl;
 
       int good_to_go=0;
-      boost::mpi::broadcast(world,good_to_go,0);
+      CommBroadcast(&good_to_go,0);
 
       return -1;
     }
 
     int good_to_go = 1;
-    boost::mpi::broadcast(world,good_to_go,0);
+    CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
   } else {
     int good_to_go;
-    boost::mpi::broadcast(world, good_to_go, 0);
+    CommBroadcast(&good_to_go,0);
     if(!good_to_go)
       return -1;
 
     GDALDataType file_type;
-    boost::mpi::broadcast(world, file_type, 0);
+    CommBroadcast(&file_type,0);
     switch(file_type){
       case GDT_Byte:
         Consumer<uint8_t >();break;
