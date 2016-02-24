@@ -86,6 +86,14 @@ run without arguments from the command line to show a comprehensive explanation
 of the program and its options. This same text is in the file `help.txt`.
 
 
+TODO: More notes about getting things started with MPI
+
+
+Layout Files
+------------
+
+TODO
+
 
 
 Testing
