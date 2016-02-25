@@ -5,6 +5,7 @@
 #include "common.hpp"
 #include <queue>
 #include <vector>
+#include <map>
 #include <iostream> //TODO
 
 template<class elev_t, class label_t>

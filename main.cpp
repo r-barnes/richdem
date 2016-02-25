@@ -9,10 +9,6 @@
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
-#include <cereal/types/string.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/archives/binary.hpp>
 #include "Zhou2015pf.hpp"
 #include "Barnes2014pf.hpp"
 #include <string>
@@ -176,6 +172,8 @@ void Consumer(){
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
       CommRecv(&chunk, nullptr, 0);
+
+      std::cerr<<"Rec name: "<<chunk.filename<<std::endl;
 
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
@@ -405,6 +403,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     if(active_nodes<CommSize()-1){
       active_nodes++;
 
+      std::cerr<<chunks.at(y).at(x).filename<<std::endl;
+
       rank_to_chunk[active_nodes] = chunks.at(y).at(x);
       CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
 
@@ -502,7 +502,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
     if(y>0            && !chunks[y-1][x].nullChunk)
       HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, chunks[y][x].label_offset, chunks[y-1][x].label_offset);
-    
+
     if(y<gridheight-1 && !chunks[y+1][x].nullChunk)
       HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, chunks[y][x].label_offset, chunks[y+1][x].label_offset);
     
@@ -941,6 +941,8 @@ void Preparer(
 
 
 int main(int argc, char **argv){
+  CommInit(&argc,&argv);
+
   if(CommRank()==0){
     std::string many_or_one;
     std::string retention;
@@ -1009,21 +1011,25 @@ int main(int argc, char **argv){
 
       int good_to_go=0;
       CommBroadcast(&good_to_go,0);
-
-      return -1;
+      CommFinalize();
     }
 
     int good_to_go = 1;
+    std::cerr<<"gtg broadcast"<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
   } else {
     int good_to_go;
+    std::cerr<<CommRank()<<" gtg broadcast"<<std::endl;
     CommBroadcast(&good_to_go,0);
-    if(!good_to_go)
+    if(!good_to_go){
+      CommFinalize();
       return -1;
+    }
 
     GDALDataType file_type;
+    std::cerr<<CommRank()<<" filetype broadcast"<<std::endl;
     CommBroadcast(&file_type,0);
     switch(file_type){
       case GDT_Byte:
@@ -1044,6 +1050,8 @@ int main(int argc, char **argv){
         return -1;
     }
   }
+
+  CommFinalize();
 
   return 0;
 }
