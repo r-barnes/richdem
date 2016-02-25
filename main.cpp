@@ -420,7 +420,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
       //Delegate new work to that consumer
       rank_to_chunk[source] = chunks.at(y).at(x);
-      CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
+      CommSend(&chunks.at(y).at(x),nullptr,source,JOB_FIRST);
     }
   }
 
