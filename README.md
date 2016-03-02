@@ -125,6 +125,25 @@ elevation models. The full codebase is available at
 [https://github.com/r-barnes](https://github.com/r-barnes)
 
 
+MPI Profiling
+-------------
+I have used [mpiP](http://mpip.sourceforge.net/) to profile the code's
+communication. The code can be downloaded [here](http://mpip.sourceforge.net/)
+and compiled with:
+
+    ./configure --with-binutils-dir=/usr/lib
+    make shared
+    make install #Installs to a subdirectory of mpiP
+
+Prerequisites include: `binutils-dev`.
+
+mpiP can be used to profile _any_ MPI program without the need to compile it
+with the program. To do so, run the following line immediately before launching
+`mpirun`:
+
+    export LD_PRELOAD=path/to/libmpiP.so
+
+
 
 
 TODO
