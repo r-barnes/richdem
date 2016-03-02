@@ -11,9 +11,9 @@ SYNOPSIS
 DESCRIPTION
 
   many        - Implies that the data has already been tiled and the layout of
-                the files is specified by the <input>. The paths of all files
-                listed in the <input> are assumed to be relative from the
-                location of that file. Each individual file is assumed to be
+                the files is specified by the <input> (see below). The paths of
+                all files listed in the <input> are assumed to be relative from
+                the location of that file. Each individual file is assumed to be
                 small enough to fit into RAM. Files must be non-overlapping
                 square blocks.
 
@@ -84,15 +84,31 @@ DESCRIPTION
   or -H         their results. This can be useful if the algorithm produces
                 unexpected results.
 
+LAYOUT FILES
+
+  A layout file is a text file with the format:
+
+          file1.tif, file2.tif, file3.tif,
+          file4.tif, file5.tif, file6.tif, file7.tif
+                   , file8.tif,          ,
+
+  where each of fileX.tif is a tile of the larger DEM collectively described by
+  all of the files. All of fileX.tif must have the same shape; the layout file
+  specifies how fileX.tif are arranged in relation to each other in space.
+  Blanks between commas indicate that there is no tile there: the algorithm will
+  treat such gaps as places to route flow towards (as if they are oceans). Note
+  that the files need not have TIF format: they can be of any type which GDAL
+  can read.
+
 AUTHOR NOTES
 
-    This algorithm and program was developed by
-      Richard Barnes (rbarnes@umn.edu, richard.barnes@berkeley.edu)
+  This algorithm and program was developed by
+    Richard Barnes (rbarnes@umn.edu, richard.barnes@berkeley.edu)
 
-    The source code is available at
-      https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood
+  The source code is available at
+    https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood
 
-    There is a manuscript available at TODO
+  There is a manuscript available at TODO
 
 SYNOPSIS REPEATED
 
