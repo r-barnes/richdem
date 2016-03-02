@@ -75,26 +75,72 @@ Note that temporary files can be stored in:
 
 or some similar directory.
 
+Running `make` will produce an executable called `parallel_pf.exe`.
 
+Running the Program
+-------------------
 
+`parallel_pf.exe` can be run without arguments from the command line to show a
+comprehensive explanation of the program and its options. This same text is in
+the file `help.txt`.
 
-Running the Algorithm
----------------------
+In order to process data, you will need to run `parallel_pf.exe` in MPI. For
+example:
 
-Running `make` will produce an executable called `parallel_pf.exe`. This can be
-run without arguments from the command line to show a comprehensive explanation
-of the program and its options. This same text is in the file `help.txt`.
+    mpirun -n 4 ./parallel_pf.exe one @offloadall dem.tif outroot -w 500 -h 500
 
-
-TODO: More notes about getting things started with MPI
-
+In the foregoing example `-n 4` indicates that the program should be run in
+parallel over four processes. One of these processes (the one with MPI rank #0)
+acts as a master process. It does limited computation but stores information
+from all of the other processes. This requires less memory than one would think,
+as discussed in the manuscript.
 
 Layout Files
 ------------
 
-TODO
+A layout file is a text file with the format:
 
+    file1.tif, file2.tif, file3.tif,
+    file4.tif, file5.tif, file6.tif, file7.tif
+             , file8.tif,          ,
 
+where each of fileX.tif is a tile of the larger DEM collectively described by
+all of the files. All of fileX.tif must have the same shape; the layout file
+specifies how fileX.tif are arranged in relation to each other in space.
+Blanks between commas indicate that there is no tile there: the algorithm will
+treat such gaps as places to route flow towards (as if they are oceans). Note
+that the files need not have TIF format: they can be of any type which GDAL
+can read.
+
+Several example layout files are included in the `tests/` directory and end with
+the `.layout` extension.
+
+MPI Profiling
+-------------
+Although the program tracks its total communication load internally, I have also
+used [mpiP](http://mpip.sourceforge.net/) to profile the code's communication.
+The code can be downloaded [here](http://mpip.sourceforge.net/) and compiled
+with:
+
+    ./configure --with-binutils-dir=/usr/lib
+    make shared
+    make install #Installs to a subdirectory of mpiP
+
+Prerequisites include: `binutils-dev`.
+
+mpiP can be used to profile _any_ MPI program without the need to compile it
+with the program. To do so, run the following line immediately before launching
+`mpirun`:
+
+    export LD_PRELOAD=path/to/libmpiP.so
+
+Although the program tracks its maximum memory requirements internally, I have
+also used `/usr/bin/time` to record this. An example of such an invocation is:
+
+    mpirun -output-filename timing -n 4 /usr/bin/time -v ./parallel_pf.exe one @offloadall dem.tif outroot -w 500 -h 500
+
+This will store memory and timing information in files beginning with the stem
+`timing`.
 
 Testing
 -------
@@ -114,8 +160,6 @@ excerpt of the SRTM Region 3 data.
 
 
 
-
-
 RichDEM
 -------
 
@@ -123,26 +167,6 @@ This code is part of the RichDEM codebase, which includes state of the art
 algorithms for quickly performing hydrologic calculations on raster digital
 elevation models. The full codebase is available at
 [https://github.com/r-barnes](https://github.com/r-barnes)
-
-
-MPI Profiling
--------------
-I have used [mpiP](http://mpip.sourceforge.net/) to profile the code's
-communication. The code can be downloaded [here](http://mpip.sourceforge.net/)
-and compiled with:
-
-    ./configure --with-binutils-dir=/usr/lib
-    make shared
-    make install #Installs to a subdirectory of mpiP
-
-Prerequisites include: `binutils-dev`.
-
-mpiP can be used to profile _any_ MPI program without the need to compile it
-with the program. To do so, run the following line immediately before launching
-`mpirun`:
-
-    export LD_PRELOAD=path/to/libmpiP.so
-
 
 
 
