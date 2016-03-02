@@ -15,6 +15,9 @@
 
 #define _unused(x) ((void)x) //Used for asserts
 
+static long bytes_sent = 0;
+static long bytes_recv = 0;
+
 void CommInit(int *argc, char ***argv){
   MPI_Init(argc,argv);
 }
@@ -32,6 +35,8 @@ void CommSend(const T* a, const U* b, int dest, int tag){
 
     std::copy(std::istream_iterator<char>(ss), std::istream_iterator<char>(), std::back_inserter(omsg));
   }
+
+  bytes_sent += omsg.size();
 
   int ret = MPI_Send(omsg.data(), omsg.size(), MPI_BYTE, dest, tag, MPI_COMM_WORLD);
   assert(ret==MPI_SUCCESS);
@@ -92,6 +97,8 @@ void CommRecv(T* a, U* b, int from){
 
   MPI_Recv(buf, msg_size, MPI_BYTE, from, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+  bytes_recv += msg_size;
+
   ss.write(buf,msg_size);
   free(buf);
 
@@ -115,6 +122,19 @@ void CommBroadcast(T *datum, int root){
 
 void CommFinalize(){
   MPI_Finalize();
+}
+
+int CommBytesSent(){
+  return bytes_sent;
+}
+
+int CommBytesRecv(){
+  return bytes_recv;
+}
+
+void CommBytesReset(){
+  bytes_recv = 0;
+  bytes_sent = 0;
 }
 
 #endif
