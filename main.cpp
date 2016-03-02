@@ -492,7 +492,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       label_t second_label = skey.first;
       if(first_label >1) first_label +=label_offset;
       if(second_label>1) second_label+=label_offset;
+      //We insert both ends of the bidirectional edge because in the watershed
+      //labeling process, we only inserted one. We need both here because we
+      //don't know which end of the edge we will approach from as we traverse
+      //the spillover graph.
       mastergraph.at(first_label)[second_label] = skey.second;
+      mastergraph.at(second_label)[first_label] = skey.second;
     }
     chunks[y][x].label_increment = this_job.graph.size();
     label_offset                += this_job.graph.size();
