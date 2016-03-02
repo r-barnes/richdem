@@ -1029,6 +1029,8 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Retention must be @offloadall or @retainall or a path.");
       if(many_or_one!="many" && many_or_one!="one")
         throw std::invalid_argument("Must specify many or one.");
+      if(CommSize()==1) //TODO: Invoke a special "one-process mode?"
+        throw std::invalid_argument("Must run program with at least two processes!");
     } catch (const std::invalid_argument &ia){
       std::string output_err;
       if(ia.what()==std::string("stoi"))
