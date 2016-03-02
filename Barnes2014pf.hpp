@@ -6,13 +6,20 @@
 #include <queue>
 #include <vector>
 
+//This GetNewLabel() function differs from the watershed variant of the original
+//Barnes et al. Priority-Flood. In the original algorithm each edge cell is the
+//root of a new watershed whereas here only the local minima of the edges
+//represent new watersheds. The two produce identical results in the context of
+//this distributed depression filling algorithm, but this new variant decreases
+//the amount of data which must be communicated by reducing the size of the
+//spillover graph.
 template<class elev_t, class label_t>
 label_t GetNewLabel(
   int x,
   int y,
   label_t &current_label,
   uint8_t edge,
-  const Array2D<elev_t> &dem,
+  const Array2D<elev_t>  &dem,
   const Array2D<label_t> &labels
 ){
   if(labels(x,y)!=0)
