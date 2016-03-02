@@ -19,6 +19,7 @@
 #include <sstream> //Used for parsing the <layout_file>
 #include <boost/filesystem.hpp>
 #include "communication.hpp"
+#include "memory.hpp"
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -89,19 +90,23 @@ class TimeInfo {
   friend class cereal::access;
   template<class Archive>
   void serialize(Archive & ar){
-    ar(calc,overall,io);
+    ar(calc,overall,io,vmpeak,vmhwm);
   }
  public:
   double calc, overall, io;
+  long vmpeak, vmhwm;
   TimeInfo() {
     calc=overall=io=0;
+    vmpeak=vmhwm=0;
   }
-  TimeInfo(double calc, double overall, double io) :
-      calc(calc), overall(overall), io(io) {}
+  TimeInfo(double calc, double overall, double io, long vmpeak, long vmhwm) :
+      calc(calc), overall(overall), io(io), vmpeak(vmpeak), vmhwm(vmhwm) {}
   TimeInfo& operator+=(const TimeInfo& o){
     calc    += o.calc;
     overall += o.overall;
     io      += o.io;
+    vmpeak   = std::max(vmpeak,o.vmpeak);
+    vmhwm    = std::max(vmhwm,o.vmhwm);
     return *this;
   }
 };
@@ -234,7 +239,9 @@ void Consumer(){
       timer_overall.stop();
       std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
 
-      job1.time_info = TimeInfo(timer_calc.accumulated(),timer_overall.accumulated(),timer_io.accumulated());
+      long vmpeak, vmhwm;
+      ProcessMemUsage(vmpeak,vmhwm);
+      job1.time_info = TimeInfo(timer_calc.accumulated(),timer_overall.accumulated(),timer_io.accumulated(),vmpeak,vmhwm);
 
       CommSend(&job1,nullptr,0,TAG_DONE_FIRST);
     } else if (the_job==JOB_SECOND){
@@ -292,7 +299,9 @@ void Consumer(){
 
       std::cerr<<"Node "<<CommRank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
 
-      TimeInfo temp(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated());
+      long vmpeak, vmhwm;
+      ProcessMemUsage(vmpeak,vmhwm);
+      TimeInfo temp(timer_calc.accumulated(), timer_overall.accumulated(), timer_io.accumulated(),vmpeak,vmhwm);
       CommSend(&temp, nullptr, 0, TAG_DONE_SECOND);
     }
   }
@@ -441,6 +450,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   const int gridwidth  = jobs1.front().size();
   const int gridheight = jobs1.size();
+
+  std::cerr<<"First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
+  std::cerr<<"First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
+  CommBytesReset();
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
@@ -653,14 +666,26 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
   std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
   std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
+  std::cout<<"TimeInfo: First stage peak child RSS="    <<time_first_total.vmpeak <<std::endl;
+  std::cout<<"TimeInfo: First stage peak child HWM="    <<time_first_total.vmhwm  <<std::endl;
+
+  std::cout<<"Second stage: "<<CommBytesSent()<<"B sent."<<std::endl;
+  std::cout<<"Second stage: "<<CommBytesRecv()<<"B received."<<std::endl;
 
   std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
   std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
   std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
   std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
+  std::cout<<"TimeInfo: Second stage peak child RSS="    <<time_second_total.vmpeak <<std::endl;
+  std::cout<<"TimeInfo: Second stage peak child HWM="    <<time_second_total.vmhwm  <<std::endl;
 
   std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
   std::cout<<"TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
+
+  long vmpeak, vmhwm;
+  ProcessMemUsage(vmpeak,vmhwm);
+  std::cout<<"TimeInfo: Producer child RSS="    <<vmpeak <<std::endl;
+  std::cout<<"TimeInfo: Producer child HWM="    <<vmhwm  <<std::endl;
 }
 
 
