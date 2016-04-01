@@ -11,7 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sys/time.h>
-#include <exception>
+#include <stdexcept>
 
 #ifdef _OPENMP
   #include <omp.h>

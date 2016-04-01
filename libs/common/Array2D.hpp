@@ -9,6 +9,7 @@
 #include <cassert>
 #include <algorithm>
 #include <typeinfo>
+#include <stdexcept>
 
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
