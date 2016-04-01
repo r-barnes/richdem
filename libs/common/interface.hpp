@@ -99,7 +99,7 @@ class ProgressBar{
                <<std::string(percent/2, '=')<<std::string(50-percent/2, ' ')
                <<"] ("
                <<percent<<"% - "
-               <<std::setprecision(1)<<timer.lap()/percent*(100-percent)
+               <<std::fixed<<std::setprecision(1)<<timer.lap()/percent*(100-percent)
                <<"s - "
                <<omp_get_num_threads()<< " threads)"<<std::flush;
     }

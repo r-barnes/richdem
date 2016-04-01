@@ -181,7 +181,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
+  std::cerr<<"\t\033[96msucceeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<"s.\033[39m"<<std::endl;
   std::cerr<<processed_cells<<" cells processed. "<<pitc<<" in pits."<<std::endl;
 }
 
