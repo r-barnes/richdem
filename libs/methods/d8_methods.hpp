@@ -85,7 +85,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::cerr<<"Setting up the area matrix..."<<std::flush;
   area.resize(flowdirs);
   area.init(0);
-  area.noData()=d8_NO_DATA;
+  area.setNoData(d8_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
