@@ -341,7 +341,7 @@ void HandleEdge(
         continue;
 
       auto elev_over = std::max(elev_a[i],elev_b[ni]);
-      if(mastergraph[c_l].count(n_l)==0 || elev_over<mastergraph[c_l][n_l]){
+      if(mastergraph.at(c_l).count(n_l)==0 || elev_over<mastergraph.at(c_l)[n_l]){
         mastergraph[c_l][n_l] = elev_over;
         mastergraph[n_l][c_l] = elev_over;
       }
@@ -362,7 +362,7 @@ void HandleCorner(
   if(l_a>1) l_a += l_a_offset;
   if(l_b>1) l_b += l_b_offset;
   auto elev_over = std::max(elev_a,elev_b);
-  if(mastergraph[l_a].count(l_b)==0 || elev_over<mastergraph[l_a][l_b]){
+  if(mastergraph.at(l_a).count(l_b)==0 || elev_over<mastergraph.at(l_a)[l_b]){
     mastergraph[l_a][l_b] = elev_over;
     mastergraph[l_b][l_a] = elev_over;
   }
