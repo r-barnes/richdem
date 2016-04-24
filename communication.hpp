@@ -44,7 +44,7 @@ void CommSend(const T* a, const U* b, int dest, int tag){
 }
 
 template<class T>
-void CommSend(const T* a, nullptr_t, int dest, int tag){
+void CommSend(const T* a, std::nullptr_t, int dest, int tag){
   CommSend(a, (int*)nullptr, dest, tag);
 }
 
@@ -111,7 +111,7 @@ void CommRecv(T* a, U* b, int from){
 }
 
 template<class T>
-void CommRecv(T* a, nullptr_t, int from){
+void CommRecv(T* a, std::nullptr_t, int from){
   CommRecv(a, (int*)nullptr, from);
 }
 
