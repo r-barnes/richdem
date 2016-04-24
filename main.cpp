@@ -891,9 +891,10 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        if(total_height-y<100 || total_width-x<100){
-          throw std::logic_error("At least one tile is <100 cells in at least one dimensions. Please change rectangle size to avoid this!");
-        }
+        if(total_height-y<100)
+          throw std::logic_error("At least one tile is <100 cells in height. Please change rectangle size to avoid this!");
+        if(total_width -x<100)
+          throw std::logic_error("At least one tile is <100 cells in width. Please change rectangle size to avoid this!");
         auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
         std::string retention = retention_base;
         if(retention[0]!='@')
