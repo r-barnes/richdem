@@ -5,6 +5,7 @@
 #include "common.hpp"
 #include <queue>
 #include <vector>
+#include <map>
 #include <iostream> //TODO
 
 template<class elev_t, class label_t>
@@ -48,10 +49,14 @@ void WatershedsMeet(
   //If count()==0, then we haven't seen this watershed before.
   //Otherwise, only make a note of the spill-over elevation if it is
   //lower than what we've seen before.
-  if(my_graph.at(my_label).count(n_label)==0 || elev_over<my_graph.at(my_label)[n_label]){
+
+  //Ensure that my_label is always smaller. Doing so means that we only need to
+  //keep track of one half of what is otherwise a bidirectional weighted graph
+  if(my_label>n_label)
+    std::swap(my_label,n_label);
+
+  if(my_graph.at(my_label).count(n_label)==0 || elev_over<my_graph.at(my_label)[n_label])
     my_graph.at(my_label)[n_label] = elev_over;
-    my_graph.at(n_label)[my_label] = elev_over;
-  }
 }
 
 template<class elev_t, class label_t>
