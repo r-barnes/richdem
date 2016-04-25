@@ -1053,13 +1053,12 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"gtg broadcast"<<std::endl;
+    std::cerr<<"Running with "<<CommSize()<<" processes."<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
   } else {
     int good_to_go;
-    std::cerr<<CommRank()<<" gtg broadcast"<<std::endl;
     CommBroadcast(&good_to_go,0);
     if(!good_to_go){
       CommFinalize();
@@ -1067,7 +1066,6 @@ int main(int argc, char **argv){
     }
 
     GDALDataType file_type;
-    std::cerr<<CommRank()<<" filetype broadcast"<<std::endl;
     CommBroadcast(&file_type,0);
     switch(file_type){
       case GDT_Byte:
