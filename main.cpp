@@ -738,7 +738,8 @@ void Preparer(
     int32_t row_width    = -1; //Width of 1st row. All rows must equal this
     int32_t chunk_width  = -1; //Width of 1st chunk. All chunks must equal this
     int32_t chunk_height = -1; //Height of 1st chunk, all chunks must equal this
-    
+    long    cell_count   = 0;
+
     boost::filesystem::path layout_path_and_name = input_file;
     auto path = layout_path_and_name.parent_path();
 
@@ -815,6 +816,8 @@ void Preparer(
           CommAbort(-1); //TODO: Set error code
         }
 
+        cell_count += this_chunk_width*this_chunk_height;
+
         //Add the chunk to the grid
         chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, gridx, gridy, 0, 0, chunk_width, chunk_height);
 
@@ -840,6 +843,7 @@ void Preparer(
     }
 
     std::cerr<<"Loaded "<<chunks.size()<<" rows of "<<chunks[0].size()<<" columns."<<std::endl;
+    std::cerr<<"Total cells to be processed: "<<cell_count<<std::endl;
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
@@ -885,6 +889,7 @@ void Preparer(
     std::cerr<<"Total height: "<<total_height<<"\n";
     std::cerr<<"Block width:  "<<bwidth      <<"\n";
     std::cerr<<"Block height: "<<bheight     <<std::endl;
+    std::cerr<<"Total cells to be processed: "<<(total_width*total_height)<<std::endl;
 
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
