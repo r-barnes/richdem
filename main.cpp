@@ -919,9 +919,9 @@ void Preparer(
       }
     }
 
-    if(retention_base=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=world.size()-1){
-      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<world.size()<<" are available."<<std::endl;
-      env.abort(-1);
+    if(retention_base=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=CommSize()-1){
+      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<CommSize()<<" are available."<<std::endl;
+      CommAbort(-1);
     }
 
   } else {
