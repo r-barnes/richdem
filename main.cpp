@@ -1054,6 +1054,7 @@ int main(int argc, char **argv){
 
     int good_to_go = 1;
     std::cerr<<"Running with "<<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"Input file: "<<input_file<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
 
