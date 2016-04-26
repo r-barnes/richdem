@@ -21,6 +21,8 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
+const char* program_version = "1";
+
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
 //for data set sizes and labels. For instance, in C++, a signed integer must be
@@ -1053,6 +1055,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
+    std::cerr<<"Running program version: "<<program_version<<std::endl;
     std::cerr<<"Running with "<<CommSize()<<" processes."<<std::endl;
     std::cerr<<"Input file: "<<input_file<<std::endl;
     CommBroadcast(&good_to_go,0);
