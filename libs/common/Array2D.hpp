@@ -92,21 +92,20 @@ GDALDataType NativeTypeToGDAL() {
     return GDT_Float32;
   else if(typeid(T)==typeid(double))
     return GDT_Float64;
-  else 
+  else{
+    std::cerr<<"Unknown native->GDAL data type conversion."<<std::endl;
     assert(false);
+  }
   return GDT_Unknown;
 }
 
 
 template<class T>
 class Array2D {
- public:
-  typedef std::vector<T>   Row;
  private:
   template<typename> friend class Array2D;
 
-  typedef std::vector<Row> InternalArray;
-  InternalArray data;
+  std::vector<T> data;
 
   static const int HEADER_SIZE = 7*sizeof(int) + sizeof(T);
 
@@ -117,7 +116,7 @@ class Array2D {
   int view_xoff;
   int view_yoff;
   int num_data_cells = -1;
-  double geotransform[6];
+  std::vector<double> geotransform;
 
   T   no_data;
 
@@ -132,7 +131,8 @@ class Array2D {
     GDALRasterBand *band = fin->GetRasterBand(1);
     auto data_type       = band->GetRasterDataType();
 
-    if(fin->GetGeoTransform(geotransform)!=CE_None)
+    geotransform.resize(6);
+    if(fin->GetGeoTransform(geotransform.data())!=CE_None)
       throw std::runtime_error("Could not fetch geotransform!");
 
     total_width  = band->GetXSize();
@@ -156,9 +156,9 @@ class Array2D {
     view_yoff = yOffset;
 
     std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
-    data = InternalArray(view_height, Row(view_width));
+    resize(view_width,view_height);
     for(int y=yOffset;y<yOffset+view_height;y++)
-      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data.data()+(y-yOffset)*view_width, view_width, 1, data_type, 0, 0 ); //TODO: Check for success
 
     GDALClose(fin);
   }
@@ -210,7 +210,7 @@ class Array2D {
     fout.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
 
     for(int y=0;y<view_height;y++)
-      fout.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+      fout.write(reinterpret_cast<char*>(data.data()+y*view_width), view_width*sizeof(T));
   }
 
   void loadNative(const std::string &filename){
@@ -226,52 +226,84 @@ class Array2D {
     fin.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
     fin.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
 
-    data = InternalArray(view_height, Row(view_width));
+    resize(view_width,view_height);
 
     for(int y=0;y<view_height;y++)
-      fin.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+      fin.read(reinterpret_cast<char*>(data.data()+y*view_width), view_width*sizeof(T));
   }
 
   //Note: The following functions return signed integers, which make them
   //generally easier to work with. If your DEM has a dimension which exceeds
   //2147483647, some other modifications to this program will probably be
   //necessary.
+  int  viewSize   () const { return view_width*view_height; }
   int  totalWidth () const { return total_width;    }
   int  totalHeight() const { return total_height;   }
-  int  viewWidth  () const { return data[0].size(); }
-  int  viewHeight () const { return data.size();    }
+  int  viewWidth  () const { return view_width;     }
+  int  viewHeight () const { return view_height;    }
   int  viewXoff   () const { return view_xoff;      }
   int  viewYoff   () const { return view_yoff;      }
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
+
+  void iToxy(const int i, int &x, int &y) const {
+    x = i%view_width;
+    y = i/view_width;
+  }
+
+  int xyToI(int x, int y) const {
+    return y*view_width+x;
+  }
+
+  int nToI(int i, int dx, int dy) const {
+    int x=i%view_width+dx;
+    int y=i/view_width+dy;
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return xyToI(x,y);
+  }
+
+  template<class U>
+  T& operator=(const Array2D<U> &o){
+    data = std::vector<T>(o.data.begin(),o.data.end());
+    total_height   = o.total_height;
+    total_width    = o.total_width;
+    view_height    = o.view_height;
+    view_width     = o.view_width;
+    view_xoff      = o.view_xoff;
+    view_yoff      = o.view_yoff;
+    num_data_cells = o.num_data_cells;
+    geotransform   = o.geotransform;
+    no_data        = (T)o.no_data;
+    return *this;
+  }
 
   bool operator==(const Array2D<T> &o){
     if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
       return false;
     if(noData()!=o.noData())
       return false;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=o.data[y][x])
+    for(int i=0;i<view_width*view_height;i++)
+      if(data[i]!=o.data[i])
         return false;
     return true;
   }
 
   bool isNoData(int x, int y) const {
-    return data[y][x]==no_data;
+    return data[xyToI(x,y)]==no_data;
   }
 
-  void flipVert(){
-    std::reverse(data.begin(),data.end());
-  }
+  // void flipVert(){
+  //   std::reverse(data.begin(),data.end());
+  // }
 
-  void flipHorz(){
-    for(auto &row: data)
-      std::reverse(row.begin(),row.end());
-  }
+  // void flipHorz(){
+  //   for(auto &row: data)
+  //     std::reverse(row.begin(),row.end());
+  // }
 
   bool in_grid(int x, int y) const {
-    return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
+    return 0<=x && x<view_width && 0<=y && y<view_height;
   }
 
   void setNoData(const T &ndval){
@@ -279,8 +311,7 @@ class Array2D {
   }
 
   void setAll(const T &val){
-    for(auto &row: data)
-      std::fill(row.begin(),row.end(),val);
+    std::fill(data.begin(),data.end(),val);
   }
 
   void init(T val){
@@ -289,7 +320,8 @@ class Array2D {
 
   //Destructively resizes the array. All data will die!
   void resize(int width, int height, const T& val = T()){
-    data         = InternalArray(height, Row(width, val));
+    data.clear();
+    data.resize(width*height,val);
     total_height = view_height = height;
     total_width  = view_width  = width;
   }
@@ -297,15 +329,13 @@ class Array2D {
   template<class U>
   void resize(const Array2D<U> &other, const T& val = T()){
     resize(other.viewWidth(), other.viewHeight(), val);
-    for(int i=0;i<6;i++)
-      geotransform[i] = other.geotransform[i];
+    geotransform = other.geotransform;
   }
 
   void countDataCells(){
     num_data_cells = 0;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=no_data)
+    for(auto &i: data)
+      if(i!=no_data)
         num_data_cells++;
   }
 
@@ -319,63 +349,76 @@ class Array2D {
     return num_data_cells;
   }
 
+  T& operator()(int i){
+    assert(i>=0);
+    assert(i<view_width*view_height);
+    return data[i];
+  }
+
+  T operator()(int i) const {
+    assert(i>=0);
+    assert(i<view_width*view_height);
+    return data[i];    
+  }
+
   T& operator()(int x, int y){
     assert(x>=0);
     assert(y>=0);
     //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
-    assert(x<viewWidth());
-    assert(y<viewHeight());
-    return data[y][x];
+    assert(x<view_width);
+    assert(y<view_height);
+    return data[xyToI(x,y)];
   }
 
   const T& operator()(int x, int y) const {
     assert(x>=0);
     assert(y>=0);
-    assert(x<viewWidth());
-    assert(y<viewHeight());
-    return data[y][x];
+    assert(x<view_width);
+    assert(y<view_height);
+    return data[xyToI(x,y)];
   }
 
-  Row&       topRow   ()       { return data.front(); }
-  Row&       bottomRow()       { return data.back (); }
-  const Row& topRow   () const { return data.front(); }
-  const Row& bottomRow() const { return data.back (); }
+  //Row&       topRow   ()       { return data.front(); }
+  //Row&       bottomRow()       { return data.back (); }
+  //const Row& topRow   () const { return data.front(); }
+  //const Row& bottomRow() const { return data.back (); }
 
-  Row leftColumn() const {
-    Row temp(data.size());
-    for(size_t y=0;y<data.size();y++)
-      temp[y] = data[y][0];
-    return temp;
+  // Row leftColumn() const {
+  //   Row temp(data.size());
+  //   for(size_t y=0;y<data.size();y++)
+  //     temp[y] = data[y][0];
+  //   return temp;
+  // }
+
+  // Row rightColumn() const {
+  //   Row temp(data.size());
+  //   size_t right = data[0].size()-1;
+  //   for(size_t y=0;y<data.size();y++)
+  //     temp[y] = data[y][right];
+  //   return temp;
+  // }
+
+  // void emplaceRow(Row &row){
+  //   data.emplace_back(row);
+  // }
+
+  // Row& rowRef(int rownum){
+  //   return data[rownum];
+  // }
+
+  void setRow(int y, const T &val){
+    for(int x=0;x<view_width;x++)
+      data[y*view_width+x] = val;
   }
 
-  Row rightColumn() const {
-    Row temp(data.size());
-    size_t right = data[0].size()-1;
-    for(size_t y=0;y<data.size();y++)
-      temp[y] = data[y][right];
-    return temp;
+  void setCol(int x, const T &val){
+    for(int y=0;y<view_height;y++)
+      data[y*view_width+x] = val;
   }
 
-  void emplaceRow(Row &row){
-    data.emplace_back(row);
-  }
-
-  Row& rowRef(int rownum){
-    return data[rownum];
-  }
-
-  void setRow(int rownum, const T &val){
-    std::fill(data[rownum].begin(),data[rownum].end(),val);
-  }
-
-  void setCol(int colnum, const T &val){
-    for(int y=0;y<viewHeight();y++)
-      data[y][colnum] = val;
-  }
-
-  const std::vector<T>& getRowData(int rownum){
-    return data[rownum].data();
-  }
+  // const std::vector<T>& getRowData(int rownum){
+  //   return data[rownum].data();
+  // }
 
   void clear(){
     data.clear();
@@ -401,8 +444,8 @@ class Array2D {
     //In case of north up images, the GT(2) and GT(4) coefficients are zero, and
     //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
     //position is the top left corner of the top left pixel of the raster.
-    double geotrans[6];
-    fintempl->GetGeoTransform(geotrans);
+    std::vector<double> geotrans(6);
+    fintempl->GetGeoTransform(geotrans.data());
 
     //We shift the top-left pixel of hte image eastward to the appropriate
     //coordinate
@@ -416,7 +459,7 @@ class Array2D {
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
     #endif
 
-    fout->SetGeoTransform(geotrans);
+    fout->SetGeoTransform(geotrans.data());
 
     const char* projection_string=fintempl->GetProjectionRef();
     fout->SetProjection(projection_string);
@@ -424,13 +467,13 @@ class Array2D {
     GDALClose(fintempl);
 
     for(int y=0;y<view_height;y++)
-      oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
+      oband->RasterIO(GF_Write, 0, y, view_width, 1, data.data()+y*view_width, view_width, 1, myGDALType(), 0, 0); //TODO: Check for success
 
     GDALClose(fout);
   }
 
   bool isEdgeCell(int x, int y) const {
-    return (x==0 || y==0 || x==(int)(data[0].size()-1) || y==(int)(data.size()-1));
+    return (x==0 || y==0 || x==view_width-1 || y==view_height-1);
   }
 
   double getCellArea() const {
