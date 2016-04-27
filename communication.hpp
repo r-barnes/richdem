@@ -15,8 +15,8 @@
 
 #define _unused(x) ((void)x) //Used for asserts
 
-static long bytes_sent = 0;
-static long bytes_recv = 0;
+static unsigned long long bytes_sent = 0;
+static unsigned long long bytes_recv = 0;
 
 void CommInit(int *argc, char ***argv){
   MPI_Init(argc,argv);
