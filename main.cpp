@@ -673,8 +673,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
   std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
   std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
-  std::cout<<"TimeInfo: First stage peak child RSS="    <<time_first_total.vmpeak <<std::endl;
-  std::cout<<"TimeInfo: First stage peak child HWM="    <<time_first_total.vmhwm  <<std::endl;
+  std::cout<<"TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
+  std::cout<<"TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
 
   std::cout<<"Second stage: "<<CommBytesSent()<<"B sent."<<std::endl;
   std::cout<<"Second stage: "<<CommBytesRecv()<<"B received."<<std::endl;
@@ -683,16 +683,16 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
   std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
   std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
-  std::cout<<"TimeInfo: Second stage peak child RSS="    <<time_second_total.vmpeak <<std::endl;
-  std::cout<<"TimeInfo: Second stage peak child HWM="    <<time_second_total.vmhwm  <<std::endl;
+  std::cout<<"TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
+  std::cout<<"TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
 
   std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
   std::cout<<"TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
 
   long vmpeak, vmhwm;
   ProcessMemUsage(vmpeak,vmhwm);
-  std::cout<<"TimeInfo: Producer's RSS="    <<vmpeak <<std::endl;
-  std::cout<<"TimeInfo: Producer's HWM="    <<vmhwm  <<std::endl;
+  std::cout<<"TimeInfo: Producer's VmPeak="   <<vmpeak <<std::endl;
+  std::cout<<"TimeInfo: Producer's VmHWM="    <<vmhwm  <<std::endl;
 }
 
 
