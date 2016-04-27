@@ -691,8 +691,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   long vmpeak, vmhwm;
   ProcessMemUsage(vmpeak,vmhwm);
-  std::cout<<"TimeInfo: Producer child RSS="    <<vmpeak <<std::endl;
-  std::cout<<"TimeInfo: Producer child HWM="    <<vmhwm  <<std::endl;
+  std::cout<<"TimeInfo: Producer's RSS="    <<vmpeak <<std::endl;
+  std::cout<<"TimeInfo: Producer's HWM="    <<vmhwm  <<std::endl;
 }
 
 
