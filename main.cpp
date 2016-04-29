@@ -1,8 +1,7 @@
 //Compile with
-// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall -lboost_mpi -lboost_serialization -lboost_filesystem -lboost_system
+// mpic++ -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -lgdal --std=c++11 -Wall 
 // mpirun -n 3 ./a.out ~/projects/watershed/data/beauford03.flt
 // TODO: MPI abort
-// TODO: See optimization notes at "http://www.boost.org/doc/libs/1_56_0/doc/html/mpi/tutorial.html"
 // For memory usage see: http://info.prelert.com/blog/stl-container-memory-usage
 // abs("single_proc@1"-"merged@1")>0
 // SRTM data: https://dds.cr.usgs.gov/srtm/version2_1/SRTM1/Region_03/
@@ -17,7 +16,6 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
-#include <boost/filesystem.hpp>
 #include "communication.hpp"
 #include "memory.hpp"
 
