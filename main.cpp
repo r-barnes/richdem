@@ -153,6 +153,15 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
+std::string trimStr(std::string const& str){
+  if(str.empty())
+      return str;
+
+  std::size_t firstScan = str.find_first_not_of(' ');
+  std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
+  std::size_t last      = str.find_last_not_of(' ');
+  return str.substr(first, last-first+1);
+}
 
 template<class elev_t>
 void Consumer(){
@@ -695,17 +704,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"TimeInfo: Producer's VmHWM="    <<vmhwm  <<std::endl;
 }
 
-
-
-std::string trimStr(std::string const& str){
-  if(str.empty())
-      return str;
-
-  std::size_t firstScan = str.find_first_not_of(' ');
-  std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
-  std::size_t last      = str.find_last_not_of(' ');
-  return str.substr(first, last-first+1);
-}
 
 
 //Preparer divides up the input raster file into chunks which can be processed
