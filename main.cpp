@@ -33,6 +33,13 @@ const char* program_version = "1";
 #include "common.hpp"
 //#define DEBUG 1
 
+//Define operating system appropriate directory separators
+#if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
+  #define SLASH_CHAR "/"
+#elif defined(__WIN32__)
+  #define SLASH_CHAR "\\"
+#endif
+
 //TODO: Is it possible to run this without mpirun if we specify a single node
 //job?
 
@@ -55,7 +62,8 @@ class ChunkInfo{
        nullChunk,
        filename,
        outputname,
-       retention);
+       retention,
+       many);
   }
  public:
   uint8_t     edge;
@@ -63,6 +71,7 @@ class ChunkInfo{
   int32_t     x,y,width,height,gridx,gridy;
   int32_t     id;
   bool        nullChunk;
+  bool        many;
   label_t     label_offset,label_increment; //Used for convenience in Producer()
   std::string filename;
   std::string outputname;
@@ -70,7 +79,7 @@ class ChunkInfo{
   ChunkInfo(){
     nullChunk = true;
   }
-  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height){
+  ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many){
     this->nullChunk    = false;
     this->edge         = 0;
     this->x            = x;
@@ -84,6 +93,7 @@ class ChunkInfo{
     this->outputname   = outputname;
     this->retention    = retention;
     this->flip         = 0;
+    this->many         = many;
   }
 };
 
@@ -203,7 +213,7 @@ void Consumer(){
 
       //Read in the data associated with the job
       timer_io.start();
-      dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+      dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height, chunk.many);
       if(chunk.flip & FLIP_VERT)
         dem.flipVert();
       if(chunk.flip & FLIP_HORZ)
@@ -714,15 +724,15 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 //communication and solution assembly.
 void Preparer(
   std::string many_or_one,
-  std::string retention_base,
-  std::string input_file,
-  std::string output_prefix,
+  const std::string retention,
+  const std::string input_file,
+  const std::string output_name,
   int bwidth,
   int bheight,
   int flipH,
   int flipV
 ){
-  int chunkid             = 0;
+  int chunkid = 0;
   Timer overall;
   overall.start();
 
@@ -738,10 +748,13 @@ void Preparer(
     int32_t row_width    = -1; //Width of 1st row. All rows must equal this
     int32_t chunk_width  = -1; //Width of 1st chunk. All chunks must equal this
     int32_t chunk_height = -1; //Height of 1st chunk, all chunks must equal this
+    std::vector<double> chunk_geotransform(6);
     long    cell_count   = 0;
 
-    boost::filesystem::path layout_path_and_name = input_file;
-    auto path = layout_path_and_name.parent_path();
+    std::string path = "";
+    std::size_t last_slash = input_file.find(SLASH_CHAR);
+    if(last_slash!=std::string::npos)
+      path = input_file.substr(0,last_slash+1);
 
     //Read each line of the layout file
     std::ifstream fin_layout(input_file);
@@ -772,59 +785,53 @@ void Preparer(
           continue;
         }
 
-        //Okay, the file exists. Let's check it out.
-        auto path_and_filename = path / filename;
-        auto path_and_filestem = path / path_and_filename.stem();
-        auto outputname        = output_prefix+path_and_filename.stem().string()+"-fill.tif";
-
-        std::string retention = retention_base;
-        if(retention[0]!='@')
-          retention = retention_base+path_and_filestem.stem().string()+"-int-";
-
-        //Place to store information about this chunk
-        int          this_chunk_width;
-        int          this_chunk_height;
-        GDALDataType this_chunk_type;
-        double       this_geotransform[6];
-
-        //Retrieve information about this chunk
-        if(getGDALDimensions(
-            path_and_filename.string(),
-            this_chunk_height,
-            this_chunk_width,
-            this_chunk_type,
-            this_geotransform
-        )!=0){
-          std::cerr<<"Error getting file information from '"<<path_and_filename.string()<<"'!"<<std::endl;
-          CommAbort(-1); //TODO
-        }
-
-        //If this is the first chunk we've seen, it determines what every other
-        //chunk should be. Note it.
         if(chunk_height==-1){
-          chunk_height = this_chunk_height;
-          chunk_width  = this_chunk_width;
-          file_type    = this_chunk_type;
+          //Retrieve information about this chunk. All chunks must have the same
+          //dimensions, which we could check here, but opening and closing
+          //thousands of files is expensive. Therefore, we rely on the user to
+          //check this beforehand if they want to. We will, however, verify that
+          //things are correct in Consumer() as we open the files for reading.
+          if(getGDALDimensions(
+              path + filename,
+              chunk_height,
+              chunk_width,
+              file_type,
+              chunk_geotransform.data()
+          )!=0){
+            std::cerr<<"Error getting file information from '"<<(path + filename)<<"'!"<<std::endl;
+            CommAbort(-1); //TODO
+          }
         }
 
-        //Check that this chunk conforms to what we've seen previously so that
-        //all chunks are the same.
-        if( this_chunk_height!=chunk_height || 
-            this_chunk_width !=chunk_width  ||
-            this_chunk_type  !=file_type   ){
-          std::cerr<<"All of the files specified by <layout_file> must be the same dimensions and type!"<<std::endl;
-          CommAbort(-1); //TODO: Set error code
-        }
+        cell_count += chunk_width*chunk_height;
 
-        cell_count += this_chunk_width*this_chunk_height;
+        std::string this_retention = retention;
+        if(this_retention[0]!='@')
+          this_retention = this_retention.replace(this_retention.find("%n"), 2,std::to_string(chunkid));
+
+        std::string this_output_name = output_name;
+        this_output_name.replace(this_output_name.find("%n"), 2,std::to_string(chunkid));
 
         //Add the chunk to the grid
-        chunks.back().emplace_back(chunkid++, path_and_filename.string(), outputname, retention, gridx, gridy, 0, 0, chunk_width, chunk_height);
+        chunks.back().emplace_back(
+          chunkid,
+          path + filename,
+          this_output_name,
+          this_retention,
+          gridx,
+          gridy,
+          0,
+          0,
+          chunk_width,
+          chunk_height,
+          true
+        );
+        chunkid++;
 
         //Flip tiles if the geotransform demands it
-        if(this_geotransform[0]<0)
+        if(chunk_geotransform[0]<0)
           chunks.back().back().flip ^= FLIP_HORZ;
-        if(this_geotransform[5]<0)
+        if(chunk_geotransform[5]<0)
           chunks.back().back().flip ^= FLIP_VERT;
 
         //Flip (or reverse the above flip!) if the user demands it
@@ -842,7 +849,7 @@ void Preparer(
       }
     }
 
-    std::cerr<<"Loaded "<<chunks.size()<<" rows of "<<chunks[0].size()<<" columns."<<std::endl;
+    std::cerr<<"Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
     std::cerr<<"Total cells to be processed: "<<cell_count<<std::endl;
 
     //nullChunks imply that the chunks around them have edges, as though they
@@ -866,14 +873,14 @@ void Preparer(
     int32_t total_height;
     int32_t total_width;
 
-    filename = input_file;
-
-    auto filepath   = boost::filesystem::path(filename);
-    filepath        = filepath.parent_path() / filepath.stem();
+    std::string path = "";
+    std::size_t last_slash = input_file.find(SLASH_CHAR);
+    if(last_slash!=std::string::npos)
+      path = input_file.substr(0,last_slash+1);
 
     //Get the total dimensions of the input file
-    if(getGDALDimensions(filename, total_height, total_width, file_type, NULL)!=0){
-      std::cerr<<"Error getting file information from '"<<filename<<"'!"<<std::endl;
+    if(getGDALDimensions(input_file, total_height, total_width, file_type, NULL)!=0){
+      std::cerr<<"Error getting file information from '"<<input_file<<"'!"<<std::endl;
       CommAbort(-1); //TODO
     }
 
@@ -900,11 +907,28 @@ void Preparer(
           throw std::logic_error("At least one tile is <100 cells in height. Please change rectangle size to avoid this!");
         if(total_width -x<100)
           throw std::logic_error("At least one tile is <100 cells in width. Please change rectangle size to avoid this!");
-        auto outputname = output_prefix+filepath.stem().string()+"-"+std::to_string(chunkid)+"-fill.tif";
-        std::string retention = retention_base;
-        if(retention[0]!='@')
-          retention = retention_base+filepath.stem().string()+"-int-"+std::to_string(chunkid)+"-";
-        chunks.back().emplace_back(chunkid++, filename, outputname, retention, gridx, gridy, x, y, bwidth, bheight);
+
+        std::string this_retention = retention;
+        if(this_retention[0]!='@')
+          this_retention.replace(this_retention.find("%n"), 2,std::to_string(chunkid));
+        std::string this_output_name = output_name;
+        this_output_name.replace(this_output_name.find("%n"),2,std::to_string(chunkid));
+
+        chunks.back().emplace_back(
+          chunkid,
+          input_file,
+          this_output_name,
+          this_retention,
+          gridx,
+          gridy,
+          x,
+          y,
+          bwidth,
+          bheight,
+          false
+        );
+        chunkid++;
+
         //Adjust the label_offset by the total number of perimeter cells of this
         //chunk plus one (to avoid another chunk's overlapping the last label of
         //this chunk). Obviously, the right and bottom edges of the global grid
@@ -919,7 +943,7 @@ void Preparer(
       }
     }
 
-    if(retention_base=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=CommSize()-1){
+    if(retention=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=CommSize()-1){
       std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<CommSize()<<" are available."<<std::endl;
       CommAbort(-1);
     }
@@ -983,7 +1007,7 @@ int main(int argc, char **argv){
     std::string many_or_one;
     std::string retention;
     std::string input_file;
-    std::string output_prefix;
+    std::string output_name;
     int         bwidth  = -1;
     int         bheight = -1;
     int         flipH   = false;
@@ -1023,13 +1047,13 @@ int main(int argc, char **argv){
           retention = argv[i];
         } else if(input_file==""){
           input_file = argv[i];
-        } else if(output_prefix==""){
-          output_prefix = argv[i];
+        } else if(output_name==""){
+          output_name = argv[i];
         } else {
           throw std::invalid_argument("Too many arguments.");
         }
       }
-      if(many_or_one=="" || retention=="" || input_file=="" || output_prefix=="")
+      if(many_or_one=="" || retention=="" || input_file=="" || output_name=="")
         throw std::invalid_argument("Too few arguments.");
       if(retention[0]=='@' && !(retention=="@offloadall" || retention=="@retainall"))
         throw std::invalid_argument("Retention must be @offloadall or @retainall or a path.");
@@ -1037,6 +1061,12 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Must specify many or one.");
       if(CommSize()==1) //TODO: Invoke a special "one-process mode?"
         throw std::invalid_argument("Must run program with at least two processes!");
+      if(output_name.find("%n")==std::string::npos)
+        throw std::invalid_argument("Output filename must indicate file number with '%n'.");
+      if(retention[0]!='@' && retention.find("%n")==std::string::npos)
+        throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
+      if(retention==output_name)
+        throw std::invalid_argument("Retention and output filenames must differ.");
     } catch (const std::invalid_argument &ia){
       std::string output_err;
       if(ia.what()==std::string("stoi"))
@@ -1057,7 +1087,7 @@ int main(int argc, char **argv){
     std::cerr<<"Running with "<<CommSize()<<" processes."<<std::endl;
     std::cerr<<"Input file: "<<input_file<<std::endl;
     CommBroadcast(&good_to_go,0);
-    Preparer(many_or_one, retention, input_file, output_prefix, bwidth, bheight, flipH, flipV);
+    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
   } else {
     int good_to_go;

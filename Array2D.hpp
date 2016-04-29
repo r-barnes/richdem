@@ -9,6 +9,7 @@
 #include <cassert>
 #include <algorithm>
 #include <typeinfo>
+#include <stdexcept>
 
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
@@ -117,7 +118,7 @@ class Array2D {
 
   T   no_data;
 
-  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0){
+  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false){
     assert(empty());
     assert(xOffset>=0);
     assert(yOffset>=0);
@@ -131,6 +132,11 @@ class Array2D {
     total_width  = band->GetXSize();
     total_height = band->GetYSize();
     no_data      = band->GetNoDataValue();
+
+    if(exact && xOffset==0 && yOffset==0 && (part_width!=total_width || part_height!=total_height))
+      throw std::logic_error("Tile dimensions did not match expectations!");
+
+    //TODO: What's going on here?
 
     if(xOffset+part_width>=total_width)
       part_width  = total_width-xOffset;
@@ -177,11 +183,11 @@ class Array2D {
   }
 
   //Create internal array from a file
-  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0) : Array2D() {
+  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false) : Array2D() {
     if(native)
       loadNative(filename);
     else
-      loadGDAL(filename, xOffset, yOffset, part_width, part_height);
+      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact);
   }
 
   void saveNative(const std::string &filename){
