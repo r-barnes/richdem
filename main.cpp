@@ -752,9 +752,10 @@ void Preparer(
     long    cell_count   = 0;
 
     std::string path = "";
-    std::size_t last_slash = input_file.find(SLASH_CHAR);
+    std::size_t last_slash = input_file.find_last_of(SLASH_CHAR);
     if(last_slash!=std::string::npos)
       path = input_file.substr(0,last_slash+1);
+    std::cerr<<"Base path for layout-identified files: "<<path<<std::endl;
 
     //Read each line of the layout file
     std::ifstream fin_layout(input_file);
@@ -872,11 +873,6 @@ void Preparer(
     std::cerr<<"Single file mode"<<std::endl;
     int32_t total_height;
     int32_t total_width;
-
-    std::string path = "";
-    std::size_t last_slash = input_file.find(SLASH_CHAR);
-    if(last_slash!=std::string::npos)
-      path = input_file.substr(0,last_slash+1);
 
     //Get the total dimensions of the input file
     if(getGDALDimensions(input_file, total_height, total_width, file_type, NULL)!=0){
