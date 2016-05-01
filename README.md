@@ -57,15 +57,11 @@ prerequisites are necessary for this to be successful.
 For **compilation**, the following command will set you up on a Debian-based
 system:
 
-    sudo apt-get install make openmpi-bin libgdal-dev libopenmpi-dev \
-                         libboost-mpi-dev libboost-filesystem-dev    \
-                         libboost-system-dev 
+    sudo apt-get install make openmpi-bin libgdal-dev libopenmpi-dev
 
 If you wish (as I did) to compile the code on XSEDE, certain modules must be
 loaded:
 
-    module unload intel/2013_sp1.2.144
-    module load boost/1.55.0
     module load intel/2015.2.164
     module load mvapich2_ib
 
