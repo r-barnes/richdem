@@ -110,7 +110,7 @@ specifies how fileX.tif are arranged in relation to each other in space.
 Blanks between commas indicate that there is no tile there: the algorithm will
 treat such gaps as places to route flow towards (as if they are oceans). Note
 that the files need not have TIF format: they can be of any type which GDAL
-can read.
+can read. Paths to fileX.tif are taken to be relative to the layout file.
 
 Several example layout files are included in the `tests/` directory and end with
 the `.layout` extension.
@@ -157,6 +157,9 @@ correctness of various tile sizing configurations, and the
 `tests/srtm_region/nasa_srtm3_small.layout` test (see the `README.md` file in
 that directory for further information), which tests the "many" mode on a 3x3
 excerpt of the SRTM Region 3 data.
+
+Subdirectories of `tests` contain directions for acquiring the datasets and
+example jobs for running them using SLURM.
 
 
 

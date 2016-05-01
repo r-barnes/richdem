@@ -98,7 +98,7 @@ LAYOUT FILES
   Blanks between commas indicate that there is no tile there: the algorithm will
   treat such gaps as places to route flow towards (as if they are oceans). Note
   that the files need not have TIF format: they can be of any type which GDAL
-  can read.
+  can read. Paths to fileX.tif are taken to be relative to the layout file.
 
 AUTHOR NOTES
 
