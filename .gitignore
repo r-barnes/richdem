@@ -6,3 +6,4 @@ temp
 cereal/
 *.ipm.xml
 *.mpiP
+libmpiP.so
