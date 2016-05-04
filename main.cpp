@@ -1009,6 +1009,9 @@ int main(int argc, char **argv){
     int         flipH   = false;
     int         flipV   = false;
 
+    Timer master_time;
+    master_time.start();
+
     std::string help=
     #include "help.txt"
     ;
@@ -1084,6 +1087,9 @@ int main(int argc, char **argv){
     std::cerr<<"Input file: "<<input_file<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
+
+    master_time.stop();
+    std::cerr<<"TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
 
   } else {
     int good_to_go;
