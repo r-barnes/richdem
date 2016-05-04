@@ -197,7 +197,7 @@ void Consumer(){
     } else if (the_job==JOB_FIRST){
       CommRecv(&chunk, nullptr, 0);
 
-      std::cerr<<"Rec name: "<<chunk.filename<<std::endl;
+      //std::cerr<<"Rec name: "<<chunk.filename<<std::endl; //todo
 
       Timer timer_calc,timer_io,timer_overall;
       timer_overall.start();
@@ -256,7 +256,7 @@ void Consumer(){
       }
 
       timer_overall.stop();
-      std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl;
+      // std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl; //TODO
 
       long vmpeak, vmhwm;
       ProcessMemUsage(vmpeak,vmhwm);
@@ -316,7 +316,7 @@ void Consumer(){
       timer_io.stop();
       timer_overall.stop();
 
-      std::cerr<<"Node "<<CommRank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl;
+      //std::cerr<<"Node "<<CommRank()<<" finished ("<<chunk.gridx<<","<<chunk.gridy<<") with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s."<<std::endl; //TODO
 
       long vmpeak, vmhwm;
       ProcessMemUsage(vmpeak,vmhwm);
@@ -418,37 +418,38 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   //Loop through all of the jobs, delegating them to Consumers
   active_nodes=0;
-  for(size_t y=0;y<chunks.size();y++)
-  for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    if(chunks[y][x].nullChunk){
-      std::cerr<<"\tNull chunk: skipping."<<std::endl;
-      continue;
-    }
+  for(size_t y=0;y<chunks.size();y++){
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    for(size_t x=0;x<chunks[0].size();x++){
+      if(chunks[y][x].nullChunk){
+        //std::cerr<<"\tNull chunk: skipping."<<std::endl;
+        continue;
+      }
 
-    //If fewer jobs have been delegated than there are Consumers available,
-    //delegate the job to a new Consumer.
-    if(active_nodes<CommSize()-1){
-      active_nodes++;
+      //If fewer jobs have been delegated than there are Consumers available,
+      //delegate the job to a new Consumer.
+      if(active_nodes<CommSize()-1){
+        active_nodes++;
 
-      std::cerr<<chunks.at(y).at(x).filename<<std::endl;
+        std::cerr<<chunks.at(y).at(x).filename<<std::endl;
 
-      rank_to_chunk[active_nodes] = chunks.at(y).at(x);
-      CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
+        rank_to_chunk[active_nodes] = chunks.at(y).at(x);
+        CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
 
-    //Once all of the consumers are active, wait for them to return results. As
-    //each Consumer returns a result, pass it the next unfinished Job until
-    //there are no jobs left.
-    } else {
-      //Execute a blocking receive until some consumer finishes its work.
-      //Receive that work.
-      int source = CommGetSource();
-      ChunkInfo received_chunk = rank_to_chunk[source];
-      CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
+      //Once all of the consumers are active, wait for them to return results. As
+      //each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left.
+      } else {
+        //Execute a blocking receive until some consumer finishes its work.
+        //Receive that work.
+        int source = CommGetSource();
+        ChunkInfo received_chunk = rank_to_chunk[source];
+        CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
 
-      //Delegate new work to that consumer
-      rank_to_chunk[source] = chunks.at(y).at(x);
-      CommSend(&chunks.at(y).at(x),nullptr,source,JOB_FIRST);
+        //Delegate new work to that consumer
+        rank_to_chunk[source] = chunks.at(y).at(x);
+        CommSend(&chunks.at(y).at(x),nullptr,source,JOB_FIRST);
+      }
     }
   }
 
@@ -625,41 +626,42 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"Sending out final jobs..."<<std::endl;
   //Loop through all of the jobs, delegating them to Consumers
   active_nodes = 0;
-  for(size_t y=0;y<chunks.size();y++)
-  for(size_t x=0;x<chunks[0].size();x++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+x+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(x+1)<<"/"<<chunks[0].size()<<","<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    if(chunks[y][x].nullChunk){
-      std::cerr<<"\tNull chunk: skipping."<<std::endl;
-      continue;
-    }
+  for(size_t y=0;y<chunks.size();y++){
+    std::cerr<<"Sending job "<<(y*chunks[0].size()+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
+    for(size_t x=0;x<chunks[0].size();x++){
+      if(chunks[y][x].nullChunk){
+        std::cerr<<"\tNull chunk: skipping."<<std::endl;
+        continue;
+      }
 
-    timer_calc.start();
-    std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
-    timer_calc.stop();
+      timer_calc.start();
+      std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
+      timer_calc.stop();
 
-    //If fewer jobs have been delegated than there are Consumers available,
-    //delegate the job to a new Consumer.
-    if(active_nodes<CommSize()-1){
-      // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-      active_nodes++;
-      CommSend(&chunks.at(y).at(x), &job2, active_nodes, JOB_SECOND);
+      //If fewer jobs have been delegated than there are Consumers available,
+      //delegate the job to a new Consumer.
+      if(active_nodes<CommSize()-1){
+        // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
+        active_nodes++;
+        CommSend(&chunks.at(y).at(x), &job2, active_nodes, JOB_SECOND);
 
-    //Once all of the consumers are active, wait for them to return results. As
-    //each Consumer returns a result, pass it the next unfinished Job until
-    //there are no jobs left.
-    } else {
-      //Execute a blocking receive until some consumer finishes its work.
-      //Receive that work.
-      int source = CommGetSource();
+      //Once all of the consumers are active, wait for them to return results. As
+      //each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left.
+      } else {
+        //Execute a blocking receive until some consumer finishes its work.
+        //Receive that work.
+        int source = CommGetSource();
 
-      TimeInfo temp;
-      CommRecv(&temp, nullptr, source);
-      
-      time_second_total += temp;
-      time_second_count++;
+        TimeInfo temp;
+        CommRecv(&temp, nullptr, source);
+        
+        time_second_total += temp;
+        time_second_count++;
 
-      //Delegate new work to that consumer
-      CommSend(&chunks.at(y).at(x), &job2, source, JOB_SECOND);
+        //Delegate new work to that consumer
+        CommSend(&chunks.at(y).at(x), &job2, source, JOB_SECOND);
+      }
     }
   }
 

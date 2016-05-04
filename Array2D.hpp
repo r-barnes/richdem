@@ -154,7 +154,7 @@ class Array2D {
     view_xoff = xOffset;
     view_yoff = yOffset;
 
-    std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
+    //std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     data = InternalArray(view_height, Row(view_width));
     for(int y=yOffset;y<yOffset+view_height;y++)
       band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
