@@ -19,7 +19,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "3";
+const char* program_version = "4";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
