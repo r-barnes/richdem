@@ -154,7 +154,6 @@ const int TAG_SECOND_DATA = 3;
 const int TAG_DONE_SECOND = 4;
 
 const int SYNC_MSG_KILL = 0;
-const int JOB_CHUNK     = 1;
 const int JOB_FIRST     = 2;
 const int JOB_SECOND    = 3;
 
@@ -190,8 +189,6 @@ void Consumer(){
     if(the_job==SYNC_MSG_KILL){
       return;
 
-    } else if (the_job==JOB_CHUNK){
-      assert(false);
     //This message indicates that the consumer should prepare to perform the
     //first part of the distributed Priority-Flood algorithm on an incoming job
     } else if (the_job==JOB_FIRST){
