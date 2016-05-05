@@ -15,8 +15,10 @@
 
 #define _unused(x) ((void)x) //Used for asserts
 
-static unsigned long long bytes_sent = 0;
-static unsigned long long bytes_recv = 0;
+typedef unsigned long long comm_count_type;
+
+static comm_count_type bytes_sent = 0;
+static comm_count_type bytes_recv = 0;
 
 void CommInit(int *argc, char ***argv){
   MPI_Init(argc,argv);
@@ -124,11 +126,11 @@ void CommFinalize(){
   MPI_Finalize();
 }
 
-int CommBytesSent(){
+comm_count_type CommBytesSent(){
   return bytes_sent;
 }
 
-int CommBytesRecv(){
+comm_count_type CommBytesRecv(){
   return bytes_recv;
 }
 
