@@ -78,20 +78,20 @@ class ChunkInfo{
     nullChunk = true;
   }
   ChunkInfo(int32_t id, std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many){
-    this->nullChunk    = false;
-    this->edge         = 0;
-    this->x            = x;
-    this->y            = y;
-    this->width        = width;
-    this->height       = height;   
-    this->gridx        = gridx;
-    this->gridy        = gridy;
-    this->id           = id;
-    this->filename     = filename;
-    this->outputname   = outputname;
-    this->retention    = retention;
-    this->flip         = 0;
-    this->many         = many;
+    this->nullChunk  = false;
+    this->edge       = 0;
+    this->x          = x;
+    this->y          = y;
+    this->width      = width;
+    this->height     = height;   
+    this->gridx      = gridx;
+    this->gridy      = gridy;
+    this->id         = id;
+    this->filename   = filename;
+    this->outputname = outputname;
+    this->retention  = retention;
+    this->flip       = 0;
+    this->many       = many;
   }
 };
 
