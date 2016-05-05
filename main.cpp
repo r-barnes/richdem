@@ -19,7 +19,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "1";
+const char* program_version = "2";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -1076,8 +1076,14 @@ int main(int argc, char **argv){
 
     int good_to_go = 1;
     std::cerr<<"Running program version: "<<program_version<<std::endl;
-    std::cerr<<"Running with "<<CommSize()<<" processes."<<std::endl;
-    std::cerr<<"Input file: "<<input_file<<std::endl;
+    std::cerr<<"Running with "            <<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"Many or one: "            <<many_or_one<<std::endl;
+    std::cerr<<"Input file: "             <<input_file<<std::endl;
+    std::cerr<<"Retention strategy: "     <<retention <<std::endl;
+    std::cerr<<"Block width: "            <<bwidth    <<std::endl;
+    std::cerr<<"Block height: "           <<bheight   <<std::endl;
+    std::cerr<<"Flip horizontal: "        <<flipH     <<std::endl;
+    std::cerr<<"Flip vertical: "          <<flipV     <<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
