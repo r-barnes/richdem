@@ -73,6 +73,8 @@ or some similar directory.
 
 Running `make` will produce an executable called `parallel_pf.exe`.
 
+
+
 Running the Program
 -------------------
 
@@ -90,6 +92,8 @@ parallel over four processes. One of these processes (the one with MPI rank #0)
 acts as a master process. It does limited computation but stores information
 from all of the other processes. This requires less memory than one would think,
 as discussed in the manuscript.
+
+
 
 Layout Files
 ------------
@@ -110,6 +114,8 @@ can read. Paths to fileX.tif are taken to be relative to the layout file.
 
 Several example layout files are included in the `tests/` directory and end with
 the `.layout` extension.
+
+
 
 MPI Profiling
 -------------
@@ -138,6 +144,8 @@ also used `/usr/bin/time` to record this. An example of such an invocation is:
 This will store memory and timing information in files beginning with the stem
 `timing`.
 
+
+
 Testing
 -------
 
@@ -149,13 +157,28 @@ system:
 The directory `tests` contains all of the information and layouts associated
 with the tests described in the paper. The most immediately useful are probably
 the `tests/beauford` test, which includes a small DEM suitable for testing the
-correctness of various tile sizing configurations, and the
-`tests/srtm_region/nasa_srtm3_small.layout` test (see the `README.md` file in
-that directory for further information), which tests the "many" mode on a 3x3
-excerpt of the SRTM Region 3 data.
+correctness of various tile sizing configurations, and the `tests/srtm_small`
+test (see the `README.md` file in that directory for further information), which
+tests the "many" mode on a 3x3 excerpt of the SRTM Region 3 data.
 
-Subdirectories of `tests` contain directions for acquiring the datasets and
-example jobs for running them using SLURM.
+Other subdirectories of `tests` are named for the dataset they pertain to and
+contain directions for acquiring the datasets and example jobs for running them
+using SLURM.
+
+The `beauford` and `srtm_small` tests can be run using the `test.py` script.
+This script can be running using one of the following: 
+
+    ./test.py tests/beauford/beauford.tif
+    ./test.py tests/srtm_small/srtm_small.layout
+
+Once data has been acquired and placed in these directories.
+
+In the case of a layout file being used, the `test.py` script will merge all of
+the tiles together. This merged file, or, in the case of a single input file
+being used, that file, will be depression filled using the algorithm in a
+single-core mode. This generates an authoritative answer against which
+correctness is checked. The program then iterates over many tile sizes to ensure
+that they all compare correctly against this authoritative answer.
 
 
 
