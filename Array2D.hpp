@@ -196,7 +196,7 @@ class Array2D {
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
       std::cerr<<"Failed to open file '"<<filename<<"'."<<std::endl;
-      assert(fout.good());
+      throw std::logic_error("Failed to open a file!");
     }
 
     fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
