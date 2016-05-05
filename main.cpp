@@ -19,7 +19,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "2";
+const char* program_version = "3";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -435,9 +435,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
         rank_to_chunk[active_nodes] = chunks.at(y).at(x);
         CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
 
-      //Once all of the consumers are active, wait for them to return results. As
-      //each Consumer returns a result, pass it the next unfinished Job until
-      //there are no jobs left.
+      //Once all of the consumers are active, wait for them to return results.
+      //As each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left. For the @retainall strategy, this part will
+      //never be called because there will be sufficient consumers for
+      //everything.
       } else {
         //Execute a blocking receive until some consumer finishes its work.
         //Receive that work.
@@ -617,7 +619,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   timer_calc.stop();
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
-  //Loop through all of the jobs, delegating them to Consumers
+  //Loop through all of the jobs, delegating them to Consumers. If @retainall is
+  //used then there are sufficient consumers to go around and they are evoked
+  //here in the same order as above, so every consumer receives the appropriate
+  //information.
   active_nodes = 0;
   for(size_t y=0;y<chunks.size();y++){
     std::cerr<<"Sending job "<<(y*chunks[0].size()+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
@@ -638,9 +643,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
         active_nodes++;
         CommSend(&chunks.at(y).at(x), &job2, active_nodes, JOB_SECOND);
 
-      //Once all of the consumers are active, wait for them to return results. As
-      //each Consumer returns a result, pass it the next unfinished Job until
-      //there are no jobs left.
+      //Once all of the consumers are active, wait for them to return results.
+      //As each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left. For the @retainall strategy this will never be
+      //called since there will be sufficient consumers.
       } else {
         //Execute a blocking receive until some consumer finishes its work.
         //Receive that work.
@@ -736,13 +742,14 @@ void Preparer(
   if(many_or_one=="many"){
     std::cerr<<"Multi file mode"<<std::endl;
 
-    int32_t gridx        =  0; //Current x coordinate in the chunk grid
-    int32_t gridy        = -1; //Current y coordinate in the chunk grid
-    int32_t row_width    = -1; //Width of 1st row. All rows must equal this
-    int32_t chunk_width  = -1; //Width of 1st chunk. All chunks must equal this
-    int32_t chunk_height = -1; //Height of 1st chunk, all chunks must equal this
+    int32_t gridx          = 0;  //Current x coordinate in the chunk grid
+    int32_t gridy          = -1; //Current y coordinate in the chunk grid
+    int32_t row_width      = -1; //Width of 1st row. All rows must equal this
+    int32_t chunk_width    = -1; //Width of 1st chunk. All chunks must equal this
+    int32_t chunk_height   = -1; //Height of 1st chunk, all chunks must equal this
+    long    cell_count     = 0;
+    int     not_null_tiles = 0;
     std::vector<double> chunk_geotransform(6);
-    long    cell_count   = 0;
 
     std::string path = "";
     std::size_t last_slash = input_file.find_last_of(SLASH_CHAR);
@@ -778,6 +785,8 @@ void Preparer(
           chunks.back().emplace_back();
           continue;
         }
+
+        not_null_tiles++;
 
         if(chunk_height==-1){
           //Retrieve information about this chunk. All chunks must have the same
@@ -845,6 +854,11 @@ void Preparer(
 
     std::cerr<<"!Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
     std::cerr<<"!Total cells to be processed: "<<cell_count<<std::endl;
+
+    if(retention=="@retainall" && CommSize()<not_null_tiles+1){
+      std::cerr<<"Insufficient processes available for @retainall strategy."<<std::endl;
+      CommAbort(-1);
+    }
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
@@ -1004,6 +1018,8 @@ int main(int argc, char **argv){
 
     Timer master_time;
     master_time.start();
+
+    std::cerr<<"!Running program version: "<<program_version<<std::endl;
 
     std::string help=
     #include "help.txt"
