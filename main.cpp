@@ -495,9 +495,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   label_t label_offset = 0;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
-    if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tcmg: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<std::endl;
-
     if(chunks[y][x].nullChunk)
       continue;
 
@@ -526,9 +523,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
-    if( (y*gridwidth+x)%10==0 )
-      std::cerr<<"\tha: "<<(y*gridwidth+x)<<"/"<<(gridheight*gridwidth)<<"\n";
-
     if(chunks[y][x].nullChunk)
       continue;
 
