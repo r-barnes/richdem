@@ -159,7 +159,7 @@ class Array2D {
     for(int y=yOffset;y<yOffset+view_height;y++){
       auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
       if(temp!=CE_None)
-        throw std::runtime_error("Error reading file with GDAL!")
+        throw std::runtime_error("Error reading file with GDAL!");
     }
 
     GDALClose(fin);
@@ -414,8 +414,11 @@ class Array2D {
 
     GDALClose(fintempl);
 
-    for(int y=0;y<view_height;y++)
-      oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
+    for(int y=0;y<view_height;y++){
+      auto temp = oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
+      if(temp!=CE_None)
+        std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
+    }
 
     GDALClose(fout);
   }
