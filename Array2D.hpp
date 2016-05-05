@@ -134,7 +134,7 @@ class Array2D {
     no_data      = band->GetNoDataValue();
 
     if(exact && xOffset==0 && yOffset==0 && (part_width!=total_width || part_height!=total_height))
-      throw std::logic_error("Tile dimensions did not match expectations!");
+      throw std::runtime_error("Tile dimensions did not match expectations!");
 
     //TODO: What's going on here?
 
@@ -156,8 +156,11 @@ class Array2D {
 
     //std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     data = InternalArray(view_height, Row(view_width));
-    for(int y=yOffset;y<yOffset+view_height;y++)
-      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+    for(int y=yOffset;y<yOffset+view_height;y++){
+      auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+      if(temp!=CE_None)
+        throw std::runtime_error("Error reading file with GDAL!")
+    }
 
     GDALClose(fin);
   }
