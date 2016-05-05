@@ -470,8 +470,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   const int gridwidth  = jobs1.front().size();
   const int gridheight = jobs1.size();
 
-  std::cerr<<"First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
-  std::cerr<<"First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
+  std::cerr<<"!First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
+  std::cerr<<"!First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
   CommBytesReset();
 
   //Merge all of the graphs together into one very big graph. Clear information
@@ -488,7 +488,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++)
     maxlabel+=jobs1[y][x].graph.size();
-  std::cerr<<"Total labels required: "<<maxlabel<<std::endl;
+  std::cerr<<"!Total labels required: "<<maxlabel<<std::endl;
 
   std::vector< std::map<label_t, elev_t> > mastergraph(maxlabel);
 
@@ -563,7 +563,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   }
   timer_mg_construct.stop();
 
-  std::cerr<<"Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
+  std::cerr<<"!Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
 
 
   jobs1.clear();
@@ -613,7 +613,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
   }
   agg_pflood_timer.stop();
-  std::cerr<<"Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
+  std::cerr<<"!Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
   std::cerr<<"Sending out final jobs..."<<std::endl;
@@ -681,30 +681,30 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   timer_overall.stop();
 
-  std::cout<<"TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
-  std::cout<<"TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
-  std::cout<<"TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
-  std::cout<<"TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
-  std::cout<<"TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
-  std::cout<<"TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
+  std::cout<<"!TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
+  std::cout<<"!TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
+  std::cout<<"!TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
+  std::cout<<"!TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
+  std::cout<<"!TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
+  std::cout<<"!TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
 
-  std::cout<<"Second stage: "<<CommBytesSent()<<"B sent."<<std::endl;
-  std::cout<<"Second stage: "<<CommBytesRecv()<<"B received."<<std::endl;
+  std::cout<<"!Second stage: "<<CommBytesSent()<<"B sent."<<std::endl;
+  std::cout<<"!Second stage: "<<CommBytesRecv()<<"B received."<<std::endl;
 
-  std::cout<<"TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
-  std::cout<<"TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
-  std::cout<<"TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
-  std::cout<<"TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
-  std::cout<<"TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
-  std::cout<<"TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
+  std::cout<<"!TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
+  std::cout<<"!TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
+  std::cout<<"!TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
+  std::cout<<"!TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
+  std::cout<<"!TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
+  std::cout<<"!TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
 
-  std::cout<<"TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
-  std::cout<<"TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
+  std::cout<<"!TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
+  std::cout<<"!TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
 
   long vmpeak, vmhwm;
   ProcessMemUsage(vmpeak,vmhwm);
-  std::cout<<"TimeInfo: Producer's VmPeak="   <<vmpeak <<std::endl;
-  std::cout<<"TimeInfo: Producer's VmHWM="    <<vmhwm  <<std::endl;
+  std::cout<<"!TimeInfo: Producer's VmPeak="   <<vmpeak <<std::endl;
+  std::cout<<"!TimeInfo: Producer's VmHWM="    <<vmhwm  <<std::endl;
 }
 
 
@@ -843,8 +843,8 @@ void Preparer(
       }
     }
 
-    std::cerr<<"Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
-    std::cerr<<"Total cells to be processed: "<<cell_count<<std::endl;
+    std::cerr<<"!Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
+    std::cerr<<"!Total cells to be processed: "<<cell_count<<std::endl;
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
@@ -881,11 +881,11 @@ void Preparer(
     if(bheight==-1)
       bheight = total_height;
 
-    std::cerr<<"Total width:  "<<total_width <<"\n";
-    std::cerr<<"Total height: "<<total_height<<"\n";
-    std::cerr<<"Block width:  "<<bwidth      <<"\n";
-    std::cerr<<"Block height: "<<bheight     <<std::endl;
-    std::cerr<<"Total cells to be processed: "<<(total_width*total_height)<<std::endl;
+    std::cerr<<"!Total width:  "<<total_width <<"\n";
+    std::cerr<<"!Total height: "<<total_height<<"\n";
+    std::cerr<<"!Block width:  "<<bwidth      <<"\n";
+    std::cerr<<"!Block height: "<<bheight     <<std::endl;
+    std::cerr<<"!Total cells to be processed: "<<(total_width*total_height)<<std::endl;
 
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
@@ -1075,20 +1075,20 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"Running program version: "<<program_version<<std::endl;
-    std::cerr<<"Running with "            <<CommSize()<<" processes."<<std::endl;
-    std::cerr<<"Many or one: "            <<many_or_one<<std::endl;
-    std::cerr<<"Input file: "             <<input_file<<std::endl;
-    std::cerr<<"Retention strategy: "     <<retention <<std::endl;
-    std::cerr<<"Block width: "            <<bwidth    <<std::endl;
-    std::cerr<<"Block height: "           <<bheight   <<std::endl;
-    std::cerr<<"Flip horizontal: "        <<flipH     <<std::endl;
-    std::cerr<<"Flip vertical: "          <<flipV     <<std::endl;
+    std::cerr<<"!Running program version: "<<program_version<<std::endl;
+    std::cerr<<"!Running with "            <<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"!Many or one: "            <<many_or_one<<std::endl;
+    std::cerr<<"!Input file: "             <<input_file<<std::endl;
+    std::cerr<<"!Retention strategy: "     <<retention <<std::endl;
+    std::cerr<<"!Block width: "            <<bwidth    <<std::endl;
+    std::cerr<<"!Block height: "           <<bheight   <<std::endl;
+    std::cerr<<"!Flip horizontal: "        <<flipH     <<std::endl;
+    std::cerr<<"!Flip vertical: "          <<flipV     <<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
     master_time.stop();
-    std::cerr<<"TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
+    std::cerr<<"!TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
 
   } else {
     int good_to_go;
