@@ -1100,6 +1100,7 @@ int main(int argc, char **argv){
     std::cerr<<"!Block height: "           <<bheight   <<std::endl;
     std::cerr<<"!Flip horizontal: "        <<flipH     <<std::endl;
     std::cerr<<"!Flip vertical: "          <<flipV     <<std::endl;
+    std::cerr<<"!World Size: "             <<CommSize()<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
