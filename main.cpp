@@ -19,7 +19,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "5";
+const char* program_version = "6";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -1089,6 +1089,7 @@ int main(int argc, char **argv){
       int good_to_go=0;
       CommBroadcast(&good_to_go,0);
       CommFinalize();
+      return -1;
     }
 
     int good_to_go = 1;
