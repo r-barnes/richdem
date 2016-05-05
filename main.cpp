@@ -290,7 +290,7 @@ void Consumer(){
         //Nothing to do: we have it all in memory
       } else {
         timer_io.start();
-        dem    = Array2D<elev_t>(chunk.retention+"dem.dat"    ,true); //TODO: There should be an exception if this fails
+        dem    = Array2D<elev_t >(chunk.retention+"dem.dat"   ,true); //TODO: There should be an exception if this fails
         labels = Array2D<label_t>(chunk.retention+"labels.dat",true);
         timer_io.stop();
       }
