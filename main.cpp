@@ -212,10 +212,6 @@ void Consumer(){
       //Read in the data associated with the job
       timer_io.start();
       dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height, chunk.many);
-      if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
-      if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
       timer_io.stop();
 
       //These variables are needed by Priority-Flood. The internal
@@ -255,6 +251,20 @@ void Consumer(){
         timer_io.stop();
       }
 
+      //Flip the tile if necessary
+      if(chunk.flip & FLIP_VERT){
+        job1.top_elev.swap(job1.bot_elev);
+        job1.top_label.swap(job1.bot_label);
+        std::reverse(job1.left_elev.begin(),job1.left_elev.end());
+        std::reverse(job1.right_elev.begin(),job1.right_elev.end());
+      }
+      if(chunk.flip & FLIP_HORZ){
+        job1.left_elev.swap(job1.right_elev);
+        job1.left_label.swap(job1.right_label);
+        std::reverse(job1.top_elev.begin(),job1.top_elev.end());
+        std::reverse(job1.bot_elev.begin(),job1.bot_elev.end());
+      }
+
       timer_overall.stop();
       // std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl; //TODO
 
@@ -276,10 +286,6 @@ void Consumer(){
       if(chunk.retention=="@offloadall"){
         timer_io.start();
         dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
-        if(chunk.flip & FLIP_VERT)
-          dem.flipVert();
-        if(chunk.flip & FLIP_HORZ)
-          dem.flipHorz();
         timer_io.stop();
   
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
@@ -303,13 +309,6 @@ void Consumer(){
       timer_calc.stop();
 
       //At this point we're done with the calculation! Boo-yeah!
-
-      timer_io.start();
-      if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
-      if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
-      timer_io.stop();
 
       timer_io.start();
       dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
