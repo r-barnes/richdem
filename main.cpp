@@ -19,7 +19,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "4";
+const char* program_version = "5";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -854,6 +854,7 @@ void Preparer(
 
     std::cerr<<"!Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
     std::cerr<<"!Total cells to be processed: "<<cell_count<<std::endl;
+    std::cerr<<"!Number of tiles which were not null: "<<not_null_tiles<<std::endl;
 
     if(retention=="@retainall" && CommSize()<not_null_tiles+1){
       std::cerr<<"Insufficient processes available for @retainall strategy."<<std::endl;
