@@ -13,12 +13,23 @@
 #include <cassert>
 #include <iostream>
 
+//For non-busy looping
+#include <thread>
+#include <chrono>
+
 #define _unused(x) ((void)x) //Used for asserts
 
 typedef unsigned long long comm_count_type;
 
 static comm_count_type bytes_sent = 0;
 static comm_count_type bytes_recv = 0;
+
+//Consumers call CommGetTag() when they are waiting for work from the Producer.
+//In many MPI implementations this leads to busy looping that can prevent
+//processors from doing other useful work, such as apears here in the @retainall
+//strategy. To avoid this, I have the processors sleep and periodically check
+//for additional work. This variable sets the delay between checks.
+static auto MPI_BUSY_LOOP_SLEEP = std::chrono::milliseconds(50);
 
 void CommInit(int *argc, char ***argv){
   MPI_Init(argc,argv);
@@ -51,8 +62,14 @@ void CommSend(const T* a, std::nullptr_t, int dest, int tag){
 }
 
 int CommGetTag(int from){
+  int flag;
   MPI_Status status;
-  MPI_Probe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+  do {
+    MPI_Iprobe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+    std::this_thread::sleep_for(MPI_BUSY_LOOP_SLEEP);
+  } while (!flag);
+
   return status.MPI_TAG;
 }
 

@@ -5,8 +5,8 @@ R"(NAME
 
 SYNOPSIS
 
-  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one>
-                        <retention> <input> <output>
+  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] [--procs]
+                        <many/one> <retention> <input> <output>
 
 DESCRIPTION
 
@@ -29,7 +29,10 @@ DESCRIPTION
                               fastest way to run the algorithm and requires
                               minimal hard-drive space. However, the entire data
                               set must be able to fit into RAM and a new process
-                              is spawned for each block.
+                              is spawned for each block. Additionally, you must
+                              run the program with a suitable number of cores.
+                              Running with too few cores will print a message
+                              telling you how many are needed.
 
                 @offloadall - No intermediate results are retained between
                               calculations. This is the slowest way to run the
@@ -83,6 +86,13 @@ DESCRIPTION
   --flipH     - Used with <many>. Flip each chunk horizontally before combining
   or -H         their results. This can be useful if the algorithm produces
                 unexpected results.
+
+  --procs     - How many active consumers to have at a given time. This is
+  or -p         useful, for example, if you have a node with enough RAM to hold
+                everything in memory, but fewer cores than would be required.
+                This defaults to WorldSize-1 (to leave space for the producer).
+                This should typically be set to one minus the number of cores
+                you have available.
 
 LAYOUT FILES
 

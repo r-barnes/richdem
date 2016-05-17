@@ -14,12 +14,13 @@
 #include <queue>
 #include <vector>
 #include <limits>
+#include <functional>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "8";
+const char* program_version = "9";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -385,7 +386,59 @@ void HandleCorner(
 
 
 
+void SendToConsumers(
+  size_t ymax,
+  size_t xmax,
+  std::function<bool (int y, int x)> send_this,
+  std::function<void (int y, int x, int sendto)> send,
+  std::function<void (int recvfrom)> receive,
+  int active_consumer_limit,
+  bool limit_consumers
+){
+  int active_consumers = 0;
+  int send_to_consumer = 0;
+  for(size_t y=0;y<ymax;y++){
+    std::cerr<<"Sending job "<<(y*xmax+1)<<"/"<<(ymax*xmax)<<" ("<<(y+1)<<"/"<<ymax<<")"<<std::endl;
+    for(size_t x=0;x<xmax;x++){
+      if(!send_this(y,x))
+        continue;
 
+      //If fewer jobs have been delegated than there are Consumers available,
+      //delegate the job to a new Consumer.
+      if(active_consumers<active_consumer_limit){
+        active_consumers++;
+        send_to_consumer++;
+
+      //Once all of the consumers are active, wait for them to return results.
+      //As each Consumer returns a result, pass it the next unfinished Job until
+      //there are no jobs left. For the @retainall strategy, this part will
+      //never be called because there will be sufficient consumers for
+      //everything.
+      } else {
+        //Execute a blocking receive until some consumer finishes its work.
+        //Receive that work.
+        auto source = CommGetSource();
+        receive(source);
+
+        //Delegate new work to that consumer
+        send_to_consumer++;
+        if(limit_consumers)
+          send_to_consumer = source;
+      }
+      send(y,x,send_to_consumer);
+    }
+  }
+
+  while(active_consumers>0){
+    //Execute a blocking receive until some consumer finishes its work.
+    //Receive that work
+    receive(CommGetSource());
+
+    //Decrement the number of consumers we are waiting on. When this hits 0 all
+    //of the jobs have been completed and we can move on
+    active_consumers--;
+  }
+}
 
 
 
@@ -395,10 +448,9 @@ void HandleCorner(
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
 template<class elev_t>
-void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
+void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consumer_limit, bool limit_consumers){
   Timer timer_overall,timer_calc;
   timer_overall.start();
-  int active_nodes = 0;
 
   std::string omsg;
 
@@ -411,57 +463,21 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
 
+  auto send_this = [&](int y, int x) -> bool {
+    return !chunks[y][x].nullChunk;
+  };
 
-  //Loop through all of the jobs, delegating them to Consumers
-  active_nodes=0;
-  for(size_t y=0;y<chunks.size();y++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    for(size_t x=0;x<chunks[0].size();x++){
-      if(chunks[y][x].nullChunk){
-        //std::cerr<<"\tNull chunk: skipping."<<std::endl;
-        continue;
-      }
+  auto send1 = [&](int y, int x, int sendto) -> void {
+    rank_to_chunk[sendto] = chunks.at(y).at(x);
+    CommSend(&chunks.at(y).at(x),nullptr,sendto,JOB_FIRST);
+  };
 
-      //If fewer jobs have been delegated than there are Consumers available,
-      //delegate the job to a new Consumer.
-      if(active_nodes<CommSize()-1){
-        active_nodes++;
+  auto recv1 = [&](int recvfrom) -> void {
+    ChunkInfo received_chunk = rank_to_chunk[recvfrom];
+    CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, recvfrom);
+  };
 
-        std::cerr<<chunks.at(y).at(x).filename<<std::endl;
-
-        rank_to_chunk[active_nodes] = chunks.at(y).at(x);
-        CommSend(&chunks.at(y).at(x),nullptr,active_nodes,JOB_FIRST);
-
-      //Once all of the consumers are active, wait for them to return results.
-      //As each Consumer returns a result, pass it the next unfinished Job until
-      //there are no jobs left. For the @retainall strategy, this part will
-      //never be called because there will be sufficient consumers for
-      //everything.
-      } else {
-        //Execute a blocking receive until some consumer finishes its work.
-        //Receive that work.
-        int source = CommGetSource();
-        ChunkInfo received_chunk = rank_to_chunk[source];
-        CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
-
-        //Delegate new work to that consumer
-        rank_to_chunk[source] = chunks.at(y).at(x);
-        CommSend(&chunks.at(y).at(x),nullptr,source,JOB_FIRST);
-      }
-    }
-  }
-
-  while(active_nodes>0){
-    //Execute a blocking receive until some consumer finishes its work.
-    //Receive that work
-    int source = CommGetSource();
-    ChunkInfo received_chunk = rank_to_chunk[source];
-    CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, source);
-
-    //Decrement the number of consumers we are waiting on. When this hits 0 all
-    //of the jobs have been completed and we can move on
-    active_nodes--;
-  }
+  SendToConsumers(chunks.size(), chunks[0].size(), send_this, send1, recv1, active_consumer_limit, limit_consumers);
 
 
   //TODO: Note here about how the code above code be incorporated
@@ -615,67 +631,25 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"!Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
-  std::cerr<<"Sending out final jobs..."<<std::endl;
-  //Loop through all of the jobs, delegating them to Consumers. If @retainall is
-  //used then there are sufficient consumers to go around and they are evoked
-  //here in the same order as above, so every consumer receives the appropriate
-  //information.
-  active_nodes = 0;
-  for(size_t y=0;y<chunks.size();y++){
-    std::cerr<<"Sending job "<<(y*chunks[0].size()+1)<<"/"<<(chunks.size()*chunks[0].size())<<" ("<<(y+1)<<"/"<<chunks.size()<<")"<<std::endl;
-    for(size_t x=0;x<chunks[0].size();x++){
-      if(chunks[y][x].nullChunk){
-        std::cerr<<"\tNull chunk: skipping."<<std::endl;
-        continue;
-      }
 
-      timer_calc.start();
-      std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
-      timer_calc.stop();
 
-      //If fewer jobs have been delegated than there are Consumers available,
-      //delegate the job to a new Consumer.
-      if(active_nodes<CommSize()-1){
-        // std::cerr<<"Sending init to "<<(active_nodes+1)<<std::endl;
-        active_nodes++;
-        CommSend(&chunks.at(y).at(x), &job2, active_nodes, JOB_SECOND);
+  auto send2 = [&](int y, int x, int sendto) -> void {
+    timer_calc.start();
+    std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
+    timer_calc.stop();
 
-      //Once all of the consumers are active, wait for them to return results.
-      //As each Consumer returns a result, pass it the next unfinished Job until
-      //there are no jobs left. For the @retainall strategy this will never be
-      //called since there will be sufficient consumers.
-      } else {
-        //Execute a blocking receive until some consumer finishes its work.
-        //Receive that work.
-        int source = CommGetSource();
+    CommSend(&chunks.at(y).at(x), &job2, sendto, JOB_SECOND);
+  };
 
-        TimeInfo temp;
-        CommRecv(&temp, nullptr, source);
-        
-        time_second_total += temp;
-        time_second_count++;
-
-        //Delegate new work to that consumer
-        CommSend(&chunks.at(y).at(x), &job2, source, JOB_SECOND);
-      }
-    }
-  }
-
-  while(active_nodes>0){
-    //Execute a blocking receive until some consumer finishes its work.
-    //Receive that work
-    int source = CommGetSource();
-
+  auto recv2 = [&](int recvfrom) -> void {
     TimeInfo temp;
-    CommRecv(&temp, nullptr, source);
-
+    CommRecv(&temp, nullptr, recvfrom);
+    
     time_second_total += temp;
     time_second_count++;
+  };
 
-    //Decrement the number of consumers we are waiting on. When this hits 0 all
-    //of the jobs have been completed and we can move on
-    active_nodes--;
-  }
+  SendToConsumers(chunks.size(), chunks[0].size(), send_this, send2, recv2, active_consumer_limit, limit_consumers);
 
   for(int i=1;i<CommSize();i++){
     int temp;
@@ -726,7 +700,9 @@ void Preparer(
   int bwidth,
   int bheight,
   int flipH,
-  int flipV
+  int flipV,
+  int active_consumer_limit,
+  int limit_consumers
 ){
   int chunkid = 0;
   Timer overall;
@@ -854,7 +830,7 @@ void Preparer(
     std::cerr<<"!Number of tiles which were not null: "<<not_null_tiles<<std::endl;
 
     if(retention=="@retainall" && CommSize()<not_null_tiles+1){
-      std::cerr<<"Insufficient processes available for @retainall strategy."<<std::endl;
+      std::cerr<<"Insufficient processes for @retainall strategy. "<<(not_null_tiles+1)<<" needed."<<std::endl;
       CommAbort(-1);
     }
 
@@ -944,8 +920,8 @@ void Preparer(
       }
     }
 
-    if(retention=="@retainall" && ((int)(chunks.size()*chunks[0].size()))>=CommSize()-1){
-      std::cerr<<"This job requires "<<(chunks.size()*chunks[0].size()+1)<<" processes. Only "<<CommSize()<<" are available."<<std::endl;
+    if(retention=="@retainall" && ((int)(chunks.size()*chunks[0].size()+1))>CommSize()){
+      std::cerr<<"Insufficient processes for @retainall strategy. "<<(chunks.size()*chunks[0].size()+1)<<" needed."<<std::endl;
       CommAbort(-1);
     }
 
@@ -974,19 +950,19 @@ void Preparer(
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
     case GDT_Byte:
-      return Producer<uint8_t >(chunks);
+      return Producer<uint8_t >(chunks,active_consumer_limit,limit_consumers);
     case GDT_UInt16:
-      return Producer<uint16_t>(chunks);
+      return Producer<uint16_t>(chunks,active_consumer_limit,limit_consumers);
     case GDT_Int16:
-      return Producer<int16_t >(chunks);
+      return Producer<int16_t >(chunks,active_consumer_limit,limit_consumers);
     case GDT_UInt32:
-      return Producer<uint32_t>(chunks);
+      return Producer<uint32_t>(chunks,active_consumer_limit,limit_consumers);
     case GDT_Int32:
-      return Producer<int32_t >(chunks);
+      return Producer<int32_t >(chunks,active_consumer_limit,limit_consumers);
     case GDT_Float32:
-      return Producer<float   >(chunks);
+      return Producer<float   >(chunks,active_consumer_limit,limit_consumers);
     case GDT_Float64:
-      return Producer<double  >(chunks);
+      return Producer<double  >(chunks,active_consumer_limit,limit_consumers);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
@@ -1009,10 +985,11 @@ int main(int argc, char **argv){
     std::string retention;
     std::string input_file;
     std::string output_name;
-    int         bwidth  = -1;
-    int         bheight = -1;
-    int         flipH   = false;
-    int         flipV   = false;
+    int         bwidth    = -1;
+    int         bheight   = -1;
+    int         flipH     = false;
+    int         flipV     = false;
+    int         consumers = CommSize()-1;
 
     Timer master_time;
     master_time.start();
@@ -1045,6 +1022,10 @@ int main(int argc, char **argv){
           flipH = true;
         } else if(strcmp(argv[i],"--flipV")==0 || strcmp(argv[i],"-V")==0){
           flipV = true;
+        } else if(strcmp(argv[i],"--procs")==0 || strcmp(argv[i],"-p")==0){
+          consumers = std::stoi(argv[i+1]);
+          i++;
+          continue;
         } else if(argv[i][0]=='-'){
           throw std::invalid_argument("Unrecognised flag: "+std::string(argv[i]));
         } else if(many_or_one==""){
@@ -1073,6 +1054,8 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
       if(retention==output_name)
         throw std::invalid_argument("Retention and output filenames must differ.");
+      if(CommSize()-1<consumers)
+        throw std::invalid_argument("More consumers specified than processes available.");
     } catch (const std::invalid_argument &ia){
       std::string output_err;
       if(ia.what()==std::string("stoi"))
@@ -1100,8 +1083,9 @@ int main(int argc, char **argv){
     std::cerr<<"!Flip horizontal: "        <<flipH     <<std::endl;
     std::cerr<<"!Flip vertical: "          <<flipV     <<std::endl;
     std::cerr<<"!World Size: "             <<CommSize()<<std::endl;
+    std::cerr<<"!Active consumers: "       <<consumers <<std::endl;
     CommBroadcast(&good_to_go,0);
-    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
+    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV, consumers, retention!="@retainall");
 
     master_time.stop();
     std::cerr<<"!TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
