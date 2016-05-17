@@ -1093,30 +1093,27 @@ int main(int argc, char **argv){
   } else {
     int good_to_go;
     CommBroadcast(&good_to_go,0);
-    if(!good_to_go){
-      CommFinalize();
-      return -1;
-    }
-
-    GDALDataType file_type;
-    CommBroadcast(&file_type,0);
-    switch(file_type){
-      case GDT_Byte:
-        Consumer<uint8_t >();break;
-      case GDT_UInt16:
-        Consumer<uint16_t>();break;
-      case GDT_Int16:
-        Consumer<int16_t >();break;
-      case GDT_UInt32:
-        Consumer<uint32_t>();break;
-      case GDT_Int32:
-        Consumer<int32_t >();break;
-      case GDT_Float32:
-        Consumer<float   >();break;
-      case GDT_Float64:
-        Consumer<double  >();break;
-      default:
-        return -1;
+    if(good_to_go){
+      GDALDataType file_type;
+      CommBroadcast(&file_type,0);
+      switch(file_type){
+        case GDT_Byte:
+          Consumer<uint8_t >();break;
+        case GDT_UInt16:
+          Consumer<uint16_t>();break;
+        case GDT_Int16:
+          Consumer<int16_t >();break;
+        case GDT_UInt32:
+          Consumer<uint32_t>();break;
+        case GDT_Int32:
+          Consumer<int32_t >();break;
+        case GDT_Float32:
+          Consumer<float   >();break;
+        case GDT_Float64:
+          Consumer<double  >();break;
+        default:
+          return -1;
+      }
     }
   }
 
