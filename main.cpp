@@ -20,7 +20,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "9";
+const char* program_version = "10";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -422,9 +422,9 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::vector<msg_type> msgs;
   //Number of jobs for which we are waiting for a return
   int jobs_out=0;
-  //Total number of jobs which were run (equals number of !nullChunk jobs)
-  int total_jobs=0;
 
+  ////////////////////////////////////////////////////////////
+  //SEND JOBS
 
   //Distribute jobs to the consumers. Since this is non-blocking, all of the
   //jobs will be sent and then we will wait to hear back below.
@@ -438,7 +438,12 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     jobs_out++;
   }
 
-  total_jobs = jobs_out;
+  //NOTE: As each job returns partial reductions could be done on the data to
+  //reduce the amount of memory required by the master node. That is, the full
+  //reduction below, which is done on all of the collected data at once, could
+  //be broken up. The downside to this would be a potentially significant
+  //increase in the complexity of this code. I have opted for a more resource-
+  //intensive implementation in order to try to keep the code simple.
 
   //Grid to hold returned jobs
   std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
@@ -449,11 +454,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     jobs1.at(temp.gridy).at(temp.gridx) = temp;
   }
 
-  
-  TimeInfo time_second_total;
-
-  //TODO: Note here about how the code above code be incorporated
-
   std::cerr<<"!First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
   std::cerr<<"!First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
   CommBytesReset();
@@ -463,6 +463,11 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++)
     time_first_total += jobs1[y][x].time_info;
+
+
+  ////////////////////////////////////////////////////////////
+  //PRODUCER NODE PERFORMS PROCESSING ON ALL THE RETURNED DATA
+
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
@@ -552,7 +557,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
 
   std::cerr<<"!Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
 
-
+  //Clear the jobs1 data from memory since we no longer need it
   jobs1.clear();
   jobs1.shrink_to_fit();
 
@@ -592,6 +597,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
       if(visited[n_vertex_num])
         continue;
       open.emplace(std::max(my_elev,n_elev),n_vertex_num);
+      //Turning on these lines activates the improved priority flood. It is
+      //disabled to make the algorithm easier to verify by inspection, and
+      //because it made little difference in the overall speed of the algorithm.
+
       // if(n_elev<=my_elev){
       //   pit.emplace(my_elev,n_vertex_num);
       // } else {
@@ -603,8 +612,13 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cerr<<"!Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
-  jobs_out=0;
-  msgs = std::vector<msg_type>();
+  ////////////////////////////////////////////////////////////
+  //SEND OUT JOBS TO FINALIZE GLOBAL SOLUTION
+
+  //Reset these two variables
+  jobs_out = 0; 
+  msgs     = std::vector<msg_type>();
+
   for(int y=0;y<gridheight;y++)
   for(int x=0;x<gridwidth;x++){
     if(chunks[y][x].nullChunk)
@@ -619,6 +633,10 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     jobs_out++;
   }
 
+  //There's no further processing to be done at this point, but we'll gather
+  //timing and memory statistics from the consumers.
+  TimeInfo time_second_total;
+
   while(jobs_out--){
     std::cerr<<jobs_out<<" jobs left to receive."<<std::endl;
     TimeInfo temp;
@@ -626,6 +644,8 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     time_second_total += temp;
   }
 
+  //Send out a message to tell the consumers to politely quit. Their job is
+  //done.
   for(int i=1;i<CommSize();i++){
     int temp;
     CommSend(&temp,nullptr,i,SYNC_MSG_KILL);
@@ -636,7 +656,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"!TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
   std::cout<<"!TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
   std::cout<<"!TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: First stage block count="       <<total_jobs              <<std::endl;
   std::cout<<"!TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
   std::cout<<"!TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
 
@@ -646,7 +665,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   std::cout<<"!TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
   std::cout<<"!TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
   std::cout<<"!TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: Second stage block count="       <<total_jobs               <<std::endl;
   std::cout<<"!TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
   std::cout<<"!TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
 
@@ -873,18 +891,6 @@ void Preparer(
           false
         );
         chunkid++;
-
-        //Adjust the label_offset by the total number of perimeter cells of this
-        //chunk plus one (to avoid another chunk's overlapping the last label of
-        //this chunk). Obviously, the right and bottom edges of the global grid
-        //may not be a perfect multiple of bwidth and bheight; therefore, labels
-        //could be dolled out more conservatively. But this would require a
-        //correctness proof and introduces the potential for truly serious bugs
-        //into the code. Since we are unlikely to run out of labels (see
-        //associated manuscript), it is better to waste a few and make this
-        //section obviously correct. Although we do not expect to run out of
-        //labels, it is possible to rigorously check for this condition here,
-        //before we have used much time or I/O.
       }
     }
 
@@ -1029,7 +1035,6 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"!Running program version: "<<program_version<<std::endl;
     std::cerr<<"!Running with "            <<CommSize()<<" processes."<<std::endl;
     std::cerr<<"!Many or one: "            <<many_or_one<<std::endl;
     std::cerr<<"!Input file: "             <<input_file<<std::endl;
