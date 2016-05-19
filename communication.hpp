@@ -84,14 +84,8 @@ void CommISend(msg_type &msg, int dest, int tag){
 //See what the tag is for the next in-coming message. This is useful for
 //determining how to process the message.
 int CommGetTag(int from){
-  int flag;
   MPI_Status status;
-
-  do {
-    MPI_Iprobe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-    std::this_thread::sleep_for(MPI_BUSY_LOOP_SLEEP);
-  } while (!flag);
-
+  MPI_Probe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
   return status.MPI_TAG;
 }
 
