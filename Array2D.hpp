@@ -11,41 +11,6 @@
 #include <typeinfo>
 #include <stdexcept>
 
-GDALDataType peekGDALType(const std::string &filename) {
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
-
-  GDALRasterBand *band   = fin->GetRasterBand(1);
-  GDALDataType data_type = band->GetRasterDataType();
-
-  GDALClose(fin);
-
-  return data_type;
-}
-
-template<class T>
-void getGDALHeader(
-  const std::string &filename,
-  int    &height,
-  int    &width,
-  T      &no_data,
-  double *geotrans
-){
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
-
-  GDALRasterBand *band   = fin->GetRasterBand(1);
-
-  height  = band->GetYSize();
-  no_data = band->GetNoDataValue();
-  width   = band->GetXSize();
-
-  fin->GetGeoTransform(geotrans);
-
-  GDALClose(fin);
-}
 
 int getGDALDimensions(
   const std::string &filename,
