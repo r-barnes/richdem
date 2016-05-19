@@ -137,13 +137,16 @@ class Job1 {
        left_label,
        right_label,
        graph,
-       time_info);
+       time_info,
+       gridy,
+       gridx);
   }
  public:
   std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
   std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
   std::vector< std::map<label_t, elev_t> > graph;
   TimeInfo time_info;
+  int gridy, gridx;
   Job1(){}
 };
 
@@ -175,6 +178,11 @@ template<class elev_t>
 void Consumer(){
   ChunkInfo chunk;
 
+  std::map<
+    std::pair<int,int>,
+    std::pair< Array2D<elev_t>, Array2D<label_t> >
+  > storage;
+
   Array2D<elev_t>  dem;
   Array2D<label_t> labels;
 
@@ -201,6 +209,8 @@ void Consumer(){
       timer_overall.start();
 
       Job1<elev_t> job1;
+      job1.gridy = chunk.gridy;
+      job1.gridx = chunk.gridx;
 
       //The upper limit on unique watersheds is the number of edge cells. Resize
       //the graph to this number. The Priority-Flood routines will shrink it to
@@ -240,8 +250,9 @@ void Consumer(){
       if(chunk.retention=="@offloadall"){
         //Nothing to do: it will all get overwritten
       } else if(chunk.retention=="@retainall"){
-        //Nothing to do: it will all be kept because this process won't get
-        //called again
+        auto &temp  = storage[std::make_pair(chunk.gridy,chunk.gridx)];
+        temp.first  = std::move(dem);
+        temp.second = std::move(labels);
       } else {
         timer_io.start();
         dem.saveNative   (chunk.retention+"dem.dat"   );
@@ -285,13 +296,15 @@ void Consumer(){
         timer_io.start();
         dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
         timer_io.stop();
-  
+
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
         timer_calc.start();
         Zhou2015Labels(dem,labels,graph,chunk.edge);
         timer_calc.stop();
       } else if(chunk.retention=="@retainall"){
-        //Nothing to do: we have it all in memory
+        auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
+        dem        = std::move(temp.first);
+        labels     = std::move(temp.second);
       } else {
         timer_io.start();
         dem    = Array2D<elev_t >(chunk.retention+"dem.dat"   ,true); //TODO: There should be an exception if this fails
@@ -386,59 +399,7 @@ void HandleCorner(
 
 
 
-void SendToConsumers(
-  size_t ymax,
-  size_t xmax,
-  std::function<bool (int y, int x)> send_this,
-  std::function<void (int y, int x, int sendto)> send,
-  std::function<void (int recvfrom)> receive,
-  int active_consumer_limit,
-  bool limit_consumers
-){
-  int active_consumers = 0;
-  int send_to_consumer = 0;
-  for(size_t y=0;y<ymax;y++){
-    std::cerr<<"Sending job "<<(y*xmax+1)<<"/"<<(ymax*xmax)<<" ("<<(y+1)<<"/"<<ymax<<")"<<std::endl;
-    for(size_t x=0;x<xmax;x++){
-      if(!send_this(y,x))
-        continue;
 
-      //If fewer jobs have been delegated than there are Consumers available,
-      //delegate the job to a new Consumer.
-      if(active_consumers<active_consumer_limit){
-        active_consumers++;
-        send_to_consumer++;
-
-      //Once all of the consumers are active, wait for them to return results.
-      //As each Consumer returns a result, pass it the next unfinished Job until
-      //there are no jobs left. For the @retainall strategy, this part will
-      //never be called because there will be sufficient consumers for
-      //everything.
-      } else {
-        //Execute a blocking receive until some consumer finishes its work.
-        //Receive that work.
-        auto source = CommGetSource();
-        receive(source);
-
-        //Delegate new work to that consumer
-        send_to_consumer++;
-        if(limit_consumers)
-          send_to_consumer = source;
-      }
-      send(y,x,send_to_consumer);
-    }
-  }
-
-  while(active_consumers>0){
-    //Execute a blocking receive until some consumer finishes its work.
-    //Receive that work
-    receive(CommGetSource());
-
-    //Decrement the number of consumers we are waiting on. When this hits 0 all
-    //of the jobs have been completed and we can move on
-    active_consumers--;
-  }
-}
 
 
 
@@ -448,46 +409,60 @@ void SendToConsumers(
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
 template<class elev_t>
-void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consumer_limit, bool limit_consumers){
+void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
   Timer timer_overall,timer_calc;
   timer_overall.start();
 
-  std::string omsg;
+  const int gridheight = chunks.size();
+  const int gridwidth  = chunks.front().size();
 
-  TimeInfo time_first_total;
-  TimeInfo time_second_total;
-  int      time_first_count  = 0;
-  int      time_second_count = 0;
+  //How many processes to send to
+  const int active_consumer_limit = CommSize()-1;
+  //Used to hold message buffers while non-blocking sends are used
+  std::vector<msg_type> msgs;
+  //Number of jobs for which we are waiting for a return
+  int jobs_out=0;
+  //Total number of jobs which were run (equals number of !nullChunk jobs)
+  int total_jobs=0;
 
-  std::map<int,ChunkInfo> rank_to_chunk;
 
+  //Distribute jobs to the consumers. Since this is non-blocking, all of the
+  //jobs will be sent and then we will wait to hear back below.
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
+    if(chunks.at(y).at(x).nullChunk)
+      continue;
+
+    msgs.push_back(CommPrepare(&chunks.at(y).at(x),nullptr));
+    CommISend(msgs.back(), (jobs_out%active_consumer_limit)+1, JOB_FIRST);
+    jobs_out++;
+  }
+
+  total_jobs = jobs_out;
+
+  //Grid to hold returned jobs
   std::vector< std::vector< Job1<elev_t> > > jobs1(chunks.size(), std::vector< Job1<elev_t> >(chunks[0].size()));
+  while(jobs_out--){
+    std::cerr<<jobs_out<<" jobs left to receive."<<std::endl;
+    Job1<elev_t> temp;
+    CommRecv(&temp, nullptr, -1);
+    jobs1.at(temp.gridy).at(temp.gridx) = temp;
+  }
 
-  auto send_this = [&](int y, int x) -> bool {
-    return !chunks[y][x].nullChunk;
-  };
-
-  auto send1 = [&](int y, int x, int sendto) -> void {
-    rank_to_chunk[sendto] = chunks.at(y).at(x);
-    CommSend(&chunks.at(y).at(x),nullptr,sendto,JOB_FIRST);
-  };
-
-  auto recv1 = [&](int recvfrom) -> void {
-    ChunkInfo received_chunk = rank_to_chunk[recvfrom];
-    CommRecv(&jobs1.at(received_chunk.gridy).at(received_chunk.gridx), nullptr, recvfrom);
-  };
-
-  SendToConsumers(chunks.size(), chunks[0].size(), send_this, send1, recv1, active_consumer_limit, limit_consumers);
-
+  
+  TimeInfo time_second_total;
 
   //TODO: Note here about how the code above code be incorporated
-
-  const int gridwidth  = jobs1.front().size();
-  const int gridheight = jobs1.size();
 
   std::cerr<<"!First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
   std::cerr<<"!First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
   CommBytesReset();
+
+  //Get timing info
+  TimeInfo time_first_total;
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++)
+    time_first_total += jobs1[y][x].time_info;
 
   //Merge all of the graphs together into one very big graph. Clear information
   //as we go in order to save space, though I am not sure if the map::clear()
@@ -542,9 +517,6 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consum
       continue;
 
     auto &c = jobs1[y][x];
-
-    time_first_total += c.time_info;
-    time_first_count++;
 
     if(y>0            && !chunks[y-1][x].nullChunk)
       HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, chunks[y][x].label_offset, chunks[y-1][x].label_offset);
@@ -631,25 +603,28 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consum
   std::cerr<<"!Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
+  jobs_out=0;
+  msgs = std::vector<msg_type>();
+  for(int y=0;y<gridheight;y++)
+  for(int x=0;x<gridwidth;x++){
+    if(chunks[y][x].nullChunk)
+      continue;
 
-
-  auto send2 = [&](int y, int x, int sendto) -> void {
     timer_calc.start();
     std::vector<elev_t> job2(graph_elev.begin()+chunks[y][x].label_offset,graph_elev.begin()+chunks[y][x].label_offset+chunks[y][x].label_increment);
     timer_calc.stop();
 
-    CommSend(&chunks.at(y).at(x), &job2, sendto, JOB_SECOND);
-  };
+    msgs.push_back(CommPrepare(&chunks.at(y).at(x),&job2));
+    CommISend(msgs.back(), (jobs_out%active_consumer_limit)+1, JOB_SECOND);
+    jobs_out++;
+  }
 
-  auto recv2 = [&](int recvfrom) -> void {
+  while(jobs_out--){
+    std::cerr<<jobs_out<<" jobs left to receive."<<std::endl;
     TimeInfo temp;
-    CommRecv(&temp, nullptr, recvfrom);
-    
+    CommRecv(&temp, nullptr, -1);
     time_second_total += temp;
-    time_second_count++;
-  };
-
-  SendToConsumers(chunks.size(), chunks[0].size(), send_this, send2, recv2, active_consumer_limit, limit_consumers);
+  }
 
   for(int i=1;i<CommSize();i++){
     int temp;
@@ -661,7 +636,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consum
   std::cout<<"!TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
   std::cout<<"!TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
   std::cout<<"!TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: First stage block count="       <<time_first_count        <<std::endl;
+  std::cout<<"!TimeInfo: First stage block count="       <<total_jobs              <<std::endl;
   std::cout<<"!TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
   std::cout<<"!TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
 
@@ -671,7 +646,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks, int active_consum
   std::cout<<"!TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
   std::cout<<"!TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
   std::cout<<"!TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: Second stage block count="       <<time_second_count        <<std::endl;
+  std::cout<<"!TimeInfo: Second stage block count="       <<total_jobs               <<std::endl;
   std::cout<<"!TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
   std::cout<<"!TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
 
@@ -700,9 +675,7 @@ void Preparer(
   int bwidth,
   int bheight,
   int flipH,
-  int flipV,
-  int active_consumer_limit,
-  int limit_consumers
+  int flipV
 ){
   int chunkid = 0;
   Timer overall;
@@ -829,11 +802,6 @@ void Preparer(
     std::cerr<<"!Total cells to be processed: "<<cell_count<<std::endl;
     std::cerr<<"!Number of tiles which were not null: "<<not_null_tiles<<std::endl;
 
-    if(retention=="@retainall" && CommSize()<not_null_tiles+1){
-      std::cerr<<"Insufficient processes for @retainall strategy. "<<(not_null_tiles+1)<<" needed."<<std::endl;
-      CommAbort(-1);
-    }
-
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
     for(int y=0;y<(int)chunks.size();y++)
@@ -920,11 +888,6 @@ void Preparer(
       }
     }
 
-    if(retention=="@retainall" && ((int)(chunks.size()*chunks[0].size()+1))>CommSize()){
-      std::cerr<<"Insufficient processes for @retainall strategy. "<<(chunks.size()*chunks[0].size()+1)<<" needed."<<std::endl;
-      CommAbort(-1);
-    }
-
   } else {
     std::cout<<"Unrecognised option! Must be 'many' or 'one'!"<<std::endl;
     CommAbort(-1);
@@ -950,19 +913,19 @@ void Preparer(
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
     case GDT_Byte:
-      return Producer<uint8_t >(chunks,active_consumer_limit,limit_consumers);
+      return Producer<uint8_t >(chunks);
     case GDT_UInt16:
-      return Producer<uint16_t>(chunks,active_consumer_limit,limit_consumers);
+      return Producer<uint16_t>(chunks);
     case GDT_Int16:
-      return Producer<int16_t >(chunks,active_consumer_limit,limit_consumers);
+      return Producer<int16_t >(chunks);
     case GDT_UInt32:
-      return Producer<uint32_t>(chunks,active_consumer_limit,limit_consumers);
+      return Producer<uint32_t>(chunks);
     case GDT_Int32:
-      return Producer<int32_t >(chunks,active_consumer_limit,limit_consumers);
+      return Producer<int32_t >(chunks);
     case GDT_Float32:
-      return Producer<float   >(chunks,active_consumer_limit,limit_consumers);
+      return Producer<float   >(chunks);
     case GDT_Float64:
-      return Producer<double  >(chunks,active_consumer_limit,limit_consumers);
+      return Producer<double  >(chunks);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
@@ -989,7 +952,6 @@ int main(int argc, char **argv){
     int         bheight   = -1;
     int         flipH     = false;
     int         flipV     = false;
-    int         consumers = CommSize()-1;
 
     Timer master_time;
     master_time.start();
@@ -1022,10 +984,6 @@ int main(int argc, char **argv){
           flipH = true;
         } else if(strcmp(argv[i],"--flipV")==0 || strcmp(argv[i],"-V")==0){
           flipV = true;
-        } else if(strcmp(argv[i],"--procs")==0 || strcmp(argv[i],"-p")==0){
-          consumers = std::stoi(argv[i+1]);
-          i++;
-          continue;
         } else if(argv[i][0]=='-'){
           throw std::invalid_argument("Unrecognised flag: "+std::string(argv[i]));
         } else if(many_or_one==""){
@@ -1054,8 +1012,6 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
       if(retention==output_name)
         throw std::invalid_argument("Retention and output filenames must differ.");
-      if(CommSize()-1<consumers)
-        throw std::invalid_argument("More consumers specified than processes available.");
     } catch (const std::invalid_argument &ia){
       std::string output_err;
       if(ia.what()==std::string("stoi"))
@@ -1083,9 +1039,8 @@ int main(int argc, char **argv){
     std::cerr<<"!Flip horizontal: "        <<flipH     <<std::endl;
     std::cerr<<"!Flip vertical: "          <<flipV     <<std::endl;
     std::cerr<<"!World Size: "             <<CommSize()<<std::endl;
-    std::cerr<<"!Active consumers: "       <<consumers <<std::endl;
     CommBroadcast(&good_to_go,0);
-    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV, consumers, retention!="@retainall");
+    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
     master_time.stop();
     std::cerr<<"!TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;

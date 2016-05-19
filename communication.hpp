@@ -20,6 +20,7 @@
 #define _unused(x) ((void)x) //Used for asserts
 
 typedef unsigned long long comm_count_type;
+typedef std::vector<char> msg_type;
 
 static comm_count_type bytes_sent = 0;
 static comm_count_type bytes_recv = 0;
@@ -36,18 +37,28 @@ void CommInit(int *argc, char ***argv){
 }
 
 template<class T, class U>
-void CommSend(const T* a, const U* b, int dest, int tag){
+msg_type CommPrepare(const T* a, const U* b){
   std::vector<char> omsg;
-  {
-    std::stringstream ss(std::stringstream::in|std::stringstream::out|std::stringstream::binary);
-    ss.unsetf(std::ios_base::skipws);
-    cereal::BinaryOutputArchive archive(ss);
-    archive(*a);
-    if(b!=nullptr)
-      archive(*b);
+  std::stringstream ss(std::stringstream::in|std::stringstream::out|std::stringstream::binary);
+  ss.unsetf(std::ios_base::skipws);
+  cereal::BinaryOutputArchive archive(ss);
+  archive(*a);
+  if(b!=nullptr)
+    archive(*b);
 
-    std::copy(std::istream_iterator<char>(ss), std::istream_iterator<char>(), std::back_inserter(omsg));
-  }
+  std::copy(std::istream_iterator<char>(ss), std::istream_iterator<char>(), std::back_inserter(omsg));
+
+  return omsg;
+}
+
+template<class T>
+msg_type CommPrepare(const T* a, std::nullptr_t){
+  return CommPrepare(a, (int*)nullptr);
+}
+
+template<class T, class U>
+void CommSend(const T* a, const U* b, int dest, int tag){
+  auto omsg = CommPrepare(a,b);
 
   bytes_sent += omsg.size();
 
@@ -59,6 +70,12 @@ void CommSend(const T* a, const U* b, int dest, int tag){
 template<class T>
 void CommSend(const T* a, std::nullptr_t, int dest, int tag){
   CommSend(a, (int*)nullptr, dest, tag);
+}
+
+void CommISend(msg_type &msg, int dest, int tag){
+  MPI_Request request;
+  bytes_sent += msg.size();
+  MPI_Isend(msg.data(), msg.size(), MPI_BYTE, dest, tag, MPI_COMM_WORLD, &request);
 }
 
 int CommGetTag(int from){
@@ -102,6 +119,10 @@ void CommAbort(int errorcode){
 template<class T, class U>
 void CommRecv(T* a, U* b, int from){
   MPI_Status status;
+
+  if(from==-1)
+    from = MPI_ANY_SOURCE;
+
   MPI_Probe(from, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
   int msg_size;

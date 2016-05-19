@@ -5,8 +5,8 @@ R"(NAME
 
 SYNOPSIS
 
-  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] [--procs]
-                        <many/one> <retention> <input> <output>
+  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one> 
+                        <retention> <input> <output>
 
 DESCRIPTION
 
@@ -87,12 +87,6 @@ DESCRIPTION
   or -H         their results. This can be useful if the algorithm produces
                 unexpected results.
 
-  --procs     - How many active consumers to have at a given time. This is
-  or -p         useful, for example, if you have a node with enough RAM to hold
-                everything in memory, but fewer cores than would be required.
-                This defaults to WorldSize-1 (to leave space for the producer).
-                This should typically be set to one minus the number of cores
-                you have available.
 
 LAYOUT FILES
 
