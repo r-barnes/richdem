@@ -22,20 +22,16 @@
 typedef unsigned long long comm_count_type;
 typedef std::vector<char> msg_type;
 
+//Used to keep track of message size statistics
 static comm_count_type bytes_sent = 0;
 static comm_count_type bytes_recv = 0;
 
-//Consumers call CommGetTag() when they are waiting for work from the Producer.
-//In many MPI implementations this leads to busy looping that can prevent
-//processors from doing other useful work, such as apears here in the @retainall
-//strategy. To avoid this, I have the processors sleep and periodically check
-//for additional work. This variable sets the delay between checks.
-static auto MPI_BUSY_LOOP_SLEEP = std::chrono::milliseconds(50);
-
+//Wrapper for MPI_Init
 void CommInit(int *argc, char ***argv){
   MPI_Init(argc,argv);
 }
 
+//Converts up to two objects into a combined serialized representation
 template<class T, class U>
 msg_type CommPrepare(const T* a, const U* b){
   std::vector<char> omsg;
@@ -51,11 +47,13 @@ msg_type CommPrepare(const T* a, const U* b){
   return omsg;
 }
 
+//Converts one object into a serialized representation
 template<class T>
 msg_type CommPrepare(const T* a, std::nullptr_t){
   return CommPrepare(a, (int*)nullptr);
 }
 
+//Serializes and sends up to two objects
 template<class T, class U>
 void CommSend(const T* a, const U* b, int dest, int tag){
   auto omsg = CommPrepare(a,b);
@@ -67,17 +65,24 @@ void CommSend(const T* a, const U* b, int dest, int tag){
   _unused(ret);
 }
 
+//Serializes and sends one object
 template<class T>
 void CommSend(const T* a, std::nullptr_t, int dest, int tag){
   CommSend(a, (int*)nullptr, dest, tag);
 }
 
+//Sends a pre-serialized representation of an object using non-blocking
+//communication. The object must be pre-serialized because the buffer containing
+//the serialization must persist until the communication is complete. It makes
+//more sense to manage this buffer outside of this library.
 void CommISend(msg_type &msg, int dest, int tag){
   MPI_Request request;
   bytes_sent += msg.size();
   MPI_Isend(msg.data(), msg.size(), MPI_BYTE, dest, tag, MPI_COMM_WORLD, &request);
 }
 
+//See what the tag is for the next in-coming message. This is useful for
+//determining how to process the message.
 int CommGetTag(int from){
   int flag;
   MPI_Status status;
@@ -90,12 +95,7 @@ int CommGetTag(int from){
   return status.MPI_TAG;
 }
 
-int CommGetSource(){
-  MPI_Status status;
-  MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-  return status.MPI_SOURCE;
-}
-
+//Get my unique process identifier (i.e. rank)
 int CommRank(){
   int rank;
   int ret = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -104,6 +104,7 @@ int CommRank(){
   return rank;
 }
 
+//How many processes are active?
 int CommSize(){
   int size;
   int ret = MPI_Comm_size (MPI_COMM_WORLD, &size);
@@ -112,10 +113,12 @@ int CommSize(){
   return size;
 }
 
+//Abort. If any process calls this it will kill all the processes.
 void CommAbort(int errorcode){
   MPI_Abort(MPI_COMM_WORLD, errorcode);
 }
 
+//Receive up to two deserialized objects
 template<class T, class U>
 void CommRecv(T* a, U* b, int from){
   MPI_Status status;
@@ -150,28 +153,34 @@ void CommRecv(T* a, U* b, int from){
   }
 }
 
+//Receive one deserialized object
 template<class T>
 void CommRecv(T* a, std::nullptr_t, int from){
   CommRecv(a, (int*)nullptr, from);
 }
 
+//Send a message to all of the processes
 template<class T>
 void CommBroadcast(T *datum, int root){
   MPI_Bcast(datum, 1, MPI_INT, root, MPI_COMM_WORLD);
 }
 
+//Wrap things up politely
 void CommFinalize(){
   MPI_Finalize();
 }
 
+//Retrieve message size statistics
 comm_count_type CommBytesSent(){
   return bytes_sent;
 }
 
+//Retrieve message size statistics
 comm_count_type CommBytesRecv(){
   return bytes_recv;
 }
 
+//Reset message size statistics
 void CommBytesReset(){
   bytes_recv = 0;
   bytes_sent = 0;
