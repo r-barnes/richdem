@@ -54,9 +54,9 @@ using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCell
 
 class Timer{
   private:
-    timeval start_time; ///<Last time the timer was started
+    timeval start_time;      ///<Last time the timer was started
     double accumulated_time; ///<Accumulated running time since creation
-    bool running; ///<True when the timer is running
+    bool running;            ///<True when the timer is running
     ///Number of seconds between two time objects
     double timediff(timeval beginning, timeval end){
       long seconds, useconds;
