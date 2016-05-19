@@ -73,6 +73,13 @@ or some similar directory.
 
 Running `make` will produce an executable called `parallel_pf.exe`.
 
+Running the above compiles the program to run the _cache_ strategy. Using `make
+compile_with_compression` will enable the _cacheC_ strategy instead. This
+strategy is not compiled by default because it requires the Boost Iostreams
+library. This libary can be installed with:
+
+    sudo apt-get install libboost-iostreams-dev
+
 
 
 Running the Program
@@ -180,6 +187,16 @@ single-core mode. This generates an authoritative answer against which
 correctness is checked. The program then iterates over many tile sizes to ensure
 that they all compare correctly against this authoritative answer.
 
+
+
+Notes
+-----
+
+The `communication.hpp` header file abstracts all of the MPI commands out of
+`main.cpp`. This is useful for generating communication statistics, but also
+preempts a day when the message passing is reimplemented using `std::threads` so
+that the program can be compiled for use on a single node/desktop without having
+to include MPI as a dependency.
 
 
 RichDEM
