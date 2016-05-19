@@ -11,7 +11,13 @@
 #include <typeinfo>
 #include <stdexcept>
 
+//These enable compression in the loadNative() and saveNative() methods
+#ifdef WITH_COMPRESSION
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#endif
 
+//Get the dimensions of a GDAL file
 int getGDALDimensions(
   const std::string &filename,
   int &height,
@@ -167,36 +173,52 @@ class Array2D {
       throw std::logic_error("Failed to open a file!");
     }
 
-    fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    fout.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_height),    sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_width),     sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
-    fout.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
-    fout.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    #ifdef WITH_COMPRESSION
+      boost::iostreams::filtering_ostream out;
+      out.push(boost::iostreams::zlib_compressor());
+      out.push(fout);
+    #else
+      auto &out = fout;
+    #endif
+
+    out.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
+    out.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
+    out.write(reinterpret_cast<char*>(&view_height),    sizeof(int));
+    out.write(reinterpret_cast<char*>(&view_width),     sizeof(int));
+    out.write(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
+    out.write(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
+    out.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
+    out.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
 
     for(int y=0;y<view_height;y++)
-      fout.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+      out.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
   }
 
   void loadNative(const std::string &filename){
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
     assert(fin.good());
 
-    fin.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    fin.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
-    fin.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
-    fin.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    #ifdef WITH_COMPRESSION
+      boost::iostreams::filtering_istream in;
+      in.push(boost::iostreams::zlib_decompressor());
+      in.push(fin);
+    #else
+      auto &in = fin;
+    #endif
+
+    in.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
+    in.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
+    in.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
+    in.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
 
     data = InternalArray(view_height, Row(view_width));
 
     for(int y=0;y<view_height;y++)
-      fin.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+      in.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
   }
 
   //Note: The following functions return signed integers, which make them
