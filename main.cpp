@@ -247,9 +247,9 @@ void Consumer(){
       job1.left_label  = labels.leftColumn ();
       job1.right_label = labels.rightColumn();
 
-      if(chunk.retention=="@offloadall"){
+      if(chunk.retention=="@evict"){
         //Nothing to do: it will all get overwritten
-      } else if(chunk.retention=="@retainall"){
+      } else if(chunk.retention=="@retain"){
         auto &temp  = storage[std::make_pair(chunk.gridy,chunk.gridx)];
         temp.first  = std::move(dem);
         temp.second = std::move(labels);
@@ -292,7 +292,7 @@ void Consumer(){
       std::vector<std::map<label_t, elev_t> > graph(2*chunk.width+2*chunk.height); //TODO
 
       //These use the same logic as the analogous lines above
-      if(chunk.retention=="@offloadall"){
+      if(chunk.retention=="@evict"){
         timer_io.start();
         dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
         timer_io.stop();
@@ -301,7 +301,7 @@ void Consumer(){
         timer_calc.start();
         Zhou2015Labels(dem,labels,graph,chunk.edge);
         timer_calc.stop();
-      } else if(chunk.retention=="@retainall"){
+      } else if(chunk.retention=="@retain"){
         auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
         dem        = std::move(temp.first);
         labels     = std::move(temp.second);
@@ -609,7 +609,7 @@ void Producer(std::vector< std::vector< ChunkInfo > > &chunks){
     }
   }
   agg_pflood_timer.stop();
-  std::cerr<<"!Aggregated priority flood took "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
+  std::cerr<<"!Aggregated priority flood time: "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
   timer_calc.stop();
 
   ////////////////////////////////////////////////////////////
@@ -704,8 +704,6 @@ void Preparer(
   GDALDataType file_type; //All chunks must have a common file_type
 
   if(many_or_one=="many"){
-    std::cerr<<"Multi file mode"<<std::endl;
-
     int32_t gridx          = 0;  //Current x coordinate in the chunk grid
     int32_t gridy          = -1; //Current y coordinate in the chunk grid
     int32_t row_width      = -1; //Width of 1st row. All rows must equal this
@@ -837,7 +835,6 @@ void Preparer(
     }
 
   } else if(many_or_one=="one") {
-    std::cerr<<"Single file mode"<<std::endl;
     int32_t total_height;
     int32_t total_width;
 
@@ -912,7 +909,7 @@ void Preparer(
 
   CommBroadcast(&file_type,0);
   overall.stop();
-  std::cerr<<"Preparer took "<<overall.accumulated()<<"s."<<std::endl;
+  std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
 
   switch(file_type){
     case GDT_Unknown:
@@ -1006,8 +1003,8 @@ int main(int argc, char **argv){
       }
       if(many_or_one=="" || retention=="" || input_file=="" || output_name=="")
         throw std::invalid_argument("Too few arguments.");
-      if(retention[0]=='@' && !(retention=="@offloadall" || retention=="@retainall"))
-        throw std::invalid_argument("Retention must be @offloadall or @retainall or a path.");
+      if(retention[0]=='@' && !(retention=="@evict" || retention=="@retain"))
+        throw std::invalid_argument("Retention must be @evict or @retain or a path.");
       if(many_or_one!="many" && many_or_one!="one")
         throw std::invalid_argument("Must specify many or one.");
       if(CommSize()==1) //TODO: Invoke a special "one-process mode?"

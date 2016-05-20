@@ -24,7 +24,7 @@ DESCRIPTION
                 as listed below. In <one> mode, if both <bwidth> and <bheight>
                 are left unspecified, then this argument is ignored.
 
-                @retainall  - All intermediate results are retained in RAM for
+                @retain     - All intermediate results are retained in RAM for
                               the duration of the calculation. This is the
                               fastest way to run the algorithm and requires
                               minimal hard-drive space. However, the entire data
@@ -34,7 +34,7 @@ DESCRIPTION
                               Running with too few cores will print a message
                               telling you how many are needed.
 
-                @offloadall - No intermediate results are retained between
+                @evict      - No intermediate results are retained between
                               calculations. This is the slowest way to run the
                               algorithm, but uses minimal RAM and minimal
                               hard-drive space. The user must indicate the
