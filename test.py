@@ -139,7 +139,12 @@ def main():
   args = parser.parse_args()
 
   VERBOSE = args.verbose
-  print(VERBOSE)
+
+
+  if not os.path.exists('auth_gen.exe'):
+    print("You need to run 'make auth_gen' before you can test things.")
+    sys.exit(-1)
+    
 
   print('Ensuring directory "temp" exists')
   if not os.path.exists('temp'):
@@ -179,15 +184,15 @@ def main():
 
 
   print('Generating authoritative answer')
-  if not os.path.exists('temp/singlecore-0.tif'):
-    output,err = doRaw('mpirun -n 4 ./parallel_pf.exe one @evict {file} temp/singlecore-%n.tif'.format(file=auth_input))
+  if not os.path.exists('temp/auth.tif'):
+    output,err = doRaw('./auth_gen.exe {file} temp/auth.tif'.format(file=auth_input))
     if err!=0:
       print('Error generating authoritative answer!')
       sys.exit(-1)
   else:
     print('Using pre-existing authoritative answer')
 
-  print('Authoritative answer is at: temp/singlecore-0.tif')
+  print('Authoritative answer is at: temp/auth.tif')
 
 
   if args.many:
@@ -209,7 +214,7 @@ def main():
     for height in sizes:
       for strat in strats_to_test:
         ret = FillAndTest(
-          authoritative = 'temp/singlecore-0.tif',
+          authoritative = 'temp/auth.tif',
           n             = args.cores,
           many_or_one   = 'many' if args.many else 'one',
           strat         = strat,

@@ -17,6 +17,19 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #endif
 
+GDALDataType peekGDALType(const std::string &filename) {
+  GDALAllRegister();
+  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+  assert(fin!=NULL);
+
+  GDALRasterBand *band   = fin->GetRasterBand(1);
+  GDALDataType data_type = band->GetRasterDataType();
+
+  GDALClose(fin);
+
+  return data_type;
+}
+
 //Get the dimensions of a GDAL file
 int getGDALDimensions(
   const std::string &filename,

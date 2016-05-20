@@ -19,5 +19,8 @@ debug: main.cpp
 	mpic++ -o parallel_pf.exe -g     `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall
 	#To run with debuggers: mpirun -n 2 xterm -hold  -e gdb -ex run --args ./parallel_pf.exe 0 beauford.tif
 
+auth_gen:
+	mpic++ -o auth_gen.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` auth_gen.cpp -I. -lgdal --std=c++11 -Wall
+
 clean:
 	rm -f output* parallel_pf.exe
