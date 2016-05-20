@@ -1,0 +1,121 @@
+R"(NAME
+
+  parallel_pflood.exe - Perform fast local or distributed filling of depressions
+                        in raster DEMs
+
+SYNOPSIS
+
+  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one> 
+                        <retention> <input> <output>
+
+DESCRIPTION
+
+  many        - Implies that the data has already been tiled and the layout of
+                the files is specified by the <input> (see below). The paths of
+                all files listed in the <input> are assumed to be relative from
+                the location of that file. Each individual file is assumed to be
+                small enough to fit into RAM. Files must be non-overlapping
+                square blocks.
+
+  one         - Implies that the data is in a single file. It is divided
+                according to the values of <bwidth> and <bheight>.
+
+  retention   - Specifies the retention policy. Several policies are available
+                as listed below. In <one> mode, if both <bwidth> and <bheight>
+                are left unspecified, then this argument is ignored.
+
+                @retain     - All intermediate results are retained in RAM for
+                              the duration of the calculation. This is the
+                              fastest way to run the algorithm and requires
+                              minimal hard-drive space. However, the entire data
+                              set must be able to fit into RAM and a new process
+                              is spawned for each block. Additionally, you must
+                              run the program with a suitable number of cores.
+                              Running with too few cores will print a message
+                              telling you how many are needed.
+
+                @evict      - No intermediate results are retained between
+                              calculations. This is the slowest way to run the
+                              algorithm, but uses minimal RAM and minimal
+                              hard-drive space. The user must indicate the
+                              number of processes to use (e.g. mpirun).
+
+                prefix      - Intermediate resuls are retained on the hard-drive
+                              between calculations. This method of using the
+                              algorithm has intermediate speed. 'prefix' is a
+                              file system path that the intermediates are
+                              written to. Minimal RAM is used, but the
+                              hard-drive must have enough free space to store an
+                              additional copy of the dataset. The user must
+                              indicate the number of processes to use (e.g.
+                              mpirun).
+
+  input       - Specifies the input file.
+
+                In <one> mode this file is a digital elevation model that may or
+                may not be split into chunks depending on the values of <bwidth>
+                and <bheight>.
+
+                In <many> mode, this is a layout file. The <layout_file>
+                specifies a square grid of filenames whose paths are considered
+                to be relative to the location of the <layout_file> itself.
+                Filenames must be comma-delimited. If the files do not form a
+                square grid or there are holes in the data (missing files), a
+                blank space may be left between two commas.
+
+  output      - This is a prefix for where the output files should go.
+                Specifying an output like "dir1/" will put all of the files into
+                the "dir1" directory. Specifying an output like "dir1/prefix"
+                will put all of the files into the "dir1" directory and begin
+                their names with "prefix".
+
+  --bwidth    - Block width in cells. Used with <one>. Should be >500. If this
+  or -w         is not specified or set to -1 than the entire width is assumed.
+                If <bheight> is also not specified than the entire operation
+                runs on a single node. This is ignored in <many> mode.
+
+  --bheight   - Block height in cells. Used with <one>. Should be >500. If this
+  or -h         is not specified or set to -1 than the entire height is assumed.
+                If <bwidth> is also not specified than the entire operation runs
+                on a single node. This is ignored in <many> mode.
+
+  --flipV     - Used with <many>. Flip each chunk vertically before combining
+  or -V         their results. This can be useful if the algorithm produces
+                unexpected results.
+
+  --flipH     - Used with <many>. Flip each chunk horizontally before combining
+  or -H         their results. This can be useful if the algorithm produces
+                unexpected results.
+
+
+LAYOUT FILES
+
+  A layout file is a text file with the format:
+
+          file1.tif, file2.tif, file3.tif,
+          file4.tif, file5.tif, file6.tif, file7.tif
+                   , file8.tif,          ,
+
+  where each of fileX.tif is a tile of the larger DEM collectively described by
+  all of the files. All of fileX.tif must have the same shape; the layout file
+  specifies how fileX.tif are arranged in relation to each other in space.
+  Blanks between commas indicate that there is no tile there: the algorithm will
+  treat such gaps as places to route flow towards (as if they are oceans). Note
+  that the files need not have TIF format: they can be of any type which GDAL
+  can read. Paths to fileX.tif are taken to be relative to the layout file.
+
+AUTHOR NOTES
+
+  This algorithm and program was developed by
+    Richard Barnes (rbarnes@umn.edu, richard.barnes@berkeley.edu)
+
+  The source code is available at
+    https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood
+
+  There is a manuscript available at TODO
+
+SYNOPSIS REPEATED
+
+  parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one>
+                        <retention> <input> <output>
+)"
