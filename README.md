@@ -7,6 +7,8 @@ RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
 RichDEM uses parallel processing and state of the art algorithms to quickly
 process even very large DEMs.
 
+**Note: Further development is occurring on another branch. RichDEM will shortly be rereleased as a suite of easy-to-use libraries and utility programs.**
+
 RichDEM can use both the D8 and D-infinite (Tarboton) flow metrics. It can
 resolve terrain depressions (or pits) either by filling or by channel carving.
 It can calculate contributing/up-slope areas, slopes, curvatures, and aspects.
