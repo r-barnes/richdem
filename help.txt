@@ -110,7 +110,7 @@ AUTHOR NOTES
     Richard Barnes (rbarnes@umn.edu, richard.barnes@berkeley.edu)
 
   The source code is available at
-    https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood
+    https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood
 
   There is a manuscript available at TODO
 
