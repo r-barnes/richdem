@@ -119,6 +119,26 @@ GDALDataType NativeTypeToGDAL() {
 }
 
 
+int peekLayoutTileSize(const std::string &layout_filename) {
+  LayoutfileReader lf(layout_filename);
+
+  GDALAllRegister();
+  std::vector<double> geotrans(6);
+  while(lf.next()){
+    if(lf.getFilename().size()==0)
+      continue;
+
+    int height;
+    int width;
+    GDALDataType dtype;
+    getGDALDimensions(lf.getPath()+lf.getFilename(),height,width,dtype,geotrans.data());
+    return width*height;
+  }
+
+  throw std::runtime_error("Empty layout file!");
+}
+
+
 template<class T>
 class Array2D {
  public:
@@ -151,10 +171,15 @@ class Array2D {
     assert(xOffset>=0);
     assert(yOffset>=0);
 
+    file_native = false;
+
     this->filename = filename;
 
     GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-    assert(fin!=NULL);
+    if(fin==NULL){
+      std::cerr<<"Failed to open GDAL file '"<<filename<<std::endl;
+      throw std::runtime_error("Failed to open GDAL file.");
+    }
 
     if(fin->GetGeoTransform(geotrans.data())!=CE_None){
       std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
@@ -230,6 +255,8 @@ class Array2D {
 
   void saveNative(const std::string &filename){
     std::fstream fout;
+
+    file_native = true;
 
     std::cerr<<"Saving native to: "<<filename<<std::endl;
 
@@ -351,6 +378,43 @@ class Array2D {
   int  viewYoff   () const { return view_yoff;      }
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
+
+  T min() const {
+    T minval = std::numeric_limits<T>::max();
+    for(auto const &row: data)
+    for(auto const cell: row){
+      if(cell==no_data)
+        continue;
+      minval = std::min(minval,cell);
+    }
+    return minval;
+  }
+
+  T max() const {
+    T maxval = std::numeric_limits<T>::min();
+    for(auto const &row: data)
+    for(auto const cell: row){
+      if(cell==no_data)
+        continue;
+      maxval = std::max(maxval,cell);
+    }
+    return maxval;
+  }
+
+  int countval(const T val) const {
+    int count=0;
+    for(int y=0;y<view_height;y++)
+    for(int x=0;x<view_width;x++)
+      if(data[y][x]==val){
+        count++;
+        std::cerr<<"Found "<<val<<" at "<<x<<","<<y<<std::endl;
+      }
+    //for(auto const &row: data) //TODO
+    //for(auto const cell: row)
+      //if(cell==val)
+      //  count++;
+    return count;
+  }
 
   bool operator==(const Array2D<T> &o){
     if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
@@ -587,7 +651,6 @@ class A2Array2D {
         tile_to_unload->dumpData();
 
       tile_to_unload->loaded = false;
-      std::cout<<"Loading "<<tile_x<<","<<tile_y<<std::endl;
       lru.pop_back();
     }
 
@@ -708,70 +771,75 @@ class A2Array2D {
       data[y][x].templateCopy(other.data[y][x]);
   }
 
-  T& getn(int tx, int ty, int x, int y, int dx, int dy){
-    x += dx;
-    y += dy;
-    if(x<0){
-      tx--;
-      x = per_tile_width-1;
-    } else if (x==per_tile_width) {
-      tx++;
-      x=0;
-    }
-    if(y<0){
-      ty--;
-      y = per_tile_height-1;
-    } else if (y==per_tile_height){
-      ty++;
-      y=0;
-    }
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<per_tile_width);
-    assert(y<per_tile_height);
-    assert(tx>=0);
-    assert(ty>=0);
-    assert(tx<widthInTiles());
-    assert(ty<heightInTiles());
-    return data[ty][tx](x,y);
-  }
+  // T& getn(int tx, int ty, int x, int y, int dx, int dy){
+  //   x += dx;
+  //   y += dy;
+  //   if(x<0){
+  //     tx--;
+  //     x = per_tile_width-1;
+  //   } else if (x==per_tile_width) {
+  //     tx++;
+  //     x=0;
+  //   }
+  //   if(y<0){
+  //     ty--;
+  //     y = per_tile_height-1;
+  //   } else if (y==per_tile_height){
+  //     ty++;
+  //     y=0;
+  //   }
+  //   assert(x>=0);
+  //   assert(y>=0);
+  //   assert(x<per_tile_width);
+  //   assert(y<per_tile_height);
+  //   assert(tx>=0);
+  //   assert(ty>=0);
+  //   assert(tx<widthInTiles());
+  //   assert(ty<heightInTiles());
+  //   return data[ty][tx](x,y);
+  // }
 
-  T& operator()(int tx, int ty, int x, int y){
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<per_tile_width);
-    assert(y<per_tile_height);
-    assert(tx>=0);
-    assert(ty>=0);
-    assert(tx<widthInTiles());
-    assert(ty<heightInTiles());
-    LoadTile(tx, ty);
-    return data[ty][tx](x,y);
-  }
+  // T& operator()(int tx, int ty, int x, int y){
+  //   assert(x>=0);
+  //   assert(y>=0);
+  //   assert(x<per_tile_width);
+  //   assert(y<per_tile_height);
+  //   assert(tx>=0);
+  //   assert(ty>=0);
+  //   assert(tx<widthInTiles());
+  //   assert(ty<heightInTiles());
+  //   LoadTile(tx, ty);
+  //   return data[ty][tx](x,y);
+  // }
 
-  const T& operator()(int tx, int ty, int x, int y) const {
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<per_tile_width);
-    assert(y<per_tile_height);
-    assert(tx>=0);
-    assert(ty>=0);
-    assert(tx<widthInTiles());
-    assert(ty<heightInTiles());
-    LoadTile(tx, ty);
-    return data[ty][tx](x,y);
-  }
+  // const T& operator()(int tx, int ty, int x, int y) const {
+  //   assert(x>=0);
+  //   assert(y>=0);
+  //   assert(x<per_tile_width);
+  //   assert(y<per_tile_height);
+  //   assert(tx>=0);
+  //   assert(ty>=0);
+  //   assert(tx<widthInTiles());
+  //   assert(ty<heightInTiles());
+  //   LoadTile(tx, ty);
+  //   return data[ty][tx](x,y);
+  // }
 
   T& operator()(int x, int y){
     assert(x>=0);
     assert(y>=0);
     assert(x<total_width_in_cells);
     assert(y<total_height_in_cells);
+    //std::cerr<<"ptw: "<<per_tile_width<<"   pth: "<<per_tile_height<<"  ";
+    //std::cerr<<"x: "<<x<<"  y: "<<y<<"  ";
     int tile_x = x/per_tile_width;
     int tile_y = y/per_tile_height;
     x          = x%per_tile_width;
     y          = y%per_tile_height;
     LoadTile(tile_x, tile_y);
+    //std::cerr<<"tx: "<<tile_x<<"   ty: "<<tile_y<<" ";
+    //std::cerr<<"fx: "<<x<<"   fy: "<<y<<" ";
+    //std::cerr<<std::endl;
     return data[tile_y][tile_x](x,y);
   }
 
@@ -834,13 +902,20 @@ class A2Array2D {
     int tile_i = 0;
     for(auto &row: data)
     for(auto &tile: row){
-      std::cerr<<"Trying to save: "<<(prefix+std::to_string(tile_i)+".tif")<<std::endl;
+      //std::cerr<<"Trying to save: "<<(prefix+std::to_string(tile_i)+".tif")<<std::endl;
       tile_i++;
       if(!tile.loaded)
         tile.loadData();
+      //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
       tile.saveGDAL(prefix+std::to_string(tile_i)+".tif", 0, 0);
       tile.clear();
     }
+  }
+
+  void setNoData(const T &ndval){
+    for(auto &row: data)
+    for(auto &tile: row)
+      tile.setNoData(ndval);
   }
 };
 
