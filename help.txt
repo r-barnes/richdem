@@ -48,7 +48,9 @@ DESCRIPTION
                               hard-drive must have enough free space to store an
                               additional copy of the dataset. The user must
                               indicate the number of processes to use (e.g.
-                              mpirun).
+                              mpirun). Intermediates are saved with a unique ID
+                              number whose location in the filename must be
+                              indicated by '%n'. Example: "/tmp/int-%n.tif"
 
   input       - Specifies the input file.
 
@@ -63,11 +65,10 @@ DESCRIPTION
                 square grid or there are holes in the data (missing files), a
                 blank space may be left between two commas.
 
-  output      - This is a prefix for where the output files should go.
-                Specifying an output like "dir1/" will put all of the files into
-                the "dir1" directory. Specifying an output like "dir1/prefix"
-                will put all of the files into the "dir1" directory and begin
-                their names with "prefix".
+  output      - This is a the format of the output filenames. Files are numbered
+                and the location of this number in the filename must be
+                indicated by "%n". Example: "output/mydem-%n.tif". Note that
+                directories are not created and must exist beforehand.
 
   --bwidth    - Block width in cells. Used with <one>. Should be >500. If this
   or -w         is not specified or set to -1 than the entire width is assumed.
