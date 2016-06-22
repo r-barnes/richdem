@@ -778,12 +778,37 @@ void Preparer(
 
         cell_count += chunk_width*chunk_height;
 
+        //Used for '%n' formatting
+        std::string coord_string = std::to_string(gridx)+"_"+std::to_string(gridy);
+
+        //Used for "%f' formatting
+        std::string out_filename = filename;
+        out_filename             = out_filename.replace(filename.find("."), std::string::npos, "");
+        std::size_t last_slash   = out_filename.find_last_of(SLASH_CHAR);
+        if(last_slash!=std::string::npos)
+          out_filename.replace(0,last_slash,"");
+
         std::string this_retention = retention;
-        if(this_retention[0]!='@')
-          this_retention = this_retention.replace(this_retention.find("%n"), 2,std::to_string(chunkid));
+        if(retention.find("%f")!=std::string::npos){
+          this_retention.replace(this_retention.find("%f"), 2, out_filename);          
+        } else if(retention.find("%n")!=std::string::npos){
+          this_retention.replace(this_retention.find("%n"), 2, coord_string);
+        } else if(retention[0]=='@') {
+          this_retention = retention;
+        } else { //Should never happen
+          std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+          throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
+        }
 
         std::string this_output_name = output_name;
-        this_output_name.replace(this_output_name.find("%n"), 2,std::to_string(chunkid));
+        if(output_name.find("%f")!=std::string::npos){
+          this_output_name.replace(this_output_name.find("%f"), 2, out_filename);          
+        } else if(output_name.find("%n")!=std::string::npos){
+          this_output_name.replace(this_output_name.find("%n"), 2, coord_string);
+        } else { //Should never happen
+          std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+          throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
+        }
 
         //Add the chunk to the grid
         chunks.back().emplace_back(
@@ -882,11 +907,14 @@ void Preparer(
           throw std::logic_error("Tile width too small!");
         }
 
+        //Used for '%n' formatting
+        std::string coord_string = std::to_string(gridx)+"_"+std::to_string(gridy);
+
         std::string this_retention = retention;
         if(this_retention[0]!='@')
-          this_retention.replace(this_retention.find("%n"), 2,std::to_string(chunkid));
+          this_retention.replace(this_retention.find("%n"), 2, coord_string);
         std::string this_output_name = output_name;
-        this_output_name.replace(this_output_name.find("%n"),2,std::to_string(chunkid));
+        this_output_name.replace(this_output_name.find("%n"),2,coord_string);
 
         chunks.back().emplace_back(
           chunkid,
@@ -1029,8 +1057,8 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Must specify many or one.");
       if(CommSize()==1) //TODO: Invoke a special "one-process mode?"
         throw std::invalid_argument("Must run program with at least two processes!");
-      if(output_name.find("%n")==std::string::npos)
-        throw std::invalid_argument("Output filename must indicate file number with '%n'.");
+      if( (output_name.find("%n")==std::string::npos) ^ (output_name.find("%n")==std::string::npos) )
+        throw std::invalid_argument("Output filename must indicate either file number (%n) or name (%f).");
       if(retention[0]!='@' && retention.find("%n")==std::string::npos)
         throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
       if(retention==output_name)

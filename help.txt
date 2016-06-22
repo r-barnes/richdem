@@ -40,7 +40,7 @@ DESCRIPTION
                               hard-drive space. The user must indicate the
                               number of processes to use (e.g. mpirun).
 
-                prefix      - Intermediate resuls are retained on the hard-drive
+                prefix      - Intermediate results are retained on the hard-disk
                               between calculations. This method of using the
                               algorithm has intermediate speed. 'prefix' is a
                               file system path that the intermediates are
@@ -48,9 +48,8 @@ DESCRIPTION
                               hard-drive must have enough free space to store an
                               additional copy of the dataset. The user must
                               indicate the number of processes to use (e.g.
-                              mpirun). Intermediates are saved with a unique ID
-                              number whose location in the filename must be
-                              indicated by '%n'. Example: "/tmp/int-%n.tif"
+                              mpirun). See below for formatting string
+                              specifications.
 
   input       - Specifies the input file.
 
@@ -65,10 +64,9 @@ DESCRIPTION
                 square grid or there are holes in the data (missing files), a
                 blank space may be left between two commas.
 
-  output      - This is a the format of the output filenames. Files are numbered
-                and the location of this number in the filename must be
-                indicated by "%n". Example: "output/mydem-%n.tif". Note that
-                directories are not created and must exist beforehand.
+  output      - This is the format of the output filenames. See below for
+                details. Note that directories are not created and must exist
+                beforehand.
 
   --bwidth    - Block width in cells. Used with <one>. Should be >500. If this
   or -w         is not specified or set to -1 than the entire width is assumed.
@@ -104,6 +102,20 @@ LAYOUT FILES
   treat such gaps as places to route flow towards (as if they are oceans). Note
   that the files need not have TIF format: they can be of any type which GDAL
   can read. Paths to fileX.tif are taken to be relative to the layout file.
+
+FORMAT STRINGS
+
+  Output and retention strings must contain a format string. This is either "%n"
+  or "%f", though "%f" can only be used in <many> mode. Details follow.
+
+  * "%n" will be replaced with the (x,y) coordinates of the tile.
+    Example: "output/mydem-%n.tif" -> "output/mydem-2_3.tif"
+
+  * "%f" can only be used in <many> mode. It will be replaced by the name of the
+    original tile, as specified by the layout file. For instance, if the
+    original tile were named "../data/N41W088.tif" then "%f" would be replaced
+    by "N41W088".
+    Example: "output/%n-filled.tif" -> "output/N41W088-filled.tif"
 
 AUTHOR NOTES
 
