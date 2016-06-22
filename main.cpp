@@ -20,7 +20,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "11";
+const char* program_version = "12";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -783,10 +783,10 @@ void Preparer(
 
         //Used for "%f' formatting
         std::string out_filename = filename;
-        out_filename             = out_filename.replace(filename.find("."), std::string::npos, "");
+        out_filename             = out_filename.replace(filename.find_last_of("."), std::string::npos, "");
         std::size_t last_slash   = out_filename.find_last_of(SLASH_CHAR);
         if(last_slash!=std::string::npos)
-          out_filename.replace(0,last_slash,"");
+          out_filename.replace(0,last_slash+1,"");
 
         std::string this_retention = retention;
         if(retention.find("%f")!=std::string::npos){
@@ -1057,8 +1057,9 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Must specify many or one.");
       if(CommSize()==1) //TODO: Invoke a special "one-process mode?"
         throw std::invalid_argument("Must run program with at least two processes!");
-      if( (output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos) )
+      if( !((output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos)) ){
         throw std::invalid_argument("Output filename must indicate either file number (%n) or name (%f).");
+      }
       if(retention[0]!='@' && retention.find("%n")==std::string::npos)
         throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
       if(retention==output_name)
