@@ -20,7 +20,7 @@
 #include "communication.hpp"
 #include "memory.hpp"
 
-const char* program_version = "10";
+const char* program_version = "11";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -997,6 +997,12 @@ int main(int argc, char **argv){
             throw std::invalid_argument("Height must be at least 500.");
           i++;
           continue;
+        } else if(strcmp(argv[i],"--help")==0){
+          std::cerr<<help<<std::endl;
+          int good_to_go=0;
+          CommBroadcast(&good_to_go,0);
+          CommFinalize();
+          return -1;
         } else if(strcmp(argv[i],"--flipH")==0 || strcmp(argv[i],"-H")==0){
           flipH = true;
         } else if(strcmp(argv[i],"--flipV")==0 || strcmp(argv[i],"-V")==0){
@@ -1035,8 +1041,10 @@ int main(int argc, char **argv){
         output_err = "Invalid width or height.";
       else
         output_err = ia.what();
-      std::cerr<<"###Error: "<<output_err<<std::endl;
-      std::cerr<<help<<std::endl;
+
+      std::cerr<<"parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one> <retention> <input> <output>"<<std::endl;
+      std::cerr<<"\tUse '--help' to show help."<<std::endl;
+
       std::cerr<<"###Error: "<<output_err<<std::endl;
 
       int good_to_go=0;
