@@ -174,6 +174,14 @@ std::string trimStr(std::string const& str){
   return str.substr(first, last-first+1);
 }
 
+int SuggestTileSize(int selected, int size, int min){
+  int best=999999999;
+  for(int x=1;x<size;x++)
+    if(size%x>min && std::abs(x-selected)<std::abs(x-best))
+      best=x;
+  return best;
+}
+
 template<class elev_t>
 void Consumer(){
   ChunkInfo chunk;
@@ -863,10 +871,16 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        if(total_height-y<100)
-          throw std::logic_error("At least one tile is <100 cells in height. Please change rectangle size to avoid this!");
-        if(total_width -x<100)
-          throw std::logic_error("At least one tile is <100 cells in width. Please change rectangle size to avoid this!");
+        if(total_height-y<100){
+          std::cerr<<"At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
+          std::cerr<<"I suggest you use bheight="<<SuggestTileSize(bheight, total_height, 100)<<std::endl;
+          throw std::logic_error("Tile height too small!");
+        }
+        if(total_width -x<100){
+          std::cerr<<"At least one tile is <100 cells in width. Please change rectangle size to avoid this!"<<std::endl;
+          std::cerr<<"I suggest you use bwidth="<<SuggestTileSize(bwidth, total_width, 100)<<std::endl;
+          throw std::logic_error("Tile width too small!");
+        }
 
         std::string this_retention = retention;
         if(this_retention[0]!='@')
