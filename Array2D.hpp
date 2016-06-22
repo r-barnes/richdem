@@ -108,7 +108,10 @@ class Array2D {
     assert(yOffset>=0);
 
     GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-    assert(fin!=NULL);
+    if(fin==NULL){
+      std::cerr<<"Could not open file '"<<filename<<"'!"<<std::endl;
+      throw std::runtime_error("Could not open a GDAL file!");
+    }
 
     GDALRasterBand *band = fin->GetRasterBand(1);
     auto data_type       = band->GetRasterDataType();
