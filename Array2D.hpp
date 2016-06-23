@@ -848,9 +848,10 @@ class A2Array2D {
     x          = x%per_tile_width;
     y          = y%per_tile_height;
 
-    no_data_to_set = no_data;
-    if(data[tile_y][tile_x].null_tile)
+    if(data[tile_y][tile_x].null_tile){
+      no_data_to_set = no_data;
       return no_data_to_set;
+    }
 
     LoadTile(tile_x, tile_y);
 
