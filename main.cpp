@@ -32,6 +32,10 @@ void ProcessFlat(
         continue;
       if(visited(nx,ny))
         continue;
+      if(dem(nx,ny)<flat_height || dem(nx,ny)==dem.noData()){
+        fds(c.first,c.second) = n;
+        continue;
+      }
       if(dem(nx,ny)!=flat_height)
         continue;
       fds(nx,ny) = d8_inverse[n];
