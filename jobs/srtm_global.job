@@ -1,6 +1,6 @@
 #!/bin/bash  
-#SBATCH --job-name="srtm_global"  
-#SBATCH --output="srtm_global.%j.%N.out"  
+#SBATCH --job-name="srtm_g"  
+#SBATCH --output="srtm_g.%j.%N.out"  
 #SBATCH --partition=compute  
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24  

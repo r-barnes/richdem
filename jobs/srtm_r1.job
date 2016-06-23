@@ -1,6 +1,6 @@
 #!/bin/bash  
-#SBATCH --job-name="Region_01"  
-#SBATCH --output="Region_01_offload.%j.%N.out"  
+#SBATCH --job-name="srtm_r1"  
+#SBATCH --output="srtm_r1.%j.%N.out"  
 #SBATCH --partition=compute  
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24  

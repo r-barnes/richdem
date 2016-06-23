@@ -1,6 +1,6 @@
 #!/bin/bash  
-#SBATCH --job-name="srtm_global_resampled"  
-#SBATCH --output="srtm_global_resampled.%j.%N.out"  
+#SBATCH --job-name="srtm_gr"  
+#SBATCH --output="srtm_gr.%j.%N.out"  
 #SBATCH --partition=compute  
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24  
