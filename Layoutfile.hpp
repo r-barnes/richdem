@@ -71,12 +71,19 @@ class LayoutfileReader {
       if(line.find_first_not_of("\t\n ")==std::string::npos)
         return false;
 
+      //Reset stringstream
+      cells.str("");
+      cells.clear();
+
+      //Send another line into the stringstream
       cells << line;
     }
 
     std::getline(cells,filename,',');
     gridx++;
     filename = trimStr(filename);
+
+    std::cerr<<filename<<std::endl;
 
     basename         = filename;
     auto last_slash  = basename.find_last_of(SLASH_CHAR);
