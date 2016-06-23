@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
 
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
