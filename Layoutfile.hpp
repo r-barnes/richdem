@@ -83,8 +83,6 @@ class LayoutfileReader {
     gridx++;
     filename = trimStr(filename);
 
-    std::cerr<<filename<<std::endl;
-
     basename         = filename;
     auto last_slash  = basename.find_last_of(SLASH_CHAR);
     auto last_period = basename.find_last_of(".");
