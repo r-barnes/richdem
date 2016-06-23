@@ -631,10 +631,14 @@ class A2Array2D {
   int32_t per_tile_height       = -1;
   int32_t evictions             = 0;
   T       no_data;
+  T       no_data_to_set; //Used to disguise null tiles
 
   bool readonly = true;
 
   void LoadTile(int tile_x, int tile_y){
+    if(data[tile_y][tile_x].null_tile)
+      return;
+
     if(data[tile_y][tile_x].loaded){
       lru.insert(&data[tile_y][tile_x]);
       return;
@@ -679,7 +683,7 @@ class A2Array2D {
       if(lf.newRow()) //Add a row to the grid of chunks
         data.emplace_back();
 
-      if(lf.getFilename().size()==0){
+      if(lf.isNullTile()){
         data.back().emplace_back();
         data.back().back().null_tile = true;
         continue;
@@ -733,14 +737,15 @@ class A2Array2D {
         throw std::runtime_error("Tiles were not all the same width!");
       if(per_tile_height!=data.back().back().viewHeight())
         throw std::runtime_error("Tiles were not all the same width!");
-
-      if(lf.getY()==0)
-        total_width_in_cells  += data.back().back().viewWidth();
-      if(lf.newRow())
-        total_height_in_cells += data.back().back().viewHeight();
     }
 
-    std::cerr<<"TWIC: "<<total_width_in_cells<<std::endl;
+    total_width_in_cells  = data[0].size()*per_tile_width;
+    total_height_in_cells = data.size()*per_tile_height;
+
+    std::cerr<<"Total width: " <<total_width_in_cells<<std::endl;
+    std::cerr<<"Total height: "<<total_height_in_cells<<std::endl;
+
+    std::cerr<<"Found "<<not_null_tiles<<" not-null tiles of "<<(data[0].size()*data.size())<<std::endl;
   }
 
   A2Array2D(std::string prefix, int per_tile_width, int per_tile_height, int width, int height, int cachesize){
@@ -841,7 +846,13 @@ class A2Array2D {
     int tile_y = y/per_tile_height;
     x          = x%per_tile_width;
     y          = y%per_tile_height;
+
+    no_data_to_set = no_data;
+    if(data[tile_y][tile_x].null_tile)
+      return no_data_to_set;
+
     LoadTile(tile_x, tile_y);
+
     //std::cerr<<"tx: "<<tile_x<<"   ty: "<<tile_y<<" ";
     //std::cerr<<"fx: "<<x<<"   fy: "<<y<<" ";
     //std::cerr<<std::endl;
@@ -857,6 +868,8 @@ class A2Array2D {
     int tile_y = y/per_tile_height;
     x          = x%per_tile_width;
     y          = y%per_tile_height;
+    if(data[tile_y][tile_x].null_tile)
+      return no_data;
     LoadTile(tile_x, tile_y);
     return data[tile_y][tile_x](x,y);
   }
@@ -904,11 +917,11 @@ class A2Array2D {
   }
 
   void saveGDAL(std::string outputname_template) {
-    int tile_i = 0;
     for(auto &row: data)
     for(auto &tile: row){
       //std::cerr<<"Trying to save: "<<(prefix+std::to_string(tile_i)+".tif")<<std::endl;
-      tile_i++;
+      if(tile.null_tile)
+        continue;
       if(!tile.loaded)
         tile.loadData();
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
@@ -922,9 +935,11 @@ class A2Array2D {
   }
 
   void setNoData(const T &ndval){
+    no_data = ndval;
     for(auto &row: data)
     for(auto &tile: row)
-      tile.setNoData(ndval);
+      if(!tile.null_tile)
+        tile.setNoData(ndval); //TODO: Lazy setting: don't set this value until tile is completely loaded
   }
 
   int32_t getEvictions() const {
