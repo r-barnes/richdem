@@ -33,6 +33,7 @@ class LayoutfileReader {
   int new_row   = false;
   int row_width = -1;
   std::string filename;
+  std::string basename;
   std::string path;
  public:
   LayoutfileReader(std::string layout_filename){
@@ -76,6 +77,12 @@ class LayoutfileReader {
     gridx++;
     filename = trimStr(filename);
 
+    basename = filename;
+    basename.replace(basename.find_last_of("."), std::string::npos, "");
+    std::size_t last_slash = basename.find_last_of(SLASH_CHAR);
+    if(last_slash!=std::string::npos)
+      basename.replace(0,last_slash+1,"");
+
     return true;
   }
 
@@ -85,6 +92,10 @@ class LayoutfileReader {
 
   const std::string& getFilename() const {
     return filename;
+  }
+
+  const std::string& getBasename() const {
+    return basename;
   }
 
   const std::string& getPath() const {

@@ -144,6 +144,7 @@ class Array2D {
  public:
   typedef std::vector<T>   Row;
   std::string filename;
+  std::string basename;
   std::vector<double> geotrans;
   std::string projection;
 
@@ -257,8 +258,6 @@ class Array2D {
     std::fstream fout;
 
     file_native = true;
-
-    std::cerr<<"Saving native to: "<<filename<<std::endl;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
@@ -546,6 +545,7 @@ class Array2D {
   void templateCopy(const Array2D<U> &other){
     geotrans   = other.geotrans;
     projection = other.projection;
+    basename   = other.basename;
   }
 
   void saveGDAL(const std::string &filename, int xoffset, int yoffset){
@@ -632,6 +632,7 @@ class A2Array2D {
   int32_t total_height_in_cells = 0;
   int32_t per_tile_width        = -1;
   int32_t per_tile_height       = -1;
+  int32_t evictions             = 0;
   T       no_data;
 
   bool readonly = true;
@@ -649,6 +650,8 @@ class A2Array2D {
         tile_to_unload->clear();
       else
         tile_to_unload->dumpData();
+
+      evictions++;
 
       tile_to_unload->loaded = false;
       lru.pop_back();
@@ -723,6 +726,8 @@ class A2Array2D {
         false
       );
 
+      data.back().back().basename = lf.getBasename();
+
       if(no_data!=data.back().back().noData()){
         std::cerr<<"NoData found: "<<data.back().back().noData()<<" Expected: "<<no_data<<std::endl;
         throw std::runtime_error("Tiles did not all have the same NoData value!");
@@ -765,10 +770,13 @@ class A2Array2D {
   }
 
   template<class U>
-  A2Array2D(std::string prefix, const A2Array2D<U> &other, int cachesize) : A2Array2D(prefix, other.tileWidth(), other.tileHeight(), other.widthInTiles(), other.heightInTiles(), cachesize) {
+  A2Array2D(std::string filename_template, const A2Array2D<U> &other, int cachesize) : A2Array2D(filename_template, other.tileWidth(), other.tileHeight(), other.widthInTiles(), other.heightInTiles(), cachesize) {
     for(int y=0;y<heightInTiles();y++)
-    for(int x=0;x<widthInTiles();x++)
+    for(int x=0;x<widthInTiles();x++){
       data[y][x].templateCopy(other.data[y][x]);
+      data[y][x].filename = filename_template;
+      data[y][x].filename.replace(data[y][x].filename.find("%f"), 2, data[y][x].basename);
+    }
   }
 
   // T& getn(int tx, int ty, int x, int y, int dx, int dy){
@@ -898,7 +906,7 @@ class A2Array2D {
     return readonly;
   }
 
-  void saveGDAL(std::string prefix) {
+  void saveGDAL(std::string outputname_template) {
     int tile_i = 0;
     for(auto &row: data)
     for(auto &tile: row){
@@ -907,7 +915,11 @@ class A2Array2D {
       if(!tile.loaded)
         tile.loadData();
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
-      tile.saveGDAL(prefix+std::to_string(tile_i)+".tif", 0, 0);
+
+      auto temp = outputname_template;
+      temp.replace(temp.find("%f"),2,tile.basename);
+
+      tile.saveGDAL(temp, 0, 0);
       tile.clear();
     }
   }
@@ -916,6 +928,10 @@ class A2Array2D {
     for(auto &row: data)
     for(auto &tile: row)
       tile.setNoData(ndval);
+  }
+
+  int32_t getEvictions() const {
+    return evictions;
   }
 };
 

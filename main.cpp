@@ -42,10 +42,15 @@ void ProcessFlat(
 }
 
 template<class T>
-void Master(std::string layoutfile, int cachesize){
-  A2Array2D<T>          dem(layoutfile,cachesize);
-  A2Array2D<flowdirs_t> fds("/z/fdstemp",dem,cachesize);
-  A2Array2D<visited_t>  visited("/z/vistemp",dem,cachesize);
+void Master(std::string layoutfile, int cachesize, std::string tempfile_name, std::string output_filename){
+  std::string temp_fds_name = tempfile_name;
+  std::string temp_vis_name = tempfile_name;
+  temp_fds_name.replace(temp_fds_name.find("%f"), 2, "%f-fds");
+  temp_vis_name.replace(temp_vis_name.find("%f"), 2, "%f-vis");
+
+  A2Array2D<T>          dem    (layoutfile,cachesize);
+  A2Array2D<flowdirs_t> fds    (temp_fds_name,dem,cachesize);
+  A2Array2D<visited_t>  visited(temp_vis_name,dem,cachesize);
 
   fds.setNoData(255);
 
@@ -109,13 +114,17 @@ void Master(std::string layoutfile, int cachesize){
   }
 
   std::cerr<<"Saving results..."<<std::endl;
-  fds.saveGDAL("/z/fds-out");
+  fds.saveGDAL(output_filename);
+
+  std::cerr<<"dem evictions: "<<dem.getEvictions()<<std::endl;
+  std::cerr<<"vis evictions: "<<visited.getEvictions()<<std::endl;
+  std::cerr<<"fds evictions: "<<fds.getEvictions()<<std::endl;
 }
 
 //TODO: Flip tiles where appropriate
 int main(int argc, char **argv){
-  if(argc!=3){
-    std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size>"<<std::endl;
+  if(argc!=5){
+    std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size> <Temp Files> <Output Files>"<<std::endl;
     std::cerr<<"\tor use 'table' for cache size"<<std::endl;
     return -1;
   }
@@ -130,23 +139,25 @@ int main(int argc, char **argv){
   }
 
 
-  int  cachesize = std::stoi(argv[2]);
+  int cachesize = std::stoi(argv[2]);
+  std::string tempfile_name(argv[3]);
+  std::string output_filename(argv[4]);
 
   switch(file_type){
     case GDT_Byte:
-      Master<uint8_t >(argv[1],cachesize);break;
+      Master<uint8_t >(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_UInt16:
-      Master<uint16_t>(argv[1],cachesize);break;
+      Master<uint16_t>(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_Int16:
-      Master<int16_t >(argv[1],cachesize);break;
+      Master<int16_t >(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_UInt32:
-      Master<uint32_t>(argv[1],cachesize);break;
+      Master<uint32_t>(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_Int32:
-      Master<int32_t >(argv[1],cachesize);break;
+      Master<int32_t >(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_Float32:
-      Master<float   >(argv[1],cachesize);break;
+      Master<float   >(argv[1],cachesize,tempfile_name,output_filename);break;
     case GDT_Float64:
-      Master<double  >(argv[1],cachesize);break;
+      Master<double  >(argv[1],cachesize,tempfile_name,output_filename);break;
     default:
       std::cerr<<"Unrecognised data type!"<<std::endl;
       return -1;
