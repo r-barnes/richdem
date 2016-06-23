@@ -74,7 +74,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
       if(visited(x,y))
         continue;
 
-      auto myelev = dem(x,y);
+      const auto myelev = dem(x,y);
       if(myelev==dem.noData()){
         fds(x,y) = 255;
         continue;
@@ -94,7 +94,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
           continue;
         }
 
-        auto nelev = dem(nx,ny);
+        const auto nelev = dem(nx,ny);
         if(nelev==dem.noData()){
           drains       = true;
           nlowest_elev = std::numeric_limits<T>::min();
