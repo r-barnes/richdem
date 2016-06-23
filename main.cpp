@@ -133,7 +133,7 @@ int main(int argc, char **argv){
   if(argv[2]==std::string("table")){
     int dtype_size = GDALGetDataTypeSizeBytes(file_type);
     int tile_size  = peekLayoutTileSize(argv[1]);
-    for(int i=2;i<100;i++)
+    for(int i=2;i<500;i++)
       std::cerr<<std::setw(2)<<i<<"  "<<((dtype_size+sizeof(flowdirs_t)+sizeof(visited_t))*tile_size*i/1000000.0)<<" MB"<<std::endl;
     return -1;
   }
