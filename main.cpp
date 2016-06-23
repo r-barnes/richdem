@@ -58,8 +58,8 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   fds.setNoData(255);
 
-  long total_cells     = dem.heightInTiles()*dem.widthInTiles()*dem.tileHeight()*dem.tileWidth();
-  long processed_cells = 0;
+  int64_t total_cells     = dem.heightInTiles()*dem.widthInTiles()*dem.tileHeight()*dem.tileWidth();
+  int64_t processed_cells = 0;
 
   for(int ty=0;ty<dem.heightInTiles();ty++)
   for(int tx=0;tx<dem.widthInTiles(); tx++){
