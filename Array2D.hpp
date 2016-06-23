@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include "Layoutfile.hpp"
 #include "lru.hpp"
+#include "common.hpp"
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -324,7 +325,7 @@ class Array2D {
       GDALRasterBand *band = fin->GetRasterBand(1);
 
       data.resize(view_width*view_height);
-      auto temp = band->RasterIO( GF_Read, view_xoff, y, view_width, 1, data.data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, data_type, 0, 0 );
       if(temp!=CE_None)
         throw std::runtime_error("Error reading file with GDAL!");
 
@@ -584,7 +585,7 @@ class Array2D {
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
     #endif
 
-    auto temp = oband->RasterIO(GF_Write, 0, 0, viewWidth(), 1, data.data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
+    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0);
     if(temp!=CE_None)
       std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
 
