@@ -83,6 +83,8 @@ class LayoutfileReader {
     gridx++;
     filename = trimStr(filename);
 
+    //std::cerr<<"X="<<gridx<<" Y="<<gridy<<" fname='"<<filename<<"'"<<std::endl;
+
     basename         = filename;
     auto last_slash  = basename.find_last_of(SLASH_CHAR);
     auto last_period = basename.find_last_of(".");
@@ -108,6 +110,10 @@ class LayoutfileReader {
 
   const std::string& getPath() const {
     return path;
+  }
+
+  bool isNullTile() const {
+    return filename.size()==0;
   }
 
   int getX() const {
