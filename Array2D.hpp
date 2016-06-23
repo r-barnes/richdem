@@ -257,8 +257,6 @@ class Array2D {
 
     file_native = true;
 
-    std::cerr<<"Saving native to: "<<filename<<std::endl;
-
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
       std::cerr<<"Failed to open file '"<<filename<<"'."<<std::endl;
