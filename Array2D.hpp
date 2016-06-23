@@ -778,6 +778,7 @@ class A2Array2D {
       data[y][x].templateCopy(other.data[y][x]);
       data[y][x].filename = filename_template;
       data[y][x].filename.replace(data[y][x].filename.find("%f"), 2, data[y][x].basename);
+      data[y][x].null_tile = other.data[y][x].null_tile;
     }
   }
 
@@ -919,9 +920,11 @@ class A2Array2D {
   void saveGDAL(std::string outputname_template) {
     for(auto &row: data)
     for(auto &tile: row){
-      //std::cerr<<"Trying to save: "<<(prefix+std::to_string(tile_i)+".tif")<<std::endl;
       if(tile.null_tile)
         continue;
+
+      //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
+
       if(!tile.loaded)
         tile.loadData();
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
