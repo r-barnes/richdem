@@ -328,6 +328,11 @@ class Array2D {
       if(temp!=CE_None)
         throw std::runtime_error("Error reading file with GDAL!");
 
+      if(geotrans[0]<0)
+        flipHorz();
+      if(geotrans[5]<0)
+        flipVert();
+
       GDALClose(fin);
     }
   }
@@ -415,13 +420,18 @@ class Array2D {
     return data[y*view_width+x]==no_data;
   }
 
-  void flipVert(){ //TODO
-    std::reverse(data.begin(),data.end());
+  void flipVert(){
+    for(int y=0;y<view_height/2;y++)
+      std::swap_ranges(
+        data.begin()+(y+0)*view_width,
+        data.begin()+(y+1)*view_width,
+        data.begin()+(view_height-1-y)*view_width
+      );
   }
 
-  void flipHorz(){ //TODO
-    for(auto &row: data)
-      std::reverse(row.begin(),row.end());
+  void flipHorz(){
+    for(int y=0;y<view_height;y++)
+      std::reverse(data.begin()+y*view_width,data.begin()+(y+1)*view_width);
   }
 
   bool in_grid(int x, int y) const {
@@ -929,6 +939,11 @@ class A2Array2D {
       if(!tile.loaded)
         tile.loadData();
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
+
+      if(tile.geotrans[0]<0)
+        tile.flipHorz();
+      if(tile.geotrans[5]<0)
+        tile.flipVert();
 
       auto temp = outputname_template;
       temp.replace(temp.find("%f"),2,tile.basename);
