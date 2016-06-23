@@ -142,14 +142,12 @@ int peekLayoutTileSize(const std::string &layout_filename) {
 template<class T>
 class Array2D {
  public:
-  typedef std::vector<T>   Row;
   std::string filename;
   std::vector<double> geotrans;
   std::string projection;
 
  private:
-  typedef std::vector<Row> InternalArray;
-  InternalArray data;
+  std::vector<T> data;
 
   GDALDataType data_type;
 
@@ -283,8 +281,7 @@ class Array2D {
     out.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
     out.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
 
-    for(int y=0;y<view_height;y++)
-      out.write(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+    out.write(reinterpret_cast<char*>(data.data()), data.size()*sizeof(T));
   }
 
   void setFilename(const std::string &filename){
@@ -312,12 +309,11 @@ class Array2D {
         auto &in = fin;
       #endif
 
-      data = InternalArray(view_height, Row(view_width));
+      data.resize(view_height*view_width);
 
       in.seekg(7*sizeof(int)+sizeof(T));
 
-      for(int y=0;y<view_height;y++)
-        in.read(reinterpret_cast<char*>(data[y].data()), view_width*sizeof(T));
+      in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
     } else {
       GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
       if(fin==NULL){
@@ -327,12 +323,10 @@ class Array2D {
 
       GDALRasterBand *band = fin->GetRasterBand(1);
 
-      data = InternalArray(view_height, Row(view_width));
-      for(int y=view_yoff;y<view_yoff+view_height;y++){
-        auto temp = band->RasterIO( GF_Read, view_xoff, y, view_width, 1, data[y-view_yoff].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
-        if(temp!=CE_None)
-          throw std::runtime_error("Error reading file with GDAL!");
-      }
+      data.resize(view_width*view_height);
+      auto temp = band->RasterIO( GF_Read, view_xoff, y, view_width, 1, data.data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+      if(temp!=CE_None)
+        throw std::runtime_error("Error reading file with GDAL!");
 
       GDALClose(fin);
     }
@@ -381,38 +375,31 @@ class Array2D {
 
   T min() const {
     T minval = std::numeric_limits<T>::max();
-    for(auto const &row: data)
-    for(auto const cell: row){
-      if(cell==no_data)
+    for(auto const x: data){
+      if(x==no_data)
         continue;
-      minval = std::min(minval,cell);
+      minval = std::min(minval,x);
     }
     return minval;
   }
 
   T max() const {
     T maxval = std::numeric_limits<T>::min();
-    for(auto const &row: data)
-    for(auto const cell: row){
-      if(cell==no_data)
+    for(auto const x: data){
+      if(x==no_data)
         continue;
-      maxval = std::max(maxval,cell);
+      maxval = std::max(maxval,x);
     }
     return maxval;
   }
 
   int countval(const T val) const {
     int count=0;
-    for(int y=0;y<view_height;y++)
-    for(int x=0;x<view_width;x++)
-      if(data[y][x]==val){
+    for(int i=0;i<data.size();i++)
+      if(data[i]==val){
         count++;
-        std::cerr<<"Found "<<val<<" at "<<x<<","<<y<<std::endl;
+        std::cerr<<"Found "<<val<<" at "<<i<<std::endl;
       }
-    //for(auto const &row: data) //TODO
-    //for(auto const cell: row)
-      //if(cell==val)
-      //  count++;
     return count;
   }
 
@@ -421,22 +408,18 @@ class Array2D {
       return false;
     if(noData()!=o.noData())
       return false;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=o.data[y][x])
-        return false;
-    return true;
+    return data==o.data;
   }
 
   bool isNoData(int x, int y) const {
-    return data[y][x]==no_data;
+    return data[y*view_width+x]==no_data;
   }
 
-  void flipVert(){
+  void flipVert(){ //TODO
     std::reverse(data.begin(),data.end());
   }
 
-  void flipHorz(){
+  void flipHorz(){ //TODO
     for(auto &row: data)
       std::reverse(row.begin(),row.end());
   }
@@ -450,8 +433,7 @@ class Array2D {
   }
 
   void setAll(const T &val){
-    for(auto &row: data)
-      std::fill(row.begin(),row.end(),val);
+    std::fill(data.begin(),data.end(),val);
   }
 
   void init(T val){
@@ -460,16 +442,16 @@ class Array2D {
 
   //Destructively resizes the array. All data will die!
   void resize(int width, int height, const T& val = T()){
-    data         = InternalArray(height, Row(width, val));
+    data.resize(width*height);
+    setAll(val);
     total_height = view_height = height;
     total_width  = view_width  = width;
   }
 
   void countDataCells(){
     num_data_cells = 0;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=no_data)
+    for(const auto x: data)
+      if(x!=no_data)
         num_data_cells++;
   }
 
@@ -479,13 +461,33 @@ class Array2D {
     return num_data_cells;
   }
 
+  T& operator()(int i){
+    assert(i>=0);
+    assert(i<view_width*view_height);
+    return data[i];
+  }
+
+  const T& operator()(int i) const {
+    assert(i>=0);
+    assert(i<view_width*view_height);
+    return data[i];
+  }
+
+  int getN(int i, int n) const {
+    int x = i%view_width+dx[n];
+    int y = i/view_width+dy[n];
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return y*view_width+x;
+  }
+
   T& operator()(int x, int y){
     assert(x>=0);
     assert(y>=0);
     //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
     assert(x<viewWidth());
     assert(y<viewHeight());
-    return data[y][x];
+    return data[y*view_width+x];
   }
 
   const T& operator()(int x, int y) const {
@@ -493,49 +495,45 @@ class Array2D {
     assert(y>=0);
     assert(x<viewWidth());
     assert(y<viewHeight());
-    return data[y][x];
+    return data[y*view_width+x];
   }
 
-  Row&       topRow   ()       { return data.front(); }
-  Row&       bottomRow()       { return data.back (); }
-  const Row& topRow   () const { return data.front(); }
-  const Row& bottomRow() const { return data.back (); }
+  // Row&       topRow   ()       { return data.front(); } //TODO
+  // Row&       bottomRow()       { return data.back (); } //TODO
+  // const Row& topRow   () const { return data.front(); } //TODO
+  // const Row& bottomRow() const { return data.back (); } //TODO
 
-  Row leftColumn() const {
-    Row temp(data.size());
-    for(size_t y=0;y<data.size();y++)
-      temp[y] = data[y][0];
-    return temp;
-  }
+  // Row leftColumn() const { //TODO
+  //   Row temp(data.size());
+  //   for(size_t y=0;y<data.size();y++)
+  //     temp[y] = data[y][0];
+  //   return temp;
+  // }
 
-  Row rightColumn() const {
-    Row temp(data.size());
-    size_t right = data[0].size()-1;
-    for(size_t y=0;y<data.size();y++)
-      temp[y] = data[y][right];
-    return temp;
-  }
+  // Row rightColumn() const { //TODO
+  //   Row temp(data.size());
+  //   size_t right = data[0].size()-1;
+  //   for(size_t y=0;y<data.size();y++)
+  //     temp[y] = data[y][right];
+  //   return temp;
+  // }
 
-  void emplaceRow(Row &row){
-    data.emplace_back(row);
-  }
+  // Row& rowRef(int rownum){
+  //   return data[rownum];
+  // }
 
-  Row& rowRef(int rownum){
-    return data[rownum];
-  }
+  // void setRow(int rownum, const T &val){
+  //   std::fill(data[rownum].begin(),data[rownum].end(),val);
+  // }
 
-  void setRow(int rownum, const T &val){
-    std::fill(data[rownum].begin(),data[rownum].end(),val);
-  }
+  // void setCol(int colnum, const T &val){
+  //   for(int y=0;y<viewHeight();y++)
+  //     data[y][colnum] = val;
+  // }
 
-  void setCol(int colnum, const T &val){
-    for(int y=0;y<viewHeight();y++)
-      data[y][colnum] = val;
-  }
-
-  const std::vector<T>& getRowData(int rownum){
-    return data[rownum].data();
-  }
+  // const std::vector<T>& getRowData(int rownum){
+  //   return data[rownum].data();
+  // }
 
   void clear(){
     data.clear();
@@ -586,11 +584,9 @@ class Array2D {
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
     #endif
 
-    for(int y=0;y<view_height;y++){
-      auto temp = oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
-      if(temp!=CE_None)
-        std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
-    }
+    auto temp = oband->RasterIO(GF_Write, 0, 0, viewWidth(), 1, data.data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
+    if(temp!=CE_None)
+      std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
 
     GDALClose(fout);
   }
