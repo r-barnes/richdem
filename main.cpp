@@ -34,7 +34,7 @@ void ProcessFlat(
         continue;
       if(visited(nx,ny))
         continue;
-      if(dem(nx,ny)<flat_height || dem(nx,ny)==dem.noData()){
+      if(dem(nx,ny)<flat_height || dem.isNoData(nx,ny)){
         fds(c.first,c.second) = n;
         continue;
       }
@@ -76,11 +76,12 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
       if(visited(x,y))
         continue;
 
-      const auto myelev = dem(x,y);
-      if(myelev==dem.noData()){
+      if(dem.isNoData(x,y)){
         fds(x,y) = 255;
         continue;
       }
+
+      const auto myelev = dem(x,y);
 
       bool    drains       = false;
       bool    has_flat     = false;
@@ -96,12 +97,16 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
           continue;
         }
 
-        const auto nelev = dem(nx,ny);
-        if(nelev==dem.noData()){
+        if(dem.isNoData(nx,ny)){
           drains       = true;
           nlowest_elev = std::numeric_limits<T>::min();
           nlowest      = n;
-        } else if(nelev==myelev){
+          continue;
+        }
+
+        const auto nelev = dem(nx,ny);
+
+        if(nelev==myelev){
           has_flat = true;
         } else if(nelev<myelev){
           drains = true;

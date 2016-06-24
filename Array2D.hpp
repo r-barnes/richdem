@@ -638,7 +638,6 @@ class A2Array2D {
   int32_t per_tile_width        = -1;
   int32_t per_tile_height       = -1;
   int32_t evictions             = 0;
-  T       no_data;
   T       no_data_to_set; //Used to disguise null tiles
 
   bool readonly = true;
@@ -709,24 +708,25 @@ class A2Array2D {
         false
       );
 
+      auto &this_tile = data.back().back();
+
       //Get properties of the first file to check against all subsequent ones
       if(per_tile_height==-1){
-        per_tile_height = data.back().back().viewHeight();
-        per_tile_width  = data.back().back().viewWidth();
-        no_data         = data.back().back().noData();
+        per_tile_height = this_tile.viewHeight();
+        per_tile_width  = this_tile.viewWidth();
+        std::cerr<<"Drawing properties from '"<<this_tile.filename<<"'"<<std::endl;
+        std::cerr<<"NoData: "     <<this_tile.noData()    <<std::endl;
+        std::cerr<<"Tile Height: "<<this_tile.viewHeight()<<std::endl;
+        std::cerr<<"Tile Width: " <<this_tile.viewWidth() <<std::endl;
       }
 
       cell_count += per_tile_width*per_tile_height;
 
-      data.back().back().basename = lf.getBasename();
+      this_tile.basename = lf.getBasename();
 
-      if(no_data!=data.back().back().noData()){
-        std::cerr<<"NoData found: "<<data.back().back().noData()<<" Expected: "<<no_data<<std::endl;
-        throw std::runtime_error("Tiles did not all have the same NoData value!");
-      }
-      if(per_tile_width!=data.back().back().viewWidth())
+      if(per_tile_width!=this_tile.viewWidth())
         throw std::runtime_error("Tiles were not all the same width!");
-      if(per_tile_height!=data.back().back().viewHeight())
+      if(per_tile_height!=this_tile.viewHeight())
         throw std::runtime_error("Tiles were not all the same width!");
     }
 
@@ -840,7 +840,7 @@ class A2Array2D {
     y          = y%per_tile_height;
 
     if(data[tile_y][tile_x].null_tile){
-      no_data_to_set = no_data;
+      no_data_to_set = data[tile_y][tile_x].noData();
       return no_data_to_set;
     }
 
@@ -852,20 +852,20 @@ class A2Array2D {
     return data[tile_y][tile_x](x,y);
   }
 
-  const T& operator()(int x, int y) const {
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<total_width_in_cells);
-    assert(y<total_height_in_cells);
-    int tile_x = x/per_tile_width;
-    int tile_y = y/per_tile_height;
-    x          = x%per_tile_width;
-    y          = y%per_tile_height;
-    if(data[tile_y][tile_x].null_tile)
-      return no_data;
-    LoadTile(tile_x, tile_y);
-    return data[tile_y][tile_x](x,y);
-  }
+  // const T& operator()(int x, int y) const {
+  //   assert(x>=0);
+  //   assert(y>=0);
+  //   assert(x<total_width_in_cells);
+  //   assert(y<total_height_in_cells);
+  //   int tile_x = x/per_tile_width;
+  //   int tile_y = y/per_tile_height;
+  //   x          = x%per_tile_width;
+  //   y          = y%per_tile_height;
+  //   if(data[tile_y][tile_x].null_tile)
+  //     return no_data;
+  //   LoadTile(tile_x, tile_y);
+  //   return data[tile_y][tile_x](x,y);
+  // }
 
   int64_t width() const {
     return total_width_in_cells;
@@ -897,8 +897,23 @@ class A2Array2D {
       tile.setAll(val);
   }
 
-  T noData() const {
-    return no_data;
+  bool isNoData(int x, int y){
+    assert(x>=0);
+    assert(y>=0);
+    assert(x<total_width_in_cells);
+    assert(y<total_height_in_cells);
+
+    int tile_x = x/per_tile_width;
+    int tile_y = y/per_tile_height;
+    x          = x%per_tile_width;
+    y          = y%per_tile_height;
+
+    if(data[tile_y][tile_x].null_tile)
+      return true;
+
+    LoadTile(tile_x, tile_y);
+
+    return data[tile_y][tile_x].isNoData(x,y);
   }
 
   bool in_grid(int x, int y) const {
@@ -943,7 +958,6 @@ class A2Array2D {
   }
 
   void setNoData(const T &ndval){
-    no_data = ndval;
     for(auto &row: data)
     for(auto &tile: row)
       if(!tile.null_tile)
