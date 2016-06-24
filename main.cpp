@@ -228,10 +228,6 @@ void Consumer(){
       //Read in the data associated with the job
       timer_io.start();
       dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height, chunk.many);
-      if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
-      if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
       timer_io.stop();
 
       //These variables are needed by Priority-Flood. The internal
@@ -245,7 +241,7 @@ void Consumer(){
       //Barnes, Lehman, and Mulla (2014).
 
       timer_calc.start();
-      Zhou2015Labels(dem,labels,job1.graph,chunk.edge);
+      Zhou2015Labels(dem,labels,job1.graph,chunk.edge, chunk.flip & FLIP_HORZ, chunk.flip & FLIP_VERT);
       timer_calc.stop();
 
       //The chunk's edge info is needed to solve the global problem. Collect it.
@@ -273,18 +269,22 @@ void Consumer(){
       }
 
       //Flip the tile if necessary
-      // if(chunk.flip & FLIP_VERT){
-      //   job1.top_elev.swap(job1.bot_elev);
-      //   job1.top_label.swap(job1.bot_label);
-      //   std::reverse(job1.left_elev.begin(),job1.left_elev.end());
-      //   std::reverse(job1.right_elev.begin(),job1.right_elev.end());
-      // }
-      // if(chunk.flip & FLIP_HORZ){
-      //   job1.left_elev.swap(job1.right_elev);
-      //   job1.left_label.swap(job1.right_label);
-      //   std::reverse(job1.top_elev.begin(),job1.top_elev.end());
-      //   std::reverse(job1.bot_elev.begin(),job1.bot_elev.end());
-      // }
+      if(chunk.flip & FLIP_VERT){
+        job1.top_elev.swap(job1.bot_elev);
+        job1.top_label.swap(job1.bot_label);
+        std::reverse(job1.left_elev.begin(),job1.left_elev.end());
+        std::reverse(job1.right_elev.begin(),job1.right_elev.end());
+        std::reverse(job1.left_label.begin(), job1.left_label.end());
+        std::reverse(job1.right_label.begin(),job1.right_label.end());
+      }
+      if(chunk.flip & FLIP_HORZ){
+        job1.left_elev.swap(job1.right_elev);
+        job1.left_label.swap(job1.right_label);
+        std::reverse(job1.top_elev.begin(),job1.top_elev.end());
+        std::reverse(job1.bot_elev.begin(),job1.bot_elev.end());
+        std::reverse(job1.top_label.begin(),job1.top_label.end());
+        std::reverse(job1.bot_label.begin(),job1.bot_label.end());
+      }
 
       timer_overall.stop();
       // std::cerr<<"Node "<<CommRank()<<" finished with Calc="<<timer_calc.accumulated()<<"s. timer_Overall="<<timer_overall.accumulated()<<"s. timer_IO="<<timer_io.accumulated()<<"s. Labels used="<<job1.graph.size()<<std::endl; //TODO
@@ -307,15 +307,11 @@ void Consumer(){
       if(chunk.retention=="@evict"){
         timer_io.start();
         dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
-        if(chunk.flip & FLIP_VERT)
-          dem.flipVert();
-        if(chunk.flip & FLIP_HORZ)
-          dem.flipHorz();
         timer_io.stop();
 
         labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
         timer_calc.start();
-        Zhou2015Labels(dem,labels,graph,chunk.edge);
+        Zhou2015Labels(dem,labels,graph,chunk.edge, chunk.flip & FLIP_HORZ, chunk.flip & FLIP_VERT);
         timer_calc.stop();
       } else if(chunk.retention=="@retain"){
         auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
@@ -336,13 +332,6 @@ void Consumer(){
       timer_calc.stop();
 
       //At this point we're done with the calculation! Boo-yeah!
-
-      timer_io.start();
-      if(chunk.flip & FLIP_HORZ)
-        dem.flipHorz();
-      if(chunk.flip & FLIP_VERT)
-        dem.flipVert();
-      timer_io.stop();
 
       timer_io.start();
       dem.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);

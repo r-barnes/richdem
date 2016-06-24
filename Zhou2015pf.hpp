@@ -142,7 +142,9 @@ void Zhou2015Labels(
   Array2D<elev_t>                         &dem,
   Array2D<label_t>                        &labels,
   std::vector<std::map<label_t, elev_t> > &my_graph,
-  uint8_t edge
+  uint8_t edge,
+  bool    flipH,
+  bool    flipV
 ){
   std::queue<GridCellZ<elev_t> > traceQueue;
   std::queue<GridCellZ<elev_t> > depressionQue;
@@ -196,21 +198,21 @@ void Zhou2015Labels(
     }
   }
 
-  if(edge & GRID_TOP)
+  if( ((edge & GRID_TOP)    && !flipV) || ((edge & GRID_BOTTOM) && flipV) )
     for(int x=0;x<labels.viewWidth();x++)
       WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);
 
-  if(edge & GRID_BOTTOM){
+  if( ((edge & GRID_BOTTOM) && !flipV) || ((edge & GRID_TOP)    && flipV) ){
     int bottom_row = labels.viewHeight()-1;
     for(int x=0;x<labels.viewWidth();x++)
       WatershedsMeet(labels(x,bottom_row),(label_t)1,dem(x,bottom_row),dem(x,bottom_row),my_graph);
   }
 
-  if(edge & GRID_LEFT)
+  if( ((edge & GRID_LEFT)  && !flipH) || ((edge & GRID_RIGHT) && flipH) )
     for(int y=0;y<labels.viewHeight();y++)
       WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
 
-  if(edge & GRID_RIGHT){
+  if( ((edge & GRID_RIGHT) && !flipH) || ((edge & GRID_LEFT)  && flipH) ){
     int right_col = labels.viewWidth()-1;
     for(int y=0;y<labels.viewHeight();y++)
       WatershedsMeet(labels(right_col,y),(label_t)1,dem(right_col,y),dem(right_col,y),my_graph);
