@@ -198,6 +198,9 @@ void Zhou2015Labels(
     }
   }
 
+  //Connect the DEM's outside edges to Special Watershed 1. This requires
+  //knowing whether the tile has been flipped toe snure that we connect the
+  //correct edges.
   if( ((edge & GRID_TOP)    && !flipV) || ((edge & GRID_BOTTOM) && flipV) )
     for(int x=0;x<labels.viewWidth();x++)
       WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);

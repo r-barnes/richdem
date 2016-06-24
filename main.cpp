@@ -238,8 +238,10 @@ void Consumer(){
       //Perform the watershed Priority-Flood algorithm on the chunk. The variant
       //by Zhou, Sun, and Fu (2015) is used for this; however, I have modified
       //their algorithm to label watersheds similarly to what is described in
-      //Barnes, Lehman, and Mulla (2014).
-
+      //Barnes, Lehman, and Mulla (2014). Note that the Priority-Flood needs to
+      //know whether the tile is being flipped since it uses this information to
+      //determine which edges connect to Special Watershed 1 (which is the
+      //outside of the DEM as a whole).
       timer_calc.start();
       Zhou2015Labels(dem,labels,job1.graph,chunk.edge, chunk.flip & FLIP_HORZ, chunk.flip & FLIP_VERT);
       timer_calc.stop();
@@ -268,7 +270,12 @@ void Consumer(){
         timer_io.stop();
       }
 
-      //Flip the tile if necessary
+      //Flip the tile if necessary. We could flip the entire tile, but this
+      //requires expensive memory shuffling. Instead, we flip just the perimeter
+      //of the tile and send the flipped perimeter to the Producer. Notice,
+      //though, that tiles adjacent to the edge of the DEM need to be treated
+      //specially, which is why the Priority-Flood performed on each tile
+      //(above) needs to have knowledge of whether the tile is being flipped.
       if(chunk.flip & FLIP_VERT){
         job1.top_elev.swap(job1.bot_elev);
         job1.top_label.swap(job1.bot_label);
