@@ -400,11 +400,9 @@ class Array2D {
 
   int countval(const T val) const {
     int count=0;
-    for(int i=0;i<data.size();i++)
-      if(data[i]==val){
+    for(const auto x: data)
+      if(x==val)
         count++;
-        std::cerr<<"Found "<<val<<" at "<<i<<std::endl;
-      }
     return count;
   }
 
@@ -928,7 +926,10 @@ class A2Array2D {
     return readonly;
   }
 
-  void saveGDAL(std::string outputname_template) {
+  //TODO: Use of checkval here is kinda gross. Is there a good way to get rid of
+  //it?
+  void saveGDAL(std::string outputname_template, int checkval) {
+    int count = 0;
     for(auto &row: data)
     for(auto &tile: row){
       if(tile.null_tile)
@@ -945,12 +946,17 @@ class A2Array2D {
       if(tile.geotrans[5]<0)
         tile.flipVert();
 
+      if(checkval!=-99) //TODO
+        count += tile.countval(checkval);
+
       auto temp = outputname_template;
       temp.replace(temp.find("%f"),2,tile.basename);
 
       tile.saveGDAL(temp, 0, 0);
       tile.clear();
     }
+
+    std::cerr<<"Found "<<count<<" cells with value "<<checkval<<std::endl;
   }
 
   void setNoData(const T &ndval){

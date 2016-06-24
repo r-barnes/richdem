@@ -11,9 +11,11 @@ typedef int8_t  visited_t;
 
 template<class T>
 void ProcessFlat(
-  A2Array2D<T> &dem,
+  A2Array2D<T>          &dem,
   A2Array2D<flowdirs_t> &fds,
-  A2Array2D<visited_t> &visited, int x, int y
+  A2Array2D<visited_t>  &visited,
+  int x,
+  int y
 ){
   std::queue< std::pair<int, int> > q;
 
@@ -85,8 +87,8 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
       uint8_t nlowest      = 0;
       T       nlowest_elev = std::numeric_limits<T>::max(); //TODO
       for(int n=1;n<=8;n++){
-        int nx = x+dx[n];
-        int ny = y+dy[n];
+        const int nx = x+dx[n];
+        const int ny = y+dy[n];
         if(!dem.in_grid(nx,ny)){
           drains       = true;
           nlowest_elev = std::numeric_limits<T>::min();
@@ -110,7 +112,8 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         }
       }
 
-      fds(x,y) = nlowest;
+      if(nlowest!=0) //Check before setting for improved caching
+        fds(x,y) = nlowest;
 
       if(drains && has_flat)
         ProcessFlat(dem,fds,visited,x,y);
@@ -118,7 +121,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   }
 
   std::cerr<<"Saving results..."<<std::endl;
-  fds.saveGDAL(output_filename);
+  fds.saveGDAL(output_filename, 0);
 
   std::cerr<<"dem evictions: "<<dem.getEvictions()<<std::endl;
   std::cerr<<"vis evictions: "<<visited.getEvictions()<<std::endl;
@@ -141,7 +144,6 @@ int main(int argc, char **argv){
       std::cerr<<std::setw(2)<<i<<"  "<<((dtype_size+sizeof(flowdirs_t)+sizeof(visited_t))*tile_size*i/1000000.0)<<" MB"<<std::endl;
     return -1;
   }
-
 
   int cachesize = std::stoi(argv[2]);
   std::string tempfile_name(argv[3]);
