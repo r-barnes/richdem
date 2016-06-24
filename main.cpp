@@ -49,6 +49,9 @@ void ProcessFlat(
 
 template<class T>
 void Master(std::string layoutfile, int cachesize, std::string tempfile_name, std::string output_filename){
+  Timer total_time;
+  total_time.start();
+
   std::string temp_fds_name = tempfile_name;
   std::string temp_vis_name = tempfile_name;
   temp_fds_name.replace(temp_fds_name.find("%f"), 2, "%f-fds");
@@ -65,7 +68,10 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   for(int ty=0;ty<dem.heightInTiles();ty++)
   for(int tx=0;tx<dem.widthInTiles(); tx++){
-    std::cerr<<"Processed: "<<(processed_cells/1000)<<"k/"<<(total_cells/1000)<<"k"<<std::endl;
+    double est_total_time = (total_time.lap()/(double)processed_cells)*(double)total_cells;
+    double time_left      = est_total_time-total_time.lap();
+    std::cerr<<"Processed: "<<(processed_cells/1000)<<"k/"<<(total_cells/1000)<<"k cells "
+             <<time_left<<"s/"<<est_total_time<<"s ("<<(time_left/3600)<<"hr/"<<(est_total_time/3600)<<"hr)"<<std::endl;
     for(int py=0;py<dem.tileHeight();py++)
     for(int px=0;px<dem.tileWidth(); px++){
       processed_cells++;
@@ -127,6 +133,10 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   std::cerr<<"Saving results..."<<std::endl;
   fds.saveGDAL(output_filename, 0);
+
+  total_time.stop();
+
+  std::cerr<<"Total time: "<<total_time.accumulated()<<"s ("<<(total_time.accumulated()/3600)<<"hr)"<<std::endl;
 
   std::cerr<<"dem evictions: "<<dem.getEvictions()<<std::endl;
   std::cerr<<"vis evictions: "<<visited.getEvictions()<<std::endl;
