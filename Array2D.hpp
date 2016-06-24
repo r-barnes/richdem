@@ -684,7 +684,6 @@ class A2Array2D {
 
     long    cell_count     = 0;
     int     not_null_tiles = 0;
-    std::vector<double> chunk_geotransform(6);
 
     LayoutfileReader lf(layoutfile);
     while(lf.next()){
@@ -699,31 +698,6 @@ class A2Array2D {
 
       not_null_tiles++;
 
-      if(per_tile_height==-1){
-        //Retrieve information about this chunk. All chunks must have the same
-        //dimensions, which we could check here, but opening and closing
-        //thousands of files is expensive. Therefore, we rely on the user to
-        //check this beforehand if they want to. We will, however, verify that
-        //things are correct in Consumer() as we open the files for reading.
-        GDALDataType file_type;
-        std::cerr<<(lf.getPath() + lf.getFilename())<<std::endl;
-        if(getGDALDimensions(
-            lf.getPath() + lf.getFilename(),
-            per_tile_height,
-            per_tile_width,
-            file_type,
-            chunk_geotransform.data()
-        )!=0){
-          std::cerr<<"Error getting file information from '"<<(lf.getPath() + lf.getFilename())<<"'!"<<std::endl;
-          throw std::runtime_error("Error get information from a DEM file!");
-        }
-
-        no_data = getGDALnodata<T>(lf.getPath() + lf.getFilename());
-        std::cerr<<"NoData: "<<no_data<<std::endl;
-      }
-
-      cell_count += per_tile_width*per_tile_height;
-
       data.back().emplace_back(
         lf.getPath()+lf.getFilename(),
         false,
@@ -734,6 +708,15 @@ class A2Array2D {
         false,
         false
       );
+
+      //Get properties of the first file to check against all subsequent ones
+      if(per_tile_height==-1){
+        per_tile_height = data.back().back().viewHeight();
+        per_tile_width  = data.back().back().viewWidth();
+        no_data         = data.back().back().noData();
+      }
+
+      cell_count += per_tile_width*per_tile_height;
 
       data.back().back().basename = lf.getBasename();
 
