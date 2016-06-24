@@ -867,27 +867,27 @@ class A2Array2D {
     return data[tile_y][tile_x](x,y);
   }
 
-  int width() const {
+  int64_t width() const {
     return total_width_in_cells;
   }
 
-  int height() const {
+  int64_t height() const {
     return total_height_in_cells;
   }
 
-  int widthInTiles() const {
+  int64_t widthInTiles() const {
     return data.back().size();
   }
 
-  int heightInTiles() const {
+  int64_t heightInTiles() const {
     return data.size();
   }
 
-  int tileWidth() const {
+  int64_t tileWidth() const {
     return per_tile_width;
   }
 
-  int tileHeight() const {
+  int64_t tileHeight() const {
     return per_tile_height;
   }
 
