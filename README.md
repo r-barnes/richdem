@@ -12,7 +12,7 @@ Flexibly Distributed Priority-Flood Depression Filling For Teracell DEMs
 TODO
 
 **Code Repositories**
- * [Author's GitHub Repository](https://github.com/r-barnes/Barnes2016-DistributedPriorityFlood)
+ * [Author's GitHub Repository](https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood)
  * [Journal's GitHub Repository](TODO)
 
 This repository contains a reference implementation of the algorithms presented
