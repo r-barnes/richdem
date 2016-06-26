@@ -1,3 +1,10 @@
 a.out
 test_output*.log
 *.exe
+tests/*/*.out
+out
+temp
+cereal/
+*.ipm.xml
+*.mpiP
+libmpiP.so
