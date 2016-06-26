@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <stdexcept>
+#include "Layoutfile.hpp"
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -30,7 +31,31 @@ GDALDataType peekGDALType(const std::string &filename) {
   return data_type;
 }
 
-//Get the dimensions of a GDAL file
+
+template<class T>
+void getGDALHeader(
+  const std::string &filename,
+  int    &height,
+  int    &width,
+  T      &no_data,
+  double *geotrans
+){
+  GDALAllRegister();
+  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+  assert(fin!=NULL);
+
+  GDALRasterBand *band   = fin->GetRasterBand(1);
+
+  height  = band->GetYSize();
+  no_data = band->GetNoDataValue();
+  width   = band->GetXSize();
+
+  fin->GetGeoTransform(geotrans);
+
+  GDALClose(fin);
+}
+
+
 int getGDALDimensions(
   const std::string &filename,
   int &height,
@@ -87,6 +112,8 @@ class Array2D {
  public:
   typedef std::vector<T>   Row;
  private:
+  template<typename> friend class Array2D;
+
   typedef std::vector<Row> InternalArray;
   InternalArray data;
 
@@ -99,6 +126,7 @@ class Array2D {
   int view_xoff;
   int view_yoff;
   int num_data_cells = -1;
+  std::vector<double> geotransform;
 
   T   no_data;
 
@@ -115,6 +143,9 @@ class Array2D {
 
     GDALRasterBand *band = fin->GetRasterBand(1);
     auto data_type       = band->GetRasterDataType();
+
+    if(fin->GetGeoTransform(geotransform.data())!=CE_None)
+      throw std::runtime_error("Could not fetch geotransform!");
 
     total_width  = band->GetXSize();
     total_height = band->GetYSize();
@@ -165,6 +196,7 @@ class Array2D {
     view_height  = 0;
     view_xoff    = 0;
     view_yoff    = 0;
+    geotransform.resize(6);
   }
 
   //Create an internal array
@@ -279,6 +311,10 @@ class Array2D {
     return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
   }
 
+  bool edge_grid(int x, int y) const {
+    return x==0 || y==0 || x==viewWidth()-1 || y==viewHeight()-1;
+  }
+
   void setNoData(const T &ndval){
     no_data = ndval;
   }
@@ -297,6 +333,12 @@ class Array2D {
     data         = InternalArray(height, Row(width, val));
     total_height = view_height = height;
     total_width  = view_width  = width;
+  }
+
+  template<class U>
+  void resize(const Array2D<U> &other, const T& val = T()){
+    resize(other.viewWidth(), other.viewHeight(), val);
+    geotransform = other.geotransform;
   }
 
   void countDataCells(){
@@ -369,6 +411,13 @@ class Array2D {
 
   const std::vector<T>& getRowData(int rownum){
     return data[rownum].data();
+  }
+
+  std::vector<T> getColData(int colnum) const {
+    std::vector<T> col(viewHeight());
+    for(int y=0;y<viewHeight();y++)
+      col[y] = data[y][colnum];
+    return col;
   }
 
   void clear(){
