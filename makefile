@@ -20,5 +20,8 @@ debug: main.cpp
 auth_gen:
 	mpic++ -o auth_gen.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` auth_gen.cpp -I. -lgdal --std=c++11 -Wall
 
+assemble_ascii:
+	g++ -o assemble_ascii.exe -g `gdal-config --cflags` `gdal-config --libs` assemble_ascii.cpp -I. -lgdal --std=c++11 -Wall
+
 clean:
 	rm -f output* parallel_d8flow_accum.exe generate_flowdirs.exe
