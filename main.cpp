@@ -47,7 +47,7 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
-#define NO_FLOW         37 //TODO: Expalin and ensure it fits in flowdir_t
+#define NO_FLOW          0 //TODO: Expalin and ensure it fits in flowdir_t
 #define FLOW_TERMINATES -3 //TODO: Expalin and ensure it fits in flowdir_t
 #define FLOW_EXTERNAL   -4 //TODO: Expalin and ensure it fits in flowdir_t
 
@@ -524,7 +524,7 @@ class ConsumerSpecifics {
     //Let's double-check that the flowdirs are valid
     for(int y=0;y<flowdirs.viewHeight();y++)
     for(int x=0;x<flowdirs.viewWidth();x++)
-      if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
+      if(!flowdirs.isNoData(x,y) && !(0<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
         throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
 
     timer_calc.start();
@@ -590,14 +590,14 @@ class ConsumerSpecifics {
     std::vector<accum_t> accum_subtract;
     GridPerimToArray(accum,accum_subtract);
     for(int i=0;i<(int)accum_subtract.size();i++)
-      accum_offset[i] -= accum_subtract[i];
+      accum_offset.at(i) -= accum_subtract.at(i);
 
     for(int s=0;s<(int)accum_offset.size();s++){
-      if(accum_offset[s]==0)
+      if(accum_offset.at(s)==0)
         continue;
       int x,y;
       serialToXY(s, x, y, accum.viewWidth(), accum.viewHeight());
-      FollowPathAdd(x,y,flowdirs,accum,accum_offset[s]);
+      FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
 
     //TODO: Remove
@@ -664,7 +664,10 @@ class ProducerSpecifics {
  public:
   Timer timer_calc;
   Timer timer_io;
+
  private:
+  Job1Grid<T> job2s_to_dist;
+
   void DownstreamCell(
     const Job1Grid<T> &jobs,
     const ChunkGrid   &chunks,
@@ -757,6 +760,8 @@ class ProducerSpecifics {
     const int gridheight = chunks.size();
     const int gridwidth  = chunks[0].size();
 
+
+
     //Set initial values for all dependencies to zero
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
@@ -815,7 +820,7 @@ class ProducerSpecifics {
 
         //Accumulated flow at an input will be transfered to an output resulting
         //in double-counting
-        if(this_job.links.at(s)!=FLOW_EXTERNAL) //TODO: NO_FLOW
+        if(this_job.links.at(s)!=FLOW_EXTERNAL)  //TODO: NO_FLOW
           this_job.accum.at(s) = 0;
         else
           accum_to_dist += this_job.accum.at(s); //TODO
@@ -871,13 +876,12 @@ class ProducerSpecifics {
 
       //TODO: Could start clearing memory here
     }
+
+    job2s_to_dist = std::move(jobs1);
   }
 
   Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
-    timer_calc.start();
-    auto job2 = Job2<T>(); //TODO
-    timer_calc.stop();
-    return job2;
+    return job2s_to_dist.at(ty).at(tx).accum;
   }
 };
 
@@ -1304,16 +1308,16 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        if(total_height-y<100){
-          std::cerr<<"At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
-          std::cerr<<"I suggest you use bheight="<<SuggestTileSize(bheight, total_height, 100)<<std::endl;
-          throw std::logic_error("Tile height too small!");
-        }
-        if(total_width -x<100){
-          std::cerr<<"At least one tile is <100 cells in width. Please change rectangle size to avoid this!"<<std::endl;
-          std::cerr<<"I suggest you use bwidth="<<SuggestTileSize(bwidth, total_width, 100)<<std::endl;
-          throw std::logic_error("Tile width too small!");
-        }
+        //if(total_height-y<100){
+        //  std::cerr<<"At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
+        //  std::cerr<<"I suggest you use bheight="<<SuggestTileSize(bheight, total_height, 100)<<std::endl;
+        //  throw std::logic_error("Tile height too small!");
+        //}
+        //if(total_width -x<100){
+        //  std::cerr<<"At least one tile is <100 cells in width. Please change rectangle size to avoid this!"<<std::endl;
+        //  std::cerr<<"I suggest you use bwidth="<<SuggestTileSize(bwidth, total_width, 100)<<std::endl;
+        //  throw std::logic_error("Tile width too small!");
+        //}
 
         //Used for '%n' formatting
         std::string coord_string = std::to_string(gridx)+"_"+std::to_string(gridy);

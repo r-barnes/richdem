@@ -15,7 +15,7 @@ xsede_with_compression:
 
 debug: main.cpp
 	mpic++ -o parallel_d8_accum.exe -g     `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall
-	#To run with debuggers: mpirun -n 2 xterm -hold  -e gdb -ex run --args ./parallel_d8_accum.exe 0 beauford.tif
+	#To run with debuggers: mpirun -n 2 xterm -hold -e gdb -ex run --args ./parallel_d8_accum.exe one @evict tests/dev/testdem10.d8 /z/out-%n.tif -w 5 -h 5
 
 auth_gen:
 	mpic++ -o auth_gen.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` auth_gen.cpp -I. -lgdal --std=c++11 -Wall
