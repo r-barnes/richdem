@@ -144,7 +144,6 @@ class Job1 {
     ar(links,
        accum,
        flowdirs,
-       dependencies,
        time_info,
        gridy,
        gridx);
@@ -153,7 +152,8 @@ class Job1 {
   std::vector<link_t   >    links;
   std::vector<accum_t  >    accum;
   std::vector<flowdir_t>    flowdirs;
-  std::vector<dependency_t> dependencies;
+  std::vector<accum_t  >    accum_in;     //Not communicated, so not serialized. Here for convenience. //TODO
+  std::vector<dependency_t> dependencies; //Not communicated, so not serialized. Here for convenience.
   TimeInfo time_info;
   int gridy, gridx;
   Job1(){}
@@ -374,30 +374,37 @@ class ConsumerSpecifics {
   ){
     int count = 0;
 
+    const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
+
     //Follow the flow path until it terminates
-    while(count++<10000000){
+    while(count++<max_path_length){
+      if(!flowdirs.in_grid(x,y))
+        return;
+
       //Break when we reach a no_data cell
       if(flowdirs.isNoData(x,y))
         return;
+
+      int n  = flowdirs(x,y); //Get neighbour
+      int nx = x+dx[n];
+      int ny = y+dy[n];
       
       //Add additional flow accumulation to this cell
-      accum(x,y) += additional_accum;
+      //if(flowdirs.in_grid(nx,ny))
+        accum(x,y) += additional_accum;
+      //else //The neighbour is off the edge of the grid. Flow path has terminated
+      //  return;
 
-      int n = flowdirs(x,y); //Get neighbour
       if(n==NO_FLOW)         //This cell doesn't flow to a neighbour
         return;              
 
-      //Move to neighbour
-      x += dx[n];
-      y += dy[n];
-
-      //The neighbour is off the edge of the grid. Flow path has terminated
-      if(!flowdirs.in_grid(x,y))
-        return;
+      x = nx;
+      y = ny;
     }
 
-    //The loop breaks with a return, so this is only reached for very long paths
-    throw std::logic_error("A flow path was more than 10M cells long - there's probably a loop!");
+    //The loop breaks with a return. This is only reached if more cells are
+    //visited than are in the tile, which implies that a loop must exist.
+    throw std::logic_error("There's a loop in the flow path!");
   }
 
   void FlowAccumulation(
@@ -517,6 +524,7 @@ class ConsumerSpecifics {
 
  public:
   void LoadFromEvict(const ChunkInfo &chunk){
+    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
     std::cerr<<"Opening "<<chunk.filename<<" as flowdirs."<<std::endl;
 
     timer_io.start();
@@ -602,28 +610,45 @@ class ConsumerSpecifics {
   }
 
   void SecondRound(const ChunkInfo &chunk, Job2<T> &job2){
+    std::cerr<<"SECOND ROUND"<<std::endl;
     std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
 
     auto &accum_offset = job2;
 
-    std::cerr<<"Received incremenets: "<<std::endl;
+    std::cerr<<"Received increments: "<<std::endl;
     print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
 
-    //TODO
-    // std::vector<accum_t> accum_subtract;
-    // GridPerimToArray(accum,accum_subtract);
-    // for(int i=0;i<(int)accum_subtract.size();i++)
-    //   if(links.)
-    //   accum_offset.at(i) -= accum_subtract.at(i);
+    std::cerr<<"Accumulation"<<std::endl;
+    print2d(accum);
 
-    std::cerr<<"Calculated offsets: "<<std::endl;
-    print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
+    // //Zero the external flows
+    // for(int y=0;y<flowdirs.viewHeight();y++)
+    // for(int x=0;x<flowdirs.viewWidth();x++){ //TODO improve efficiency
+    //   if(!flowdirs.edge_grid(x,y))
+    //     continue;
+    //   int n  = flowdirs(x,y);
+    //   int nx = x+dx[n];
+    //   int ny = y+dy[n];
+    //   if(!flowdirs.in_grid(nx,ny))
+    //     accum(x,y)=0;
+    // }
+
+    std::cerr<<"Adjusted accumulation"<<std::endl;
+    print2d(accum);
+
+    // std::cerr<<"Calculated offsets: "<<std::endl;
+    // print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
 
     for(int s=0;s<(int)accum_offset.size();s++){
       if(accum_offset.at(s)==0)
         continue;
       int x,y;
       serialToXY(s, x, y, accum.viewWidth(), accum.viewHeight());
+      // int n  = flowdirs(x,y);
+      // int nx = x+dx[n];
+      // int ny = y+dy[n];
+      // if(!flowdirs.in_grid(nx,ny))
+      //   accum(x,y) = 0;
       FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
 
@@ -794,10 +819,10 @@ class ProducerSpecifics {
     std::cerr<<std::endl;
 
     //Set initial values for all dependencies to zero
-    for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++){
-      auto &this_job = jobs1.at(y).at(x);
-      this_job.dependencies.resize(this_job.links.size(),0);
+    for(auto &row: jobs1)
+    for(auto &this_job: row){
+      this_job.dependencies.resize(this_job.links.size(),0);      
+      this_job.accum_in.resize(this_job.links.size(),0);      
     }
 
     std::cerr<<"Calculating dependencies..."<<std::endl;
@@ -853,6 +878,8 @@ class ProducerSpecifics {
         if(this_job.links.at(s)!=FLOW_EXTERNAL)  //TODO: NO_FLOW
           this_job.accum.at(s) = 0;
       }
+
+      //this_job.accum_orig = this_job.accum;
     }
 
     std::cerr<<q.size()<<" peaks founds in aggregated problem."<<std::endl;
@@ -876,6 +903,8 @@ class ProducerSpecifics {
         continue;
 
       jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
+      if(gny!=c.gy || gnx!=c.gx)
+        jobs1.at(gny).at(gnx).accum_in.at(ns) += j.accum.at(c.s);
 
       if( (--jobs1.at(gny).at(gnx).dependencies.at(ns))==0 )
         q.emplace(gnx,gny,ns);
@@ -919,10 +948,11 @@ class ProducerSpecifics {
   }
 
   Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
-    for(size_t s=0;s<job2s_to_dist.at(ty).at(tx).links.size();s++) //TODO: Check if necessary
-      if(job2s_to_dist.at(ty).at(tx).links.at(s)==FLOW_EXTERNAL)
-        job2s_to_dist.at(ty).at(tx).accum.at(s)=0;
-    return job2s_to_dist.at(ty).at(tx).accum;
+    auto &this_job = job2s_to_dist.at(ty).at(tx);
+    // for(size_t s=0;s<this_job.accum.size();s++)
+    //   this_job.accum[s] -= this_job.accum_orig[s];
+
+    return this_job.accum_in;
   }
 };
 
