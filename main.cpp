@@ -47,9 +47,9 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
-#define NO_FLOW          0 //TODO: Expalin and ensure it fits in flowdir_t
-#define FLOW_TERMINATES -3 //TODO: Expalin and ensure it fits in flowdir_t
-#define FLOW_EXTERNAL   -4 //TODO: Expalin and ensure it fits in flowdir_t
+#define NO_FLOW          0 //TODO: Explain and ensure it fits in flowdir_t
+#define FLOW_TERMINATES -3 //TODO: Explain and ensure it fits in link_t
+#define FLOW_EXTERNAL   -4 //TODO: Explain and ensure it fits in link_t
 
 const int ACCUM_NO_DATA = -1;
 
@@ -182,7 +182,7 @@ int SuggestTileSize(int selected, int size, int min){
 
 
 
-
+//TODO: Explain
 int xyToSerial(const int x, const int y, const int width, const int height){
   //Ensure cell is on the perimeter
   assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
@@ -224,7 +224,7 @@ template<class T>
 void print2d(const Array2D<T> &arr){
   for(int y=0;y<arr.viewHeight();y++){
     for(int x=0;x<arr.viewWidth();x++)
-      std::cerr<<std::setw(5)<<arr(x,y);
+      std::cerr<<std::setw(5)<<(int)arr(x,y);
     std::cerr<<std::endl;
   }
 }
@@ -233,7 +233,7 @@ void print2d(const Array2D<T> &arr){
 template<class T>
 void print1d(const std::vector<T> &v){
   for(int x=0;x<(int)v.size();x++)
-    std::cerr<<std::setw(5)<<v[x];
+    std::cerr<<std::setw(5)<<(int)v[x];
   std::cerr<<std::endl;
 }
 
@@ -275,8 +275,9 @@ class ConsumerSpecifics {
   Timer timer_calc;
 
  private:
-  Array2D<flowdir_t> flowdirs;
-  Array2D<accum_t  > accum;
+  Array2D<flowdir_t>  flowdirs;
+  Array2D<accum_t  >  accum;
+  std::vector<link_t> links;
 
 
   //TODO: Check this description
@@ -304,7 +305,9 @@ class ConsumerSpecifics {
 
     int path_len = 0;
 
-    const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight();
+    int x0y0serial = xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight());
+
+    const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
 
     //Follow the flow path until it terminates
     while(path_len++<max_path_length){ //Follow the flow path until we reach its end
@@ -319,7 +322,7 @@ class ConsumerSpecifics {
       //began this flow path as terminating somewhere unimportant: its flow cannot
       //pass to neighbouring segments/nodes for further processing.
       if(flowdirs.isNoData(x,y) || n==NO_FLOW){
-        links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = FLOW_TERMINATES;
+        links.at(x0y0serial) = FLOW_TERMINATES;
         return;
       }
 
@@ -349,7 +352,8 @@ class ConsumerSpecifics {
       y = ny;
     }
 
-    //The loop breaks with a return, so this is only reached for very long paths
+    //The loop breaks with a return. This is only reached if more cells are
+    //visited than are in the tile, which implies that a loop must exist.
     throw std::logic_error("There's a loop in the flow path!");
   }
 
@@ -513,8 +517,14 @@ class ConsumerSpecifics {
 
  public:
   void LoadFromEvict(const ChunkInfo &chunk){
+    std::cerr<<"Opening "<<chunk.filename<<" as flowdirs."<<std::endl;
+
     timer_io.start();
     flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
+
+    std::cerr<<"Flowdirs raw: "<<std::endl;
+    print2d(flowdirs);
+
     if(chunk.flip & FLIP_VERT)
       flowdirs.flipVert();
     if(chunk.flip & FLIP_HORZ)
@@ -524,18 +534,23 @@ class ConsumerSpecifics {
     //Let's double-check that the flowdirs are valid
     for(int y=0;y<flowdirs.viewHeight();y++)
     for(int x=0;x<flowdirs.viewWidth();x++)
-      if(!flowdirs.isNoData(x,y) && !(0<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
+      if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
         throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
 
     timer_calc.start();
     FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
+
+    std::cerr<<"Accum first: "<<std::endl;
+    print2d(accum);
   }
 
   void FirstRound(const ChunkInfo &chunk, Job1<T> &job1){
+    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+
     //-2 removes duplicate cells on vertical edges which would otherwise
     //overlap horizontal edges
-    job1.links.resize(2*flowdirs.viewWidth()+2*(flowdirs.viewHeight()-2), FLOW_TERMINATES);
+    links.resize(2*flowdirs.viewWidth()+2*(flowdirs.viewHeight()-2), FLOW_TERMINATES);
 
     //TODO: Although the following may consider a cell more than once, the
     //repeated effort merely produces the same results in the same places
@@ -547,7 +562,7 @@ class ConsumerSpecifics {
     //and find out where its flow goes to.
     // if(!(chunk.edge & GRID_TOP)) //TODO
       for(int x=0;x<flowdirs.viewWidth();x++)
-        FollowPath(x,0,flowdirs,job1.links);
+        FollowPath(x,0,flowdirs,links);
 
     //If we are the bottom segment, nothing can flow into us, so we do not
     //need to know where flow paths originating at the bottom go to. On the
@@ -555,15 +570,17 @@ class ConsumerSpecifics {
     //the bottom row and find out where its flow goes to.
     // if(!(chunk.edge & GRID_BOTTOM)) //TODO
       for(int x=0;x<flowdirs.viewWidth();x++)
-        FollowPath(x,flowdirs.viewHeight()-1,flowdirs,job1.links);
+        FollowPath(x,flowdirs.viewHeight()-1,flowdirs,links);
 
     // if(!(chunk.edge & GRID_LEFT)) //TODO
       for(int y=0;y<flowdirs.viewHeight();y++)
-        FollowPath(0,y,flowdirs,job1.links);
+        FollowPath(0,y,flowdirs,links);
 
     // if(!(chunk.edge & GRID_RIGHT)) //TODO
       for(int y=0;y<flowdirs.viewHeight();y++)
-        FollowPath(flowdirs.viewWidth()-1,y,flowdirs,job1.links);
+        FollowPath(flowdirs.viewWidth()-1,y,flowdirs,links);
+
+    job1.links = std::move(links);
 
     FlowAccumulation(flowdirs,accum);
 
@@ -585,12 +602,22 @@ class ConsumerSpecifics {
   }
 
   void SecondRound(const ChunkInfo &chunk, Job2<T> &job2){
+    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+
     auto &accum_offset = job2;
+
+    std::cerr<<"Received incremenets: "<<std::endl;
+    print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
+
     //TODO
-    std::vector<accum_t> accum_subtract;
-    GridPerimToArray(accum,accum_subtract);
-    for(int i=0;i<(int)accum_subtract.size();i++)
-      accum_offset.at(i) -= accum_subtract.at(i);
+    // std::vector<accum_t> accum_subtract;
+    // GridPerimToArray(accum,accum_subtract);
+    // for(int i=0;i<(int)accum_subtract.size();i++)
+    //   if(links.)
+    //   accum_offset.at(i) -= accum_subtract.at(i);
+
+    std::cerr<<"Calculated offsets: "<<std::endl;
+    print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
 
     for(int s=0;s<(int)accum_offset.size();s++){
       if(accum_offset.at(s)==0)
@@ -671,12 +698,12 @@ class ProducerSpecifics {
   void DownstreamCell(
     const Job1Grid<T> &jobs,
     const ChunkGrid   &chunks,
-    const int gx,
-    const int gy,
-    const int s,
-    int &ns,
-    int &gnx, //Input is the tile of this cell
-    int &gny  //Input is the tile of this cell
+    const int gx,     //Grid tile x of cell we wish to find downstream cell of
+    const int gy,     //Grid tile y of cell we wish to find downstream cell of
+    const int s,      //Array index of the cell in the tile in question
+    int &ns,          //Array index of downstream cell in the tile
+    int &gnx,         //Grid tile x of downstream cell
+    int &gny          //Grid tile y of downstream cell
   ){
     const auto &j = jobs.at(gy).at(gx);
 
@@ -704,20 +731,18 @@ class ProducerSpecifics {
       int ny        = y+dy[nfd];
 
       //Since this is a FLOW_EXTERNAL, this cell must point off of the grid
-      assert(nx<0 || ny<0 || nx==c.width || ny==c.height);
+      assert(nx==-1 || ny==-1 || nx==c.width || ny==c.height);
 
       //Identify which neighbouring tile the flow will be going to
-      if(nx==c.width){
+      if(nx==c.width)
         gnx += 1;
-      } else if(nx==-1){
+      else if(nx==-1)
         gnx -= 1;
-      } 
       
-      if(ny==c.height){
+      if(ny==c.height)
         gny += 1;
-      } else if(ny==-1) {
+      else if(ny==-1)
         gny -= 1;
-      }
 
       //Ensure that the neighbouring tile is valid (TODO: nullChunk here?)
       //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
@@ -730,17 +755,15 @@ class ProducerSpecifics {
 
       //Now that we know the neighbouring tile, set the next-x and next-y
       //coordinates with reference to the bounds of that tile
-      if(nx==c.width){
+      if(nx==c.width)
         nx = 0;
-      } else if(nx==-1){
+      else if(nx==-1)
         nx = nc.width-1;
-      } 
       
-      if(ny==c.height){
+      if(ny==c.height)
         ny = 0;
-      } else if(ny==-1) {
+      else if(ny==-1)
         ny = nc.height-1;
-      }
 
       //Serialize the coordinates
       ns = xyToSerial(nx,ny,nc.width,nc.height);
@@ -760,7 +783,15 @@ class ProducerSpecifics {
     const int gridheight = chunks.size();
     const int gridwidth  = chunks[0].size();
 
-
+    std::cerr<<std::endl;
+    std::cerr<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"======PRODUCER==========="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<std::endl;
+    std::cerr<<std::endl;
 
     //Set initial values for all dependencies to zero
     for(int y=0;y<gridheight;y++)
@@ -805,7 +836,6 @@ class ProducerSpecifics {
 
     std::queue<atype> q;
 
-    int accum_to_dist=0; //TODO
     //Search for cells without dependencies
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
@@ -819,15 +849,11 @@ class ProducerSpecifics {
           q.emplace(x,y,s);
 
         //Accumulated flow at an input will be transfered to an output resulting
-        //in double-counting
+        //in double-counting (TODO: More logical place to put this?)
         if(this_job.links.at(s)!=FLOW_EXTERNAL)  //TODO: NO_FLOW
           this_job.accum.at(s) = 0;
-        else
-          accum_to_dist += this_job.accum.at(s); //TODO
       }
     }
-
-    std::cerr<<accum_to_dist<<" accumulation to distribute."<<std::endl;
 
     std::cerr<<q.size()<<" peaks founds in aggregated problem."<<std::endl;
 
@@ -835,10 +861,11 @@ class ProducerSpecifics {
     while(!q.empty()){
       atype      c  = q.front();
       Job1<T>   &j  = jobs1.at(c.gy).at(c.gx);
-      ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
       q.pop();
       processed_peaks++;
 
+      //TODO: Cut
+      ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
       assert(!ci.nullChunk);
 
       int ns  = -1; //Initial value designed to cause devastation if misused
@@ -865,22 +892,36 @@ class ProducerSpecifics {
       unprocessed_dependencies+=jobs1[y][x].dependencies[s];
     std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
 
-    for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++){
-      if(chunks[y][x].nullChunk)
-        continue;
+    // for(int y=0;y<gridheight;y++)
+    // for(int x=0;x<gridwidth;x++){
+    //   if(chunks[y][x].nullChunk)
+    //     continue;
 
-      // for(size_t s=0;s<jobs1.at(y).at(x).accum.size();s++) //TODO: NO_FLOW
-      //   if(jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL)
-      //     jobs1.at(y).at(x).accum.at(s) = 0;
+    //   // for(size_t s=0;s<jobs1.at(y).at(x).accum.size();s++) //TODO: NO_FLOW
+    //   //   if(jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL)
+    //   //     jobs1.at(y).at(x).accum.at(s) = 0;
 
-      //TODO: Could start clearing memory here
-    }
+    //   //TODO: Could start clearing memory here
+    // }
 
     job2s_to_dist = std::move(jobs1);
+
+    std::cerr<<std::endl;
+    std::cerr<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"==========DONE==========="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<"========================="<<std::endl;
+    std::cerr<<std::endl;
+    std::cerr<<std::endl;
+
   }
 
   Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
+    for(size_t s=0;s<job2s_to_dist.at(ty).at(tx).links.size();s++) //TODO: Check if necessary
+      if(job2s_to_dist.at(ty).at(tx).links.at(s)==FLOW_EXTERNAL)
+        job2s_to_dist.at(ty).at(tx).accum.at(s)=0;
     return job2s_to_dist.at(ty).at(tx).accum;
   }
 };

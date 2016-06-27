@@ -142,7 +142,7 @@ class Array2D {
     }
 
     GDALRasterBand *band = fin->GetRasterBand(1);
-    auto data_type       = band->GetRasterDataType();
+//    auto data_type       = band->GetRasterDataType();
 
     if(fin->GetGeoTransform(geotransform.data())!=CE_None)
       throw std::runtime_error("Could not fetch geotransform!");
@@ -175,7 +175,7 @@ class Array2D {
     //std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     data = InternalArray(view_height, Row(view_width));
     for(int y=yOffset;y<yOffset+view_height;y++){
-      auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+      auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data[y-yOffset].data(), view_width, 1, NativeTypeToGDAL<T>(), 0, 0 );
       if(temp!=CE_None)
         throw std::runtime_error("Error reading file with GDAL!");
     }
