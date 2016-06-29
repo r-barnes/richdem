@@ -21,6 +21,13 @@ xsede_debug_with_compression:
 debug: main.cpp
 	g++ -o parallel_flats.exe -g `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall
 
+inspect: main.cpp
+	g++ -o inspect.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` inspect.cpp -I. -lgdal --std=c++11 -Wall #-Wextra #-fsanitize=undefined #-Wextra -Wconversion
+
+loop_check: main.cpp
+	g++ -o loop_check.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` loop_check.cpp -I. -lgdal --std=c++11 -Wall
+
+
 #auth_gen:
 #	mpic++ -o auth_gen.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` auth_gen.cpp -I. -lgdal --std=c++11 -Wall
 
