@@ -174,7 +174,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   }
 
   std::cerr<<"Saving results..."<<std::endl;
-  fds.saveGDAL(output_filename, 0);
+  fds.saveGDAL(output_filename);
 
   total_time.stop();
 
