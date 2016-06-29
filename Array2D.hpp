@@ -101,8 +101,10 @@ GDALDataType NativeTypeToGDAL() {
     return GDT_Float32;
   else if(typeid(T)==typeid(double))
     return GDT_Float64;
-  else 
-    assert(false);
+  else {
+    std::cerr<<"Could not map native type '"<<typeid(T).name()<<"' to GDAL type! (Use `c++filt -t` to decode.)"<<std::endl;
+    throw std::runtime_error("Could not map native data type to GDAL type!");
+  }
   return GDT_Unknown;
 }
 
