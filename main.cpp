@@ -5,44 +5,88 @@
 #include <unordered_set>
 #include <iomanip>
 #include <iostream>
+#include <csignal>
 
 typedef uint8_t flowdirs_t;
 typedef int8_t  visited_t;
+
+#define UNVISITED    13
+#define FLOW_NO_DATA 255
+
+const int fwidth=10;
+
+template<class T>
+void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius){
+  return;
+  int minx  = std::max(xcen-radius,0);
+  int maxx  = std::min(xcen+radius,(int)(arr.width()-1));
+  int miny  = std::max(ycen-radius,0);
+  int maxy  = std::min(ycen+radius,(int)(arr.height()-1));
+  std::cout<<std::setw(fwidth)<<" ";
+  for(int x=minx;x<=maxx;x++)
+    std::cout<<std::setw(fwidth)<<x;
+  std::cout<<std::endl;
+
+  for(int y=miny;y<=maxy;y++){
+    std::cout<<std::setw(fwidth)<<y;
+    for(int x=minx;x<=maxx;x++){
+      if(xcen==x && ycen==y)
+        std::cout<<"\033[93m";
+
+      if(NativeTypeToGDAL<T>()==GDT_Byte)
+        std::cout<<std::setw(10)<<(int)arr(x,y);
+      else
+        std::cout<<std::setw(10)<<arr(x,y);
+
+      if(xcen==x && ycen==y)
+        std::cout<<"\033[39m";
+    }
+    std::cout<<std::endl;
+  }
+}
+
+template<class T>
+void InspectPoint(std::string header, A2Array2D<T> &dem, A2Array2D<flowdirs_t> &fds, int x, int y){
+  return;
+  if(x!=dem.width()-494 || y!=dem.height()-373)
+    return;
+  std::cerr<<header<<std::endl;
+  print2dradius(dem, x, y, 5);
+  print2dradius(fds, x, y, 5);
+}
 
 template<class T>
 void ProcessFlat(
   A2Array2D<T>          &dem,
   A2Array2D<flowdirs_t> &fds,
-  A2Array2D<visited_t>  &visited,
-  int x,
-  int y
+  const int x0,
+  const int y0
 ){
   std::queue< std::pair<int, int> > q;
 
-  auto flat_height = dem(x,y);
+  const auto flat_height = dem(x0,y0);
 
-  q.emplace(x,y);
-  visited(x,y) = true;
+  InspectPoint("ProcessFlatTop",dem,fds,x0,y0);
+
+  q.emplace(x0,y0);
   while(!q.empty()){
-    auto c = q.front();
+    const auto c = q.front();
     q.pop();
 
     for(int n=1;n<=8;n++){
       int nx = c.first +dx[n];
       int ny = c.second+dy[n];
-      if(!dem.in_grid(nx,ny))
-        continue;
-      if(visited(nx,ny))
-        continue;
-      if(dem(nx,ny)<flat_height || dem.isNoData(nx,ny)){
+
+      InspectPoint("ProcessFlatN",dem,fds,nx,ny);
+
+      if(!dem.in_grid(nx,ny) || dem(nx,ny)<flat_height || dem.isNoData(nx,ny)){
         fds(c.first,c.second) = n;
         continue;
       }
-      if(dem(nx,ny)!=flat_height)
+      if(fds(nx,ny)!=UNVISITED || dem(nx,ny)!=flat_height)
         continue;
       fds(nx,ny) = d8_inverse[n];
       q.emplace(nx,ny);
-      visited(nx,ny) = true;
     }
   }
 }
@@ -53,41 +97,46 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   total_time.start();
 
   std::string temp_fds_name = tempfile_name;
-  std::string temp_vis_name = tempfile_name;
   temp_fds_name.replace(temp_fds_name.find("%f"), 2, "%f-fds");
-  temp_vis_name.replace(temp_vis_name.find("%f"), 2, "%f-vis");
 
-  A2Array2D<T>          dem    (layoutfile,cachesize);
-  A2Array2D<flowdirs_t> fds    (temp_fds_name,dem,cachesize);
-  A2Array2D<visited_t>  visited(temp_vis_name,dem,cachesize);
+  A2Array2D<T>          dem(layoutfile,cachesize);
+  A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
-  fds.setNoData(255);
+  fds.setNoData(FLOW_NO_DATA);
+  fds.setAll(UNVISITED);
 
-  int64_t total_cells     = dem.heightInTiles()*dem.widthInTiles()*dem.tileHeight()*dem.tileWidth();
-  int64_t processed_cells = 0;
+  int processed_cells = 0;
 
   for(int ty=0;ty<dem.heightInTiles();ty++)
   for(int tx=0;tx<dem.widthInTiles(); tx++){
-    double est_total_time = (total_time.lap()/(double)processed_cells)*(double)total_cells;
+    if(dem.isNullTile(tx,ty))
+      continue;
+
+    std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight()<<" "<<dem.tileWidth()<<std::endl;
+
+    int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
+    int processed_tiles   = ty*dem.widthInTiles()+tx;
+    double est_total_time = (total_time.lap()/(double)processed_tiles)*(double)total_tiles;
     double time_left      = est_total_time-total_time.lap();
-    std::cerr<<"Processed: "<<(processed_cells/1000)<<"k/"<<(total_cells/1000)<<"k cells "
+    std::cerr<<"Processed: "<<processed_tiles<<" of "<<total_tiles<<" tiles "
              <<time_left<<"s/"<<est_total_time<<"s ("<<(time_left/3600)<<"hr/"<<(est_total_time/3600)<<"hr)"<<std::endl;
     for(int py=0;py<dem.tileHeight();py++)
     for(int px=0;px<dem.tileWidth(); px++){
-      processed_cells++;
 
       const int y = ty*dem.tileHeight()+py;
       const int x = tx*dem.tileWidth() +px;
 
-      if(visited(x,y))
+      processed_cells++;
+
+      if(fds(tx,ty,px,py)!=UNVISITED)
         continue;
 
-      if(dem.isNoData(x,y)){
-        fds(x,y) = 255;
+      if(dem.isNoData(tx,ty,px,py)){
+        fds(tx,ty,px,py) = FLOW_NO_DATA; //TODO: global var
         continue;
       }
 
-      const auto myelev = dem(x,y);
+      const auto myelev = dem(tx,ty,px,py);
 
       bool    drains       = false;
       bool    has_flat     = false;
@@ -96,16 +145,9 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
       for(int n=1;n<=8;n++){
         const int nx = x+dx[n];
         const int ny = y+dy[n];
-        if(!dem.in_grid(nx,ny)){
+        if(!dem.in_grid(nx,ny) || dem.isNoData(nx,ny)){
           drains       = true;
-          nlowest_elev = std::numeric_limits<T>::min();
-          nlowest      = n;
-          continue;
-        }
-
-        if(dem.isNoData(nx,ny)){
-          drains       = true;
-          nlowest_elev = std::numeric_limits<T>::min();
+          nlowest_elev = std::numeric_limits<T>::lowest();
           nlowest      = n;
           continue;
         }
@@ -114,20 +156,20 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
         if(nelev==myelev){
           has_flat = true;
-        } else if(nelev<myelev){
-          drains = true;
-          if(nelev<nlowest_elev){
-            nlowest_elev = nelev;
-            nlowest      = n;
-          }
+        } else if(nelev<myelev && nelev<nlowest_elev){
+          drains       = true;
+          nlowest_elev = nelev;
+          nlowest      = n;
         }
       }
 
-      if(nlowest!=0) //Check before setting for improved caching
-        fds(x,y) = nlowest;
+      if(nlowest!=0)
+        fds(tx,ty,px,py) = nlowest;
+
+      InspectPoint("MainBottom",dem,fds,x,y);
 
       if(drains && has_flat)
-        ProcessFlat(dem,fds,visited,x,y);
+        ProcessFlat(dem,fds,x,y);
     }
   }
 
@@ -136,10 +178,11 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   total_time.stop();
 
+  std::cerr<<"Processed cells: "<<processed_cells<<std::endl;
+
   std::cerr<<"Total time: "<<total_time.accumulated()<<"s ("<<(total_time.accumulated()/3600)<<"hr)"<<std::endl;
 
   std::cerr<<"dem evictions: "<<dem.getEvictions()<<std::endl;
-  std::cerr<<"vis evictions: "<<visited.getEvictions()<<std::endl;
   std::cerr<<"fds evictions: "<<fds.getEvictions()<<std::endl;
 }
 
