@@ -14,9 +14,9 @@ void FollowPath(
   int x = x0;
   int y = y0;
 
-  size_t path_len              = 0;
+  size_t path_len        = 0;
   size_t max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
-  max_path_length              = flowdirs.viewWidth();
+  max_path_length        = flowdirs.viewWidth();
 
   //Follow the flow path until it terminates
   while(path_len++<max_path_length){ //Follow the flow path until we reach its end
@@ -38,6 +38,8 @@ void FollowPath(
     x = nx;
     y = ny;
   }
+
+  std::cerr<<"\n"<<std::endl;
 }
 
 
