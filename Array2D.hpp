@@ -1008,8 +1008,9 @@ class A2Array2D {
 
   //TODO: Use of checkval here is kinda gross. Is there a good way to get rid of
   //it?
-  void saveGDAL(std::string outputname_template, int checkval) {
-    int count = 0;
+  void saveGDAL(std::string outputname_template) {
+    int zero_count      = 0;
+    int unvisited_count = 0;
     for(auto &row: data)
     for(auto &tile: row){
       if(tile.null_tile)
@@ -1030,8 +1031,8 @@ class A2Array2D {
         tile.flipVert();
       }
 
-      if(checkval!=-99) //TODO
-        count += tile.countval(checkval);
+      zero_count      += tile.countval(0);
+      unvisited_count += tile.countval(13);
 
       auto temp = outputname_template;
       temp.replace(temp.find("%f"),2,tile.basename);
@@ -1040,7 +1041,8 @@ class A2Array2D {
       tile.clear();
     }
 
-    std::cerr<<"Found "<<count<<" cells with value "<<checkval<<std::endl;
+    std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
+    std::cerr<<"Found "<<unvisited_count<<" cells that were unvisited."<<std::endl;
   }
 
   void setNoData(const T &ndval){
