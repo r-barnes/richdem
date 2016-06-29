@@ -14,59 +14,33 @@ void FollowPath(
   int x = x0;
   int y = y0;
 
-  std::vector< std::pair<int, int> >   path;
-  std::unordered_set< int > visited;
-
-  if(flowdirs.isNoData(x,y))
-    return;
-
-  visited.emplace(y*flowdirs.viewWidth()+x);
-  path.emplace_back(x,y);
+  size_t path_len              = 0;
+  size_t max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
+  max_path_length              = flowdirs.viewWidth();
 
   //Follow the flow path until it terminates
-  while(true){ //Follow the flow path until we reach its end
+  while(path_len++<max_path_length){ //Follow the flow path until we reach its end
     const int n = flowdirs(x,y);     //Neighbour the current cell flows towards
 
-    //If the neighbour this cell flows into is a no_data cell or this cell does
-    //not flow into any neighbour, then mark the initial cell from which we
-    //began this flow path as terminating somewhere unimportant: its flow cannot
-    //pass to neighbouring segments/nodes for further processing.
+    //Show the final part of the loop path (TODO)
+    if(path_len>max_path_length-10)
+      std::cerr<<"Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
+
     if(flowdirs.isNoData(x,y) || n==NO_FLOW)
       return;
 
-    //Flow direction was valid. Where does it lead?
     const int nx = x+dx[n]; //Get neighbour's x-coordinate.
     const int ny = y+dy[n]; //Get neighbour's y-coordinate.
 
-    //The neighbour cell is off one of the sides of the tile. Therefore, its
-    //flow may be passed on to a neighbouring tile. Thus, we need to link this
-    //flow path's initial cell to this terminal cell.
     if(!flowdirs.in_grid(nx,ny))
       return;
 
-    //The flow path has not yet terminated. Continue following it.
     x = nx;
     y = ny;
-
-    int serial = y*flowdirs.viewWidth()+x;
-
-    if(visited.count(serial)){
-      bool print = false;
-      for(auto &p: path){
-        if(p.second*flowdirs.viewWidth()+p.first==serial)
-          print = true;
-        if(print)
-          std::cerr<<p.first<<","<<p.second<<" "<<flowdirs(p.first,p.second)<<std::endl;
-      }
-      std::cerr<<x<<","<<y<<" "<<flowdirs(x,y)<<std::endl;
-      std::cerr<<"\n"<<std::endl;
-      return;
-    }
-
-    visited.emplace(y*flowdirs.viewWidth()+x);
-    path.emplace_back(x,y);
   }
 }
+
+
 
 template<class T>
 void Master(std::string input){
