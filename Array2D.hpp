@@ -422,6 +422,12 @@ class Array2D {
     return maxval;
   }
 
+  void replace(const T oldval, const T newval){
+    for(auto &x: data)
+      if(x==oldval)
+        x = newval;
+  }
+
   int countval(const T val) const {
     int count=0;
     for(const auto x: data)
