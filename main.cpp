@@ -961,6 +961,10 @@ void Preparer(
         if(this_retention[0]!='@')
           this_retention.replace(this_retention.find("%n"), 2, coord_string);
         std::string this_output_name = output_name;
+        if(this_output_name.find("%n")==std::string::npos){
+          std::cerr<<"Outputname must include '%n' for <one> mode."<<std::endl;
+          throw std::runtime_error("Outputname must include '%n' for <one> mode.");
+        }
         this_output_name.replace(this_output_name.find("%n"),2,coord_string);
 
         chunks.back().emplace_back(
