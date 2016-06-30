@@ -441,9 +441,15 @@ class Array2D {
 
   void saveGDAL(const std::string &filename, int xoffset, int yoffset){
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    assert(poDriver!=NULL); //TODO: Error handle
+    if(poDriver==NULL){
+      std::cerr<<"Could not load GTiff driver!"<<std::endl;
+      throw std::runtime_error("Could not load GTiff driver!");
+    }
     GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
-    assert(fout!=NULL);     //TODO: Error handle
+    if(fout==NULL){
+      std::cerr<<"Could not open output file!"<<std::endl;
+      throw std::runtime_error("Could not open output file!");
+    }
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
