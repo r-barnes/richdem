@@ -113,11 +113,18 @@ template<class T>
 class Array2D {
  public:
   typedef std::vector<T>   Row;
+  std::string filename;
+  std::string basename;
+  std::vector<double> geotransform;
+  std::string projection;
+
  private:
   template<typename> friend class Array2D;
 
   typedef std::vector<Row> InternalArray;
   InternalArray data;
+
+  GDALDataType data_type;
 
   static const int HEADER_SIZE = 7*sizeof(int) + sizeof(T);
 
@@ -128,7 +135,6 @@ class Array2D {
   int view_xoff;
   int view_yoff;
   int num_data_cells = -1;
-  std::vector<double> geotransform;
 
   T   no_data;
 
@@ -143,11 +149,18 @@ class Array2D {
       throw std::runtime_error("Could not open a GDAL file!");
     }
 
-    GDALRasterBand *band = fin->GetRasterBand(1);
-    auto data_type       = band->GetRasterDataType();
+    geotransform.resize(6);
+    if(fin->GetGeoTransform(geotransform.data())!=CE_None){
+      std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
+      throw std::runtime_error("Error getting geotransform!");
+    }
 
-    if(fin->GetGeoTransform(geotransform.data())!=CE_None)
-      throw std::runtime_error("Could not fetch geotransform!");
+    const char* projection_string=fin->GetProjectionRef();
+    projection = std::string(projection_string);
+
+    GDALRasterBand *band = fin->GetRasterBand(1);
+    data_type            = band->GetRasterDataType();
+
 
     total_width  = band->GetXSize();
     total_height = band->GetYSize();
@@ -198,7 +211,6 @@ class Array2D {
     view_height  = 0;
     view_xoff    = 0;
     view_yoff    = 0;
-    geotransform.resize(6);
   }
 
   //Create an internal array
@@ -427,10 +439,7 @@ class Array2D {
     data.shrink_to_fit();
   }
 
-  void saveGDAL(const std::string &filename, const std::string &template_name, int xoffset, int yoffset){
-    GDALDataset *fintempl = (GDALDataset*)GDALOpen(template_name.c_str(), GA_ReadOnly);
-    assert(fintempl!=NULL); //TODO: Error handle
-
+  void saveGDAL(const std::string &filename, int xoffset, int yoffset){
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     assert(poDriver!=NULL); //TODO: Error handle
     GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
@@ -446,27 +455,23 @@ class Array2D {
     //In case of north up images, the GT(2) and GT(4) coefficients are zero, and
     //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
     //position is the top left corner of the top left pixel of the raster.
-    double geotrans[6];
-    fintempl->GetGeoTransform(geotrans);
+
+    auto out_geotransform = geotransform;
 
     //We shift the top-left pixel of hte image eastward to the appropriate
     //coordinate
-    geotrans[0] += xoffset*geotrans[1];
+    out_geotransform[0] += xoffset*geotransform[1];
 
     //We shift the top-left pixel of the image southward to the appropriate
     //coordinate
-    geotrans[3] += yoffset*geotrans[5];
+    out_geotransform[3] += yoffset*geotransform[5];
+
+    fout->SetGeoTransform(out_geotransform.data());
+    fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
     #endif
-
-    fout->SetGeoTransform(geotrans);
-
-    const char* projection_string=fintempl->GetProjectionRef();
-    fout->SetProjection(projection_string);
-
-    GDALClose(fintempl);
 
     for(int y=0;y<view_height;y++){
       auto temp = oband->RasterIO(GF_Write, 0, y, viewWidth(), 1, data[y].data(), viewWidth(), 1, myGDALType(), 0, 0); //TODO: Check for success
