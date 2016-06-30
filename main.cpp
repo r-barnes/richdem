@@ -297,9 +297,11 @@ class ConsumerSpecifics {
 
 template<class elev_t>
 class ProducerSpecifics {
+ public:
+  Timer timer_io, timer_calc;
+
  private:
   std::vector<elev_t> graph_elev;
-  Timer timer_io, timer_calc;
 
   void HandleEdge(
     const std::vector<elev_t>  &elev_a,
@@ -654,7 +656,7 @@ void Consumer(){
 //processing.
 template<class T>
 void Producer(ChunkGrid &chunks){
-  Timer timer_overall,timer_calc;
+  Timer timer_overall;
   timer_overall.start();
 
   ProducerSpecifics<T> producer;
@@ -770,8 +772,8 @@ void Producer(ChunkGrid &chunks){
   std::cout<<"!TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
   std::cout<<"!TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
 
-  std::cout<<"!TimeInfo: Producer overall="<<timer_overall.accumulated()<<std::endl;
-  std::cout<<"!TimeInfo: Producer calc="   <<timer_calc.accumulated()   <<std::endl;
+  std::cout<<"!TimeInfo: Producer overall="<<timer_overall.accumulated()       <<std::endl;
+  std::cout<<"!TimeInfo: Producer calc="   <<producer.timer_calc.accumulated() <<std::endl;
 
   long vmpeak, vmhwm;
   ProcessMemUsage(vmpeak,vmhwm);
