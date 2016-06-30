@@ -173,8 +173,11 @@ class Array2D {
 
     std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     resize(view_width,view_height);
-    for(int y=yOffset;y<yOffset+view_height;y++)
-      band->RasterIO( GF_Read, xOffset, y, view_width, 1, data.data()+(y-yOffset)*view_width, view_width, 1, data_type, 0, 0 ); //TODO: Check for success
+    for(int y=yOffset;y<yOffset+view_height;y++){
+      auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data.data()+(y-yOffset)*view_width, view_width, 1, data_type, 0, 0 );
+      if(temp!=CE_None)
+        throw std::runtime_error("Error reading file with GDAL!");
+    }
 
     GDALClose(fin);
   }
@@ -481,8 +484,16 @@ class Array2D {
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
     #endif
 
-    for(int y=0;y<view_height;y++)
-      oband->RasterIO(GF_Write, 0, y, view_width, 1, data.data()+y*view_width, view_width, 1, myGDALType(), 0, 0); //TODO: Check for success
+    for(int y=0;y<view_height;y++){
+      auto temp = oband->RasterIO(GF_Write, 0, y, view_width, 1, data.data()+y*view_width, view_width, 1, myGDALType(), 0, 0); //TODO: Check for success
+      if(temp!=CE_None)
+        throw std::runtime_error("Error saving file with GDAL!");        
+    }
+
+
+
+
+
 
     GDALClose(fout);
   }
