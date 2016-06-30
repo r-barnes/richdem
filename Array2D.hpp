@@ -423,8 +423,8 @@ class Array2D {
       data[y][colnum] = val;
   }
 
-  const std::vector<T>& getRowData(int rownum){
-    return data[rownum].data();
+  const std::vector<T>& getRowData(int rownum) const {
+    return data[rownum];
   }
 
   std::vector<T> getColData(int colnum) const {
