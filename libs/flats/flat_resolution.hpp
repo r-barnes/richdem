@@ -413,7 +413,7 @@ static void find_flat_edges(
     }
   }
   std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
-  std::cerr<<cells_without_flow<<" cells had now flow direction."<<std::endl;
+  std::cerr<<cells_without_flow<<" cells had no flow direction."<<std::endl;
 }
 
 
@@ -458,11 +458,13 @@ void resolve_flats_barnes(
   std::cerr<<"\n###Barnes Flat Resolution"<<std::endl;
 
   std::cerr<<"Setting up labels matrix..."<<std::flush;
+  labels.templateCopy(elevations);
   labels.resize(flowdirs);
   labels.init(0);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"Setting up flat resolution mask..."<<std::flush;
+  flat_mask.templateCopy(elevations);
   flat_mask.resize(elevations);
   flat_mask.init(0);
   flat_mask.setNoData(-1);
@@ -599,6 +601,8 @@ void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, boo
   } else {
     d8_flow_flats(flat_mask,labels,flowdirs);
   }
+
+  flowdirs.templateCopy(elevations);
 }
 
 #endif
