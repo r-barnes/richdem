@@ -954,6 +954,16 @@ void Preparer(
           throw std::logic_error("Tile width too small!");
         }
 
+        if(this_retention.find("%n")==std::string::npos){
+          std::cerr<<"In <one> mode '%n' must be present in the retention path."<<std::endl;
+          throw std::invalid_argument("'%n' not found in retention path!");
+        }
+
+        if(output_name.find("%n")==std::string::npos){
+          std::cerr<<"In <one> mode '%n' must be present in the output path."<<std::endl;
+          throw std::invalid_argument("'%n' not found in output path!");
+        }
+
         //Used for '%n' formatting
         std::string coord_string = std::to_string(gridx)+"_"+std::to_string(gridy);
 
