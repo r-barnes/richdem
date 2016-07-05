@@ -1,7 +1,8 @@
 #include "Layoutfile.hpp"
 #include "Array2D.hpp"
+#include "A2Array2D.hpp"
 #include "common.hpp"
-#include <queue>
+#include <stack>
 #include <unordered_set>
 #include <iomanip>
 #include <iostream>
@@ -16,8 +17,7 @@ typedef int8_t  visited_t;
 const int fwidth=10;
 
 template<class T>
-void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius){
-  return;
+void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius, int alsox, int alsoy){
   int minx  = std::max(xcen-radius,0);
   int maxx  = std::min(xcen+radius,(int)(arr.width()-1));
   int miny  = std::max(ycen-radius,0);
@@ -32,6 +32,8 @@ void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius){
     for(int x=minx;x<=maxx;x++){
       if(xcen==x && ycen==y)
         std::cout<<"\033[93m";
+      if(alsox==x && alsoy==y)
+        std::cout<<"\033[92m";
 
       if(NativeTypeToGDAL<T>()==GDT_Byte)
         std::cout<<std::setw(10)<<(int)arr(x,y);
@@ -40,19 +42,25 @@ void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius){
 
       if(xcen==x && ycen==y)
         std::cout<<"\033[39m";
+      if(alsox==x && alsoy==y)
+        std::cout<<"\033[39m";
     }
     std::cout<<std::endl;
   }
 }
 
 template<class T>
-void InspectPoint(std::string header, A2Array2D<T> &dem, A2Array2D<flowdirs_t> &fds, int x, int y){
-  return;
-  if(x!=dem.width()-494 || y!=dem.height()-373)
-    return;
-  std::cerr<<header<<std::endl;
-  print2dradius(dem, x, y, 5);
-  print2dradius(fds, x, y, 5);
+void print2D(A2Array2D<T> &arr, int hx=1, int hy=-1){
+  for(int y=0;y<arr.height();y++){
+    for(int x=0;x<arr.width();x++){
+      if(hx==x && hy==y)
+        std::cout<<"\033[93m";
+      std::cerr<<std::setw(3)<<(int)arr(x,y)<<" ";
+      if(hx==x && hy==y)
+        std::cout<<"\033[39m";
+    }
+    std::cerr<<std::endl;
+  }
 }
 
 template<class T>
@@ -62,34 +70,72 @@ void ProcessFlat(
   const int x0,
   const int y0
 ){
-  std::queue< std::pair<int, int> > q;
+  std::stack< std::pair<int, int> > q;
 
-  const auto flat_height = dem(x0,y0);
-
-  InspectPoint("ProcessFlatTop",dem,fds,x0,y0);
+  const T flat_height = dem(x0,y0);
 
   q.emplace(x0,y0);
   while(!q.empty()){
-    const auto c = q.front();
+    const auto c = q.top();
     q.pop();
 
     for(int n=1;n<=8;n++){
-      int nx = c.first +dx[n];
-      int ny = c.second+dy[n];
+      const int nx = c.first +dx[n];
+      const int ny = c.second+dy[n];
 
-      InspectPoint("ProcessFlatN",dem,fds,nx,ny);
+      if(!dem.in_grid(nx,ny))
+        continue;
+      if(dem.isEdgeCell(nx,ny))
+        continue;
+      if(fds(nx,ny)!=UNVISITED)
+        continue;
+      if(dem(nx,ny)!=flat_height)
+        continue;
 
-      if(!dem.in_grid(nx,ny) || dem(nx,ny)<flat_height || dem.isNoData(nx,ny)){
+      if(dem(nx,ny)<flat_height || dem.isNoData(nx,ny)){
         fds(c.first,c.second) = n;
         continue;
       }
-      if(fds(nx,ny)!=UNVISITED || dem(nx,ny)!=flat_height)
-        continue;
+
       fds(nx,ny) = d8_inverse[n];
+
+      if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)]){
+        std::cerr<<"Loop formed in flat resolution."<<std::endl;
+        std::cerr<<"("<<c.first<<","<<c.second<<","<<dem(c.first,c.second)<<")="<<(int)fds(c.first,c.second)<<" linked to ("<<nx<<","<<ny<<","<<dem(nx,ny)<<")="<<(int)fds(nx,ny)<<std::endl;
+        print2D(dem,c.first,c.second);
+        std::cerr<<std::endl;
+        print2D(fds,c.first,c.second);
+        std::cerr<<"\n\n"<<std::endl;
+      }
+
       q.emplace(nx,ny);
     }
   }
 }
+
+template<class T>
+static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
+  if(x==0 && y==0)
+    return 2;
+  else if(x==0 && y==elevations.width()-1)
+    return 8;
+  else if(x==elevations.width()-1 && y==0)
+    return 4;
+  else if(x==elevations.width()-1 && y==elevations.height()-1)
+    return 6;
+  else if(x==0)
+    return 1;
+  else if(x==elevations.width()-1)
+    return 5;
+  else if(y==0)
+    return 3;
+  else if(y==elevations.height()-1)
+    return 7;
+  else
+    std::cerr<<"Should never reach this point!"<<std::endl;
+  return -199; //TODO: Blow up
+}
+
 
 template<class T>
 void Master(std::string layoutfile, int cachesize, std::string tempfile_name, std::string output_filename){
@@ -107,12 +153,12 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   int processed_cells = 0;
 
-  for(int ty=0;ty<dem.heightInTiles();ty++)
-  for(int tx=0;tx<dem.widthInTiles(); tx++){
+  for(size_t ty=0;ty<dem.heightInTiles();ty++)
+  for(size_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
 
-    std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight()<<" "<<dem.tileWidth()<<std::endl;
+    std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight(tx,ty)<<" "<<dem.tileWidth(tx,ty)<<std::endl;
 
     int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
     int processed_tiles   = ty*dem.widthInTiles()+tx;
@@ -120,11 +166,11 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     double time_left      = est_total_time-total_time.lap();
     std::cerr<<"Processed: "<<processed_tiles<<" of "<<total_tiles<<" tiles "
              <<time_left<<"s/"<<est_total_time<<"s ("<<(time_left/3600)<<"hr/"<<(est_total_time/3600)<<"hr)"<<std::endl;
-    for(int py=0;py<dem.tileHeight();py++)
-    for(int px=0;px<dem.tileWidth(); px++){
+    for(int py=0;py<dem.tileHeight(tx,ty);py++)
+    for(int px=0;px<dem.tileWidth(tx,ty); px++){
 
-      const int y = ty*dem.tileHeight()+py;
-      const int x = tx*dem.tileWidth() +px;
+      const int y = ty*dem.stdTileHeight()+py;
+      const int x = tx*dem.stdTileWidth() +px;
 
       processed_cells++;
 
@@ -132,7 +178,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         continue;
 
       if(dem.isNoData(tx,ty,px,py)){
-        fds(tx,ty,px,py) = FLOW_NO_DATA; //TODO: global var
+        fds(tx,ty,px,py) = FLOW_NO_DATA;
         continue;
       }
 
@@ -141,7 +187,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
       bool    drains       = false;
       bool    has_flat     = false;
       uint8_t nlowest      = 0;
-      T       nlowest_elev = std::numeric_limits<T>::max(); //TODO
+      T       nlowest_elev = std::numeric_limits<T>::max();
       for(int n=1;n<=8;n++){
         const int nx = x+dx[n];
         const int ny = y+dy[n];
@@ -163,17 +209,50 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         }
       }
 
-      if(nlowest!=0)
+      if(nlowest!=0){
         fds(tx,ty,px,py) = nlowest;
+        int nx = x+dx[nlowest];
+        int ny = y+dy[nlowest];
+        if(fds.in_grid(nx,ny) && fds(nx,ny)==d8_inverse[nlowest]){
+          std::cerr<<"Two cell loop detected!"<<std::endl;
+          print2dradius(dem,x,y,4,nx,ny);
+          std::cerr<<std::endl;
+          print2dradius(fds,x,y,4,nx,ny);
+          std::cerr<<"\n\n"<<std::endl;
+        }
+      }
 
-      InspectPoint("MainBottom",dem,fds,x,y);
+      if(dem.isEdgeCell(x,y))
+        fds(tx,ty,px,py) = d8EdgeFlow(dem,x,y);
 
       if(drains && has_flat)
         ProcessFlat(dem,fds,x,y);
     }
   }
 
+  // for(int y=0;y<dem.height();y++)
+  // for(int x=0;x<dem.width();x++)
+  //   if(fds(x,y)==UNVISITED){
+  //     print2dradius(dem,x,y,4);
+  //     std::cerr<<std::endl;
+  //     print2dradius(fds,x,y,4);
+  //     std::cerr<<"\n\n"<<std::endl;
+  //   }
+
+  int loops = 0;
+  for(int y=0;y<fds.height();y++)
+  for(int x=0;x<fds.width();x++){
+    int nx = x+dx[fds(x,y)];
+    int ny = y+dy[fds(x,y)];
+    if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
+      loops++;
+  }
+  std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
+
+  print2D(fds);
+
   std::cerr<<"Saving results..."<<std::endl;
+  dem.saveGDAL(output_filename+"elev");
   fds.saveGDAL(output_filename);
 
   total_time.stop();

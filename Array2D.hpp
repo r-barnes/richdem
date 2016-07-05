@@ -10,9 +10,15 @@
 #include <algorithm>
 #include <typeinfo>
 #include <stdexcept>
-#include "Layoutfile.hpp"
-#include "lru.hpp"
-#include "common.hpp"
+
+#ifndef d8flowdirs_dxdy
+#define d8flowdirs_dxdy
+//D8 Directions
+///x offsets of D8 neighbours, from a central cell
+const int dx[9]={0,-1,-1, 0, 1,1,1,0,-1};
+///y offsets of D8 neighbours, from a central cell
+const int dy[9]={0, 0,-1,-1,-1,0,1,1, 1};
+#endif
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -33,41 +39,31 @@ GDALDataType peekGDALType(const std::string &filename) {
   return data_type;
 }
 
-GDALDataType peekLayoutType(const std::string &layout_filename) {
-  LayoutfileReader lf(layout_filename);
-
-  while(lf.next()){
-    if(lf.getFilename().size()==0)
-      continue;
-
-    GDALAllRegister();
-    std::string tile_path = lf.getPath()+lf.getFilename();
-    GDALDataset *fin = (GDALDataset*)GDALOpen(tile_path.c_str(), GA_ReadOnly);
-    if(fin==NULL)
-      std::cerr<<"Could not open '"<<(lf.getPath()+lf.getFilename())<<"' to determine layout type."<<std::endl;
-
-    GDALRasterBand *band   = fin->GetRasterBand(1);
-    GDALDataType data_type = band->GetRasterDataType();
-
-    GDALClose(fin);
-
-    return data_type;
-  }
-
-  throw std::runtime_error("Empty layout file!");
-}
 
 template<class T>
-T getGDALnodata(const std::string filename){
+void getGDALHeader(
+  const std::string &filename,
+  int    &height,
+  int    &width,
+  T      &no_data,
+  double *geotrans
+){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
   assert(fin!=NULL);
 
-  GDALRasterBand *band = fin->GetRasterBand(1);
-  return band->GetNoDataValue();
+  GDALRasterBand *band   = fin->GetRasterBand(1);
+
+  height  = band->GetYSize();
+  no_data = band->GetNoDataValue();
+  width   = band->GetXSize();
+
+  fin->GetGeoTransform(geotrans);
+
+  GDALClose(fin);
 }
 
-//Get the dimensions of a GDAL file
+
 int getGDALDimensions(
   const std::string &filename,
   int &height,
@@ -121,23 +117,7 @@ GDALDataType NativeTypeToGDAL() {
 }
 
 
-int peekLayoutTileSize(const std::string &layout_filename) {
-  LayoutfileReader lf(layout_filename);
 
-  GDALAllRegister();
-  while(lf.next()){
-    if(lf.getFilename().size()==0)
-      continue;
-
-    int height;
-    int width;
-    GDALDataType dtype;
-    getGDALDimensions(lf.getPath()+lf.getFilename(),height,width,dtype,NULL);
-    return width*height;
-  }
-
-  throw std::runtime_error("Empty layout file!");
-}
 
 
 template<class T>
@@ -149,7 +129,7 @@ class Array2D {
   std::string projection;
 
  private:
-  template<typename U> friend class Array2D;
+  template<typename> friend class Array2D;
 
   std::vector<T> data;
 
@@ -350,12 +330,11 @@ class Array2D {
         std::cerr<<x<<" ";
       std::cerr<<std::endl;
 
+      //TODO
       if(geotransform[0]<0)
         flipHorz();
-      if(geotransform[5]<0){
-        std::cerr<<"Flip vert on load"<<std::endl;
+      if(geotransform[5]<0)
         flipVert();
-      }
 
       GDALClose(fin);
     }
@@ -393,10 +372,11 @@ class Array2D {
   //generally easier to work with. If your DEM has a dimension which exceeds
   //2147483647, some other modifications to this program will probably be
   //necessary.
+  int  viewSize   () const { return view_width*view_height; }
   int  totalWidth () const { return total_width;    }
   int  totalHeight() const { return total_height;   }
-  int  viewWidth  () const { return view_width;     }
-  int  viewHeight () const { return view_height;    }
+  size_t viewWidth  () const { return view_width;     }
+  size_t viewHeight () const { return view_height;    }
   int  viewXoff   () const { return view_xoff;      }
   int  viewYoff   () const { return view_yoff;      }
   bool empty      () const { return data.empty();   }
@@ -436,6 +416,38 @@ class Array2D {
     return count;
   }
 
+  void iToxy(const int i, int &x, int &y) const {
+    x = i%view_width;
+    y = i/view_width;
+  }
+
+  int xyToI(int x, int y) const {
+    return y*view_width+x;
+  }
+
+  int nToI(int i, int dx, int dy) const {
+    int x=i%view_width+dx;
+    int y=i/view_width+dy;
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return xyToI(x,y);
+  }
+
+  template<class U>
+  T& operator=(const Array2D<U> &o){
+    data = std::vector<T>(o.data.begin(),o.data.end());
+    total_height   = o.total_height;
+    total_width    = o.total_width;
+    view_height    = o.view_height;
+    view_width     = o.view_width;
+    view_xoff      = o.view_xoff;
+    view_yoff      = o.view_yoff;
+    num_data_cells = o.num_data_cells;
+    geotransform   = o.geotransform;
+    no_data        = (T)o.no_data;
+    return *this;
+  }
+
   bool operator==(const Array2D<T> &o){
     if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
       return false;
@@ -462,8 +474,23 @@ class Array2D {
       std::reverse(data.begin()+y*view_width,data.begin()+(y+1)*view_width);
   }
 
+  void transpose(){
+    std::cerr<<"transpose() is an experimental feature."<<std::endl;
+    std::vector<T> new_data(view_width*view_height);
+    for(int y=0;y<view_height;y++)
+    for(int x=0;x<view_width;x++)
+      new_data[x*view_height+y] = data[y*view_width+x];
+    data = new_data;
+    std::swap(view_width,view_height);
+    //TODO
+  }
+
   bool in_grid(int x, int y) const {
-    return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
+    return 0<=x && x<view_width && 0<=y && y<view_height;
+  }
+
+  bool isEdgeCell(int x, int y) const {
+    return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
   void setNoData(const T &ndval){
@@ -486,6 +513,30 @@ class Array2D {
     total_width  = view_width  = width;
   }
 
+  template<class U>
+  void resize(const Array2D<U> &other, const T& val = T()){
+    resize(other.viewWidth(), other.viewHeight(), val);
+    geotransform = other.geotransform;
+  }
+
+  void expand(int new_width, int new_height, const T val){
+    if(new_width<view_width)
+      throw std::runtime_error("expand(): new_width<view_width");
+    if(new_height<view_height)
+      throw std::runtime_error("expand(): new_height<view_height");
+    
+    int old_width  = viewWidth();
+    int old_height = viewHeight();
+
+    std::vector<T> old_data = std::move(data);
+
+    resize(new_width,new_height,val);
+
+    for(int y=0;y<old_height;y++)
+    for(int x=0;x<old_width;x++)
+      data[y*new_width+x] = old_data[y*old_width+x];
+  }
+
   void countDataCells(){
     num_data_cells = 0;
     for(const auto x: data)
@@ -499,13 +550,17 @@ class Array2D {
     return num_data_cells;
   }
 
+  int numDataCells() const {
+    return num_data_cells;
+  }
+
   T& operator()(int i){
     assert(i>=0);
     assert(i<view_width*view_height);
     return data[i];
   }
 
-  const T& operator()(int i) const {
+  T operator()(int i) const {
     assert(i>=0);
     assert(i<view_width*view_height);
     return data[i];
@@ -519,7 +574,7 @@ class Array2D {
     return y*view_width+x;
   }
 
-  T& operator()(int x, int y){
+  T& operator()(size_t x, size_t y){
     assert(x>=0);
     assert(y>=0);
     //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
@@ -528,7 +583,7 @@ class Array2D {
     return data[y*view_width+x];
   }
 
-  const T& operator()(int x, int y) const {
+  const T& operator()(size_t x, size_t y) const {
     assert(x>=0);
     assert(y>=0);
     assert(x<viewWidth());
@@ -536,42 +591,45 @@ class Array2D {
     return data[y*view_width+x];
   }
 
-  // Row&       topRow   ()       { return data.front(); } //TODO
-  // Row&       bottomRow()       { return data.back (); } //TODO
-  // const Row& topRow   () const { return data.front(); } //TODO
-  // const Row& bottomRow() const { return data.back (); } //TODO
+  std::vector<T> topRow() const {    //TODO: Test
+    return std::vector<T>(data.begin(),data.begin()+view_width);
+  }
 
-  // Row leftColumn() const { //TODO
-  //   Row temp(data.size());
-  //   for(size_t y=0;y<data.size();y++)
-  //     temp[y] = data[y][0];
-  //   return temp;
-  // }
+  std::vector<T> bottomRow() const { //TODO: Test
+    return std::vector<T>(data.begin()+(view_height-1)*view_width, data.begin()+view_height*view_width);
+  }
 
-  // Row rightColumn() const { //TODO
-  //   Row temp(data.size());
-  //   size_t right = data[0].size()-1;
-  //   for(size_t y=0;y<data.size();y++)
-  //     temp[y] = data[y][right];
-  //   return temp;
-  // }
+  std::vector<T> leftColumn() const { //TODO: Test
+    return getColData(0); 
+  }
+
+  std::vector<T> rightColumn() const { //TODO: Test
+    return getColData(view_width-1);
+  }
 
   // Row& rowRef(int rownum){
   //   return data[rownum];
   // }
 
-  // void setRow(int rownum, const T &val){
-  //   std::fill(data[rownum].begin(),data[rownum].end(),val);
-  // }
+  void setRow(int y, const T &val){
+    std::fill(data.begin()+y*view_width,data.begin()+(y+1)*view_width,val);
+  }
 
-  // void setCol(int colnum, const T &val){
-  //   for(int y=0;y<viewHeight();y++)
-  //     data[y][colnum] = val;
-  // }
+  void setCol(int x, const T &val){
+    for(int y=0;y<view_height;y++)
+      data[y*view_width+x] = val;
+  }
 
-  // const std::vector<T>& getRowData(int rownum){
-  //   return data[rownum].data();
-  // }
+  std::vector<T> getRowData(int rownum) const {
+    return std::vector<T>(data.begin()+rownum*view_width,data.begin()+(rownum+1)*view_width);
+  }
+
+  std::vector<T> getColData(int colnum) const {
+    std::vector<T> temp(view_height);
+    for(int y=0;y<view_height;y++)
+      temp[y]=data[y*view_width+colnum];
+    return temp;
+  }
 
   void clear(){
     data.clear();
@@ -588,13 +646,13 @@ class Array2D {
   void saveGDAL(const std::string &filename, int xoffset, int yoffset){
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(poDriver==NULL){
-      std::cerr<<"Could not load GTiff driver!"<<std::endl;
-      throw std::runtime_error("Could not load GTiff driver!");
+      std::cerr<<"Could not open GDAL driver!"<<std::endl;
+      throw std::runtime_error("Could not open GDAL driver!");
     }
     GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
     if(fout==NULL){
-      std::cerr<<"Could not open output file!"<<std::endl;
-      throw std::runtime_error("Could not open output file!");
+      std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
+      throw std::runtime_error("Could not open file for GDAL save!");
     }
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
@@ -631,433 +689,9 @@ class Array2D {
 
     GDALClose(fout);
   }
-};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<class T>
-class A2Array2D {
- private:
-  template<typename U> friend class A2Array2D;
-
-  class WrappedArray2D : public Array2D<T> {
-   public:
-    using Array2D<T>::Array2D;
-    bool null_tile  = false;
-    bool loaded     = false;
-    bool created    = true;
-    bool do_set_all = false; //If true, then set all to 'set_all_val' when tile is loaded
-    T set_all_val   = 0;
-    void lazySetAll(){
-      if(do_set_all){
-        do_set_all = false;
-        setAll(set_all_val);
-      }
-    }
-  };
-  std::vector< std::vector< WrappedArray2D > > data;
-
-  LRU< WrappedArray2D* > lru;
-
-  int32_t total_width_in_cells    = 0;
-  int32_t total_height_in_cells   = 0;
-  int32_t per_tile_width          = -1;
-  int32_t per_tile_height         = -1;
-  int32_t evictions               = 0;
-  int64_t cells_in_not_null_tiles = 0;
-  T       no_data_to_set; //Used to disguise null tiles
-
-  bool readonly = true;
-
-  void LoadTile(int tile_x, int tile_y){
-    auto& tile = data[tile_y][tile_x];
-    if(tile.null_tile)
-      return;
-
-    if(tile.loaded){
-      lru.insert(&data[tile_y][tile_x]);
-      tile.lazySetAll();
-      return;
-    }
-
-    if(lru.full()){
-      auto tile_to_unload = lru.back();
-
-      if(readonly)
-        tile_to_unload->clear();
-      else
-        tile_to_unload->dumpData();
-
-      evictions++;
-
-      tile_to_unload->loaded = false;
-      lru.pop_back();
-    }
-
-    if(tile.created){
-      tile.loadData();
-    } else {
-      tile.resize(per_tile_width,per_tile_height);
-      tile.created = true;
-    }
-    tile.loaded = true;
-    lru.insert(&data[tile_y][tile_x]);
-
-    tile.lazySetAll();
-  }
-
- public:
-
-  A2Array2D(std::string layoutfile, int cachesize){
-    lru.setCapacity(cachesize);
-    readonly = true;
-
-    int     not_null_tiles = 0;
-
-    LayoutfileReader lf(layoutfile);
-    while(lf.next()){
-      if(lf.newRow()) //Add a row to the grid of chunks
-        data.emplace_back();
-
-      if(lf.isNullTile()){
-        data.back().emplace_back();
-        data.back().back().null_tile = true;
-        continue;
-      }
-
-      not_null_tiles++;
-
-      data.back().emplace_back(
-        lf.getPath()+lf.getFilename(),
-        false,
-        0,
-        0,
-        0,
-        0,
-        false,
-        false
-      );
-
-      auto &this_tile = data.back().back();
-
-      //Get properties of the first file to check against all subsequent ones
-      if(per_tile_height==-1){
-        per_tile_height = this_tile.viewHeight();
-        per_tile_width  = this_tile.viewWidth();
-        std::cerr<<"Drawing properties from '"<<this_tile.filename<<"'"<<std::endl;
-        std::cerr<<"NoData: "     <<this_tile.noData()    <<std::endl;
-        std::cerr<<"Tile Height: "<<this_tile.viewHeight()<<std::endl;
-        std::cerr<<"Tile Width: " <<this_tile.viewWidth() <<std::endl;
-      }
-
-      cells_in_not_null_tiles += per_tile_width*per_tile_height;
-
-      this_tile.basename = lf.getBasename();
-
-      if(per_tile_width!=this_tile.viewWidth())
-        throw std::runtime_error("Tiles were not all the same width!");
-      if(per_tile_height!=this_tile.viewHeight())
-        throw std::runtime_error("Tiles were not all the same width!");
-    }
-
-    total_width_in_cells  = data[0].size()*per_tile_width;
-    total_height_in_cells = data.size()*per_tile_height;
-
-    std::cerr<<"Total width: " <<total_width_in_cells<<std::endl;
-    std::cerr<<"Total height: "<<total_height_in_cells<<std::endl;
-
-    std::cerr<<"Found "<<not_null_tiles<<" not-null tiles of "<<(data[0].size()*data.size())<<std::endl;
-  }
-
-  A2Array2D(std::string prefix, int per_tile_width, int per_tile_height, int width, int height, int cachesize){
-    lru.setCapacity(cachesize);
-
-    readonly = false;
-
-    this->per_tile_width  = per_tile_width;
-    this->per_tile_height = per_tile_height;
-
-    this->total_width_in_cells  = per_tile_width*width;
-    this->total_height_in_cells = per_tile_height*height;
-
-    int tile=0;
-    for(int y=0;y<height;y++){
-      data.emplace_back();
-      for(int x=0;x<width;x++){
-        tile++;
-        data.back().emplace_back();
-        data.back().back().setFilename(prefix+std::to_string(tile)+".native");
-        data.back().back().created  = false;
-      }
-    }
-  }
-
-  template<class U>
-  A2Array2D(std::string filename_template, const A2Array2D<U> &other, int cachesize) : A2Array2D(filename_template, other.tileWidth(), other.tileHeight(), other.widthInTiles(), other.heightInTiles(), cachesize) {
-    for(int y=0;y<heightInTiles();y++)
-    for(int x=0;x<widthInTiles();x++){
-      data[y][x].templateCopy(other.data[y][x]);
-      data[y][x].filename = filename_template;
-      data[y][x].filename.replace(data[y][x].filename.find("%f"), 2, data[y][x].basename);
-      data[y][x].null_tile = other.data[y][x].null_tile;
-    }
-  }
-
-  // T& getn(int tx, int ty, int x, int y, int dx, int dy){
-  //   x += dx;
-  //   y += dy;
-  //   if(x<0){
-  //     tx--;
-  //     x = per_tile_width-1;
-  //   } else if (x==per_tile_width) {
-  //     tx++;
-  //     x=0;
-  //   }
-  //   if(y<0){
-  //     ty--;
-  //     y = per_tile_height-1;
-  //   } else if (y==per_tile_height){
-  //     ty++;
-  //     y=0;
-  //   }
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<per_tile_width);
-  //   assert(y<per_tile_height);
-  //   assert(tx>=0);
-  //   assert(ty>=0);
-  //   assert(tx<widthInTiles());
-  //   assert(ty<heightInTiles());
-  //   return data[ty][tx](x,y);
-  // }
-
-  // T& operator()(int tx, int ty, int x, int y){
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<per_tile_width);
-  //   assert(y<per_tile_height);
-  //   assert(tx>=0);
-  //   assert(ty>=0);
-  //   assert(tx<widthInTiles());
-  //   assert(ty<heightInTiles());
-  //   LoadTile(tx, ty);
-  //   return data[ty][tx](x,y);
-  // }
-
-  // const T& operator()(int tx, int ty, int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<per_tile_width);
-  //   assert(y<per_tile_height);
-  //   assert(tx>=0);
-  //   assert(ty>=0);
-  //   assert(tx<widthInTiles());
-  //   assert(ty<heightInTiles());
-  //   LoadTile(tx, ty);
-  //   return data[ty][tx](x,y);
-  // }
-
-  T& operator()(int tx, int ty, int x, int y){
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<per_tile_width);
-    assert(y<per_tile_height);
-
-    assert(tx>=0);
-    assert(ty>=0);
-    assert(tx<data[0].size());
-    assert(ty<data.size());
-
-    if(data[ty][tx].null_tile){
-      no_data_to_set = data[ty][tx].noData();
-      return no_data_to_set;
-    }
-
-    LoadTile(tx, ty);
-
-    return data[ty][tx](x,y);
-  }
-
-  T& operator()(int x, int y){
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<total_width_in_cells);
-    assert(y<total_height_in_cells);
-
-    int tile_x = x/per_tile_width;
-    int tile_y = y/per_tile_height;
-    x          = x%per_tile_width;
-    y          = y%per_tile_height;
-
-    if(data[tile_y][tile_x].null_tile){
-      no_data_to_set = data[tile_y][tile_x].noData();
-      return no_data_to_set;
-    }
-
-    LoadTile(tile_x, tile_y);
-
-    return data[tile_y][tile_x](x,y);
-  }
-
-  // const T& operator()(int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<total_width_in_cells);
-  //   assert(y<total_height_in_cells);
-  //   int tile_x = x/per_tile_width;
-  //   int tile_y = y/per_tile_height;
-  //   x          = x%per_tile_width;
-  //   y          = y%per_tile_height;
-  //   if(data[tile_y][tile_x].null_tile)
-  //     return no_data;
-  //   LoadTile(tile_x, tile_y);
-  //   return data[tile_y][tile_x](x,y);
-  // }
-
-  int64_t width() const {
-    return total_width_in_cells;
-  }
-
-  int64_t height() const {
-    return total_height_in_cells;
-  }
-
-  int64_t widthInTiles() const {
-    return data.back().size();
-  }
-
-  int64_t heightInTiles() const {
-    return data.size();
-  }
-
-  int64_t tileWidth() const {
-    return per_tile_width;
-  }
-
-  int64_t tileHeight() const {
-    return per_tile_height;
-  }
-
-  void setAll(const T &val){
-    for(auto &row: data)
-    for(auto &tile: row){
-      tile.do_set_all  = true;
-      tile.set_all_val = val;
-    }
-  }
-
-  bool isNoData(int x, int y){
-    assert(x>=0);
-    assert(y>=0);
-    assert(x<total_width_in_cells);
-    assert(y<total_height_in_cells);
-
-    int tile_x = x/per_tile_width;
-    int tile_y = y/per_tile_height;
-    x          = x%per_tile_width;
-    y          = y%per_tile_height;
-
-    if(data[tile_y][tile_x].null_tile)
-      return true;
-
-    LoadTile(tile_x, tile_y);
-
-    return data[tile_y][tile_x].isNoData(x,y);
-  }
-
-  bool isNoData(int tx, int ty, int px, int py){
-    assert(px>=0);
-    assert(py>=0);
-    assert(px<per_tile_width);
-    assert(py<per_tile_height);
-
-    assert(tx>=0);
-    assert(ty>=0);
-    assert(tx<data[0].size());
-    assert(ty<data.size());
-
-    if(data[ty][tx].null_tile)
-      return true;
-
-    LoadTile(tx, ty);
-
-    return data[ty][tx].isNoData(px,py);
-  }
-
-  bool in_grid(int x, int y) const {
-    return (x>=0 && y>=0 && x<total_width_in_cells && y<total_height_in_cells);
-  }
-
-  bool isReadonly() const {
-    return readonly;
-  }
-
-  //TODO: Use of checkval here is kinda gross. Is there a good way to get rid of
-  //it?
-  void saveGDAL(std::string outputname_template) {
-    int zero_count      = 0;
-    int unvisited_count = 0;
-    for(auto &row: data)
-    for(auto &tile: row){
-      if(tile.null_tile)
-        continue;
-
-      //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
-
-      if(!tile.loaded)
-        tile.loadData();
-      //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
-
-      if(tile.geotrans[0]<0){
-        std::cerr<<"Flip horz"<<std::endl;
-        tile.flipHorz();
-      }
-      if(tile.geotrans[5]<0){
-        std::cerr<<"Flip vert"<<std::endl;
-        tile.flipVert();
-      }
-
-      zero_count      += tile.countval(0);
-      unvisited_count += tile.countval(13);
-
-      auto temp = outputname_template;
-      temp.replace(temp.find("%f"),2,tile.basename);
-
-      tile.saveGDAL(temp, 0, 0);
-      tile.clear();
-    }
-
-    std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
-    std::cerr<<"Found "<<unvisited_count<<" cells that were unvisited."<<std::endl;
-  }
-
-  void setNoData(const T &ndval){
-    for(auto &row: data)
-    for(auto &tile: row)
-      if(!tile.null_tile)
-        tile.setNoData(ndval); //TODO: Lazy setting: don't set this value until tile is completely loaded
-  }
-
-  int32_t getEvictions() const {
-    return evictions;
-  }
-
-  bool isNullTile(int tx, int ty) const {
-    return data[ty][tx].null_tile;
+  double getCellArea() const {
+    return geotransform[1]*geotransform[5];
   }
 };
 
