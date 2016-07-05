@@ -954,7 +954,7 @@ void Preparer(
           throw std::logic_error("Tile width too small!");
         }
 
-        if(this_retention.find("%n")==std::string::npos){
+        if(retention[0]!='@' && retention.find("%n")==std::string::npos){
           std::cerr<<"In <one> mode '%n' must be present in the retention path."<<std::endl;
           throw std::invalid_argument("'%n' not found in retention path!");
         }
