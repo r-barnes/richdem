@@ -101,11 +101,11 @@ void ProcessFlat(
 
       if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)]){
         std::cerr<<"Loop formed in flat resolution."<<std::endl;
-        std::cerr<<"("<<c.first<<","<<c.second<<","<<dem(c.first,c.second)<<")="<<(int)fds(c.first,c.second)<<" linked to ("<<nx<<","<<ny<<","<<dem(nx,ny)<<")="<<(int)fds(nx,ny)<<std::endl;
-        print2D(dem,c.first,c.second);
-        std::cerr<<std::endl;
-        print2D(fds,c.first,c.second);
-        std::cerr<<"\n\n"<<std::endl;
+        // std::cerr<<"("<<c.first<<","<<c.second<<","<<dem(c.first,c.second)<<")="<<(int)fds(c.first,c.second)<<" linked to ("<<nx<<","<<ny<<","<<dem(nx,ny)<<")="<<(int)fds(nx,ny)<<std::endl;
+        // print2D(dem,c.first,c.second);
+        // std::cerr<<std::endl;
+        // print2D(fds,c.first,c.second);
+        // std::cerr<<"\n\n"<<std::endl;
       }
 
       q.emplace(nx,ny);
@@ -158,7 +158,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     if(dem.isNullTile(tx,ty))
       continue;
 
-    std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight(tx,ty)<<" "<<dem.tileWidth(tx,ty)<<std::endl;
+    //std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight(tx,ty)<<" "<<dem.tileWidth(tx,ty)<<std::endl;
 
     int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
     int processed_tiles   = ty*dem.widthInTiles()+tx;
@@ -215,10 +215,10 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         int ny = y+dy[nlowest];
         if(fds.in_grid(nx,ny) && fds(nx,ny)==d8_inverse[nlowest]){
           std::cerr<<"Two cell loop detected!"<<std::endl;
-          print2dradius(dem,x,y,4,nx,ny);
-          std::cerr<<std::endl;
-          print2dradius(fds,x,y,4,nx,ny);
-          std::cerr<<"\n\n"<<std::endl;
+          // print2dradius(dem,x,y,4,nx,ny);
+          // std::cerr<<std::endl;
+          // print2dradius(fds,x,y,4,nx,ny);
+          // std::cerr<<"\n\n"<<std::endl;
         }
       }
 
@@ -230,26 +230,15 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     }
   }
 
-  // for(int y=0;y<dem.height();y++)
-  // for(int x=0;x<dem.width();x++)
-  //   if(fds(x,y)==UNVISITED){
-  //     print2dradius(dem,x,y,4);
-  //     std::cerr<<std::endl;
-  //     print2dradius(fds,x,y,4);
-  //     std::cerr<<"\n\n"<<std::endl;
-  //   }
-
-  int loops = 0;
-  for(int y=0;y<fds.height();y++)
-  for(int x=0;x<fds.width();x++){
-    int nx = x+dx[fds(x,y)];
-    int ny = y+dy[fds(x,y)];
-    if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
-      loops++;
-  }
-  std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
-
-  print2D(fds);
+  // int loops = 0;
+  // for(int y=0;y<fds.height();y++)
+  // for(int x=0;x<fds.width();x++){
+  //   int nx = x+dx[fds(x,y)];
+  //   int ny = y+dy[fds(x,y)];
+  //   if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
+  //     loops++;
+  // }
+  // std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
 
   std::cerr<<"Saving results..."<<std::endl;
   dem.saveGDAL(output_filename+"elev");
