@@ -278,8 +278,8 @@ class ConsumerSpecifics {
 
   void SecondRound(const ChunkInfo &chunk, Job2<elev_t> &job2){
     timer_calc.start();
-    for(int y=0;y<dem.viewHeight();y++)
-    for(int x=0;x<dem.viewWidth();x++)
+    for(size_t y=0;y<dem.viewHeight();y++)
+    for(size_t x=0;x<dem.viewWidth();x++)
       if(labels(x,y)>1 && dem(x,y)<job2.at(labels(x,y)))
         dem(x,y) = job2.at(labels(x,y));
     timer_calc.stop();
