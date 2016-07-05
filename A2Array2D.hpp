@@ -225,8 +225,8 @@ class A2Array2D {
 
     per_tile_width        = 0;
     per_tile_height       = 0;
-    total_width_in_cells  = 0;
-    total_height_in_cells = 0;
+    total_width_in_cells  = other.total_width_in_cells;
+    total_height_in_cells = other.total_height_in_cells;
 
     std::cerr<<"other hit="<<other.heightInTiles()<<std::endl;
 
@@ -242,8 +242,6 @@ class A2Array2D {
         this_tile.filename.replace(data[y][x].filename.find("%f"), 2, data[y][x].basename);
         per_tile_width               = std::max(per_tile_width, other_tile.viewWidth() );
         per_tile_height              = std::max(per_tile_height,other_tile.viewHeight());
-        total_width_in_cells        += other_tile.viewWidth();
-        total_height_in_cells       += other_tile.viewHeight();
         this_tile.create_with_width  = other_tile.viewWidth();
         this_tile.create_with_height = other_tile.viewHeight();
         this_tile.null_tile          = other_tile.null_tile;
