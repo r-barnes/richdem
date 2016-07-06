@@ -133,7 +133,7 @@ class Array2D {
 
   GDALDataType data_type;
 
-  static const int HEADER_SIZE = 7*sizeof(int) + sizeof(T);
+  size_t header_size = -1;
 
   int total_height;
   int total_width;
@@ -267,16 +267,21 @@ class Array2D {
       auto &out = fout;
     #endif
 
-    out.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    out.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
-    out.write(reinterpret_cast<char*>(&view_height),    sizeof(int));
-    out.write(reinterpret_cast<char*>(&view_width),     sizeof(int));
-    out.write(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
-    out.write(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
-    out.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
-    out.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    out.write(reinterpret_cast<const char*>(&total_height),   sizeof(int));
+    out.write(reinterpret_cast<const char*>(&total_width),    sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_height),    sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_width),     sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_xoff),      sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_yoff),      sizeof(int));
+    out.write(reinterpret_cast<const char*>(&num_data_cells), sizeof(int));
+    out.write(reinterpret_cast<const char*>(&no_data),        sizeof(T  ));
 
-    out.write(reinterpret_cast<char*>(data.data()), data.size()*sizeof(T));
+    out.write(reinterpret_cast<const char*>(geotransform.data()), 6*sizeof(double));
+    std::string::size_type projection_size = projection.size();
+    out.write(reinterpret_cast<const char*>(&projection_size), sizeof(std::string::size_type));
+    out.write(reinterpret_cast<const char*>(projection.data()), projection.size()*sizeof(const char));
+
+    out.write(reinterpret_cast<const char*>(data.data()), data.size()*sizeof(T));
   }
 
   void setFilename(const std::string &filename){
@@ -306,7 +311,7 @@ class Array2D {
 
       data.resize(view_height*view_width);
 
-      in.seekg(7*sizeof(int)+sizeof(T));
+      in.seekg(header_size);
 
       in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
     } else {
@@ -355,6 +360,15 @@ class Array2D {
     in.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
     in.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
     in.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    geotransform.resize(6);
+    in.read(reinterpret_cast<char*>(geotransform.data()), 6*sizeof(double));
+
+    std::string::size_type projection_size;
+    in.read(reinterpret_cast<char*>(&projection_size), sizeof(std::string::size_type));
+    projection.resize(projection_size,' ');
+    in.read(reinterpret_cast<char*>(&projection[0]), projection.size()*sizeof(char));
+
+    header_size = in.tellg();
 
     if(load_data)
       loadData();
@@ -659,6 +673,11 @@ class Array2D {
     //position is the top left corner of the top left pixel of the raster.
 
     auto out_geotransform = geotransform;
+
+    if(out_geotransform.size()!=6){
+      std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
+      throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+    }
 
     //We shift the top-left pixel of hte image eastward to the appropriate
     //coordinate
