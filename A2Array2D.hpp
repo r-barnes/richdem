@@ -116,10 +116,17 @@ class A2Array2D {
 
     if(tile.created){
       tile.loadData();
-      if((tile.geotransform[0]<0) ^ flipH)
-        tile.flipHorz();
-      if((tile.geotransform[5]<0) ^ flipV)
-        tile.flipVert();
+      std::cerr<<"Loading "<<tile.filename<<std::endl;
+      if(readonly){
+        if((tile.geotransform[0]<0) ^ flipH){
+          std::cerr<<"Flipping tile horz "<<tile.filename<<std::endl;
+          tile.flipHorz();
+        }
+        if((tile.geotransform[5]<0) ^ flipV){
+          std::cerr<<"Flipping tile vert "<<tile.filename<<std::endl;
+          tile.flipVert();
+        }
+      }
     } else {
       if(tile.create_with_width!=-1 && tile.create_with_height!=-1)
         tile.resize(tile.create_with_width,tile.create_with_height);
@@ -236,6 +243,8 @@ class A2Array2D {
     per_tile_height       = 0;
     total_width_in_cells  = other.total_width_in_cells;
     total_height_in_cells = other.total_height_in_cells;
+    flipV                 = other.flipV;
+    flipH                 = other.flipH;
 
     std::cerr<<"other hit="<<other.heightInTiles()<<std::endl;
 
