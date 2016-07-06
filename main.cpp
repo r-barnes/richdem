@@ -1116,9 +1116,8 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Must specify many or one.");
       if(CommSize()==1) //TODO: Invoke a special "one-process mode?"
         throw std::invalid_argument("Must run program with at least two processes!");
-      if( !((output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos)) ){
+      if( !((output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos)) )
         throw std::invalid_argument("Output filename must indicate either file number (%n) or name (%f).");
-      }
       if(retention[0]!='@' && retention.find("%n")==std::string::npos)
         throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
       if(retention==output_name)
