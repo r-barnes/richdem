@@ -224,8 +224,8 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 //TODO: Remove
 template<class T>
 void print2d(const Array2D<T> &arr){
-  for(int y=0;y<arr.viewHeight();y++){
-    for(int x=0;x<arr.viewWidth();x++)
+  for(size_t y=0;y<arr.viewHeight();y++){
+    for(size_t x=0;x<arr.viewWidth();x++)
       std::cerr<<std::setw(5)<<(int)arr(x,y);
     std::cerr<<std::endl;
   }
