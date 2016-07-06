@@ -135,6 +135,7 @@ class TimeInfo {
   }
 };
 
+//TODO: Explain all of the variables
 template<class elev_t>
 class Job1 {
  private:
@@ -152,7 +153,7 @@ class Job1 {
   std::vector<link_t   >    links;
   std::vector<accum_t  >    accum;
   std::vector<flowdir_t>    flowdirs;
-  std::vector<accum_t  >    accum_in;     //Not communicated, so not serialized. Here for convenience. //TODO
+  std::vector<accum_t  >    accum_in;     //Not communicated, so not serialized. Here for convenience.
   std::vector<dependency_t> dependencies; //Not communicated, so not serialized. Here for convenience.
   TimeInfo time_info;
   int gridy, gridx;
@@ -199,6 +200,7 @@ int xyToSerial(const int x, const int y, const int width, const int height){
   return 2*(width-1)+(height-1)+y; //Left-hand side
 }
 
+//TODO: Explain
 void serialToXY(const int serial, int &x, int &y, const int width, const int height){
   if(serial<width){                        //Top row
     x = serial;
@@ -228,6 +230,20 @@ void print2d(const Array2D<T> &arr){
     std::cerr<<std::endl;
   }
 }
+
+//TODO: Remove
+// template<class T>
+// void print2dradius(const Array2D<T> &arr, int xcen, int ycen, int radius){
+//   int minx  = std::max(xcen-radius,0);
+//   int maxx  = std::min(xcen+radius,arr.viewWidth()-1);
+//   int miny  = std::max(ycen-radius,0);
+//   int maxy  = std::min(ycen+radius,arr.viewHeight()-1);
+//   for(int y=ymin;y<=ymax;y++){
+//     for(int x=xmin;x<=xmax;x++)
+//       std::cerr<<std::setw(5)<<(int)arr(x,y);
+//     std::cerr<<std::endl;
+//   }
+// }
 
 //TODO: Remove
 template<class T>
@@ -375,6 +391,7 @@ class ConsumerSpecifics {
   ){
     int count = 0;
 
+    //TODO: Shouldn't need this since a loop would be detected in FollowPath
     const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
 
     //Follow the flow path until it terminates
