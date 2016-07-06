@@ -1047,6 +1047,7 @@ void Consumer(){
       job1.gridx = chunk.gridx;
 
       consumer.LoadFromEvict(chunk);
+      consumer.VerifyInputSanity();
 
       consumer.FirstRound(chunk, job1);
 
