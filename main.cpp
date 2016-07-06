@@ -602,8 +602,6 @@ class ConsumerSpecifics {
 
     job1.links = std::move(links);
 
-    FlowAccumulation(flowdirs,accum);
-
     //Construct output arrays
     GridPerimToArray(flowdirs, job1.flowdirs);
     GridPerimToArray(accum,    job1.accum   );
