@@ -297,6 +297,25 @@ class Array2D {
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
 
+  T min() const {
+    T minval = std::numeric_limits<T>::max();
+    for(auto const x: data){
+      if(x==no_data)
+        continue;
+      minval = std::min(minval,x);
+    }
+    return minval;
+  }
+
+  T max() const {
+    T maxval = std::numeric_limits<T>::min();
+    for(auto const x: data){
+      if(x==no_data)
+        continue;
+      maxval = std::max(maxval,x);
+    }
+    return maxval;
+  }
   bool operator==(const Array2D<T> &o){
     if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
       return false;
