@@ -281,6 +281,8 @@ class Array2D {
     out.write(reinterpret_cast<const char*>(&projection_size), sizeof(std::string::size_type));
     out.write(reinterpret_cast<const char*>(projection.data()), projection.size()*sizeof(const char));
 
+    header_size = out.tellg();
+
     out.write(reinterpret_cast<const char*>(data.data()), data.size()*sizeof(T));
   }
 
