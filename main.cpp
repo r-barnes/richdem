@@ -663,11 +663,6 @@ class ConsumerSpecifics {
         continue;
       int x,y;
       serialToXY(s, x, y, accum.viewWidth(), accum.viewHeight());
-      // int n  = flowdirs(x,y);
-      // int nx = x+dx[n];
-      // int ny = y+dy[n];
-      // if(!flowdirs.in_grid(nx,ny))
-      //   accum(x,y) = 0;
       FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
 
