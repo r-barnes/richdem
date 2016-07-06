@@ -812,7 +812,14 @@ class ProducerSpecifics {
       //Serialize the coordinates
       ns = xyToSerial(nx,ny,nc.width,nc.height);
 
-      //Ensure that the serialization is valid
+      #ifdef DEBUG
+        //Ensure that the serialization is valid
+        if(ns>=(int)jobs.at(gny).at(gnx).flowdirs.size()){
+          std::cerr<<nx<<" "<<ny<<" "<<nc.width<<" "<<nc.height<<std::endl;
+          std::cerr<<ns<<std::endl;
+          std::cerr<<(int)jobs.at(gny).at(gnx).flowdirs.size()<<std::endl;
+        }
+      #endif
       assert(ns<(int)jobs.at(gny).at(gnx).flowdirs.size());
     } else {
       //Flow goes to somewhere else on the perimeter of the same tile
