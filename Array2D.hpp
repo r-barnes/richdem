@@ -335,11 +335,7 @@ class Array2D {
       return false;
     if(noData()!=o.noData())
       return false;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=o.data[y][x])
-        return false;
-    return true;
+    return data==o.data;
   }
 
   bool isNoData(int x, int y) const {
