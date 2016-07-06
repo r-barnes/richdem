@@ -297,6 +297,7 @@ class ConsumerSpecifics {
   void FollowPath(
     const int x0,                       //x-coordinate of initial cell
     const int y0,                       //y-coordinate of initial cell
+    const ChunkInfo          &chunk,    //Used to determine which tile we are in
     const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
     std::vector<link_t>      &links
   ){
@@ -427,11 +428,8 @@ class ConsumerSpecifics {
     std::cerr<<"Calculating dependencies..."<<std::endl;
     Array2D<dependency_t> dependencies;
     dependencies.resize(flowdirs,0);
-    for(int y=0;y<flowdirs.viewHeight();y++)
-    for(int x=0;x<flowdirs.viewWidth();x++){
-      int n = flowdirs(x,y);       //The neighbour this cell flows into
-
-      
+    for(size_t y=0;y<flowdirs.viewHeight();y++)
+    for(size_t x=0;x<flowdirs.viewWidth();x++){
       if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
         accum(x,y) = ACCUM_NO_DATA;
         continue;                
@@ -455,8 +453,8 @@ class ConsumerSpecifics {
     //cells are the peaks: the sources of flow. We make a note of where the peaks
     //are for later use.
     std::queue<GridCell> sources;
-    for(int y=0;y<dependencies.viewHeight();y++)
-    for(int x=0;x<dependencies.viewWidth();x++)
+    for(size_t y=0;y<dependencies.viewHeight();y++)
+    for(size_t x=0;x<dependencies.viewWidth();x++)
       //Valid cell with no dependencies: a peak!
       if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
         sources.emplace(x,y);
