@@ -108,10 +108,12 @@ GDALDataType NativeTypeToGDAL() {
 }
 
 
+
+
+
 template<class T>
 class Array2D {
  public:
-  typedef std::vector<T>   Row;
   std::string filename;
   std::string basename;
   std::vector<double> geotransform;
@@ -120,8 +122,7 @@ class Array2D {
  private:
   template<typename> friend class Array2D;
 
-  typedef std::vector<Row> InternalArray;
-  InternalArray data;
+  std::vector<T> data;
 
   GDALDataType data_type;
 
@@ -286,10 +287,11 @@ class Array2D {
   //generally easier to work with. If your DEM has a dimension which exceeds
   //2147483647, some other modifications to this program will probably be
   //necessary.
+  int  viewSize   () const { return view_width*view_height; }
   int  totalWidth () const { return total_width;    }
   int  totalHeight() const { return total_height;   }
-  int  viewWidth  () const { return data[0].size(); }
-  int  viewHeight () const { return data.size();    }
+  size_t viewWidth  () const { return view_width;     }
+  size_t viewHeight () const { return view_height;    }
   int  viewXoff   () const { return view_xoff;      }
   int  viewYoff   () const { return view_yoff;      }
   bool empty      () const { return data.empty();   }
@@ -308,7 +310,7 @@ class Array2D {
   }
 
   bool isNoData(int x, int y) const {
-    return data[y][x]==no_data;
+    return data[y*view_width+x]==no_data;
   }
 
   void flipVert(){
@@ -321,11 +323,11 @@ class Array2D {
   }
 
   bool in_grid(int x, int y) const {
-    return 0<=x && x<viewWidth() && 0<=y && y<viewHeight();
+    return 0<=x && x<view_width && 0<=y && y<view_height;
   }
 
-  bool edge_grid(int x, int y) const {
-    return x==0 || y==0 || x==viewWidth()-1 || y==viewHeight()-1;
+  bool isEdgeCell(int x, int y) const {
+    return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
   void setNoData(const T &ndval){
@@ -333,8 +335,7 @@ class Array2D {
   }
 
   void setAll(const T &val){
-    for(auto &row: data)
-      std::fill(row.begin(),row.end(),val);
+    std::fill(data.begin(),data.end(),val);
   }
 
   void init(T val){
@@ -343,7 +344,8 @@ class Array2D {
 
   //Destructively resizes the array. All data will die!
   void resize(int width, int height, const T& val = T()){
-    data         = InternalArray(height, Row(width, val));
+    data.resize(width*height);
+    setAll(val);
     total_height = view_height = height;
     total_width  = view_width  = width;
   }
@@ -356,9 +358,8 @@ class Array2D {
 
   void countDataCells(){
     num_data_cells = 0;
-    for(int y=0;y<viewHeight();y++)
-    for(int x=0;x<viewWidth();x++)
-      if(data[y][x]!=no_data)
+    for(const auto x: data)
+      if(x!=no_data)
         num_data_cells++;
   }
 
@@ -485,6 +486,10 @@ class Array2D {
     }
 
     GDALClose(fout);
+  }
+
+  double getCellArea() const {
+    return geotransform[1]*geotransform[5];
   }
 };
 
