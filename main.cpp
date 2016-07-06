@@ -371,7 +371,8 @@ class ConsumerSpecifics {
 
     //The loop breaks with a return. This is only reached if more cells are
     //visited than are in the tile, which implies that a loop must exist.
-    throw std::logic_error("There's a loop in the flow path!");
+    std::cerr<<"File "<<chunk.filename<<"("<<chunk.gridx<<","<<chunk.gridy<<") dimensions=("<<flowdirs.viewWidth()<<","<<flowdirs.viewHeight()<<") contains a loop!"<<std::endl;
+    throw std::logic_error("FollowPath() found a loop in the flow path!");
   }
 
   //As in the function above, we will start at an initial cell and follow its flow
