@@ -436,6 +436,8 @@ class ConsumerSpecifics {
         accum(x,y) = ACCUM_NO_DATA;
         continue;                
       }         
+
+      int n = flowdirs(x,y);       //The neighbour this cell flows into
       if(n==NO_FLOW)               //This cell does not flow into a neighbour
         continue;
 
@@ -472,7 +474,6 @@ class ConsumerSpecifics {
 
       if(flowdirs.isNoData(c.x,c.y)) //Oh snap! This isn't a real cell!
         continue;
-
 
       accum(c.x,c.y)++;              //This is a real cell, and it accumulates
                                      //one cell's worth of flow automatically.
