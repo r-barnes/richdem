@@ -537,18 +537,19 @@ class ConsumerSpecifics {
       flowdirs.flipHorz();
     timer_io.stop();
 
-    //Let's double-check that the flowdirs are valid
-    for(int y=0;y<flowdirs.viewHeight();y++)
-    for(int x=0;x<flowdirs.viewWidth();x++)
-      if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
-        throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
-
     timer_calc.start();
     FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
 
     std::cerr<<"Accum first: "<<std::endl;
     print2d(accum);
+
+  void VerifyInputSanity(){
+    //Let's double-check that the flowdirs are valid
+    for(size_t y=0;y<flowdirs.viewHeight();y++)
+    for(size_t x=0;x<flowdirs.viewWidth();x++)
+      if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
+        throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
   }
 
   void FirstRound(const ChunkInfo &chunk, Job1<T> &job1){
