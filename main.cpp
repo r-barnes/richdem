@@ -443,7 +443,6 @@ class ConsumerSpecifics {
     accum.resize(flowdirs,0);
     accum.setNoData(ACCUM_NO_DATA);
 
-    std::cerr<<"Calculating dependencies..."<<std::endl;
     Array2D<dependency_t> dependencies;
     dependencies.resize(flowdirs,0);
     for(size_t y=0;y<flowdirs.viewHeight();y++)
