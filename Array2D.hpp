@@ -330,6 +330,23 @@ class Array2D {
         count++;
     return count;
   }
+
+  void iToxy(const int i, int &x, int &y) const {
+    x = i%view_width;
+    y = i/view_width;
+  }
+
+  int xyToI(int x, int y) const {
+    return y*view_width+x;
+  }
+
+  int nToI(int i, int dx, int dy) const {
+    int x=i%view_width+dx;
+    int y=i/view_width+dy;
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return xyToI(x,y);
+  }
   bool operator==(const Array2D<T> &o){
     if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
       return false;
