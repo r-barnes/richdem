@@ -197,7 +197,7 @@ class ConsumerSpecifics {
     //These variables are needed by Priority-Flood. The internal
     //interconnections of labeled regions (named "graph") are also needed to
     //solve the problem, but that can be passed directly from the job object.
-    labels = Array2D<label_t>(dem.viewWidth(),dem.viewHeight(),0);
+    labels = Array2D<label_t>(dem,0);
 
     //Perform the watershed Priority-Flood algorithm on the chunk. The variant
     //by Zhou, Sun, and Fu (2015) is used for this; however, I have modified
