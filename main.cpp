@@ -331,7 +331,7 @@ class ConsumerSpecifics {
       const int n = flowdirs(x,y);     //Neighbour the current cell flows towards
 
       //Show the final part of the loop path (TODO)
-      if(path_len>max_path_length-200)
+      if(path_len>max_path_length-10)
         std::cerr<<"Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
 
       //If the neighbour this cell flows into is a no_data cell or this cell does
