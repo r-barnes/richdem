@@ -985,8 +985,8 @@ void Preparer(
           gridy,
           x,
           y,
-          bwidth,
-          bheight,
+          (total_width-x >=bwidth )?bwidth :total_width -x, //TODO: Check
+          (total_height-y>=bheight)?bheight:total_height-y,
           false
         );
       }
