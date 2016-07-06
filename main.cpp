@@ -684,7 +684,7 @@ class ConsumerSpecifics {
     timer_io.stop();
 
     timer_io.start();
-    accum.saveGDAL(chunk.outputname, chunk.filename, chunk.x, chunk.y);
+    accum.saveGDAL(chunk.outputname, chunk.x, chunk.y);
     timer_io.stop();
   }
 
