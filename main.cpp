@@ -540,14 +540,20 @@ class ConsumerSpecifics {
 
  public:
   void LoadFromEvict(const ChunkInfo &chunk){
-    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
-    std::cerr<<"Opening "<<chunk.filename<<" as flowdirs."<<std::endl;
+    #ifdef DEBUG
+      std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+      std::cerr<<"Opening "<<chunk.filename<<" as flowdirs."<<std::endl;
+    #endif
 
     timer_io.start();
     flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
 
-    std::cerr<<"Flowdirs raw: "<<std::endl;
-    print2d(flowdirs);
+    std::cerr<<"Loading with width="<<chunk.width<<", height="<<chunk.height<<std::endl;
+
+    #ifdef DEBUG
+     std::cerr<<"Flowdirs raw: "<<std::endl;
+     print2d(flowdirs);
+    #endif
 
     if(chunk.flip & FLIP_VERT)
       flowdirs.flipVert();
@@ -559,8 +565,11 @@ class ConsumerSpecifics {
     FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
 
-    std::cerr<<"Accum first: "<<std::endl;
-    print2d(accum);
+    #ifdef DEBUG
+      std::cerr<<"Accum first: "<<std::endl;
+      print2d(accum);
+    #endif
+  }
 
   void VerifyInputSanity(){
     //Let's double-check that the flowdirs are valid
@@ -614,47 +623,38 @@ class ConsumerSpecifics {
     GridPerimToArray(accum,    job1.accum   );
 
     //TODO: Remove
-    std::cerr<<"Flowdirs: "<<std::endl;
-    print2d(flowdirs);
-    std::cerr<<"Accum: "<<std::endl;
-    print2d(accum);
-    std::cerr<<"Flowdirs Perim: "<<std::endl;
-    print1d(job1.flowdirs);
-    std::cerr<<"Accum perim: "<<std::endl;
-    print1das2d(job1.accum,flowdirs.viewWidth(),flowdirs.viewHeight());
-    std::cerr<<"Links: "<<std::endl;
-    print1das2d(job1.links,flowdirs.viewWidth(),flowdirs.viewHeight());
+    #ifdef DEBUG
+      std::cerr<<"Flowdirs: "<<std::endl;
+      print2d(flowdirs);
+      std::cerr<<"Accum: "<<std::endl;
+      print2d(accum);
+      std::cerr<<"Flowdirs Perim: "<<std::endl;
+      print1d(job1.flowdirs);
+      std::cerr<<"Accum perim: "<<std::endl;
+      print1das2d(job1.accum,flowdirs.viewWidth(),flowdirs.viewHeight());
+      std::cerr<<"Links: "<<std::endl;
+      print1das2d(job1.links,flowdirs.viewWidth(),flowdirs.viewHeight());
+    #endif
   }
 
   void SecondRound(const ChunkInfo &chunk, Job2<T> &job2){
-    std::cerr<<"SECOND ROUND"<<std::endl;
-    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+    #ifdef DEBUG
+      std::cerr<<"SECOND ROUND"<<std::endl;
+      std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+    #endif
 
     auto &accum_offset = job2;
 
-    std::cerr<<"Received increments: "<<std::endl;
-    print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
+    #ifdef DEBUG
+      std::cerr<<"Received increments: "<<std::endl;
+      print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
 
-    std::cerr<<"Accumulation"<<std::endl;
-    print2d(accum);
+      std::cerr<<"Accumulation"<<std::endl;
+      print2d(accum);
 
-    // //Zero the external flows
-    // for(int y=0;y<flowdirs.viewHeight();y++)
-    // for(int x=0;x<flowdirs.viewWidth();x++){ //TODO improve efficiency
-    //   if(!flowdirs.edge_grid(x,y))
-    //     continue;
-    //   int n  = flowdirs(x,y);
-    //   int nx = x+dx[n];
-    //   int ny = y+dy[n];
-    //   if(!flowdirs.in_grid(nx,ny))
-    //     accum(x,y)=0;
-    // }
-
-    std::cerr<<"Adjusted accumulation"<<std::endl;
-    print2d(accum);
-
-    // std::cerr<<"Calculated offsets: "<<std::endl;
-    // print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
+      std::cerr<<"Adjusted accumulation"<<std::endl;
+      print2d(accum);
+    #endif
 
     for(int s=0;s<(int)accum_offset.size();s++){
       if(accum_offset.at(s)==0)
@@ -670,8 +670,10 @@ class ConsumerSpecifics {
     }
 
     //TODO: Remove
-    std::cerr<<"Final accumulation"<<std::endl;
-    print2d(accum);
+    #ifdef DEBUG
+      std::cerr<<"Final accumulation"<<std::endl;
+      print2d(accum);
+    #endif
 
     //At this point we're done with the calculation! Boo-yeah!
 
@@ -825,15 +827,17 @@ class ProducerSpecifics {
     const int gridheight = chunks.size();
     const int gridwidth  = chunks[0].size();
 
-    std::cerr<<std::endl;
-    std::cerr<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"======PRODUCER==========="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<std::endl;
-    std::cerr<<std::endl;
+    #ifdef DEBUG
+      std::cerr<<std::endl;
+      std::cerr<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"======PRODUCER==========="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<std::endl;
+      std::cerr<<std::endl;
+    #endif
 
     //Set initial values for all dependencies to zero
     for(auto &row: jobs1)
@@ -864,11 +868,13 @@ class ProducerSpecifics {
     }
 
     //TODO: Remove
-    for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++){
-      std::cerr<<"Dependencies of chunk ("<<x<<","<<y<<")"<<std::endl;
-      print1das2d(jobs1.at(y).at(x).dependencies,chunks.at(y).at(x).width,chunks.at(y).at(x).height);
-    }
+    #ifdef DEBUG
+      for(int y=0;y<gridheight;y++)
+      for(int x=0;x<gridwidth;x++){
+        std::cerr<<"Dependencies of chunk ("<<x<<","<<y<<")"<<std::endl;
+        print1das2d(jobs1.at(y).at(x).dependencies,chunks.at(y).at(x).width,chunks.at(y).at(x).height);
+      }
+    #endif
 
     class atype {
      public:
@@ -931,37 +937,28 @@ class ProducerSpecifics {
 
     //TODO: Remove this block as this should always be zero once I have things
     //right.
-    int unprocessed_dependencies=0;
-    for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++)
-    for(size_t s=0;s<jobs1[y][x].dependencies.size();s++)
-      unprocessed_dependencies+=jobs1[y][x].dependencies[s];
-    std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
-
-    // for(int y=0;y<gridheight;y++)
-    // for(int x=0;x<gridwidth;x++){
-    //   if(chunks[y][x].nullChunk)
-    //     continue;
-
-    //   // for(size_t s=0;s<jobs1.at(y).at(x).accum.size();s++) //TODO: NO_FLOW
-    //   //   if(jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL)
-    //   //     jobs1.at(y).at(x).accum.at(s) = 0;
-
-    //   //TODO: Could start clearing memory here
-    // }
+    #ifdef DEBUG
+      int unprocessed_dependencies=0;
+      for(int y=0;y<gridheight;y++)
+      for(int x=0;x<gridwidth;x++)
+      for(size_t s=0;s<jobs1[y][x].dependencies.size();s++)
+        unprocessed_dependencies+=jobs1[y][x].dependencies[s];
+      std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
+    #endif
 
     job2s_to_dist = std::move(jobs1);
 
-    std::cerr<<std::endl;
-    std::cerr<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"==========DONE==========="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<"========================="<<std::endl;
-    std::cerr<<std::endl;
-    std::cerr<<std::endl;
-
+    #ifdef DEBUG
+      std::cerr<<std::endl;
+      std::cerr<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"==========DONE==========="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<"========================="<<std::endl;
+      std::cerr<<std::endl;
+      std::cerr<<std::endl;
+    #endif
   }
 
   Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
@@ -1034,7 +1031,6 @@ void Consumer(){
     //This message indicates that everything is done and the Consumer should shut
     //down.
     if(the_job==SYNC_MSG_KILL){
-      std::cerr<<"Received kill message."<<std::endl;
       return;
 
     //This message indicates that the consumer should prepare to perform the
