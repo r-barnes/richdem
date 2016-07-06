@@ -390,13 +390,8 @@ class ConsumerSpecifics {
     Array2D<accum_t>         &accum,    //Output: Accumulation matrix
     const accum_t additional_accum      //Add this to every cell in the flow path
   ){
-    int count = 0;
-
-    //TODO: Shouldn't need this since a loop would be detected in FollowPath
-    const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
-
     //Follow the flow path until it terminates
-    while(count++<max_path_length){
+    while(true){
       if(!flowdirs.in_grid(x,y))
         return;
 
@@ -404,26 +399,16 @@ class ConsumerSpecifics {
       if(flowdirs.isNoData(x,y))
         return;
 
-      int n  = flowdirs(x,y); //Get neighbour
-      int nx = x+dx[n];
-      int ny = y+dy[n];
-      
       //Add additional flow accumulation to this cell
-      //if(flowdirs.in_grid(nx,ny))
-        accum(x,y) += additional_accum;
-      //else //The neighbour is off the edge of the grid. Flow path has terminated
-      //  return;
+      accum(x,y) += additional_accum;
 
-      if(n==NO_FLOW)         //This cell doesn't flow to a neighbour
+      int n = flowdirs(x,y); //Get neighbour
+      if(n==NO_FLOW)          //This cell doesn't flow to a neighbour
         return;              
 
-      x = nx;
-      y = ny;
+      x += dx[n];
+      y += dy[n];
     }
-
-    //The loop breaks with a return. This is only reached if more cells are
-    //visited than are in the tile, which implies that a loop must exist.
-    throw std::logic_error("There's a loop in the flow path!");
   }
 
   void FlowAccumulation(
