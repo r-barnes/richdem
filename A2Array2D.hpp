@@ -486,7 +486,6 @@ class A2Array2D {
         tile.loadData();
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
-      //TODO
       if((tile.geotransform[0]<0) ^ flipH)
         tile.flipHorz();
       if((tile.geotransform[5]<0) ^ flipV)
@@ -510,7 +509,7 @@ class A2Array2D {
     for(auto &row: data)
     for(auto &tile: row)
       if(!tile.null_tile)
-        tile.setNoData(ndval); //TODO: Lazy setting: don't set this value until tile is completely loaded
+        tile.setNoData(ndval);
   }
 
   int32_t getEvictions() const {
