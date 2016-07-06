@@ -593,25 +593,26 @@ class ConsumerSpecifics {
     //to know where flow paths originating at the top go to. On the otherhand,
     //if we are not the top segment, then consider each cell of the top row
     //and find out where its flow goes to.
-    // if(!(chunk.edge & GRID_TOP)) //TODO
-      for(int x=0;x<flowdirs.viewWidth();x++)
-        FollowPath(x,0,flowdirs,links);
+    timer_calc.start();
+    if(!(chunk.edge & GRID_TOP))
+      for(size_t x=0;x<flowdirs.viewWidth();x++)
+        FollowPath(x,0,chunk,flowdirs,links);
 
     //If we are the bottom segment, nothing can flow into us, so we do not
     //need to know where flow paths originating at the bottom go to. On the
     //otherhand, if we are not the bottom segment, then consider each cell of
     //the bottom row and find out where its flow goes to.
-    // if(!(chunk.edge & GRID_BOTTOM)) //TODO
-      for(int x=0;x<flowdirs.viewWidth();x++)
-        FollowPath(x,flowdirs.viewHeight()-1,flowdirs,links);
+    if(!(chunk.edge & GRID_BOTTOM))
+      for(size_t x=0;x<flowdirs.viewWidth();x++)
+        FollowPath(x,flowdirs.viewHeight()-1,chunk,flowdirs,links);
 
-    // if(!(chunk.edge & GRID_LEFT)) //TODO
-      for(int y=0;y<flowdirs.viewHeight();y++)
-        FollowPath(0,y,flowdirs,links);
+    if(!(chunk.edge & GRID_LEFT))
+      for(size_t y=0;y<flowdirs.viewHeight();y++)
+        FollowPath(0,y,chunk,flowdirs,links);
 
-    // if(!(chunk.edge & GRID_RIGHT)) //TODO
-      for(int y=0;y<flowdirs.viewHeight();y++)
-        FollowPath(flowdirs.viewWidth()-1,y,flowdirs,links);
+    if(!(chunk.edge & GRID_RIGHT))
+      for(size_t y=0;y<flowdirs.viewHeight();y++)
+        FollowPath(flowdirs.viewWidth()-1,y,chunk,flowdirs,links);
 
     job1.links = std::move(links);
 
