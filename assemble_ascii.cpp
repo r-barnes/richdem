@@ -24,7 +24,7 @@ void Process(std::string path, int gridwidth, int gridheight, int tile_width, in
       int ty = y/tile_height;
       int px = x%tile_width;
       int py = y%tile_height;
-      std::cout<<std::setw(4)<<grid[ty][tx](px,py);
+      std::cout<<std::setw(4)<<(int)grid[ty][tx](px,py);
     }
     std::cout<<std::endl;
   }
