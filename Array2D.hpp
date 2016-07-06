@@ -17,6 +17,13 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #endif
 
+#ifndef d8flowdirs_dxdy
+#define d8flowdirs_dxdy
+const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
+///y offsets of D8 neighbours, from a central cell
+const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+#endif
+
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
