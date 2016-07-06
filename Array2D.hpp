@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <typeinfo>
 #include <stdexcept>
-#include "Layoutfile.hpp"
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
