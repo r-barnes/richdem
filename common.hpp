@@ -14,9 +14,12 @@ const uint8_t GRID_BOTTOM = 8;
 
 //D8 Directions
 ///x offsets of D8 neighbours, from a central cell
+#ifndef d8flowdirs_dxdy
+#define d8flowdirs_dxdy
 const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
 ///y offsets of D8 neighbours, from a central cell
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+#endif
 //234
 //105
 //876
