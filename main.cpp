@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <csignal>
+#include <stdexcept>
 
 typedef uint8_t flowdirs_t;
 typedef int8_t  visited_t;
@@ -133,7 +134,8 @@ static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
     return 7;
   else
     std::cerr<<"Should never reach this point!"<<std::endl;
-  return -199; //TODO: Blow up
+  throw std::runtime_error("Requested edge direction not on an edge!");
+  return -199;
 }
 
 
