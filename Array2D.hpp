@@ -329,9 +329,9 @@ class Array2D {
       std::cerr<<std::endl;
 
       //TODO
-      if(geotransform[0]<0)
+      if(geotransform[0]>0)
         flipHorz();
-      if(geotransform[5]<0)
+      if(geotransform[5]>0)
         flipVert();
 
       GDALClose(fin);
