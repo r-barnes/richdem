@@ -249,7 +249,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   // std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
 
   std::cerr<<"Saving results..."<<std::endl;
-  dem.saveGDAL(output_filename+"elev");
   fds.saveGDAL(output_filename);
 
   total_time.stop();
@@ -262,7 +261,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   std::cerr<<"fds evictions: "<<fds.getEvictions()<<std::endl;
 }
 
-//TODO: Flip tiles where appropriate
 int main(int argc, char **argv){
   if(argc!=6){
     std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size> <Temp Files> <Output Files> <noflip/fliph/flipv/fliphv>"<<std::endl;
