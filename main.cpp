@@ -605,6 +605,24 @@ class ConsumerSpecifics {
     //Construct output arrays
     GridPerimToArray(flowdirs, job1.flowdirs);
     GridPerimToArray(accum,    job1.accum   );
+    timer_calc.stop();
+
+    #ifdef DEBUG
+      std::cerr<<job1.gridx<<","<<job1.gridy<<" Links: ";
+      for(auto const x: job1.links)
+        std::cerr<<x<<" ";
+      std::cerr<<std::endl;
+
+      std::cerr<<job1.gridx<<","<<job1.gridy<<" Flowdirs: ";
+      for(auto const x: job1.flowdirs)
+        std::cerr<<x<<" ";
+      std::cerr<<std::endl;
+
+      std::cerr<<job1.gridx<<","<<job1.gridy<<" Accum: ";
+      for(auto const x: job1.accum)
+        std::cerr<<x<<" ";
+      std::cerr<<std::endl;
+    #endif
 
     //TODO: Remove
     #ifdef DEBUG
