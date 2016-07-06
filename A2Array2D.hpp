@@ -116,7 +116,6 @@ class A2Array2D {
 
     if(tile.created){
       tile.loadData();
-      std::cerr<<"Loading "<<tile.filename<<std::endl;
       if(readonly){
         if((tile.geotransform[0]<0) ^ flipH){
           std::cerr<<"Flipping tile horz "<<tile.filename<<std::endl;
@@ -207,7 +206,7 @@ class A2Array2D {
     std::cerr<<"Total width: " <<total_width_in_cells<<std::endl;
     std::cerr<<"Total height: "<<total_height_in_cells<<std::endl;
 
-    std::cerr<<"Found "<<not_null_tiles<<" not-null tiles of "<<(data[0].size()*data.size())<<std::endl;
+    std::cerr<<not_null_tiles<<" of "<<(data[0].size()*data.size())<<" tiles were not null."<<std::endl;
   }
 
   A2Array2D(std::string prefix, int per_tile_width, int per_tile_height, int width, int height, int cachesize){
@@ -245,8 +244,6 @@ class A2Array2D {
     total_height_in_cells = other.total_height_in_cells;
     flipV                 = other.flipV;
     flipH                 = other.flipH;
-
-    std::cerr<<"other hit="<<other.heightInTiles()<<std::endl;
 
     for(size_t y=0;y<other.heightInTiles();y++){
       data.emplace_back();
