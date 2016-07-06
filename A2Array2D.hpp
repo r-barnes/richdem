@@ -52,6 +52,9 @@ int peekLayoutTileSize(const std::string &layout_filename) {
 
 template<class T>
 class A2Array2D {
+ public:
+  bool flipH = false;
+  bool flipV = false;
  private:
   template<typename U> friend class A2Array2D;
 
@@ -113,6 +116,10 @@ class A2Array2D {
 
     if(tile.created){
       tile.loadData();
+      if((tile.geotransform[0]<0) ^ flipH)
+        tile.flipHorz();
+      if((tile.geotransform[5]<0) ^ flipV)
+        tile.flipVert();
     } else {
       if(tile.create_with_width!=-1 && tile.create_with_height!=-1)
         tile.resize(tile.create_with_width,tile.create_with_height);
@@ -480,9 +487,9 @@ class A2Array2D {
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
       //TODO
-      if(tile.geotransform[0]<0)
+      if((tile.geotransform[0]<0) ^ flipH)
         tile.flipHorz();
-      if(tile.geotransform[5]<0)
+      if((tile.geotransform[5]<0) ^ flipV)
         tile.flipVert();
 
       zero_count      += tile.countval(0);

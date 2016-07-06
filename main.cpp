@@ -138,7 +138,7 @@ static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
 
 
 template<class T>
-void Master(std::string layoutfile, int cachesize, std::string tempfile_name, std::string output_filename){
+void Master(std::string layoutfile, int cachesize, std::string tempfile_name, std::string output_filename, std::string flip_style){
   Timer total_time;
   total_time.start();
 
@@ -146,6 +146,12 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   temp_fds_name.replace(temp_fds_name.find("%f"), 2, "%f-fds");
 
   A2Array2D<T>          dem(layoutfile,cachesize);
+
+  if(flip_style=="fliph" || flip_style=="fliphv")
+    dem.flipH = true;
+  if(flip_style=="flipv" || flip_style=="fliphv")
+    dem.flipV = true;
+
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
   fds.setNoData(FLOW_NO_DATA);
@@ -256,12 +262,13 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
 //TODO: Flip tiles where appropriate
 int main(int argc, char **argv){
-  if(argc!=5){
-    std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size> <Temp Files> <Output Files>"<<std::endl;
+  if(argc!=6){
+    std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size> <Temp Files> <Output Files> <noflip/fliph/flipv/fliphv>"<<std::endl;
     std::cerr<<"\tor use 'table' for cache size"<<std::endl;
     return -1;
   }
-  auto file_type = peekLayoutType(argv[1]);
+  auto file_type         = peekLayoutType(argv[1]);
+  std::string flip_style = argv[5];
 
   if(argv[2]==std::string("table")){
     int dtype_size = GDALGetDataTypeSizeBytes(file_type);
@@ -277,19 +284,19 @@ int main(int argc, char **argv){
 
   switch(file_type){
     case GDT_Byte:
-      Master<uint8_t >(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<uint8_t >(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_UInt16:
-      Master<uint16_t>(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<uint16_t>(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_Int16:
-      Master<int16_t >(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<int16_t >(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_UInt32:
-      Master<uint32_t>(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<uint32_t>(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_Int32:
-      Master<int32_t >(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<int32_t >(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_Float32:
-      Master<float   >(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<float   >(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     case GDT_Float64:
-      Master<double  >(argv[1],cachesize,tempfile_name,output_filename);break;
+      Master<double  >(argv[1],cachesize,tempfile_name,output_filename,flip_style);break;
     default:
       std::cerr<<"Unrecognised data type!"<<std::endl;
       return -1;
