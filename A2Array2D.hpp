@@ -16,8 +16,10 @@ GDALDataType peekLayoutType(const std::string &layout_filename) {
     GDALAllRegister();
     std::string tile_path = lf.getPath()+lf.getFilename();
     GDALDataset *fin = (GDALDataset*)GDALOpen(tile_path.c_str(), GA_ReadOnly);
-    if(fin==NULL)
+    if(fin==NULL){
       std::cerr<<"Could not open '"<<(lf.getPath()+lf.getFilename())<<"' to determine layout type."<<std::endl;
+      throw std::runtime_error("Could not open one of the data files!");
+    }
 
     GDALRasterBand *band   = fin->GetRasterBand(1);
     GDALDataType data_type = band->GetRasterDataType();
@@ -175,11 +177,11 @@ class A2Array2D {
     for(size_t y=0;y<heightInTiles()-1;y++)
     for(size_t x=0;x<widthInTiles()-1;x++){
       if(data[y][x].viewWidth()!=per_tile_width){
-        std::cerr<<data[y][x].filename<<" has a non-standard width."<<std::endl;
+        std::cerr<<data[y][x].filename<<" has a non-standard width. Found "<<data[y][x].viewWidth()<<" expected "<<per_tile_width<<"."<<std::endl;
         good = false;
       }
       if(data[y][x].viewHeight()!=per_tile_height){
-        std::cerr<<data[y][x].filename<<" has a non-standard height."<<std::endl;
+        std::cerr<<data[y][x].filename<<" has a non-standard height. Found "<<data[y][x].viewHeight()<<" expected "<<per_tile_height<<"."<<std::endl;
         good = false;
       }
     }
