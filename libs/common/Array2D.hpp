@@ -164,6 +164,11 @@ class Array2D {
     total_height = band->GetYSize();
     no_data      = band->GetNoDataValue();
 
+    if(exact && xOffset==0 && yOffset==0 && (part_width!=total_width || part_height!=total_height))
+      throw std::runtime_error("Tile dimensions did not match expectations!");
+
+    //TODO: What's going on here?
+
     if(xOffset+part_width>=total_width)
       part_width  = total_width-xOffset;
     if(yOffset+part_height>=total_height)
@@ -227,7 +232,7 @@ class Array2D {
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
       std::cerr<<"Failed to open file '"<<filename<<"'."<<std::endl;
-      assert(fout.good());
+      throw std::logic_error("Failed to open a file!");
     }
 
     fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
@@ -458,13 +463,13 @@ class Array2D {
   void saveGDAL(const std::string &filename, int xoffset, int yoffset){
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(poDriver==NULL){
-      std::cerr<<"Could not load GTiff driver!"<<std::endl;
-      throw std::runtime_error("Could not load GTiff driver!");
+      std::cerr<<"Could not open GDAL driver!"<<std::endl;
+      throw std::runtime_error("Could not open GDAL driver!");
     }
     GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
     if(fout==NULL){
-      std::cerr<<"Could not open output file!"<<std::endl;
-      throw std::runtime_error("Could not open output file!");
+      std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
+      throw std::runtime_error("Could not open file for GDAL save!");
     }
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
@@ -480,6 +485,11 @@ class Array2D {
 
     auto out_geotransform = geotransform;
 
+    if(out_geotransform.size()!=6){
+      std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
+      throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+    }
+
     //We shift the top-left pixel of hte image eastward to the appropriate
     //coordinate
     out_geotransform[0] += xoffset*geotransform[1];
@@ -492,7 +502,7 @@ class Array2D {
     fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
-      std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotrans[3]<< std::endl;
+      std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3]<< std::endl;
     #endif
 
     for(int y=0;y<view_height;y++){
