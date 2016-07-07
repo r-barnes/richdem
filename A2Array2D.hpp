@@ -185,6 +185,8 @@ class A2Array2D {
     bool good=true;
     for(size_t y=0;y<heightInTiles()-1;y++)
     for(size_t x=0;x<widthInTiles()-1;x++){
+      if(data[y][x].null_tile)
+        continue;
       if(data[y][x].viewWidth()!=per_tile_width){
         std::cerr<<data[y][x].filename<<" has a non-standard width. Found "<<data[y][x].viewWidth()<<" expected "<<per_tile_width<<"."<<std::endl;
         good = false;
