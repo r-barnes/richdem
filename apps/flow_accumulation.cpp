@@ -14,7 +14,7 @@ int PerformAlgorithm(std::string filename, std::string output_prefix){
 
   flowdirs.countDataCells();
 
-  d8_upslope_area2(flowdirs, area);
+  d8_upslope_area(flowdirs, area);
 
   return 0;
 }

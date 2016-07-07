@@ -7,8 +7,8 @@ frances:
 flood_for_flowdirs:
 	g++ -o flood_for_flowdirs.exe -O3 `gdal-config --cflags` `gdal-config --libs` flood_for_flowdirs.cpp -lgdal --std=c++11 -Wall # -Wno-unknown-pragmas
 
-fast_accum:
-	g++ -o fast_accum.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` fast_accum.cpp -lgdal --std=c++11 -Wall -DNOPROGRESS -DNDEBUG # -Wno-unknown-pragmas
+flow_accumulation:
+	g++ -o flow_accumulation.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` flow_accumulation.cpp -lgdal --std=c++11 -Wall -DNOPROGRESS -DNDEBUG # -Wno-unknown-pragmas
 
 fast_flood:
 	g++ -o fast_flood.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` fast_flood.cpp -lgdal --std=c++11 -Wall -DNOPROGRESS -DNDEBUG # -Wno-unknown-pragmas
