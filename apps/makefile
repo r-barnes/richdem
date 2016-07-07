@@ -28,6 +28,9 @@ expand_dimensions:
 test:
 	g++ -o test.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` test.cpp -lgdal --std=c++11 -Wall # -Wno-unknown-pragmas
 
+pitremove:
+	g++ -o pitremove.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` pitremove.cpp -lgdal --std=c++11 -Wall # -Wno-unknown-pragmas
+
 
 clean:
 	rm -rf *.exe
