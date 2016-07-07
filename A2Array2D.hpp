@@ -117,14 +117,10 @@ class A2Array2D {
     if(tile.created){
       tile.loadData();
       if(readonly){
-        if((tile.geotransform[0]<0) ^ flipH){
-          std::cerr<<"Flipping tile horz "<<tile.filename<<std::endl;
+        if((tile.geotransform[0]<0) ^ flipH)
           tile.flipHorz();
-        }
-        if((tile.geotransform[5]<0) ^ flipV){
-          std::cerr<<"Flipping tile vert "<<tile.filename<<std::endl;
+        if((tile.geotransform[5]<0) ^ flipV)
           tile.flipVert();
-        }
       }
     } else {
       if(tile.create_with_width!=-1 && tile.create_with_height!=-1)
