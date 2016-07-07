@@ -128,6 +128,7 @@ class Array2D {
   int view_xoff;
   int view_yoff;
   int num_data_cells = -1;
+  bool file_native;
 
   T   no_data;
 
@@ -135,6 +136,10 @@ class Array2D {
     assert(empty());
     assert(xOffset>=0);
     assert(yOffset>=0);
+
+    file_native = false;
+
+    this->filename = filename;
 
     GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
     if(fin==NULL){
@@ -216,6 +221,8 @@ class Array2D {
 
   void saveNative(const std::string &filename){
     std::fstream fout;
+
+    file_native = true;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
