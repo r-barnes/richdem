@@ -324,6 +324,10 @@ class ConsumerSpecifics {
 
     int x0y0serial = xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight());
 
+    #ifdef DEBUG
+      std::cerr<<std::endl<<"FP: "<<chunk.gridx<<","<<chunk.gridy<<": ("<<x0<<","<<y0<<")";
+    #endif
+
     const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
 
     //Follow the flow path until it terminates
@@ -346,6 +350,10 @@ class ConsumerSpecifics {
       //Flow direction was valid. Where does it lead?
       const int nx = x+dx[n]; //Get neighbour's x-coordinate.
       const int ny = y+dy[n]; //Get neighbour's y-coordinate.
+
+      #ifdef DEBUG
+        std::cerr<<" -- ("<<nx<<","<<ny<<")";
+      #endif
 
       //The neighbour cell is off one of the sides of the tile. Therefore, its
       //flow may be passed on to a neighbouring tile. Thus, we need to link this
