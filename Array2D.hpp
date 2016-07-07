@@ -310,11 +310,6 @@ class Array2D {
       if(temp!=CE_None)
         throw std::runtime_error("Error reading file with GDAL!");
 
-      std::cerr<<"Geotrans: ";
-      for(auto x: geotransform)
-        std::cerr<<x<<" ";
-      std::cerr<<std::endl;
-
       GDALClose(fin);
     }
   }
