@@ -249,6 +249,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   // std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
 
   std::cerr<<"Saving results..."<<std::endl;
+  //dem.saveGDAL(output_filename+"elev"); //TODO
   fds.saveGDAL(output_filename);
 
   total_time.stop();
