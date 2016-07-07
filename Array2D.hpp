@@ -292,7 +292,7 @@ class Array2D {
 
   void loadData() {
     if(!data.empty())
-      return;
+      return; //TODO: Warning?
 
     if(file_native){
       loadNative(filename, true);
@@ -309,11 +309,6 @@ class Array2D {
       auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
       if(temp!=CE_None)
         throw std::runtime_error("Error reading file with GDAL!");
-
-      std::cerr<<"Geotrans: ";
-      for(auto x: geotransform)
-        std::cerr<<x<<" ";
-      std::cerr<<std::endl;
 
       GDALClose(fin);
     }
