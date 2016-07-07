@@ -1,6 +1,8 @@
 #frances_windows:
 #	x86_64-w64-mingw32-g++ -o frances_win.exe -O3 `gdal-config --cflags` `gdal-config --dep-libs` frances.cpp -Wall -static-libgcc -static-libstdc++ --std=c++11 # -Wno-unknown-pragmas
 
+all: pitremove flow_accumulation
+
 frances:
 	g++ -o frances.exe -O3 `gdal-config --cflags` `gdal-config --libs` frances.cpp -lgdal --std=c++11 -Wall # -Wno-unknown-pragmas
 
