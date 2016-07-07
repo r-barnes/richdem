@@ -24,7 +24,7 @@ void FollowPath(
 
     //Show the final part of the loop path (TODO)
     if(path_len>max_path_length-10)
-      std::cerr<<"Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
+      std::cout<<x<<","<<y<<" with flowdir "<<n<<"\n";
 
     if(flowdirs.isNoData(x,y) || n==NO_FLOW)
       return;
@@ -39,7 +39,7 @@ void FollowPath(
     y = ny;
   }
 
-  std::cerr<<"\n"<<std::endl;
+  std::cout<<"\n\n";
 }
 
 
