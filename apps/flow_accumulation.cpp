@@ -7,21 +7,21 @@
 #include "../libs/methods/d8_methods.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string output_prefix){
+int PerformAlgorithm(std::string filename, std::string output){
   Array2D<T> flowdirs(filename,false);
 
   Array2D<int> area;
 
-  flowdirs.countDataCells();
-
   d8_upslope_area(flowdirs, area);
+
+  area.saveGDAL(output,0,0);
 
   return 0;
 }
 
 int main(int argc, char **argv){
   if(argc!=3){
-    std::cerr<<argv[0]<<" <INPUT> <OUTPUT_PREFIX>"<<std::endl;
+    std::cerr<<argv[0]<<" <Flowdirs input file> <Output filename>"<<std::endl;
     return -1;
   }
 
