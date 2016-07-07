@@ -11,19 +11,7 @@ int PerformAlgorithm(std::string filename, std::string output_prefix){
   
   Array2D<T> elevations(filename,false);
 
-  for(int y=0;y<elevations.viewHeight();y++){
-    for(int x=0;x<elevations.viewWidth();x++)
-      std::cerr<<(int)elevations(x,y)<<" ";
-    std::cerr<<std::endl;
-  }
-
   improved_priority_flood(elevations);
-
-  for(int y=0;y<elevations.viewHeight();y++){
-    for(int x=0;x<elevations.viewWidth();x++)
-      std::cerr<<(int)elevations(x,y)<<" ";
-    std::cerr<<std::endl;
-  }
 
   Array2D<uint8_t> flowdirs;
 
