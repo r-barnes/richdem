@@ -24,6 +24,7 @@ GDALDataType peekGDALType(const std::string &filename) {
   return data_type;
 }
 
+
 template<class T>
 void getGDALHeader(
   const std::string &filename,
