@@ -19,8 +19,7 @@
 
 #ifndef d8flowdirs_dxdy
 #define d8flowdirs_dxdy
-const int dx[9]={0,-1,-1,0,1,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
-///y offsets of D8 neighbours, from a central cell
+const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
 const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
 #endif
 
@@ -295,7 +294,7 @@ class Array2D {
 
   void loadData() {
     if(!data.empty())
-      return;
+      return; //TODO: Warning?
 
     if(file_native){
       std::ifstream fin(filename, std::ios::in | std::ios::binary);
@@ -597,19 +596,19 @@ class Array2D {
     return data[y*view_width+x];
   }
 
-  std::vector<T> topRow() const {    //TODO: Test
+  std::vector<T> topRow() const {    
     return std::vector<T>(data.begin(),data.begin()+view_width);
   }
 
-  std::vector<T> bottomRow() const { //TODO: Test
+  std::vector<T> bottomRow() const { 
     return std::vector<T>(data.begin()+(view_height-1)*view_width, data.begin()+view_height*view_width);
   }
 
-  std::vector<T> leftColumn() const { //TODO: Test
+  std::vector<T> leftColumn() const { 
     return getColData(0); 
   }
 
-  std::vector<T> rightColumn() const { //TODO: Test
+  std::vector<T> rightColumn() const { 
     return getColData(view_width-1);
   }
 
