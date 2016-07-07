@@ -133,8 +133,6 @@ class Array2D {
 
   GDALDataType data_type;
 
-  size_t header_size = -1;
-
   int total_height;
   int total_width;
   int view_height;
@@ -281,8 +279,6 @@ class Array2D {
     out.write(reinterpret_cast<const char*>(&projection_size), sizeof(std::string::size_type));
     out.write(reinterpret_cast<const char*>(projection.data()), projection.size()*sizeof(const char));
 
-    header_size = out.tellg();
-
     out.write(reinterpret_cast<const char*>(data.data()), data.size()*sizeof(T));
   }
 
@@ -297,25 +293,10 @@ class Array2D {
 
   void loadData() {
     if(!data.empty())
-      return;
+      return; //TODO: Warning?
 
     if(file_native){
-      std::ifstream fin(filename, std::ios::in | std::ios::binary);
-      assert(fin.good());
-
-      #ifdef WITH_COMPRESSION
-        boost::iostreams::filtering_istream in;
-        in.push(boost::iostreams::zlib_decompressor());
-        in.push(fin);
-      #else
-        auto &in = fin;
-      #endif
-
-      data.resize(view_height*view_width);
-
-      in.seekg(header_size);
-
-      in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
+      loadNative(filename, true);
     } else {
       GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
       if(fin==NULL){
@@ -365,10 +346,10 @@ class Array2D {
     projection.resize(projection_size,' ');
     in.read(reinterpret_cast<char*>(&projection[0]), projection.size()*sizeof(char));
 
-    header_size = in.tellg();
-
-    if(load_data)
-      loadData();
+    if(load_data){
+      data.resize(view_height*view_width);
+      in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
+    }
   }
 
   //Note: The following functions return signed integers, which make them
