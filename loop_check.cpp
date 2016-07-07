@@ -48,8 +48,8 @@ template<class T>
 void Master(std::string input){
   Array2D<T> inp(input, 0, 0, 0, 0, false);
 
-  for(int y=0;y<inp.viewHeight();y++)
-  for(int x=0;x<inp.viewWidth();x++)
+  for(size_t y=0;y<inp.viewHeight();y++)
+  for(size_t x=0;x<inp.viewWidth();x++)
     FollowPath(x,y,inp);
 }
 
