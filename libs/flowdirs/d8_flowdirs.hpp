@@ -9,7 +9,7 @@
 
 ///Value used to indicate that a cell does not have a defined flow direction
 //(i.e. that it has no local gradient)
-#define NO_FLOW       13
+#define NO_FLOW       0
 
 //Neighbour directions
 //345
