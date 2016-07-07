@@ -11,6 +11,18 @@
 #include <typeinfo>
 #include <stdexcept>
 
+//These enable compression in the loadNative() and saveNative() methods
+#ifdef WITH_COMPRESSION
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#endif
+
+#ifndef d8flowdirs_dxdy
+#define d8flowdirs_dxdy
+const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
+const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+#endif
+
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -47,6 +59,7 @@ void getGDALHeader(
 
   GDALClose(fin);
 }
+
 
 int getGDALDimensions(
   const std::string &filename,
@@ -119,8 +132,6 @@ class Array2D {
 
   GDALDataType data_type;
 
-  static const int HEADER_SIZE = 7*sizeof(int) + sizeof(T);
-
   int total_height;
   int total_width;
   int view_height;
@@ -132,7 +143,7 @@ class Array2D {
 
   T   no_data;
 
-  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0){
+  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
     assert(xOffset>=0);
     assert(yOffset>=0);
@@ -185,15 +196,11 @@ class Array2D {
     view_xoff = xOffset;
     view_yoff = yOffset;
 
-    std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
-    resize(view_width,view_height);
-    for(int y=yOffset;y<yOffset+view_height;y++){
-      auto temp = band->RasterIO( GF_Read, xOffset, y, view_width, 1, data.data()+(y-yOffset)*view_width, view_width, 1, data_type, 0, 0 );
-      if(temp!=CE_None)
-        throw std::runtime_error("Error reading file with GDAL!");
-    }
-
     GDALClose(fin);
+
+    //std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
+    if(load_data)
+      loadData();
   }
 
   GDALDataType myGDALType() const {
@@ -216,12 +223,26 @@ class Array2D {
     resize(width,height,val);
   }
 
+  template<class U>
+  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
+    total_height = other.total_height;
+    total_width  = other.total_width;
+    view_width   = other.view_width;
+    view_height  = other.view_height;
+    view_xoff    = other.view_xoff;
+    view_yoff    = other.view_yoff;
+    geotransform = other.geotransform;
+    projection   = other.projection;
+    basename     = other.basename;
+    resize(other.viewWidth(), other.viewHeight(), val);
+  }
+
   //Create internal array from a file
-  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0) : Array2D() {
+  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true) : Array2D() {
     if(native)
-      loadNative(filename);
+      loadNative(filename, load_data);
     else
-      loadGDAL(filename, xOffset, yOffset, part_width, part_height);
+      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
   }
 
   void saveNative(const std::string &filename){
@@ -235,36 +256,99 @@ class Array2D {
       throw std::logic_error("Failed to open a file!");
     }
 
-    fout.write(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    fout.write(reinterpret_cast<char*>(&total_width),    sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_height),    sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_width),     sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
-    fout.write(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
-    fout.write(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
-    fout.write(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    #ifdef WITH_COMPRESSION
+      boost::iostreams::filtering_ostream out;
+      out.push(boost::iostreams::zlib_compressor());
+      out.push(fout);
+    #else
+      auto &out = fout;
+    #endif
 
-    for(int y=0;y<view_height;y++)
-      fout.write(reinterpret_cast<char*>(data.data()+y*view_width), view_width*sizeof(T));
+    out.write(reinterpret_cast<const char*>(&total_height),   sizeof(int));
+    out.write(reinterpret_cast<const char*>(&total_width),    sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_height),    sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_width),     sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_xoff),      sizeof(int));
+    out.write(reinterpret_cast<const char*>(&view_yoff),      sizeof(int));
+    out.write(reinterpret_cast<const char*>(&num_data_cells), sizeof(int));
+    out.write(reinterpret_cast<const char*>(&no_data),        sizeof(T  ));
+
+    out.write(reinterpret_cast<const char*>(geotransform.data()), 6*sizeof(double));
+    std::string::size_type projection_size = projection.size();
+    out.write(reinterpret_cast<const char*>(&projection_size), sizeof(std::string::size_type));
+    out.write(reinterpret_cast<const char*>(projection.data()), projection.size()*sizeof(const char));
+
+    out.write(reinterpret_cast<const char*>(data.data()), data.size()*sizeof(T));
   }
 
-  void loadNative(const std::string &filename){
+  void setFilename(const std::string &filename){
+    this->filename = filename;
+  }
+
+  void dumpData() {
+    saveNative(filename);
+    clear();
+  }
+
+  void loadData() {
+    if(!data.empty())
+      return; //TODO: Warning?
+
+    if(file_native){
+      loadNative(filename, true);
+    } else {
+      GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+      if(fin==NULL){
+        std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
+        throw std::runtime_error("Failed to loadData() into tile.");
+      }
+
+      GDALRasterBand *band = fin->GetRasterBand(1);
+
+      data.resize(view_width*view_height);
+      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
+      if(temp!=CE_None)
+        throw std::runtime_error("Error reading file with GDAL!");
+
+      GDALClose(fin);
+    }
+  }
+
+  void loadNative(const std::string &filename, bool load_data=true){
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
     assert(fin.good());
 
-    fin.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    fin.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
-    fin.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
-    fin.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
-    fin.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    this->filename = filename;
+    file_native    = true;
 
-    resize(view_width,view_height);
+    #ifdef WITH_COMPRESSION
+      boost::iostreams::filtering_istream in;
+      in.push(boost::iostreams::zlib_decompressor());
+      in.push(fin);
+    #else
+      auto &in = fin;
+    #endif
 
-    for(int y=0;y<view_height;y++)
-      fin.read(reinterpret_cast<char*>(data.data()+y*view_width), view_width*sizeof(T));
+    in.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
+    in.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
+    in.read(reinterpret_cast<char*>(&view_yoff),      sizeof(int));
+    in.read(reinterpret_cast<char*>(&num_data_cells), sizeof(int));
+    in.read(reinterpret_cast<char*>(&no_data),        sizeof(T  ));
+    geotransform.resize(6);
+    in.read(reinterpret_cast<char*>(geotransform.data()), 6*sizeof(double));
+
+    std::string::size_type projection_size;
+    in.read(reinterpret_cast<char*>(&projection_size), sizeof(std::string::size_type));
+    projection.resize(projection_size,' ');
+    in.read(reinterpret_cast<char*>(&projection[0]), projection.size()*sizeof(char));
+
+    if(load_data){
+      data.resize(view_height*view_width);
+      in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
+    }
   }
 
   //Note: The following functions return signed integers, which make them
@@ -274,12 +358,46 @@ class Array2D {
   int  viewSize   () const { return view_width*view_height; }
   int  totalWidth () const { return total_width;    }
   int  totalHeight() const { return total_height;   }
-  int  viewWidth  () const { return view_width;     }
-  int  viewHeight () const { return view_height;    }
+  size_t viewWidth  () const { return view_width;     }
+  size_t viewHeight () const { return view_height;    }
   int  viewXoff   () const { return view_xoff;      }
   int  viewYoff   () const { return view_yoff;      }
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
+
+  T min() const {
+    T minval = std::numeric_limits<T>::max();
+    for(auto const x: data){
+      if(x==no_data)
+        continue;
+      minval = std::min(minval,x);
+    }
+    return minval;
+  }
+
+  T max() const {
+    T maxval = std::numeric_limits<T>::min();
+    for(auto const x: data){
+      if(x==no_data)
+        continue;
+      maxval = std::max(maxval,x);
+    }
+    return maxval;
+  }
+
+  void replace(const T oldval, const T newval){
+    for(auto &x: data)
+      if(x==oldval)
+        x = newval;
+  }
+
+  int countval(const T val) const {
+    int count=0;
+    for(const auto x: data)
+      if(x==val)
+        count++;
+    return count;
+  }
 
   void iToxy(const int i, int &x, int &y) const {
     x = i%view_width;
@@ -318,27 +436,44 @@ class Array2D {
       return false;
     if(noData()!=o.noData())
       return false;
-    for(int i=0;i<view_width*view_height;i++)
-      if(data[i]!=o.data[i])
-        return false;
-    return true;
+    return data==o.data;
   }
 
   bool isNoData(int x, int y) const {
-    return data[xyToI(x,y)]==no_data;
+    return data[y*view_width+x]==no_data;
   }
 
-  // void flipVert(){
-  //   std::reverse(data.begin(),data.end());
-  // }
+  void flipVert(){
+    for(int y=0;y<view_height/2;y++)
+      std::swap_ranges(
+        data.begin()+(y+0)*view_width,
+        data.begin()+(y+1)*view_width,
+        data.begin()+(view_height-1-y)*view_width
+      );
+  }
 
-  // void flipHorz(){
-  //   for(auto &row: data)
-  //     std::reverse(row.begin(),row.end());
-  // }
+  void flipHorz(){
+    for(int y=0;y<view_height;y++)
+      std::reverse(data.begin()+y*view_width,data.begin()+(y+1)*view_width);
+  }
+
+  void transpose(){
+    std::cerr<<"transpose() is an experimental feature."<<std::endl;
+    std::vector<T> new_data(view_width*view_height);
+    for(int y=0;y<view_height;y++)
+    for(int x=0;x<view_width;x++)
+      new_data[x*view_height+y] = data[y*view_width+x];
+    data = new_data;
+    std::swap(view_width,view_height);
+    //TODO
+  }
 
   bool in_grid(int x, int y) const {
     return 0<=x && x<view_width && 0<=y && y<view_height;
+  }
+
+  bool isEdgeCell(int x, int y) const {
+    return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
   void setNoData(const T &ndval){
@@ -355,8 +490,8 @@ class Array2D {
 
   //Destructively resizes the array. All data will die!
   void resize(int width, int height, const T& val = T()){
-    data.clear();
-    data.resize(width*height,val);
+    data.resize(width*height);
+    setAll(val);
     total_height = view_height = height;
     total_width  = view_width  = width;
   }
@@ -367,10 +502,28 @@ class Array2D {
     geotransform = other.geotransform;
   }
 
+  void expand(int new_width, int new_height, const T val){
+    if(new_width<view_width)
+      throw std::runtime_error("expand(): new_width<view_width");
+    if(new_height<view_height)
+      throw std::runtime_error("expand(): new_height<view_height");
+    
+    int old_width  = viewWidth();
+    int old_height = viewHeight();
+
+    std::vector<T> old_data = std::move(data);
+
+    resize(new_width,new_height,val);
+
+    for(int y=0;y<old_height;y++)
+    for(int x=0;x<old_width;x++)
+      data[y*new_width+x] = old_data[y*old_width+x];
+  }
+
   void countDataCells(){
     num_data_cells = 0;
-    for(auto &i: data)
-      if(i!=no_data)
+    for(const auto x: data)
+      if(x!=no_data)
         num_data_cells++;
   }
 
@@ -393,57 +546,56 @@ class Array2D {
   T operator()(int i) const {
     assert(i>=0);
     assert(i<view_width*view_height);
-    return data[i];    
+    return data[i];
   }
 
-  T& operator()(int x, int y){
+  int getN(int i, int n) const {
+    int x = i%view_width+dx[n];
+    int y = i/view_width+dy[n];
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return y*view_width+x;
+  }
+
+  T& operator()(size_t x, size_t y){
     assert(x>=0);
     assert(y>=0);
     //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
-    assert(x<view_width);
-    assert(y<view_height);
-    return data[xyToI(x,y)];
+    assert(x<viewWidth());
+    assert(y<viewHeight());
+    return data[y*view_width+x];
   }
 
-  const T& operator()(int x, int y) const {
+  const T& operator()(size_t x, size_t y) const {
     assert(x>=0);
     assert(y>=0);
-    assert(x<view_width);
-    assert(y<view_height);
-    return data[xyToI(x,y)];
+    assert(x<viewWidth());
+    assert(y<viewHeight());
+    return data[y*view_width+x];
   }
 
-  //Row&       topRow   ()       { return data.front(); }
-  //Row&       bottomRow()       { return data.back (); }
-  //const Row& topRow   () const { return data.front(); }
-  //const Row& bottomRow() const { return data.back (); }
+  std::vector<T> topRow() const {    
+    return std::vector<T>(data.begin(),data.begin()+view_width);
+  }
 
-  // Row leftColumn() const {
-  //   Row temp(data.size());
-  //   for(size_t y=0;y<data.size();y++)
-  //     temp[y] = data[y][0];
-  //   return temp;
-  // }
+  std::vector<T> bottomRow() const { 
+    return std::vector<T>(data.begin()+(view_height-1)*view_width, data.begin()+view_height*view_width);
+  }
 
-  // Row rightColumn() const {
-  //   Row temp(data.size());
-  //   size_t right = data[0].size()-1;
-  //   for(size_t y=0;y<data.size();y++)
-  //     temp[y] = data[y][right];
-  //   return temp;
-  // }
+  std::vector<T> leftColumn() const { 
+    return getColData(0); 
+  }
 
-  // void emplaceRow(Row &row){
-  //   data.emplace_back(row);
-  // }
+  std::vector<T> rightColumn() const { 
+    return getColData(view_width-1);
+  }
 
   // Row& rowRef(int rownum){
   //   return data[rownum];
   // }
 
   void setRow(int y, const T &val){
-    for(int x=0;x<view_width;x++)
-      data[y*view_width+x] = val;
+    std::fill(data.begin()+y*view_width,data.begin()+(y+1)*view_width,val);
   }
 
   void setCol(int x, const T &val){
@@ -451,13 +603,27 @@ class Array2D {
       data[y*view_width+x] = val;
   }
 
-  // const std::vector<T>& getRowData(int rownum){
-  //   return data[rownum].data();
-  // }
+  std::vector<T> getRowData(int rownum) const {
+    return std::vector<T>(data.begin()+rownum*view_width,data.begin()+(rownum+1)*view_width);
+  }
+
+  std::vector<T> getColData(int colnum) const {
+    std::vector<T> temp(view_height);
+    for(int y=0;y<view_height;y++)
+      temp[y]=data[y*view_width+colnum];
+    return temp;
+  }
 
   void clear(){
     data.clear();
     data.shrink_to_fit();
+  }
+
+  template<class U>
+  void templateCopy(const Array2D<U> &other){
+    geotransform = other.geotransform;
+    projection   = other.projection;
+    basename     = other.basename;
   }
 
   void saveGDAL(const std::string &filename, int xoffset, int yoffset){
@@ -505,22 +671,11 @@ class Array2D {
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3]<< std::endl;
     #endif
 
-    for(int y=0;y<view_height;y++){
-      auto temp = oband->RasterIO(GF_Write, 0, y, view_width, 1, data.data()+y*view_width, view_width, 1, myGDALType(), 0, 0); //TODO: Check for success
-      if(temp!=CE_None)
-        throw std::runtime_error("Error saving file with GDAL!");        
-    }
-
-
-
-
-
+    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0);
+    if(temp!=CE_None)
+      std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
 
     GDALClose(fout);
-  }
-
-  bool isEdgeCell(int x, int y) const {
-    return (x==0 || y==0 || x==view_width-1 || y==view_height-1);
   }
 
   double getCellArea() const {
