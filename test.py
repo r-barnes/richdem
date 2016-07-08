@@ -185,10 +185,13 @@ def main():
 
   print('Generating authoritative answer')
   if not os.path.exists('temp/auth.tif'):
-    output,err = doRaw('./auth_gen.exe {file} temp/auth.tif'.format(file=auth_input))
+    start_auth_gen = time.time()
+    output,err     = doRaw('./auth_gen.exe {file} temp/auth.tif'.format(file=auth_input))
+    stop_auth_gen  = time.time()
     if err!=0:
       print('Error generating authoritative answer!')
       sys.exit(-1)
+    print('Took {0:.4}s to generate authoritative answer.'.format(stop_auth_gen-start_auth_gen))
   else:
     print('Using pre-existing authoritative answer')
 
