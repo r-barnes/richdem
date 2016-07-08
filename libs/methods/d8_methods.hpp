@@ -91,9 +91,9 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
   progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
   #pragma omp parallel for
-  for(int x=0;x<flowdirs.viewWidth();x++){
+  for(size_t x=0;x<flowdirs.viewWidth();x++){
     progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++){
+    for(size_t y=0;y<flowdirs.viewHeight();y++){
       dependency(x,y)=0;
       if(flowdirs(x,y)==flowdirs.noData()){
         area(x,y)=area.noData();
@@ -114,9 +114,9 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
   progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
-  for(int x=0;x<flowdirs.viewWidth();x++){
+  for(size_t x=0;x<flowdirs.viewWidth();x++){
     progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++)
+    for(size_t y=0;y<flowdirs.viewHeight();y++)
       if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(dependency(x,y)==0)
