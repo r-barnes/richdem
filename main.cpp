@@ -2,7 +2,7 @@
 #include "Array2D.hpp"
 #include "A2Array2D.hpp"
 #include "common.hpp"
-#include <stack>
+#include <queue>
 #include <unordered_set>
 #include <iomanip>
 #include <iostream>
@@ -71,13 +71,13 @@ void ProcessFlat(
   const int x0,
   const int y0
 ){
-  std::stack< std::pair<int, int> > q;
+  std::queue< std::pair<int, int> > q;
 
   const T flat_height = dem(x0,y0);
 
   q.emplace(x0,y0);
   while(!q.empty()){
-    const auto c = q.top();
+    const auto c = q.front();
     q.pop();
 
     for(int n=1;n<=8;n++){
