@@ -39,7 +39,8 @@ void FollowPath(
     y = ny;
   }
 
-  std::cout<<"\n\n";
+  if(path_len>max_path_length-10)
+    std::cout<<"\n\n";
 }
 
 
