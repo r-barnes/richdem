@@ -19,8 +19,8 @@
 
 #ifndef d8flowdirs_dxdy
 #define d8flowdirs_dxdy
-const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
-const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
+const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
 #endif
 
 GDALDataType peekGDALType(const std::string &filename) {
