@@ -678,6 +678,40 @@ class Array2D {
     GDALClose(fout);
   }
 
+  void printStamp(int size) const {
+    int sx = -1;
+    int sy = -1;
+
+    auto GoodStamp = [&](int x0, int y0) -> bool {
+      for(int y=y0;y<y0+size;y++)
+      for(int x=x0;x<x0+size;x++)
+        if(isNoData(x,y))
+          return false;
+      return true;
+    };
+
+    //There are more performant ways to perform this search using dynamic
+    //programming; however, this method is not intended to be called in
+    //performant situations, so I have opted to use a more obvious and simpler
+    //algorithm
+    bool good = false;
+    for(int sy=0;sy<view_height-size;sy++)
+    for(int sx=0;sx<view_width-size; sx++)
+      if(GoodStamp(sx,sy)){
+        good = true;
+        break;
+      }
+
+    if(!good)
+      std::cerr<<"No stamp found!"<<std::endl;
+
+    for(int y=sy;y<sy+size;y++){
+      for(int x=sx;x<sx+size;x++)
+        std::cerr<<std::setw(5)<<std::setprecision(3)<<data[sy][sx]<<" ";
+      std::cerr<<"\n";
+    }
+  }
+
   double getCellArea() const {
     return geotransform[1]*geotransform[5];
   }
