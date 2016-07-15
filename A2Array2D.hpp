@@ -528,6 +528,18 @@ class A2Array2D {
   bool isEdgeCell(size_t x, size_t y){
     return x==0 || y==0 || x==total_width_in_cells-1 || y==total_height_in_cells-1;
   }
+
+  void printStamp(int size){
+    for(size_t ty=0;ty<heightInTiles();ty++)
+    for(size_t tx=0;tx<widthInTiles();tx++){
+      if(data[ty][tx].null_tile)
+        continue;
+
+      LoadTile(tx, ty);
+
+      data[ty][tx].printStamp(size);
+    }
+  }
 };
 
 #endif
