@@ -479,15 +479,17 @@ class A2Array2D {
   void saveGDAL(std::string outputname_template) {
     int zero_count      = 0;
     int unvisited_count = 0;
-    for(auto &row: data)
-    for(auto &tile: row){
+    for(size_t ty=0;ty<heightInTiles();ty++)
+    for(size_t tx=0;tx<widthInTiles();tx++){
+      auto& tile = data[ty][tx];
+
       if(tile.null_tile)
         continue;
 
       //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
 
-      if(!tile.loaded)
-        tile.loadData();
+      LoadTile(tx,ty);
+
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
       if((tile.geotransform[0]<0) ^ flipH)
@@ -502,7 +504,6 @@ class A2Array2D {
       temp.replace(temp.find("%f"),2,tile.basename);
 
       tile.saveGDAL(temp, 0, 0);
-      tile.clear();
     }
 
     std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
