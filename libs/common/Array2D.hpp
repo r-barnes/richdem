@@ -553,6 +553,23 @@ class Array2D {
   }
 
   /**
+    @brief Given a cell identified by an i-coordinate, return the i-coordinate
+           of the neighbour identified by n
+
+    @param[in]  i   i-coordinate of cell whose neighbour needs to be identified
+    @param[in]  n   Neighbour to be identified
+
+    @return i-coordinate of the neighbour. Usually referred to as 'ni'
+  */
+  int getN(int i, int n) const {
+    int x = i%view_width+dx[n];
+    int y = i/view_width+dy[n];
+    if(x<0 || y<0 || x==view_width || y==view_height)
+      return -1;
+    return xyToI(x,y);
+  }
+
+  /**
     @brief Copies all the properties AND data of another raster into this one
 
     @param[in]  o   Raster to copy
@@ -742,7 +759,16 @@ class Array2D {
     projection   = other.projection;
   }
 
-  ///TODO
+  /**
+    @brief Makes a raster larger and retains the raster's old data, similar to resize.
+
+    Note: Using this command requires RAM equal to the sum of the old raster and
+    the new raster.
+
+    @param[in] new_width  New width of the raster. Must be >= the old width.
+    @param[in] new_height New height of the raster. Must be >= the old height.
+    @param[in] val        Value to set the new cells to
+  */
   void expand(int new_width, int new_height, const T val){
     if(new_width<view_width)
       throw std::runtime_error("expand(): new_width<view_width");
@@ -761,6 +787,9 @@ class Array2D {
       data[y*new_width+x] = old_data[y*old_width+x];
   }
 
+  /**
+    @brief Counts the number of cells which are not NoData.
+  */
   void countDataCells(){
     num_data_cells = 0;
     for(const auto x: data)
@@ -768,36 +797,63 @@ class Array2D {
         num_data_cells++;
   }
 
+  /**
+    @brief Returns the number of cells which are not NoData. May count them.
+
+    @return Returns the number of cells which are not NoData.
+  */
   int numDataCells(){
     if(num_data_cells==-1)
       countDataCells();
     return num_data_cells;
   }
 
+  /**
+    @brief Returns the number of cells which are not NoData. Does not count them.
+
+    countDataCells() should be call prior to running this method, or the
+    non-const version of the method should be used.
+
+    @return Returns the number of cells which are not NoData.
+  */
   int numDataCells() const {
     return num_data_cells;
   }
 
+  /**
+    @brief Return cell value based on i-coordinate
+
+    @param[in]   i    i-coordinate of cell whose data should be fetched.
+
+    @return The value of the cell identified by 'i'
+  */
   T& operator()(int i){
     assert(i>=0);
     assert(i<view_width*view_height);
     return data[i];
   }
 
+  /**
+    @brief Return cell value based on i-coordinate
+
+    @param[in]   i    i-coordinate of cell whose data should be fetched.
+
+    @return The value of the cell identified by 'i'
+  */
   T operator()(int i) const {
     assert(i>=0);
     assert(i<view_width*view_height);
     return data[i];
   }
 
-  int getN(int i, int n) const {
-    int x = i%view_width+dx[n];
-    int y = i/view_width+dy[n];
-    if(x<0 || y<0 || x==view_width || y==view_height)
-      return -1;
-    return y*view_width+x;
-  }
+  /**
+    @brief Return cell value based on x,y coordinates
 
+    @param[in]   x    X-coordinate of cell whose data should be fetched.
+    @param[in]   y    Y-coordinate of cell whose data should be fetched.
+
+    @return The value of the cell identified by x,y
+  */
   T& operator()(size_t x, size_t y){
     assert(x>=0);
     assert(y>=0);
@@ -807,7 +863,15 @@ class Array2D {
     return data[y*view_width+x];
   }
 
-  const T& operator()(size_t x, size_t y) const {
+  /**
+    @brief Return cell value based on x,y coordinates
+
+    @param[in]   x    X-coordinate of cell whose data should be fetched.
+    @param[in]   y    Y-coordinate of cell whose data should be fetched.
+
+    @return The value of the cell identified by x,y
+  */
+  T operator()(size_t x, size_t y) const {
     assert(x>=0);
     assert(y>=0);
     assert(x<width());
@@ -815,43 +879,89 @@ class Array2D {
     return data[y*view_width+x];
   }
 
+  /**
+    @brief Returns a copy of the top row of the raster
+
+    @return A vector containing a copy of the top row of the raster
+  */
   std::vector<T> topRow() const {    
     return std::vector<T>(data.begin(),data.begin()+view_width);
   }
 
+  /**
+    @brief Returns a copy of the bottom row of the raster
+
+    @return A vector containing a copy of the bottom row of the raster
+  */
   std::vector<T> bottomRow() const { 
     return std::vector<T>(data.begin()+(view_height-1)*view_width, data.begin()+view_height*view_width);
   }
 
+  /**
+    @brief Returns a copy of the left column of the raster
+
+    Top to bottom is reoriented as left to right.
+
+    @return A vector containing a copy of the left column of the raster
+  */
   std::vector<T> leftColumn() const { 
     return getColData(0); 
   }
 
+  /**
+    @brief Returns a copy of the right column of the raster
+
+    Top to bottom is reoriented as left to right.
+
+    @return A vector containing a copy of the right column of the raster
+  */
   std::vector<T> rightColumn() const { 
     return getColData(view_width-1);
   }
 
-  // Row& rowRef(int rownum){
-  //   return data[rownum];
-  // }
+  /**
+    @brief Sets an entire row of a raster to a given value.
 
+    @param[in]   y    The row to be set
+    @param[in] val    The value to set the row to
+  */
   void setRow(int y, const T &val){
     std::fill(data.begin()+y*view_width,data.begin()+(y+1)*view_width,val);
   }
 
+  /**
+    @brief Sets an entire column of a raster to a given value.
+
+    @param[in]   x    The column to be set
+    @param[in] val    The value to set the column to
+  */
   void setCol(int x, const T &val){
     for(int y=0;y<view_height;y++)
       data[y*view_width+x] = val;
   }
 
-  std::vector<T> getRowData(int rownum) const {
-    return std::vector<T>(data.begin()+rownum*view_width,data.begin()+(rownum+1)*view_width);
+  /**
+    @brief Returns a copy of an arbitrary row of the raster
+
+    @param[in]   y    The row to retrieve
+
+    @return A vector containing a copy of the selected row
+  */
+  std::vector<T> getRowData(int y) const {
+    return std::vector<T>(data.begin()+y*view_width,data.begin()+(y+1)*view_width);
   }
 
-  std::vector<T> getColData(int colnum) const {
+  /**
+    @brief Returns a copy of an arbitrary column of the raster
+
+    @param[in]   x    The column to retrieve
+
+    @return A vector containing a copy of the selected column
+  */
+  std::vector<T> getColData(int x) const {
     std::vector<T> temp(view_height);
     for(int y=0;y<view_height;y++)
-      temp[y]=data[y*view_width+colnum];
+      temp[y]=data[y*view_width+x];
     return temp;
   }
 
