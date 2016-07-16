@@ -224,8 +224,8 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 //TODO: Remove
 template<class T>
 void print2d(const Array2D<T> &arr){
-  for(size_t y=0;y<arr.viewHeight();y++){
-    for(size_t x=0;x<arr.viewWidth();x++)
+  for(size_t y=0;y<arr.height();y++){
+    for(size_t x=0;x<arr.width();x++)
       std::cerr<<std::setw(5)<<(int)arr(x,y);
     std::cerr<<std::endl;
   }
@@ -235,9 +235,9 @@ void print2d(const Array2D<T> &arr){
 // template<class T>
 // void print2dradius(const Array2D<T> &arr, int xcen, int ycen, int radius){
 //   int minx  = std::max(xcen-radius,0);
-//   int maxx  = std::min(xcen+radius,arr.viewWidth()-1);
+//   int maxx  = std::min(xcen+radius,arr.width()-1);
 //   int miny  = std::max(ycen-radius,0);
-//   int maxy  = std::min(ycen+radius,arr.viewHeight()-1);
+//   int maxy  = std::min(ycen+radius,arr.height()-1);
 //   for(int y=ymin;y<=ymax;y++){
 //     for(int x=xmin;x<=xmax;x++)
 //       std::cerr<<std::setw(5)<<(int)arr(x,y);
@@ -322,13 +322,13 @@ class ConsumerSpecifics {
 
     int path_len = 0;
 
-    int x0y0serial = xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight());
+    int x0y0serial = xyToSerial(x0,y0,flowdirs.width(),flowdirs.height());
 
     #ifdef DEBUG
       std::cerr<<std::endl<<"FP: "<<chunk.gridx<<","<<chunk.gridy<<": ("<<x0<<","<<y0<<")";
     #endif
 
-    const int max_path_length = flowdirs.viewWidth()*flowdirs.viewHeight(); //TODO: Should this have +1?
+    const int max_path_length = flowdirs.width()*flowdirs.height(); //TODO: Should this have +1?
 
     //Follow the flow path until it terminates
     while(path_len++<max_path_length){ //Follow the flow path until we reach its end
@@ -358,16 +358,16 @@ class ConsumerSpecifics {
       //The neighbour cell is off one of the sides of the tile. Therefore, its
       //flow may be passed on to a neighbouring tile. Thus, we need to link this
       //flow path's initial cell to this terminal cell.
-      if(!flowdirs.in_grid(nx,ny)) {
+      if(!flowdirs.inGrid(nx,ny)) {
         if(x==x0 && y==y0) {
           //If (x,y)==(x0,y0), then this is the first cell and it points off of
           //the grid. Mark it as being FLOW_EXTERNAL.
-          links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = FLOW_EXTERNAL;
+          links.at(xyToSerial(x0,y0,flowdirs.width(),flowdirs.height())) = FLOW_EXTERNAL;
         } else {
           //The flow path entered the grid one place and left another. We mark
           //only the start of the flow path since the end of the flow path will be
           //handled by another call to this function
-          links.at(xyToSerial(x0,y0,flowdirs.viewWidth(),flowdirs.viewHeight())) = xyToSerial(x,y,flowdirs.viewWidth(),flowdirs.viewHeight());
+          links.at(xyToSerial(x0,y0,flowdirs.width(),flowdirs.height())) = xyToSerial(x,y,flowdirs.width(),flowdirs.height());
         }
         return;
       }
@@ -379,7 +379,7 @@ class ConsumerSpecifics {
 
     //The loop breaks with a return. This is only reached if more cells are
     //visited than are in the tile, which implies that a loop must exist.
-    std::cerr<<"File "<<chunk.filename<<"("<<chunk.gridx<<","<<chunk.gridy<<") dimensions=("<<flowdirs.viewWidth()<<","<<flowdirs.viewHeight()<<") contains a loop!"<<std::endl;
+    std::cerr<<"File "<<chunk.filename<<"("<<chunk.gridx<<","<<chunk.gridy<<") dimensions=("<<flowdirs.width()<<","<<flowdirs.height()<<") contains a loop!"<<std::endl;
     throw std::logic_error("FollowPath() found a loop in the flow path!");
   }
 
@@ -400,7 +400,7 @@ class ConsumerSpecifics {
   ){
     //Follow the flow path until it terminates
     while(true){
-      if(!flowdirs.in_grid(x,y))
+      if(!flowdirs.inGrid(x,y))
         return;
 
       //Break when we reach a no_data cell
@@ -438,8 +438,8 @@ class ConsumerSpecifics {
 
     Array2D<dependency_t> dependencies;
     dependencies.resize(flowdirs,0);
-    for(size_t y=0;y<flowdirs.viewHeight();y++)
-    for(size_t x=0;x<flowdirs.viewWidth();x++){
+    for(size_t y=0;y<flowdirs.height();y++)
+    for(size_t x=0;x<flowdirs.width();x++){
       if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
         accum(x,y) = ACCUM_NO_DATA;
         continue;                
@@ -453,7 +453,7 @@ class ConsumerSpecifics {
       int ny = y+dy[n];            //y-coordinate of the neighbour
         
       //Neighbour is not on the grid
-      if(!flowdirs.in_grid(nx,ny))
+      if(!flowdirs.inGrid(nx,ny))
         continue;
 
       //Neighbour is valid and is part of the grid. The neighbour depends on this
@@ -465,8 +465,8 @@ class ConsumerSpecifics {
     //cells are the peaks: the sources of flow. We make a note of where the peaks
     //are for later use.
     std::queue<GridCell> sources;
-    for(size_t y=0;y<dependencies.viewHeight();y++)
-    for(size_t x=0;x<dependencies.viewWidth();x++)
+    for(size_t y=0;y<dependencies.height();y++)
+    for(size_t x=0;x<dependencies.width();x++)
       //Valid cell with no dependencies: a peak!
       if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
         sources.emplace(x,y);
@@ -495,7 +495,7 @@ class ConsumerSpecifics {
       int ny = c.y+dy[n];            //Make a note of where
 
       //This cell flows of the edge of the grid. Move on to next source.
-      if(!flowdirs.in_grid(nx,ny))
+      if(!flowdirs.inGrid(nx,ny))
         continue;
       //This cell flows into a no_data cell. Move on to next source.
       if(flowdirs.isNoData(nx,ny))
@@ -521,10 +521,10 @@ class ConsumerSpecifics {
     vec2copy = grid.getRowData(0);                         //Top
     vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
 
-    vec2copy = grid.getColData(grid.viewWidth()-1);        //Right
+    vec2copy = grid.getColData(grid.width()-1);        //Right
     vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end());
     
-    vec2copy = grid.getRowData(grid.viewHeight()-1);       //Bottom
+    vec2copy = grid.getRowData(grid.height()-1);       //Bottom
     vec.insert(vec.end(),vec2copy.begin(),vec2copy.end()-1);
     
     vec2copy = grid.getColData(0);                         //Left
@@ -554,6 +554,8 @@ class ConsumerSpecifics {
       flowdirs.flipHorz();
     timer_io.stop();
 
+    flowdirs.printStamp(5);
+
     timer_calc.start();
     FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
@@ -566,8 +568,8 @@ class ConsumerSpecifics {
 
   void VerifyInputSanity(){
     //Let's double-check that the flowdirs are valid
-    for(size_t y=0;y<flowdirs.viewHeight();y++)
-    for(size_t x=0;x<flowdirs.viewWidth();x++)
+    for(size_t y=0;y<flowdirs.height();y++)
+    for(size_t x=0;x<flowdirs.width();x++)
       if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
         throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
   }
@@ -577,7 +579,7 @@ class ConsumerSpecifics {
 
     //-2 removes duplicate cells on vertical edges which would otherwise
     //overlap horizontal edges
-    links.resize(2*flowdirs.viewWidth()+2*(flowdirs.viewHeight()-2), FLOW_TERMINATES);
+    links.resize(2*flowdirs.width()+2*(flowdirs.height()-2), FLOW_TERMINATES);
 
     //TODO: Although the following may consider a cell more than once, the
     //repeated effort merely produces the same results in the same places
@@ -589,7 +591,7 @@ class ConsumerSpecifics {
     //and find out where its flow goes to.
     timer_calc.start();
     if(!(chunk.edge & GRID_TOP))
-      for(size_t x=0;x<flowdirs.viewWidth();x++)
+      for(size_t x=0;x<flowdirs.width();x++)
         FollowPath(x,0,chunk,flowdirs,links);
 
     //If we are the bottom segment, nothing can flow into us, so we do not
@@ -597,16 +599,16 @@ class ConsumerSpecifics {
     //otherhand, if we are not the bottom segment, then consider each cell of
     //the bottom row and find out where its flow goes to.
     if(!(chunk.edge & GRID_BOTTOM))
-      for(size_t x=0;x<flowdirs.viewWidth();x++)
-        FollowPath(x,flowdirs.viewHeight()-1,chunk,flowdirs,links);
+      for(size_t x=0;x<flowdirs.width();x++)
+        FollowPath(x,flowdirs.height()-1,chunk,flowdirs,links);
 
     if(!(chunk.edge & GRID_LEFT))
-      for(size_t y=0;y<flowdirs.viewHeight();y++)
+      for(size_t y=0;y<flowdirs.height();y++)
         FollowPath(0,y,chunk,flowdirs,links);
 
     if(!(chunk.edge & GRID_RIGHT))
-      for(size_t y=0;y<flowdirs.viewHeight();y++)
-        FollowPath(flowdirs.viewWidth()-1,y,chunk,flowdirs,links);
+      for(size_t y=0;y<flowdirs.height();y++)
+        FollowPath(flowdirs.width()-1,y,chunk,flowdirs,links);
 
     job1.links = std::move(links);
 
@@ -641,9 +643,9 @@ class ConsumerSpecifics {
       std::cerr<<"Flowdirs Perim: "<<std::endl;
       print1d(job1.flowdirs);
       std::cerr<<"Accum perim: "<<std::endl;
-      print1das2d(job1.accum,flowdirs.viewWidth(),flowdirs.viewHeight());
+      print1das2d(job1.accum,flowdirs.width(),flowdirs.height());
       std::cerr<<"Links: "<<std::endl;
-      print1das2d(job1.links,flowdirs.viewWidth(),flowdirs.viewHeight());
+      print1das2d(job1.links,flowdirs.width(),flowdirs.height());
     #endif
   }
 
@@ -657,7 +659,7 @@ class ConsumerSpecifics {
 
     #ifdef DEBUG
       std::cerr<<"Received increments: "<<std::endl;
-      print1das2d(accum_offset,flowdirs.viewWidth(),flowdirs.viewHeight());
+      print1das2d(accum_offset,flowdirs.width(),flowdirs.height());
 
       std::cerr<<"Accumulation"<<std::endl;
       print2d(accum);
@@ -670,7 +672,7 @@ class ConsumerSpecifics {
       if(accum_offset.at(s)==0)
         continue;
       int x,y;
-      serialToXY(s, x, y, accum.viewWidth(), accum.viewHeight());
+      serialToXY(s, x, y, accum.width(), accum.height());
       FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
 
@@ -696,8 +698,8 @@ class ConsumerSpecifics {
 
   void SaveToCache(const ChunkInfo &chunk){
     timer_io.start();
-    flowdirs.saveNative(chunk.retention+"-flowdirs.dat"   );
-    accum.saveNative(chunk.retention+"-accum.dat");
+    flowdirs.dumpData(chunk.retention+"-flowdirs.dat");
+    accum.dumpData(chunk.retention+"-accum.dat");
     timer_io.stop();
   }
 
