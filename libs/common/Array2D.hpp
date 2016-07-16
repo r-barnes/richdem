@@ -829,10 +829,6 @@ class Array2D {
     return getColData(view_width-1);
   }
 
-  // Row& rowRef(int rownum){
-  //   return data[rownum];
-  // }
-
   void setRow(int y, const T &val){
     std::fill(data.begin()+y*view_width,data.begin()+(y+1)*view_width,val);
   }
@@ -853,11 +849,17 @@ class Array2D {
     return temp;
   }
 
+  ///Clears all raster data from RAM
   void clear(){
     data.clear();
     data.shrink_to_fit();
   }
 
+  /**
+    @brief Copies the geotransform, projection, and basename of another raster
+
+    @param[in]    other    Raster to copy from
+  */
   template<class U>
   void templateCopy(const Array2D<U> &other){
     geotransform = other.geotransform;
@@ -960,6 +962,11 @@ FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
     }
   }
 
+  /**
+    @brief Get the area of an individual cell in square projection units
+
+    @return The area of the cell in square projection units
+  */
   double getCellArea() const {
     return geotransform[1]*geotransform[5];
   }
