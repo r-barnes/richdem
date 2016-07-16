@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <stdexcept>
+#include <unordered_set> //For printStamp
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -678,16 +679,22 @@ class Array2D {
     GDALClose(fout);
   }
 
-  void printStamp(int size) const {
-    int sx = -1;
-    int sy = -1;
+  void printStamp(size_t size) const {
+    size_t sx = -1; //-1 suppresses uninitialized warning, causes things to blow
+    size_t sy = -1; //up if sx,sy aren't used correctly
 
-    auto GoodStamp = [&](int x0, int y0) -> bool {
-      for(int y=y0;y<y0+size;y++)
-      for(int x=x0;x<x0+size;x++)
+
+    auto GoodStamp = [&](size_t x0, size_t y0) -> bool {
+      std::unordered_set<T> vals(3*size*size);
+      //Is the area sufficient big?
+      for(size_t y=y0;y<y0+size;y++)
+      for(size_t x=x0;x<x0+size;x++){
+        vals.insert(data[y*view_width+x]);
         if(isNoData(x,y))
           return false;
-      return true;
+      }
+      //Okay, it was. Is it diverse enough?
+      return vals.size()>size;
     };
 
     //There are more performant ways to perform this search using dynamic
@@ -695,19 +702,22 @@ class Array2D {
     //performant situations, so I have opted to use a more obvious and simpler
     //algorithm
     bool good = false;
-    for(int sy=0;sy<view_height-size;sy++)
-    for(int sx=0;sx<view_width-size; sx++)
+    for(sy=0;sy<view_height-size;sy++)
+    for(sx=0;sx<view_width-size; sx++)
       if(GoodStamp(sx,sy)){
         good = true;
-        break;
+        goto FOUNDSTAMP; //How bad could one little goto be? VELOCIRAPTOR!!!!!
       }
+
+FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
 
     if(!good)
       std::cerr<<"No stamp found!"<<std::endl;
 
-    for(int y=sy;y<sy+size;y++){
-      for(int x=sx;x<sx+size;x++)
-        std::cerr<<std::setw(5)<<std::setprecision(3)<<data[sy][sx]<<" ";
+    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType())<<" at "<<sx<<","<<sy<<"\n";
+    for(size_t y=sy;y<sy+size;y++){
+      for(size_t x=sx;x<sx+size;x++)
+        std::cerr<<std::setw(5)<<std::setprecision(3)<<data[y*view_width+x]<<" ";
       std::cerr<<"\n";
     }
   }
