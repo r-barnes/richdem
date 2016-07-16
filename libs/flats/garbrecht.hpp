@@ -11,8 +11,8 @@ void FindFlats(
 	const Array2D<uint8_t> &flowdirs,
 	flat_type &flats
 ){
-	for(int x=0;x<flowdirs.viewWidth();++x)
-	for(int y=0;y<flowdirs.viewHeight();++y)
+	for(int x=0;x<flowdirs.width();++x)
+	for(int y=0;y<flowdirs.height();++y)
 		if(flowdirs(x,y)==NO_FLOW)
 			flats.push_back(grid_cell(x,y));
 }
@@ -114,8 +114,8 @@ void CombineGradients(
 	float epsilon //TODO
 ){
   std::cerr<<"Combining the gradients..."<<std::flush;
-	for(int x=0;x<elevations.viewWidth();++x)
-	for(int y=0;y<elevations.viewHeight();++y)
+	for(int x=0;x<elevations.width();++x)
+	for(int y=0;y<elevations.height();++y)
 		elevations(x,y)+=(inc1(x,y)+inc2(x,y))*epsilon;
   std::cerr<<"succeeded."<<std::endl;
 }

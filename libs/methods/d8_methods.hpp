@@ -75,7 +75,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::cerr<<"\n###D8 Upslope Area"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.viewWidth()*flowdirs.viewHeight()*((long)sizeof(grid_cell))/1024/1024)
+           <<(flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
   std::cerr<<"Resizing dependency matrix..."<<std::flush;
@@ -89,18 +89,18 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
-  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
+  progress.start( flowdirs.width()*flowdirs.height() );
   #pragma omp parallel for
-  for(int x=0;x<flowdirs.viewWidth();x++){
-    progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++){
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++){
       dependency(x,y)=0;
       if(flowdirs(x,y)==flowdirs.noData()){
         area(x,y)=area.noData();
         continue;
       }
       for(int n=1;n<=8;n++)
-        if(!flowdirs.in_grid(x+dx[n],y+dy[n]))
+        if(!flowdirs.inGrid(x+dx[n],y+dy[n]))
           continue;
         else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
           continue;
@@ -113,10 +113,10 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
-  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
-  for(int x=0;x<flowdirs.viewWidth();x++){
-    progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++)
+  progress.start( flowdirs.width()*flowdirs.height() );
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++)
       if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(dependency(x,y)==0)
@@ -141,7 +141,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
 
     int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
     int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
-    if(flowdirs.in_grid(nx,ny) && area(nx,ny)!=area.noData()){
+    if(flowdirs.inGrid(nx,ny) && area(nx,ny)!=area.noData()){
       area(nx,ny)+=area(c.x,c.y);
       if((--dependency(nx,ny))==0)
         sources.push(grid_cell(nx,ny));
@@ -222,7 +222,7 @@ void d8_upslope_cells(
     progress.update(ccount++);
 
     for(int n=1;n<=8;n++)
-      if(!flowdirs.in_grid(c.x+dx[n],c.y+dy[n]))
+      if(!flowdirs.inGrid(c.x+dx[n],c.y+dy[n]))
         continue;
       else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
         continue;
@@ -271,7 +271,7 @@ void d8_SPI(
 
   std::cerr<<"\n###d8_SPI"<<std::endl;
 
-  if(flow_accumulation.viewWidth()!=riserun_slope.viewWidth() || flow_accumulation.viewHeight()!=riserun_slope.viewHeight()){
+  if(flow_accumulation.width()!=riserun_slope.width() || flow_accumulation.height()!=riserun_slope.height()){
     std::cerr<<"Couldn't calculate SPI! The input matricies were of unequal dimensions!"<<std::endl;
     exit(-1);
   }
@@ -284,8 +284,8 @@ void d8_SPI(
   std::cerr<<"Calculating SPI..."<<std::endl;
   timer.start();
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<flow_accumulation.viewWidth();x++)
-    for(int y=0;y<flow_accumulation.viewHeight();y++)
+  for(int x=0;x<flow_accumulation.width();x++)
+    for(int y=0;y<flow_accumulation.height();y++)
       if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
         result(x,y)=result.noData();
       else
@@ -328,7 +328,7 @@ void d8_CTI(
 
   std::cerr<<"\n###d8_CTI"<<std::endl;
 
-  if(flow_accumulation.viewWidth()!=riserun_slope.viewWidth() || flow_accumulation.viewHeight()!=riserun_slope.viewHeight()){
+  if(flow_accumulation.width()!=riserun_slope.width() || flow_accumulation.height()!=riserun_slope.height()){
     std::cerr<<"Couldn't calculate CTI! The input matricies were of unequal dimensions!"<<std::endl;
     exit(-1);
   }
@@ -341,8 +341,8 @@ void d8_CTI(
   std::cerr<<"Calculating CTI..."<<std::flush;
   timer.start();
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<flow_accumulation.viewWidth();x++)
-    for(int y=0;y<flow_accumulation.viewHeight();y++)
+  for(int x=0;x<flow_accumulation.width();x++)
+    for(int y=0;y<flow_accumulation.height();y++)
       if(flow_accumulation(x,y)==flow_accumulation.noData() || riserun_slope(x,y)==riserun_slope.noData())
         result(x,y)=result.noData();
       else
@@ -421,14 +421,14 @@ Burrough 1998's "Principles of Geographical Information Systems" explains all th
   //Deal with grid edges and NoData values in the manner suggested by
   //ArcGIS. Note that this function should never be called on a NoData cell
   a=b=c=d=e=f=g=h=i=elevations(x0,y0);
-  if(elevations.in_grid(x0-1,y0-1))  a = elevations(x0-1,y0-1);
-  if(elevations.in_grid(x0-1,y0))    d = elevations(x0-1,y0);
-  if(elevations.in_grid(x0-1,y0+1))  g = elevations(x0-1,y0+1);
-  if(elevations.in_grid(x0  ,y0-1))  b = elevations(x0,y0-1);
-  if(elevations.in_grid(x0  ,y0+1))  h = elevations(x0,y0+1);
-  if(elevations.in_grid(x0+1,y0-1))  c = elevations(x0+1,y0-1);
-  if(elevations.in_grid(x0+1,y0))    f = elevations(x0+1,y0);
-  if(elevations.in_grid(x0+1,y0+1))  i = elevations(x0+1,y0+1);
+  if(elevations.inGrid(x0-1,y0-1))  a = elevations(x0-1,y0-1);
+  if(elevations.inGrid(x0-1,y0))    d = elevations(x0-1,y0);
+  if(elevations.inGrid(x0-1,y0+1))  g = elevations(x0-1,y0+1);
+  if(elevations.inGrid(x0  ,y0-1))  b = elevations(x0,y0-1);
+  if(elevations.inGrid(x0  ,y0+1))  h = elevations(x0,y0+1);
+  if(elevations.inGrid(x0+1,y0-1))  c = elevations(x0+1,y0-1);
+  if(elevations.inGrid(x0+1,y0))    f = elevations(x0+1,y0);
+  if(elevations.inGrid(x0+1,y0+1))  i = elevations(x0+1,y0+1);
   if(a==elevations.noData())          a = e;
   if(b==elevations.noData())          b = e;
   if(c==elevations.noData())          c = e;
@@ -551,11 +551,11 @@ void d8_terrain_attribute(
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating terrain attribute #"<<attrib<<"..."<<std::endl;
-  progress.start( elevations.viewWidth()*elevations.viewHeight() );
+  progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
-  for(int x=0;x<elevations.viewWidth();x++){
-    progress.update( x*elevations.viewHeight() );
-    for(int y=0;y<elevations.viewHeight();y++){
+  for(int x=0;x<elevations.width();x++){
+    progress.update( x*elevations.height() );
+    for(int y=0;y<elevations.height();y++){
       if(elevations(x,y)==elevations.noData()){
         attribs(x,y)=attribs.noData();
         continue;

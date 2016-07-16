@@ -76,19 +76,19 @@ static int d8_FlowDir(const Array2D<T> &elevations, const int x, const int y){
   if (elevations.isEdgeCell(x,y)){
     if(x==0 && y==0)
       return 2;
-    else if(x==0 && y==elevations.viewHeight()-1)
+    else if(x==0 && y==elevations.height()-1)
       return 8;
-    else if(x==elevations.viewWidth()-1 && y==0)
+    else if(x==elevations.width()-1 && y==0)
       return 4;
-    else if(x==elevations.viewWidth()-1 && y==elevations.viewHeight()-1)
+    else if(x==elevations.width()-1 && y==elevations.height()-1)
       return 6;
     else if(x==0)
       return 1;
-    else if(x==elevations.viewWidth()-1)
+    else if(x==elevations.width()-1)
       return 5;
     else if(y==0)
       return 3;
-    else if(y==elevations.viewHeight()-1)
+    else if(y==elevations.height()-1)
       return 7;
   }
 
@@ -146,11 +146,11 @@ void d8_flow_directions(
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating D8 flow directions..."<<std::endl;
-  progress.start( elevations.viewWidth()*elevations.viewHeight() );
+  progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
-  for(int x=0;x<elevations.viewWidth();x++){
-    progress.update( x*elevations.viewHeight() );
-    for(int y=0;y<elevations.viewHeight();y++)
+  for(int x=0;x<elevations.width();x++){
+    progress.update( x*elevations.height() );
+    for(int y=0;y<elevations.height();y++)
       if(elevations(x,y)==elevations.noData())
         flowdirs(x,y)=flowdirs.noData();
       else
