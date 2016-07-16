@@ -154,6 +154,8 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   if(flip_style=="flipv" || flip_style=="fliphv")
     dem.flipV = true;
 
+  //dem.printStamp(5); //TODO
+
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
   fds.setNoData(FLOW_NO_DATA);
@@ -238,15 +240,17 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     }
   }
 
-  // int loops = 0;
-  // for(int y=0;y<fds.height();y++)
-  // for(int x=0;x<fds.width();x++){
-  //   int nx = x+dx[fds(x,y)];
-  //   int ny = y+dy[fds(x,y)];
-  //   if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
-  //     loops++;
-  // }
-  // std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
+  int loops = 0;
+  for(int y=0;y<fds.height();y++)
+  for(int x=0;x<fds.width();x++){
+    int nx = x+dx[fds(x,y)];
+    int ny = y+dy[fds(x,y)];
+    if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
+      loops++;
+  }
+  std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
+
+  fds.printStamp(5); //TODO
 
   std::cerr<<"Saving results..."<<std::endl;
   //dem.saveGDAL(output_filename+"elev"); //TODO

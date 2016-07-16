@@ -169,13 +169,13 @@ class A2Array2D {
 
       auto &this_tile = data.back().back();
 
-      per_tile_height = std::max(per_tile_height,this_tile.viewHeight());
-      per_tile_width  = std::max(per_tile_width, this_tile.viewWidth() );
+      per_tile_height = std::max(per_tile_height,this_tile.height());
+      per_tile_width  = std::max(per_tile_width, this_tile.width() );
 
       if(lf.getY()==0)
-        total_width_in_cells += this_tile.viewWidth();
+        total_width_in_cells += this_tile.width();
       if(lf.getX()==0)
-        total_height_in_cells += this_tile.viewHeight();
+        total_height_in_cells += this_tile.height();
 
       cells_in_not_null_tiles += per_tile_width*per_tile_height;
 
@@ -187,12 +187,12 @@ class A2Array2D {
     for(size_t x=0;x<widthInTiles()-1;x++){
       if(data[y][x].null_tile)
         continue;
-      if(data[y][x].viewWidth()!=per_tile_width){
-        std::cerr<<data[y][x].filename<<" has a non-standard width. Found "<<data[y][x].viewWidth()<<" expected "<<per_tile_width<<"."<<std::endl;
+      if(data[y][x].width()!=per_tile_width){
+        std::cerr<<data[y][x].filename<<" has a non-standard width. Found "<<data[y][x].width()<<" expected "<<per_tile_width<<"."<<std::endl;
         good = false;
       }
-      if(data[y][x].viewHeight()!=per_tile_height){
-        std::cerr<<data[y][x].filename<<" has a non-standard height. Found "<<data[y][x].viewHeight()<<" expected "<<per_tile_height<<"."<<std::endl;
+      if(data[y][x].height()!=per_tile_height){
+        std::cerr<<data[y][x].filename<<" has a non-standard height. Found "<<data[y][x].height()<<" expected "<<per_tile_height<<"."<<std::endl;
         good = false;
       }
     }
@@ -224,7 +224,7 @@ class A2Array2D {
       for(int x=0;x<width;x++){
         tile++;
         data.back().emplace_back();
-        data.back().back().setFilename(prefix+std::to_string(tile)+".native");
+        data.back().back().setCacheFilename(prefix+std::to_string(tile)+".native");
         data.back().back().created  = false;
       }
     }
@@ -253,10 +253,10 @@ class A2Array2D {
         this_tile.templateCopy(other_tile);
         this_tile.filename = filename_template;
         this_tile.filename.replace(data[y][x].filename.find("%f"), 2, data[y][x].basename);
-        per_tile_width               = std::max(per_tile_width, other_tile.viewWidth() );
-        per_tile_height              = std::max(per_tile_height,other_tile.viewHeight());
-        this_tile.create_with_width  = other_tile.viewWidth();
-        this_tile.create_with_height = other_tile.viewHeight();
+        per_tile_width               = std::max(per_tile_width, other_tile.width() );
+        per_tile_height              = std::max(per_tile_height,other_tile.height());
+        this_tile.create_with_width  = other_tile.width();
+        this_tile.create_with_height = other_tile.height();
         this_tile.null_tile          = other_tile.null_tile;
         this_tile.created            = false;
       }
@@ -334,8 +334,8 @@ class A2Array2D {
 
     assert(x>=0);
     assert(y>=0);
-    assert(x<data[ty][tx].viewWidth() );
-    assert(y<data[ty][tx].viewHeight());
+    assert(x<data[ty][tx].width() );
+    assert(y<data[ty][tx].height());
 
     return data[ty][tx](x,y);
   }
@@ -401,7 +401,7 @@ class A2Array2D {
     assert(ty>=0);
     assert(tx<data[0].size());
     assert(ty<data.size());
-    return data[ty][tx].viewWidth();
+    return data[ty][tx].width();
   }
 
   int64_t tileHeight(size_t tx, size_t ty) const {
@@ -409,7 +409,7 @@ class A2Array2D {
     assert(ty>=0);
     assert(tx<widthInTiles());
     assert(ty<heightInTiles());
-    return data[ty][tx].viewHeight();
+    return data[ty][tx].height();
   }
 
   int64_t stdTileHeight() const {
@@ -455,8 +455,8 @@ class A2Array2D {
 
     assert(px>=0);
     assert(py>=0);
-    assert(px<data[ty][tx].viewWidth() );
-    assert(py<data[ty][tx].viewHeight());
+    assert(px<data[ty][tx].width() );
+    assert(py<data[ty][tx].height());
 
     if(data[ty][tx].null_tile)
       return true;
