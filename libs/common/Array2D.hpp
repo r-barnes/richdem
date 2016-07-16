@@ -382,7 +382,7 @@ class Array2D {
       loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
   }
 
-  void setFilename(const std::string &filename){
+  void setCacheFilename(const std::string &filename){
     this->filename = filename;
   }
 
@@ -395,8 +395,7 @@ class Array2D {
     @post  Calls to loadData() after this will result in data being loaded from
            the cache.
   */
-  void dumpData(const std::string &filename) {
-    this->filename = filename;
+  void dumpData(){
     saveToCache(filename);
     clear();
   }
