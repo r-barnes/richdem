@@ -148,6 +148,11 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
     }
   }
   std::cerr<<"Succeded in "<<progress.stop()<<std::endl;
+
+  int loops=0;
+  for(int i=-1;i>=-8;i--)
+    loops+=dependency.countval(-1);
+  std::cerr<<"Input contained at least "<<loops<<" loops."<<std::endl;
 }
 
 

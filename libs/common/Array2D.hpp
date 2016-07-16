@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include <stdexcept>
+#include <unordered_set> //For printStamp
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -19,8 +20,8 @@
 
 #ifndef d8flowdirs_dxdy
 #define d8flowdirs_dxdy
-const int dx[9]={0,-1,-1,0,1,1,1,0,-1};
-const int dy[9]={0,0,-1,-1,-1,0,1,1,1};
+const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
+const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
 #endif
 
 
@@ -916,6 +917,49 @@ class Array2D {
       std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
 
     GDALClose(fout);
+  }
+
+  void printStamp(size_t size) const {
+    size_t sx = -1; //-1 suppresses uninitialized warning, causes things to blow
+    size_t sy = -1; //up if sx,sy aren't used correctly
+
+
+    auto GoodStamp = [&](size_t x0, size_t y0) -> bool {
+      std::unordered_set<int> vals(3*size*size);
+      //Is the area sufficient big?
+      for(size_t y=y0;y<y0+size;y++)
+      for(size_t x=x0;x<x0+size;x++){
+        vals.insert((int)data[y*view_width+x]);
+        if(isNoData(x,y))
+          return false;
+      }
+      //Okay, it was. Is it diverse enough?
+      return vals.size()>size;
+    };
+
+    //There are more performant ways to perform this search using dynamic
+    //programming; however, this method is not intended to be called in
+    //performant situations, so I have opted to use a more obvious and simpler
+    //algorithm
+    bool good = false;
+    for(sy=0;sy<view_height-size;sy++)
+    for(sx=0;sx<view_width-size; sx++)
+      if(GoodStamp(sx,sy)){
+        good = true;
+        goto FOUNDSTAMP; //How bad could one little goto be? VELOCIRAPTOR!!!!!
+      }
+
+FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
+
+    if(!good)
+      std::cerr<<"No stamp found!"<<std::endl;
+
+    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType())<<" at "<<sx<<","<<sy<<"\n";
+    for(size_t y=sy;y<sy+size;y++){
+      for(size_t x=sx;x<sx+size;x++)
+        std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
+      std::cerr<<"\n";
+    }
   }
 
   double getCellArea() const {
