@@ -1,3 +1,7 @@
+NOTE
+====
+Further development is taking place on the `dev/` branch, which should be released sometime in Fall 2016. This branch converts RichDEM into (largely) a header-only library, making it easy to include in other projects. This branch will also introduce more consistent testing and better documentation.
+
 RichDem
 =======
 
