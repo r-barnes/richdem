@@ -711,10 +711,14 @@ class Array2D {
 
 FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
 
-    if(!good)
+    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType());
+    if(!good){
       std::cerr<<"No stamp found!"<<std::endl;
+      return;
+    }
 
-    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType())<<" at "<<sx<<","<<sy<<"\n";
+    std::cerr<<" at "<<sx<<","<<sy<<"\n";
+
     for(size_t y=sy;y<sy+size;y++){
       for(size_t x=sx;x<sx+size;x++)
         std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
