@@ -194,10 +194,8 @@ class Array2D {
                     ///from a GDAL file.
 
   ///TODO
-  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true){
+  void loadGDAL(const std::string &filename, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
-    assert(xOffset>=0);
-    assert(yOffset>=0);
 
     from_cache = false;
 
@@ -352,7 +350,7 @@ class Array2D {
     @param[in] val     Initial value of all the raster's cells. Defaults to the
                        Array2D template type's default value
   */
-  Array2D(int width, int height, const T& val = T()) : Array2D() {
+  Array2D(size_t width, size_t height, const T& val = T()) : Array2D() {
     resize(width,height,val);
   }
 
@@ -377,7 +375,7 @@ class Array2D {
   }
 
   ///TODO
-  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true) : Array2D() {
+  Array2D(const std::string &filename, bool native, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
     if(native)
       loadNative(filename, load_data);
     else
