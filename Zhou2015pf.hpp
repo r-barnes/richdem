@@ -23,7 +23,7 @@ label_t GetNewLabelZhou(
   for(int n=1;n<=8;n++){
     int nx = x+dx[n];
     int ny = y+dy[n];
-    if(!dem.in_grid(nx,ny))
+    if(!dem.inGrid(nx,ny))
       continue;
     if(labels(nx,ny)!=0 && dem(nx,ny)<=dem(x,y))
       return labels(nx,ny);
@@ -70,7 +70,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
 
-      if(!dem.in_grid(nx,ny))
+      if(!dem.inGrid(nx,ny))
         continue;
 
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
@@ -91,7 +91,7 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
         for(int nn=1;nn<=8;nn++){
           int nnx = nx+dx[n];
           int nny = ny+dy[n];
-          if(!dem.in_grid(nnx,nny))
+          if(!dem.inGrid(nnx,nny))
             continue;
           if (labels(nnx,nny)!=0 && dem(nnx,nny)<dem(nx,ny)){
             isBoundary = false;
@@ -117,7 +117,7 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::que
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
 
-      if(!dem.in_grid(nx,ny))
+      if(!dem.inGrid(nx,ny))
         continue;
 
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
@@ -151,18 +151,18 @@ void Zhou2015Labels(
 
   label_t current_label = 2;
 
-  labels.init(0);
+  labels.setAll(0);
 
   GridCellZ_pq<elev_t> priorityQueue;
 
-  for(size_t x=0;x<dem.viewWidth();x++){
-    const int height = dem.viewHeight()-1;
+  for(size_t x=0;x<dem.width();x++){
+    const int height = dem.height()-1;
     priorityQueue.emplace(x,0,     dem(x,0     ));
     priorityQueue.emplace(x,height,dem(x,height));
   }
 
-  for(size_t y=1;y<dem.viewHeight()-1;y++){
-    const int width = dem.viewWidth()-1;
+  for(size_t y=1;y<dem.height()-1;y++){
+    const int width = dem.width()-1;
     priorityQueue.emplace(0,    y,dem(0,    y));
     priorityQueue.emplace(width,y,dem(width,y));
   }
@@ -177,7 +177,7 @@ void Zhou2015Labels(
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
 
-      if (!dem.in_grid(nx,ny))
+      if (!dem.inGrid(nx,ny))
         continue;
 
       WatershedsMeet(my_label,labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
@@ -202,22 +202,22 @@ void Zhou2015Labels(
   //knowing whether the tile has been flipped toe snure that we connect the
   //correct edges.
   if( ((edge & GRID_TOP)    && !flipV) || ((edge & GRID_BOTTOM) && flipV) )
-    for(size_t x=0;x<labels.viewWidth();x++)
+    for(size_t x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);
 
   if( ((edge & GRID_BOTTOM) && !flipV) || ((edge & GRID_TOP)    && flipV) ){
-    int bottom_row = labels.viewHeight()-1;
-    for(size_t x=0;x<labels.viewWidth();x++)
+    int bottom_row = labels.height()-1;
+    for(size_t x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,bottom_row),(label_t)1,dem(x,bottom_row),dem(x,bottom_row),my_graph);
   }
 
   if( ((edge & GRID_LEFT)  && !flipH) || ((edge & GRID_RIGHT) && flipH) )
-    for(size_t y=0;y<labels.viewHeight();y++)
+    for(size_t y=0;y<labels.height();y++)
       WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
 
   if( ((edge & GRID_RIGHT) && !flipH) || ((edge & GRID_LEFT)  && flipH) ){
-    int right_col = labels.viewWidth()-1;
-    for(size_t y=0;y<labels.viewHeight();y++)
+    int right_col = labels.width()-1;
+    for(size_t y=0;y<labels.height();y++)
       WatershedsMeet(labels(right_col,y),(label_t)1,dem(right_col,y),dem(right_col,y),my_graph);
   }
 
