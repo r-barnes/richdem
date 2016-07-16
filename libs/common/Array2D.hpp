@@ -194,10 +194,8 @@ class Array2D {
                     ///from a GDAL file.
 
   ///TODO
-  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true){
+  void loadGDAL(const std::string &filename, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
-    assert(xOffset>=0);
-    assert(yOffset>=0);
 
     from_cache = false;
 
@@ -352,7 +350,7 @@ class Array2D {
     @param[in] val     Initial value of all the raster's cells. Defaults to the
                        Array2D template type's default value
   */
-  Array2D(int width, int height, const T& val = T()) : Array2D() {
+  Array2D(size_t width, size_t height, const T& val = T()) : Array2D() {
     resize(width,height,val);
   }
 
@@ -377,14 +375,14 @@ class Array2D {
   }
 
   ///TODO
-  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true) : Array2D() {
+  Array2D(const std::string &filename, bool native, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
     if(native)
       loadNative(filename, load_data);
     else
       loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
   }
 
-  void setFilename(const std::string &filename){
+  void setCacheFilename(const std::string &filename){
     this->filename = filename;
   }
 
@@ -397,8 +395,7 @@ class Array2D {
     @post  Calls to loadData() after this will result in data being loaded from
            the cache.
   */
-  void dumpData(const std::string &filename) {
-    this->filename = filename;
+  void dumpData(){
     saveToCache(filename);
     clear();
   }
@@ -965,11 +962,17 @@ class Array2D {
     return temp;
   }
 
+  ///Clears all raster data from RAM
   void clear(){
     data.clear();
     data.shrink_to_fit();
   }
 
+  /**
+    @brief Copies the geotransform, projection, and basename of another raster
+
+    @param[in]    other    Raster to copy from
+  */
   template<class U>
   void templateCopy(const Array2D<U> &other){
     geotransform = other.geotransform;
@@ -1061,10 +1064,14 @@ class Array2D {
 
 FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
 
-    if(!good)
+    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType());
+    if(!good){
       std::cerr<<"No stamp found!"<<std::endl;
+      return;
+    }
 
-    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType())<<" at "<<sx<<","<<sy<<"\n";
+    std::cerr<<" at "<<sx<<","<<sy<<"\n";
+
     for(size_t y=sy;y<sy+size;y++){
       for(size_t x=sx;x<sx+size;x++)
         std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
@@ -1072,6 +1079,11 @@ FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
     }
   }
 
+  /**
+    @brief Get the area of an individual cell in square projection units
+
+    @return The area of the cell in square projection units
+  */
   double getCellArea() const {
     return geotransform[1]*geotransform[5];
   }
