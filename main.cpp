@@ -698,8 +698,10 @@ class ConsumerSpecifics {
 
   void SaveToCache(const ChunkInfo &chunk){
     timer_io.start();
-    flowdirs.dumpData(chunk.retention+"-flowdirs.dat");
-    accum.dumpData(chunk.retention+"-accum.dat");
+    flowdirs.setCacheFilename(chunk.retention+"-flowdirs.dat");
+    accum.setCacheFilename(chunk.retention+"-accum.dat");
+    flowdirs.dumpData();
+    accum.dumpData();
     timer_io.stop();
   }
 
