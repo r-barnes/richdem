@@ -72,11 +72,11 @@ void dinf_flow_flats(
   std::cerr<<"\n###Dinf Flow Flats"<<std::endl;
 
   std::cerr<<"%%Calculating Dinf flow directions using flat mask..."<<std::endl;
-  progress.start( flat_resolution_mask.viewWidth()*flat_resolution_mask.viewHeight() );
+  progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
   #pragma omp parallel for
-  for(int x=1;x<flat_resolution_mask.viewWidth()-1;x++){
-    progress.update( x*flat_resolution_mask.viewHeight() );
-    for(int y=1;y<flat_resolution_mask.viewHeight()-1;y++)
+  for(int x=1;x<flat_resolution_mask.width()-1;x++){
+    progress.update( x*flat_resolution_mask.height() );
+    for(int y=1;y<flat_resolution_mask.height()-1;y++)
       if(flat_resolution_mask(x,y)==flat_resolution_mask.noData())
         continue;
       else if(flowdirs(x,y)==NO_FLOW)

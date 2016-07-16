@@ -100,11 +100,11 @@ void d8_flow_flats(
   ProgressBar progress;
 
   std::cerr<<"%%Calculating D8 flow directions using flat mask..."<<std::endl;
-  progress.start( flat_mask.viewWidth()*flat_mask.viewHeight() );
+  progress.start( flat_mask.width()*flat_mask.height() );
   #pragma omp parallel for
-  for(int x=1;x<flat_mask.viewWidth()-1;x++){
-    progress.update( x*flat_mask.viewHeight() );
-    for(int y=1;y<flat_mask.viewHeight()-1;y++)
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++)
       if(flat_mask(x,y)==flat_mask.noData())
         continue;
       else if (flowdirs(x,y)==NO_FLOW)
@@ -185,7 +185,7 @@ static void BuildAwayGradient(
     for(int n=1;n<=8;n++){
       int nx = x+dx[n];
       int ny = y+dy[n];
-      if(labels.in_grid(nx,ny)
+      if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
@@ -257,8 +257,8 @@ static void BuildTowardsCombinedGradient(
 
   //Make previous flat_mask negative so that we can keep track of where we are
   #pragma omp parallel for collapse(2)
-  for(int x=0;x<flat_mask.viewWidth();x++)
-  for(int y=0;y<flat_mask.viewHeight();y++)
+  for(int x=0;x<flat_mask.width();x++)
+  for(int y=0;y<flat_mask.height();y++)
     flat_mask(x,y)*=-1;
 
 
@@ -286,7 +286,7 @@ static void BuildTowardsCombinedGradient(
     for(int n=1;n<=8;n++){
       int nx = x+dx[n];
       int ny = y+dy[n];
-      if(labels.in_grid(nx,ny)
+      if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
         edges.push_back(grid_cell(nx,ny));
@@ -348,7 +348,7 @@ static void label_this(
       continue;
     labels(c.x,c.y)=label;
     for(int n=1;n<=8;n++)
-      if(labels.in_grid(c.x+dx[n],c.y+dy[n]))
+      if(labels.inGrid(c.x+dx[n],c.y+dy[n]))
         to_fill.push(grid_cell(c.x+dx[n],c.y+dy[n]));
   }
 }
@@ -387,10 +387,10 @@ static void find_flat_edges(
   int cells_without_flow=0;
   ProgressBar progress;
   std::cerr<<"%%Searching for flats..."<<std::endl;
-  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
-  for(int x=0;x<flowdirs.viewWidth();x++){
-    progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++){
+  progress.start( flowdirs.width()*flowdirs.height() );
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++){
       if(flowdirs(x,y)==flowdirs.noData())
         continue;
       if(flowdirs(x,y)==NO_FLOW)
@@ -399,7 +399,7 @@ static void find_flat_edges(
         int nx = x+dx[n];
         int ny = y+dy[n];
 
-        if(!flowdirs.in_grid(nx,ny)) continue;
+        if(!flowdirs.inGrid(nx,ny)) continue;
         if(flowdirs(nx,ny)==flowdirs.noData()) continue;
 
         if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y)){
@@ -460,13 +460,13 @@ void resolve_flats_barnes(
   std::cerr<<"Setting up labels matrix..."<<std::flush;
   labels.templateCopy(elevations);
   labels.resize(flowdirs);
-  labels.init(0);
+  labels.setAll(0);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"Setting up flat resolution mask..."<<std::flush;
   flat_mask.templateCopy(elevations);
   flat_mask.resize(elevations);
-  flat_mask.init(0);
+  flat_mask.setAll(0);
   flat_mask.setNoData(-1);
   std::cerr<<"succeeded!"<<std::endl;
 
@@ -554,11 +554,11 @@ void d8_flats_alter_dem(
   ProgressBar progress;
 
   std::cerr<<"%%Calculating D8 flow directions using flat mask..."<<std::endl;
-  progress.start( flat_mask.viewWidth()*flat_mask.viewHeight() );
+  progress.start( flat_mask.width()*flat_mask.height() );
   #pragma omp parallel for
-  for(int x=1;x<flat_mask.viewWidth()-1;x++){
-    progress.update( x*flat_mask.viewHeight() );
-    for(int y=1;y<flat_mask.viewHeight()-1;y++){
+  for(int x=1;x<flat_mask.width()-1;x++){
+    progress.update( x*flat_mask.height() );
+    for(int y=1;y<flat_mask.height()-1;y++){
       if(labels(x,y)==0)
         continue;
 

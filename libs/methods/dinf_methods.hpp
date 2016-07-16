@@ -90,7 +90,7 @@ static void area_proportion(float flowdir, int nhigh, int nlow, float &phigh, fl
 /*//TODO: Debugging code used for checking for loops. Since loops should not occur in the output of the production code, this is not needed.
 bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
   int nh,nl;
-  if(! flowdirs.in_grid(c2x, c2y) || flowdirs(c2x,c2y)==flowdirs.noData() || flowdirs(c2x,c2y)==NO_FLOW)
+  if(! flowdirs.inGrid(c2x, c2y) || flowdirs(c2x,c2y)==flowdirs.noData() || flowdirs(c2x,c2y)==NO_FLOW)
     return false;
   where_do_i_flow(flowdirs(c2x,c2y),nh,nl);
   if(n==dinf_d8_inverse[nh] || (nl!=-1 && n==dinf_d8_inverse[nl])){
@@ -112,27 +112,27 @@ void dinf_upslope_area(
   std::cerr<<"\n###Dinf Upslope Area"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.viewWidth()*flowdirs.viewHeight()*((long)sizeof(grid_cell))/1024/1024)
+           <<(flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
   std::cerr<<"Setting up the dependency matrix..."<<std::flush;
   dependency.resize(flowdirs);
-  dependency.init(0);
+  dependency.setAll(0);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"Setting up the area matrix..."<<std::flush;
   area.resize(flowdirs);
-  area.init(0);
+  area.setAll(0);
   area.setNoData(dinf_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
 
   bool has_cells_without_flow_directions=false;
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
-  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
+  progress.start( flowdirs.width()*flowdirs.height() );
   #pragma omp parallel for reduction(|:has_cells_without_flow_directions)
-  for(int x=0;x<flowdirs.viewWidth();x++){
-    progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++){
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++){
       if(flowdirs(x,y)==flowdirs.noData()){
         area(x,y)       = area.noData();
         dependency(x,y) = 9;  //Note: This is an unnecessary safety precaution
@@ -150,9 +150,9 @@ void dinf_upslope_area(
         nlx = x+dinf_dx[n_low];
         nly = y+dinf_dy[n_low];
       }
-      if( n_low!=-1 && flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData() )
+      if( n_low!=-1 && flowdirs.inGrid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData() )
         dependency(nlx,nly)++;
-      if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() )
+      if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() )
         dependency(nhx,nhy)++;
     }
   }
@@ -161,10 +161,10 @@ void dinf_upslope_area(
     std::cerr<<"\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
-  progress.start( flowdirs.viewWidth()*flowdirs.viewHeight() );
-  for(int x=0;x<flowdirs.viewWidth();x++){
-    progress.update( x*flowdirs.viewHeight() );
-    for(int y=0;y<flowdirs.viewHeight();y++)
+  progress.start( flowdirs.width()*flowdirs.height() );
+  for(int x=0;x<flowdirs.width();x++){
+    progress.update( x*flowdirs.height() );
+    for(int y=0;y<flowdirs.height();y++)
       if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(flowdirs(x,y)==NO_FLOW)
@@ -199,20 +199,20 @@ void dinf_upslope_area(
 
     float phigh,plow;
     area_proportion(flowdirs(c.x,c.y), n_high, n_low, phigh, plow);
-    if(flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData())
+    if(flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData())
       area(nhx,nhy)+=area(c.x,c.y)*phigh;
 
     if(n_low!=-1){
       nlx = c.x+dinf_dx[n_low];
       nly = c.y+dinf_dy[n_low];
-      if(flowdirs.in_grid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData()){
+      if(flowdirs.inGrid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData()){
         area(nlx,nly)+=area(c.x,c.y)*plow;
         if((--dependency(nlx,nly))==0)
           sources.push(grid_cell(nlx,nly));
       }
     }
 
-    if( flowdirs.in_grid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
+    if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
       sources.push(grid_cell(nhx,nhy));
   }
   std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;

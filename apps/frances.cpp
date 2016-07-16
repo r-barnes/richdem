@@ -15,7 +15,7 @@ int PerformAlgorithm(std::string filename, std::string output_prefix, float zsca
   improved_priority_flood(elevations);
 
   //Save pit-filled DEM
-  elevations.saveGDAL(output_prefix+"-filled.tif", filename, 0, 0);
+  elevations.saveGDAL(output_prefix+"-filled.tif", 0, 0);
 
   Array2D<float> flowdirs;
 
@@ -25,23 +25,23 @@ int PerformAlgorithm(std::string filename, std::string output_prefix, float zsca
   //Resolve flats without altering elevations
   resolve_flats_barnes_dinf(elevations,flowdirs);
 
-  flowdirs.saveGDAL(output_prefix+"-flowdirs.tif", filename, 0, 0);
+  flowdirs.saveGDAL(output_prefix+"-flowdirs.tif", 0, 0);
 
   Array2D<float> slope;
   d8_slope(elevations,slope,TATTRIB_SLOPE_RISERUN,zscale);
 
-  slope.saveGDAL(output_prefix+"-slope.tif",filename,0,0);
+  slope.saveGDAL(output_prefix+"-slope.tif",0,0);
 
   Array2D<float> area;
   flowdirs.countDataCells();
   dinf_upslope_area(flowdirs,area);
 
-  area.saveGDAL(output_prefix+"-area.tif",filename,0,0);
+  area.saveGDAL(output_prefix+"-area.tif",0,0);
 
   Array2D<float> cti;
   d8_CTI(area, slope, cti);
 
-  cti.saveGDAL(output_prefix+"-cti.tif",filename,0,0);
+  cti.saveGDAL(output_prefix+"-cti.tif",0,0);
 
   return 0;
 }

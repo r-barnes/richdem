@@ -24,6 +24,13 @@ const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
 const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
 #endif
 
+
+/**
+  @brief  Determine data type of a GDAL file's first layer
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  filename   Filename of file whose type should be determined
+*/
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -38,13 +45,23 @@ GDALDataType peekGDALType(const std::string &filename) {
 }
 
 
+/**
+  @brief  Retrieve height, width, NoData, and geotransform from a GDAL file
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  filename   GDAL file to peek at
+  @param[out] height     Height of the raster in cells
+  @param[out] width      Width of the raster in cells
+  @param[out] no_data    Value of the raster's no_data property
+  @param[out] geo_trans  Returns the SIX elements of the raster's geotransform
+*/
 template<class T>
 void getGDALHeader(
   const std::string &filename,
   int    &height,
   int    &width,
   T      &no_data,
-  double *geotrans
+  double geotransform[6]
 ){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -56,12 +73,22 @@ void getGDALHeader(
   no_data = band->GetNoDataValue();
   width   = band->GetXSize();
 
-  fin->GetGeoTransform(geotrans);
+  fin->GetGeoTransform(geotransform);
 
   GDALClose(fin);
 }
 
 
+/**
+  @brief  Retrieve height, width, data type, and geotransform from a GDAL file
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  filename   GDAL file to peek at
+  @param[out] height     Height of the raster in cells
+  @param[out] width      Width of the raster in cells
+  @param[out] dtype      Data type of the file in question
+  @param[out] geo_trans  Returns the SIX elements of the raster's geotransform
+*/
 int getGDALDimensions(
   const std::string &filename,
   int &height,
@@ -91,6 +118,12 @@ int getGDALDimensions(
 }
 
 
+/**
+  @brief  Convert Array2D or any other template to its GDAL data type
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @return The GDAL datatype of T
+*/
 template<class T>
 GDALDataType NativeTypeToGDAL() {
   if(typeid(T)==typeid(uint8_t))
@@ -117,39 +150,54 @@ GDALDataType NativeTypeToGDAL() {
 
 
 
+/**
+  @brief  Class to hold and manipulate GDAL and native rasters
+  @author Richard Barnes (rbarnes@umn.edu)
 
+  Array2D manages a two-dimensional raster dataset. Passed a request to load
+  such data, it peeks at the file header and can either load data on
+  construction or wait until a later point. It can also offload data to disk.
+
+  Array2D permits simple copy construction as well as templated copies, which
+  transfer projections and geotransforms, but not the actual data. This is
+  useful for say, create a flow directions raster which is homologous to a DEM.
+*/
 template<class T>
 class Array2D {
  public:
-  std::string filename;
-  std::string basename;
-  std::vector<double> geotransform;
-  std::string projection;
+  std::string filename;             ///TODO
+  std::string basename;             ///Filename without path or extension
+  std::vector<double> geotransform; ///Geotransform of the raster
+  std::string projection;           ///Projection of the raster
 
  private:
   template<typename> friend class Array2D;
 
-  std::vector<T> data;
+  std::vector<T> data;              ///Holds the raster data in a 1D array
+                                    ///this improves caching versus a 2D array
 
-  GDALDataType data_type;
+  T   no_data;                      ///NoData value of the raster
+  int num_data_cells = -1;          ///Number of cells which are not NoData
 
-  int total_height;
-  int total_width;
-  int view_height;
-  int view_width;
+  int view_width;                   ///Height of raster in cells
+  int view_height;                  ///Width of raster in cells
+
+  ///@{ A rectangular subregion of a larger raster can be extracted. These
+  ///   variables store the offsets of this subregion in case the subregion
+  ///   needs to be saved into a raster with other subregions
   int view_xoff;
   int view_yoff;
-  int num_data_cells = -1;
-  bool file_native;
+  ///@}
+  
+  bool from_cache;  ///If TRUE, loadData() loads data from the cache assuming 
+                    ///the Native format. Otherwise, it assumes it is loading
+                    ///from a GDAL file.
 
-  T   no_data;
-
-  void loadGDAL(const std::string &filename, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true){
+  ///TODO
+  void loadGDAL(const std::string &filename, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
-    assert(xOffset>=0);
-    assert(yOffset>=0);
 
-    file_native = false;
+    from_cache = false;
 
     this->filename = filename;
 
@@ -169,14 +217,12 @@ class Array2D {
     projection = std::string(projection_string);
 
     GDALRasterBand *band = fin->GetRasterBand(1);
-    data_type            = band->GetRasterDataType();
 
+    size_t total_width  = band->GetXSize();
+    size_t total_height = band->GetYSize();
+    no_data             = band->GetNoDataValue();
 
-    total_width  = band->GetXSize();
-    total_height = band->GetYSize();
-    no_data      = band->GetNoDataValue();
-
-    if(exact && xOffset==0 && yOffset==0 && (part_width!=total_width || part_height!=total_height))
+    if(exact && (total_width-xOffset!=part_width || total_height-yOffset!=part_height))
       throw std::runtime_error("Tile dimensions did not match expectations!");
 
     //TODO: What's going on here?
@@ -204,52 +250,23 @@ class Array2D {
       loadData();
   }
 
+  ///Returns the GDAL data type of the Array2D template type
   GDALDataType myGDALType() const {
     return NativeTypeToGDAL<T>();
   }
 
- public:
-  Array2D(){
-    GDALAllRegister();
-    total_height = 0;
-    total_width  = 0;
-    view_width   = 0;
-    view_height  = 0;
-    view_xoff    = 0;
-    view_yoff    = 0;
-  }
+  /**
+    @brief Saves raster to a simply-structure file on disk, possibly using
+           compression.
 
-  //Create an internal array
-  Array2D(int width, int height, const T& val = T()) : Array2D() {
-    resize(width,height,val);
-  }
-
-  template<class U>
-  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
-    total_height = other.total_height;
-    total_width  = other.total_width;
-    view_width   = other.view_width;
-    view_height  = other.view_height;
-    view_xoff    = other.view_xoff;
-    view_yoff    = other.view_yoff;
-    geotransform = other.geotransform;
-    projection   = other.projection;
-    basename     = other.basename;
-    resize(other.viewWidth(), other.viewHeight(), val);
-  }
-
-  //Create internal array from a file
-  Array2D(const std::string &filename, bool native, int xOffset=0, int yOffset=0, int part_width=0, int part_height=0, bool exact=false, bool load_data=true) : Array2D() {
-    if(native)
-      loadNative(filename, load_data);
-    else
-      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
-  }
-
-  void saveNative(const std::string &filename){
+    @post  Using loadData() after running this function will result in data
+           being loaded from the cache, rather than the original file (if any).
+  */
+  void saveToCache(const std::string &filename){
     std::fstream fout;
 
-    file_native = true;
+    from_cache     = true;
+    this->filename = filename;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
@@ -265,8 +282,6 @@ class Array2D {
       auto &out = fout;
     #endif
 
-    out.write(reinterpret_cast<const char*>(&total_height),   sizeof(int));
-    out.write(reinterpret_cast<const char*>(&total_width),    sizeof(int));
     out.write(reinterpret_cast<const char*>(&view_height),    sizeof(int));
     out.write(reinterpret_cast<const char*>(&view_width),     sizeof(int));
     out.write(reinterpret_cast<const char*>(&view_xoff),      sizeof(int));
@@ -282,45 +297,13 @@ class Array2D {
     out.write(reinterpret_cast<const char*>(data.data()), data.size()*sizeof(T));
   }
 
-  void setFilename(const std::string &filename){
-    this->filename = filename;
-  }
-
-  void dumpData() {
-    saveNative(filename);
-    clear();
-  }
-
-  void loadData() {
-    if(!data.empty())
-      return; //TODO: Warning?
-
-    if(file_native){
-      loadNative(filename, true);
-    } else {
-      GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-      if(fin==NULL){
-        std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
-        throw std::runtime_error("Failed to loadData() into tile.");
-      }
-
-      GDALRasterBand *band = fin->GetRasterBand(1);
-
-      data.resize(view_width*view_height);
-      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
-      if(temp!=CE_None)
-        throw std::runtime_error("Error reading file with GDAL!");
-
-      GDALClose(fin);
-    }
-  }
-
+  ///TODO
   void loadNative(const std::string &filename, bool load_data=true){
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
     assert(fin.good());
 
     this->filename = filename;
-    file_native    = true;
+    from_cache    = true;
 
     #ifdef WITH_COMPRESSION
       boost::iostreams::filtering_istream in;
@@ -330,8 +313,6 @@ class Array2D {
       auto &in = fin;
     #endif
 
-    in.read(reinterpret_cast<char*>(&total_height),   sizeof(int));
-    in.read(reinterpret_cast<char*>(&total_width),    sizeof(int));
     in.read(reinterpret_cast<char*>(&view_height),    sizeof(int));
     in.read(reinterpret_cast<char*>(&view_width),     sizeof(int));
     in.read(reinterpret_cast<char*>(&view_xoff),      sizeof(int));
@@ -352,20 +333,129 @@ class Array2D {
     }
   }
 
-  //Note: The following functions return signed integers, which make them
-  //generally easier to work with. If your DEM has a dimension which exceeds
-  //2147483647, some other modifications to this program will probably be
-  //necessary.
-  int  viewSize   () const { return view_width*view_height; }
-  int  totalWidth () const { return total_width;    }
-  int  totalHeight() const { return total_height;   }
-  size_t viewWidth  () const { return view_width;     }
-  size_t viewHeight () const { return view_height;    }
-  int  viewXoff   () const { return view_xoff;      }
-  int  viewYoff   () const { return view_yoff;      }
-  bool empty      () const { return data.empty();   }
-  T    noData     () const { return no_data;        }
+ public:
+  Array2D(){
+    GDALAllRegister();
+    view_width   = 0;
+    view_height  = 0;
+    view_xoff    = 0;
+    view_yoff    = 0;
+  }
 
+  /**
+    @brief Creates a raster of the specified dimensions
+
+    @param[in] width   Width of the raster
+    @param[in] height  Height of the raster
+    @param[in] val     Initial value of all the raster's cells. Defaults to the
+                       Array2D template type's default value
+  */
+  Array2D(size_t width, size_t height, const T& val = T()) : Array2D() {
+    resize(width,height,val);
+  }
+
+  /**
+    @brief Create a raster with the same properties and dimensions as another
+           raster. No data is copied between the two.
+
+    @param[in] other   Raster whose properties and dimensions should be copied
+    @param[in] val     Initial value of all the raster's cells. Defaults to the
+                       Array2D template type's default value
+  */
+  template<class U>
+  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
+    view_width   = other.view_width;
+    view_height  = other.view_height;
+    view_xoff    = other.view_xoff;
+    view_yoff    = other.view_yoff;
+    geotransform = other.geotransform;
+    projection   = other.projection;
+    basename     = other.basename;
+    resize(other.width(), other.height(), val);
+  }
+
+  ///TODO
+  Array2D(const std::string &filename, bool native, size_t xOffset=0, size_t yOffset=0, size_t part_width=0, size_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
+    if(native)
+      loadNative(filename, load_data);
+    else
+      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
+  }
+
+  void setFilename(const std::string &filename){
+    this->filename = filename;
+  }
+
+  /**
+    @brief Caches the raster data and all its properties to disk. Data is then
+           purged from RAM.
+
+    @param[in] filename File to save the data to
+
+    @post  Calls to loadData() after this will result in data being loaded from
+           the cache.
+  */
+  void dumpData(const std::string &filename) {
+    this->filename = filename;
+    saveToCache(filename);
+    clear();
+  }
+
+  /**
+    @brief Loads data from disk into RAM. 
+
+    If dumpData() has been previously called, data is loaded from the cache; 
+    otherwise, it is loaded from a GDAL file. No data is loaded if data is
+    already present in RAM.
+  */
+  void loadData() {
+    if(!data.empty())
+      return; //TODO: Warning?
+
+    if(from_cache){
+      loadNative(filename, true);
+    } else {
+      GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+      if(fin==NULL){
+        std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
+        throw std::runtime_error("Failed to loadData() into tile.");
+      }
+
+      GDALRasterBand *band = fin->GetRasterBand(1);
+
+      data.resize(view_width*view_height);
+      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
+      if(temp!=CE_None)
+        throw std::runtime_error("Error reading file with GDAL!");
+
+      GDALClose(fin);
+    }
+  }
+
+  ///Number of cells in the DEM
+  size_t size() const { return view_width*view_height; }
+
+  ///Width of the raster
+  size_t width() const { return view_width; }
+
+  ///Height of the raster
+  size_t height() const { return view_height; }
+
+  ///X-Offset of this subregion of whatever raster we loaded from
+  size_t viewXoff() const { return view_xoff; }
+
+  ///Y-Offset of this subregion of whatever raster we loaded from
+  size_t viewYoff() const { return view_yoff; }
+
+  ///Returns TRUE if no data is present in RAM
+  bool empty() const { return data.empty(); }
+
+  ///Returns the NoData value of the raster. Cells equal to this value sould
+  ///generally not be used in calculations. But note that the isNoData() method
+  ///is a much better choice for testing whether a cell is NoData or not.
+  T noData() const { return no_data; }
+
+  ///Finds the minimum value of the raster, ignoring NoData cells
   T min() const {
     T minval = std::numeric_limits<T>::max();
     for(auto const x: data){
@@ -376,6 +466,7 @@ class Array2D {
     return minval;
   }
 
+  ///Finds the maximum value of the raster, ignoring NoData cells
   T max() const {
     T maxval = std::numeric_limits<T>::min();
     for(auto const x: data){
@@ -386,13 +477,30 @@ class Array2D {
     return maxval;
   }
 
+  /**
+    @brief Replace one cell value with another throughout the raster. Can
+           operate on NoData cells.
+
+    @param[in] oldval   Value to be replaced
+    @param[in] newval   Value to replace 'oldval' with
+  */
   void replace(const T oldval, const T newval){
     for(auto &x: data)
       if(x==oldval)
         x = newval;
   }
 
+  /**
+    @brief Counts the number of occurrences of a particular value in the raster.
+           Can operate on NoData cells.
+
+    @param[in] val   Value to be be counted
+
+    @return The number of times 'val' appears in the raster. Will be 0 if raster
+            is not loaded in RAM.
+  */
   int countval(const T val) const {
+    //TODO: Warn if raster is empty?
     int count=0;
     for(const auto x: data)
       if(x==val)
@@ -400,15 +508,40 @@ class Array2D {
     return count;
   }
 
+  /**
+    @brief Convert from index coordinates to x,y coordinates
+
+    @param[in]  i   Index coordinate
+    @param[out] x   X-coordinate of i
+    @param[out] y   Y-coordinate of i
+  */
   void iToxy(const int i, int &x, int &y) const {
     x = i%view_width;
     y = i/view_width;
   }
 
+  /**
+    @brief Convert from x,y coordinates to index coordinates
+
+    @param[in]  x   X-coordinate to convert
+    @param[in]  y   Y-coordinate to convert
+
+    @return Returns the index coordinate i of (x,y)
+  */
   int xyToI(int x, int y) const {
     return y*view_width+x;
   }
 
+  /**
+    @brief Given a cell identified by an i-coordinate, return the i-coordinate
+           of the neighbour identified by dx,dy
+
+    @param[in]  i   i-coordinate of cell whose neighbour needs to be identified
+    @param[in] dx   x-displacement of the neighbour from i
+    @param[in] dy   y-displacement of the neighbour from i
+
+    @return i-coordinate of the neighbour. Usually referred to as 'ni'
+  */
   int nToI(int i, int dx, int dy) const {
     int x=i%view_width+dx;
     int y=i/view_width+dy;
@@ -417,11 +550,17 @@ class Array2D {
     return xyToI(x,y);
   }
 
+  /**
+    @brief Copies all the properties AND data of another raster into this one
+
+    @param[in]  o   Raster to copy
+
+    @return Returns this raster, with the other raster's data and properties
+            copied in.
+  */
   template<class U>
   T& operator=(const Array2D<U> &o){
     data = std::vector<T>(o.data.begin(),o.data.end());
-    total_height   = o.total_height;
-    total_width    = o.total_width;
     view_height    = o.view_height;
     view_width     = o.view_width;
     view_xoff      = o.view_xoff;
@@ -432,18 +571,47 @@ class Array2D {
     return *this;
   }
 
+  /**
+    @brief Determine if two rasters are equivalent based on dimensions,
+           NoData value, and their data
+  */
   bool operator==(const Array2D<T> &o){
-    if(viewWidth()!=o.viewWidth() || viewHeight()!=o.viewHeight())
+    if(width()!=o.width() || height()!=o.height())
       return false;
     if(noData()!=o.noData())
       return false;
     return data==o.data;
   }
 
+  /**
+    @brief Whether or not a cell is NoData using x,y coordinates
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   Y-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
   bool isNoData(int x, int y) const {
+    assert(0<=x && x<view_width);
+    assert(0<=y && y<view_height);
     return data[y*view_width+x]==no_data;
   }
 
+  /**
+    @brief Whether or not a cell is NoData using i coordinates
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  bool isNoData(int i) const {
+    assert(0<=i && i<view_width*view_height);
+    return data[i]==no_data;
+  }
+
+  /**
+    @brief Flips the raster from top to bottom
+  */
   void flipVert(){
     for(int y=0;y<view_height/2;y++)
       std::swap_ranges(
@@ -453,11 +621,17 @@ class Array2D {
       );
   }
 
+  /**
+    @brief Flips the raster from side-to-side
+  */
   void flipHorz(){
     for(int y=0;y<view_height;y++)
       std::reverse(data.begin()+y*view_width,data.begin()+(y+1)*view_width);
   }
 
+  /**
+    @brief Flips the raster about its diagonal axis, like a matrix tranpose.
+  */
   void transpose(){
     std::cerr<<"transpose() is an experimental feature."<<std::endl;
     std::vector<T> new_data(view_width*view_height);
@@ -466,51 +640,115 @@ class Array2D {
       new_data[x*view_height+y] = data[y*view_width+x];
     data = new_data;
     std::swap(view_width,view_height);
-    //TODO
+    //TODO: Offsets?
   }
 
-  bool in_grid(int x, int y) const {
+  /**
+    @brief Test whether a cell lies within the boundaries of the raster
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   Y-coordinate of cell to test
+
+    @return TRUE if cell lies within the raster
+  */
+  bool inGrid(int x, int y) const {
     return 0<=x && x<view_width && 0<=y && y<view_height;
   }
 
+  /**
+    @brief Test whether a cell lies within the boundaries of the raster.
+
+    Obviously this bears some difference from `inGrid(x,y)`.
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return TRUE if cell lies within the raster
+  */
+  bool inGrid(int i) const {
+    return 0<=i && i<view_width*view_height;
+  }
+
+  /**
+    @brief Test whether a cell lies on the boundary of the raster
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   X-coordinate of cell to test
+
+    @return TRUE if cell lies on the raster's boundary
+  */
   bool isEdgeCell(int x, int y) const {
     return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
+  /**
+    @brief Test whether a cell lies on the boundary of the raster
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return TRUE if cell lies on the raster's boundary
+  */
+  bool isEdgeCell(int i) const {
+    int x,y;
+    iToxy(i,x,y);
+    return isEdgeCell(x,y);
+  }
+
+  /**
+    @brief Sets the NoData value of the raster
+
+    @param[in]   ndval    Value to change NoData to
+  */
   void setNoData(const T &ndval){
     no_data = ndval;
   }
 
-  void setAll(const T &val){
+  /**
+    @brief Sets all of the raster's cells to 'val'
+
+    @param[in]   val      Value to change the cells to
+  */
+  void setAll(const T val){
     std::fill(data.begin(),data.end(),val);
   }
 
-  void init(T val){
-    setAll(val);
-  }
+  /**
+    @brief Resize the raster. Note: this clears all the raster's data.
 
-  //Destructively resizes the array. All data will die!
+    @param[in]   width    New width of the raster
+    @param[in]   height   New height of the raster
+    @param[in]   val      Value to set all the cells to. Defaults to the 
+                          raster's template type default value
+  */
   void resize(int width, int height, const T& val = T()){
     data.resize(width*height);
     setAll(val);
-    total_height = view_height = height;
-    total_width  = view_width  = width;
+    view_height = height;
+    view_width  = width;
   }
 
+  /*
+    @brief Resize a raster to copy another raster's dimensions. Copy properies.
+
+    @param[in]   other    Raster to match sizes with
+    @param[in]   val      Value to set all the cells to. Defaults to the
+                          raster's template type default value
+  */
   template<class U>
   void resize(const Array2D<U> &other, const T& val = T()){
-    resize(other.viewWidth(), other.viewHeight(), val);
+    resize(other.width(), other.height(), val);
     geotransform = other.geotransform;
+    projection   = other.projection;
   }
 
+  ///TODO
   void expand(int new_width, int new_height, const T val){
     if(new_width<view_width)
       throw std::runtime_error("expand(): new_width<view_width");
     if(new_height<view_height)
       throw std::runtime_error("expand(): new_height<view_height");
     
-    int old_width  = viewWidth();
-    int old_height = viewHeight();
+    int old_width  = width();
+    int old_height = height();
 
     std::vector<T> old_data = std::move(data);
 
@@ -561,17 +799,17 @@ class Array2D {
   T& operator()(size_t x, size_t y){
     assert(x>=0);
     assert(y>=0);
-    //std::cerr<<"Width: "<<viewWidth()<<" Height: "<<viewHeight()<<" x: "<<x<<" y: "<<y<<std::endl;
-    assert(x<viewWidth());
-    assert(y<viewHeight());
+    //std::cerr<<"Width: "<<width()<<" Height: "<<height()<<" x: "<<x<<" y: "<<y<<std::endl;
+    assert(x<width());
+    assert(y<height());
     return data[y*view_width+x];
   }
 
   const T& operator()(size_t x, size_t y) const {
     assert(x>=0);
     assert(y>=0);
-    assert(x<viewWidth());
-    assert(y<viewHeight());
+    assert(x<width());
+    assert(y<height());
     return data[y*view_width+x];
   }
 
@@ -590,10 +828,6 @@ class Array2D {
   std::vector<T> rightColumn() const { 
     return getColData(view_width-1);
   }
-
-  // Row& rowRef(int rownum){
-  //   return data[rownum];
-  // }
 
   void setRow(int y, const T &val){
     std::fill(data.begin()+y*view_width,data.begin()+(y+1)*view_width,val);
@@ -615,11 +849,17 @@ class Array2D {
     return temp;
   }
 
+  ///Clears all raster data from RAM
   void clear(){
     data.clear();
     data.shrink_to_fit();
   }
 
+  /**
+    @brief Copies the geotransform, projection, and basename of another raster
+
+    @param[in]    other    Raster to copy from
+  */
   template<class U>
   void templateCopy(const Array2D<U> &other){
     geotransform = other.geotransform;
@@ -633,7 +873,7 @@ class Array2D {
       std::cerr<<"Could not open GDAL driver!"<<std::endl;
       throw std::runtime_error("Could not open GDAL driver!");
     }
-    GDALDataset *fout    = poDriver->Create(filename.c_str(), viewWidth(), viewHeight(), 1, myGDALType(), NULL);
+    GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), NULL);
     if(fout==NULL){
       std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
       throw std::runtime_error("Could not open file for GDAL save!");
@@ -726,6 +966,11 @@ FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
     }
   }
 
+  /**
+    @brief Get the area of an individual cell in square projection units
+
+    @return The area of the cell in square projection units
+  */
   double getCellArea() const {
     return geotransform[1]*geotransform[5];
   }
