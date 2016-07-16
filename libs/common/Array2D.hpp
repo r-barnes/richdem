@@ -685,11 +685,11 @@ class Array2D {
 
 
     auto GoodStamp = [&](size_t x0, size_t y0) -> bool {
-      std::unordered_set<T> vals(3*size*size);
+      std::unordered_set<int> vals(3*size*size);
       //Is the area sufficient big?
       for(size_t y=y0;y<y0+size;y++)
       for(size_t x=x0;x<x0+size;x++){
-        vals.insert(data[y*view_width+x]);
+        vals.insert((int)data[y*view_width+x]);
         if(isNoData(x,y))
           return false;
       }
@@ -717,7 +717,7 @@ FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
     std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType())<<" at "<<sx<<","<<sy<<"\n";
     for(size_t y=sy;y<sy+size;y++){
       for(size_t x=sx;x<sx+size;x++)
-        std::cerr<<std::setw(5)<<std::setprecision(3)<<data[y*view_width+x]<<" ";
+        std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
       std::cerr<<"\n";
     }
   }
