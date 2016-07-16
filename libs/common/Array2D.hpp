@@ -1032,6 +1032,20 @@ class Array2D {
     GDALClose(fout);
   }
 
+  /**
+    @brief Output a square of cells useful for determining raster orientation.
+
+    This method prints out a square block of cells, none of which are NoData.
+    The block will have more than 'size' different values and be the closest
+    such block to the top, then left, of the raster.
+
+    Since algorithms may have to flip rasters horizontally or vertically before
+    manipulating them, it is important that all algorithms work on data in the
+    same orientation. This method, used in testing, helps a user ensure that 
+    their algorithm is orientating data correctly.
+
+    @param[in]  size   Output stamp will be size x size with > size unique values
+  */
   void printStamp(size_t size) const {
     size_t sx = -1; //-1 suppresses uninitialized warning, causes things to blow
     size_t sy = -1; //up if sx,sy aren't used correctly
