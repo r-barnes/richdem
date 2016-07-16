@@ -49,16 +49,16 @@ void PriorityFlood(
 
   label_t current_label = 2;
 
-  labels.init(0);
+  labels.setAll(0);
 
-  for(int x=0;x<dem.viewWidth();x++){
-    const int the_y = dem.viewHeight()-1;
+  for(int x=0;x<dem.width();x++){
+    const int the_y = dem.height()-1;
     pq.emplace(x,0,    dem(x,0    ));
     pq.emplace(x,the_y,dem(x,the_y));
   }
 
-  for(int y=1;y<dem.viewHeight()-1;y++){
-    const int the_x = dem.viewWidth()-1;
+  for(int y=1;y<dem.height()-1;y++){
+    const int the_x = dem.width()-1;
     pq.emplace(0,    y,dem(0,    y));
     pq.emplace(the_x,y,dem(the_x,y));
   }
@@ -126,22 +126,22 @@ void PriorityFlood(
   }
 
   if(edge & GRID_TOP)
-    for(int x=0;x<labels.viewWidth();x++)
+    for(int x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);
 
   if(edge & GRID_BOTTOM){
-    int bottom_row = labels.viewHeight()-1;
-    for(int x=0;x<labels.viewWidth();x++)
+    int bottom_row = labels.height()-1;
+    for(int x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,bottom_row),(label_t)1,dem(x,bottom_row),dem(x,bottom_row),my_graph);
   }
 
   if(edge & GRID_LEFT)
-    for(int y=0;y<labels.viewHeight();y++)
+    for(int y=0;y<labels.height();y++)
       WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
 
   if(edge & GRID_RIGHT){
-    int right_col = labels.viewWidth()-1;
-    for(int y=0;y<labels.viewHeight();y++)
+    int right_col = labels.width()-1;
+    for(int y=0;y<labels.height();y++)
       WatershedsMeet(labels(right_col,y),(label_t)1,dem(right_col,y),dem(right_col,y),my_graph);
   }
 
