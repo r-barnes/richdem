@@ -126,6 +126,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
   ProgressBar progress;
 
   std::cerr<<"\n###Improved Priority-Flood"<<std::endl;
+  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
   std::cerr<<"Setting up boolean flood array matrix..."<<std::flush;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
   std::cerr<<"succeeded."<<std::endl;
@@ -223,6 +224,7 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   int false_pit_cells           = 0;
 
   std::cerr<<"\n###Priority-Flood+Epsilon"<<std::endl;
+  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
   std::cerr<<"Setting up boolean flood array matrix..."<<std::flush;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
   std::cerr<<"succeeded."<<std::endl;
@@ -362,6 +364,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
   ProgressBar progress;
 
   std::cerr<<"\n###Priority-Flood+Flow Directions"<<std::endl;
+  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
   std::cerr<<"Setting up boolean flood array matrix..."<<std::flush;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
   std::cerr<<"succeeded."<<std::endl;
@@ -586,6 +589,7 @@ void priority_flood_watersheds(
   ProgressBar progress;
 
   std::cerr<<"\n###Priority-Flood+Watershed Labels"<<std::endl;
+  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
   std::cerr<<"Setting up boolean flood array matrix..."<<std::flush;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
   std::cerr<<"succeeded."<<std::endl;
