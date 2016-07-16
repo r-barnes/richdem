@@ -84,7 +84,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
 
   std::cerr<<"Setting up the area matrix..."<<std::flush;
   area.resize(flowdirs);
-  area.init(0);
+  area.setAll(0);
   area.setNoData(d8_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
 
@@ -183,7 +183,7 @@ void d8_upslope_cells(
 ){
   std::cerr<<"Setting up the upslope_cells matrix..."<<std::flush;
   upslope_cells.resize(flowdirs);
-  upslope_cells.init(d8_NO_DATA);
+  upslope_cells.setAll(d8_NO_DATA);
   upslope_cells.noData()=d8_NO_DATA;
   std::cerr<<"succeeded."<<std::endl;
   ProgressBar progress;
