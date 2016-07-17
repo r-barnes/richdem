@@ -1033,44 +1033,13 @@ class Array2D {
   }
 
   void printStamp(size_t size) const {
-    size_t sx = -1; //-1 suppresses uninitialized warning, causes things to blow
-    size_t sy = -1; //up if sx,sy aren't used correctly
+    const int sx = width()/2;
+    const int sy = height()/2;
 
-
-    auto GoodStamp = [&](size_t x0, size_t y0) -> bool {
-      std::unordered_set<int> vals(3*size*size);
-      //Is the area sufficient big?
-      for(size_t y=y0;y<y0+size;y++)
-      for(size_t x=x0;x<x0+size;x++){
-        vals.insert((int)data[y*view_width+x]);
-        if(isNoData(x,y))
-          return false;
-      }
-      //Okay, it was. Is it diverse enough?
-      return vals.size()>size;
-    };
-
-    //There are more performant ways to perform this search using dynamic
-    //programming; however, this method is not intended to be called in
-    //performant situations, so I have opted to use a more obvious and simpler
-    //algorithm
-    bool good = false;
-    for(sy=0;sy<view_height-size;sy++)
-    for(sx=0;sx<view_width-size; sx++)
-      if(GoodStamp(sx,sy)){
-        good = true;
-        goto FOUNDSTAMP; //How bad could one little goto be? VELOCIRAPTOR!!!!!
-      }
-
-FOUNDSTAMP: //Look, the label's right here. That's okay, right? VELOCIRAPTOR!!!
-
-    std::cerr<<"Stamp for basename='"<<basename<<"', filename='"<<filename<<"', dtype="<<GDALGetDataTypeName(myGDALType());
-    if(!good){
-      std::cerr<<"No stamp found!"<<std::endl;
-      return;
-    }
-
-    std::cerr<<" at "<<sx<<","<<sy<<"\n";
+    std::cerr<<"Stamp for basename='"<<basename
+             <<"', filename='"<<filename
+             <<"', dtype="<<GDALGetDataTypeName(myGDALType())
+             <<" at "<<sx<<","<<sy<<"\n";
 
     for(size_t y=sy;y<sy+size;y++){
       for(size_t x=sx;x<sx+size;x++)
