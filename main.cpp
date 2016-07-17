@@ -288,6 +288,8 @@ class ConsumerSpecifics {
 
     //At this point we're done with the calculation! Boo-yeah!
 
+    dem.printStamp(5,"Unorientated output stamp");
+
     timer_io.start();
     dem.saveGDAL(chunk.outputname, chunk.x, chunk.y);
     timer_io.stop();
