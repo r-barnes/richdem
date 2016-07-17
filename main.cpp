@@ -659,7 +659,7 @@ void Consumer(){
 //modified, is then redelegated to a Consumer which ultimately finishes the
 //processing.
 template<class T>
-void Producer(ChunkGrid &chunks){
+void Producer(ChunkGrid &chunks, const std::string output_layout_name){
   Timer timer_overall;
   timer_overall.start();
 
@@ -757,6 +757,15 @@ void Producer(ChunkGrid &chunks){
   for(int i=1;i<CommSize();i++){
     int temp;
     CommSend(&temp,nullptr,i,SYNC_MSG_KILL);
+  }
+
+
+  std::cerr<<"Printing new layout file..."<<std::endl;
+  std::ofstream flout(output_layout_name);
+  for(size_t y=0;y<chunks.size();y++){
+    for(size_t x=0;x<chunks[0].size()-1;x++)
+      flout<<chunks[y][x].outputname<<",";
+    flout<<chunks[y][chunks[0].size()-1].outputname<<std::endl;
   }
 
   timer_overall.stop();
@@ -1001,6 +1010,16 @@ void Preparer(
     CommAbort(-1);
   }
 
+  std::string output_layout_name = output_name;
+  if(output_name.find("%f")!=std::string::npos){
+    output_layout_name.replace(output_layout_name.find("%f"), 2, "layout");
+  } else if(output_name.find("%n")!=std::string::npos){
+    output_layout_name.replace(output_layout_name.find("%n"), 2, "layout");
+  } else { //Should never happen
+    std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+    throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
+  }
+
   //If a job is on the edge of the raster, mark it as having this property so
   //that it can be handled with elegance later.
   for(auto &e: chunks.front())
@@ -1021,19 +1040,19 @@ void Preparer(
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
     case GDT_Byte:
-      return Producer<uint8_t >(chunks);
+      return Producer<uint8_t >(chunks, output_layout_name);
     case GDT_UInt16:
-      return Producer<uint16_t>(chunks);
+      return Producer<uint16_t>(chunks, output_layout_name);
     case GDT_Int16:
-      return Producer<int16_t >(chunks);
+      return Producer<int16_t >(chunks, output_layout_name);
     case GDT_UInt32:
-      return Producer<uint32_t>(chunks);
+      return Producer<uint32_t>(chunks, output_layout_name);
     case GDT_Int32:
-      return Producer<int32_t >(chunks);
+      return Producer<int32_t >(chunks, output_layout_name);
     case GDT_Float32:
-      return Producer<float   >(chunks);
+      return Producer<float   >(chunks, output_layout_name);
     case GDT_Float64:
-      return Producer<double  >(chunks);
+      return Producer<double  >(chunks, output_layout_name);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
