@@ -15,7 +15,7 @@
   #define SLASH_CHAR "\\"
 #endif
 
-std::string trimStr(std::string const& str){
+static std::string trimStr(std::string const& str){
   if(str.empty())
       return str;
 
@@ -23,6 +23,16 @@ std::string trimStr(std::string const& str){
   std::size_t first     = firstScan == std::string::npos ? str.length() : firstScan;
   std::size_t last      = str.find_last_not_of(' ');
   return str.substr(first, last-first+1);
+}
+
+static std::string GetBaseName(std::string filename){
+  auto last_slash  = filename.find_last_of(SLASH_CHAR);
+  auto last_period = filename.find_last_of(".");
+  if(last_period!=std::string::npos)
+    filename.replace(last_period, std::string::npos, "");
+  if(last_slash!=std::string::npos)
+    filename.replace(0,last_slash+1,"");
+  return filename;
 }
 
 class LayoutfileReader {
@@ -85,13 +95,7 @@ class LayoutfileReader {
 
     //std::cerr<<"X="<<gridx<<" Y="<<gridy<<" fname='"<<filename<<"'"<<std::endl;
 
-    basename         = filename;
-    auto last_slash  = basename.find_last_of(SLASH_CHAR);
-    auto last_period = basename.find_last_of(".");
-    if(last_period!=std::string::npos)
-      basename.replace(last_period, std::string::npos, "");
-    if(last_slash!=std::string::npos)
-      basename.replace(0,last_slash+1,"");
+    basename = GetBaseName(filename);
 
     return true;
   }
