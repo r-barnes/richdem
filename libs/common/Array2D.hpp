@@ -1049,8 +1049,8 @@ class Array2D {
   */
   void printStamp(size_t size, std::string msg="") const {
     #ifdef SHOW_STAMPS
-      const int sx = width()/2;
-      const int sy = height()/2;
+      const size_t sx = width()/2;
+      const size_t sy = height()/2;
 
       if(msg.size()>0)
         std::cerr<<msg<<std::endl;
@@ -1059,8 +1059,11 @@ class Array2D {
                <<"', dtype="<<GDALGetDataTypeName(myGDALType())
                <<" at "<<sx<<","<<sy<<"\n";
 
-      for(size_t y=sy;y<sy+size;y++){
-        for(size_t x=sx;x<sx+size;x++)
+      const size_t sxmax = std::min(width(), sx+size);
+      const size_t symax = std::min(height(),sy+size);
+
+      for(size_t y=sy;y<symax;y++){
+        for(size_t x=sx;x<sxmax;x++)
           std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
         std::cerr<<"\n";
       }
