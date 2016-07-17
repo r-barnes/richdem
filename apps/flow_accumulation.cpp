@@ -6,13 +6,33 @@
 #include "../libs/flats/flat_resolution.hpp"
 #include "../libs/methods/d8_methods.hpp"
 
+inline bool XOR(bool a, bool b){
+  return a!=b;
+}
+
 template<class T>
 int PerformAlgorithm(std::string filename, std::string output){
+  bool flipH = false; //TODO
+  bool flipV = false;
+
   Array2D<T> flowdirs(filename,false);
 
-  Array2D<int> area;
 
+  //Flip tiles if the geotransform demands it
+  if( XOR(flowdirs.geotransform[0]<0, flipH) )
+    flowdirs.flipHorz();
+  if( XOR(flowdirs.geotransform[5]<0, flipV) )
+    flowdirs.flipVert();
+
+
+  Array2D<int> area;
   d8_upslope_area(flowdirs, area);
+
+
+  if( XOR(area.geotransform[0]<0, flipH) )
+    area.flipHorz();
+  if( XOR(area.geotransform[5]<0, flipV) )
+    area.flipVert();
 
   area.saveGDAL(output,0,0);
 
