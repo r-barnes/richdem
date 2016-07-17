@@ -159,6 +159,7 @@ def main():
       filetiles = fin.read()
       filetiles = filetiles.replace(',',' ').replace('\n',' ').replace('\r',' ')
       filetiles = filetiles.split(' ')
+      filetiles = [x for x in filetiles if len(x)>0]
 
       #Files are assumed to be stored at a location relative to the layout file,
       #so append the layout file's path to each filename in the list
