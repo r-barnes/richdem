@@ -17,6 +17,7 @@ int PerformAlgorithm(std::string filename, std::string output){
 
   Array2D<T> flowdirs(filename,false);
 
+  flowdirs.printStamp(5,"Stamp before reorientation");
 
   //Flip tiles if the geotransform demands it
   if( XOR(flowdirs.geotransform[0]<0, flipH) )
@@ -24,15 +25,19 @@ int PerformAlgorithm(std::string filename, std::string output){
   if( XOR(flowdirs.geotransform[5]<0, flipV) )
     flowdirs.flipVert();
 
+  flowdirs.printStamp(5,"Stamp after reorientation");
 
   Array2D<int> area;
   d8_upslope_area(flowdirs, area);
 
+  area.printStamp(5,"Output stamp before reorientation");
 
   if( XOR(area.geotransform[0]<0, flipH) )
     area.flipHorz();
   if( XOR(area.geotransform[5]<0, flipV) )
     area.flipVert();
+
+  area.printStamp(5,"Output stamp after reorientation");
 
   area.saveGDAL(output,0,0);
 
