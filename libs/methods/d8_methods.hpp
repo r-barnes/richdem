@@ -68,61 +68,58 @@ T sgn(T val){
 */
 template<class T, class U>
 void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
-  Array2D<int8_t> dependency;
   std::queue<grid_cell> sources;
   ProgressBar progress;
 
   std::cerr<<"\n###D8 Upslope Area"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024)
+           <<(flowdirs.size()*((long)sizeof(grid_cell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
   std::cerr<<"Resizing dependency matrix..."<<std::flush;
-  dependency.resize(flowdirs);
+  Array2D<int8_t> dependency(flowdirs,0);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"Setting up the area matrix..."<<std::flush;
-  area.resize(flowdirs);
-  area.setAll(0);
-  area.setNoData(d8_NO_DATA);
+  area.resize(flowdirs,0);
+  area.setNoData(-1);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
-  progress.start( flowdirs.width()*flowdirs.height() );
+  progress.start( flowdirs.size() );
   #pragma omp parallel for
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++){
-      dependency(x,y)=0;
-      if(flowdirs(x,y)==flowdirs.noData()){
-        area(x,y)=area.noData();
+  for(int y=0;y<flowdirs.height();y++){
+    progress.update( y*flowdirs.width() );
+    for(int x=0;x<flowdirs.width();x++){
+      if(flowdirs.isNoData(x,y)){
+        area(x,y) = area.noData();
         continue;
       }
-      for(int n=1;n<=8;n++)
-        if(!flowdirs.inGrid(x+dx[n],y+dy[n]))
-          continue;
-        else if(flowdirs(x+dx[n],y+dy[n])==NO_FLOW)
-          continue;
-        else if(flowdirs(x+dx[n],y+dy[n])==flowdirs.noData())
-          continue;
-        else if(n==inverse_flow[(int)flowdirs(x+dx[n],y+dy[n])])
-          ++dependency(x,y);
+
+      int n = flowdirs(x,y); //The neighbour this cell flows into
+      if(n==NO_FLOW)         //This cell does not flow into a neighbour
+        continue;
+
+      int nx = x+dx[n];      //x-coordinate of the neighbour
+      int ny = y+dy[n];      //y-coordinate of the neighbour
+
+      //Neighbour is not on the grid
+      if(!flowdirs.inGrid(nx,ny))
+        continue;
+
+      //Neighbour is valid and is part of the grid. The neighbour depends on this
+      //cell, so increment its dependency count.
+      ++dependency(nx,ny);
     }
   }
   std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
-  progress.start( flowdirs.width()*flowdirs.height() );
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++)
-      if(flowdirs(x,y)==flowdirs.noData())
-        continue;
-      else if(dependency(x,y)==0)
-        sources.push(grid_cell(x,y));
-  }
-  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
+  for(int y=0;y<flowdirs.height();y++)
+  for(int x=0;x<flowdirs.width();x++)
+    if(dependency(x,y)==0 && !flowdirs.isNoData(x,y))
+      sources.emplace(x,y);
 
   std::cerr<<"%%Calculating up-slope areas..."<<std::endl;
   progress.start(flowdirs.numDataCells());
@@ -134,18 +131,26 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
     ccount++;
     progress.update(ccount);
 
-    area(c.x,c.y)+=1;
+    area(c.x,c.y)++;
 
-    if(flowdirs(c.x,c.y)==NO_FLOW)
+    int n = flowdirs(c.x,c.y);
+
+    if(n==NO_FLOW)
       continue;
 
-    int nx=c.x+dx[(int)flowdirs(c.x,c.y)];
-    int ny=c.y+dy[(int)flowdirs(c.x,c.y)];
-    if(flowdirs.inGrid(nx,ny) && area(nx,ny)!=area.noData()){
-      area(nx,ny)+=area(c.x,c.y);
-      if((--dependency(nx,ny))==0)
-        sources.push(grid_cell(nx,ny));
-    }
+    int nx=c.x+dx[n];
+    int ny=c.y+dy[n];
+
+    if(!flowdirs.inGrid(nx,ny))
+      continue;
+    if(flowdirs.isNoData(nx,ny))
+      continue;
+
+    area(nx,ny)+=area(c.x,c.y);
+    --dependency(nx,ny);
+
+    if(dependency(nx,ny)==0)
+      sources.emplace(nx,ny);
   }
   std::cerr<<"Succeded in "<<progress.stop()<<std::endl;
 
