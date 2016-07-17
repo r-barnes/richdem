@@ -1038,6 +1038,8 @@ class Array2D {
     This method prints out a square block of cells whose upper-left corner is
     the (integer-division) center of the raster.
 
+    Stamps are only shown if the SHOW_STAMPS preprocessor variable is set.
+
     Since algorithms may have to flip rasters horizontally or vertically before
     manipulating them, it is important that all algorithms work on data in the
     same orientation. This method, used in testing, helps a user ensure that 
@@ -1045,20 +1047,24 @@ class Array2D {
 
     @param[in]  size   Output stamp will be size x size
   */
-  void printStamp(size_t size) const {
-    const int sx = width()/2;
-    const int sy = height()/2;
+  void printStamp(size_t size, std::string msg="") const {
+    #ifdef SHOW_STAMPS
+      const int sx = width()/2;
+      const int sy = height()/2;
 
-    std::cerr<<"Stamp for basename='"<<basename
-             <<"', filename='"<<filename
-             <<"', dtype="<<GDALGetDataTypeName(myGDALType())
-             <<" at "<<sx<<","<<sy<<"\n";
+      if(msg.size()>0)
+        std::cerr<<msg<<std::endl;
+      std::cerr<<"Stamp for basename='"<<basename
+               <<"', filename='"<<filename
+               <<"', dtype="<<GDALGetDataTypeName(myGDALType())
+               <<" at "<<sx<<","<<sy<<"\n";
 
-    for(size_t y=sy;y<sy+size;y++){
-      for(size_t x=sx;x<sx+size;x++)
-        std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
-      std::cerr<<"\n";
-    }
+      for(size_t y=sy;y<sy+size;y++){
+        for(size_t x=sx;x<sx+size;x++)
+          std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
+        std::cerr<<"\n";
+      }
+    #endif
   }
 
   /**
