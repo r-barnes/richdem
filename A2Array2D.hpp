@@ -116,6 +116,7 @@ class A2Array2D {
 
     if(tile.created){
       tile.loadData();
+      tile.printStamp(5,"Tile load, before reorientating"); //Print stamp before reorientating since this must match parallel_pf.exe
       if(readonly){
         if((tile.geotransform[0]<0) ^ flipH)
           tile.flipHorz();
@@ -492,10 +493,14 @@ class A2Array2D {
 
       //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
+      tile.printStamp(5,"Before post-reorientation");
+
       if((tile.geotransform[0]<0) ^ flipH)
         tile.flipHorz();
       if((tile.geotransform[5]<0) ^ flipV)
         tile.flipVert();
+
+      tile.printStamp(5,"After post-reorientation");
 
       zero_count      += tile.countval(0);
       unvisited_count += tile.countval(13);
