@@ -133,4 +133,51 @@ class LayoutfileReader {
   }
 };
 
+class LayoutfileWriter {
+ private:
+  int gridx;
+  int gridy;
+  std::string path;
+  std::ofstream flout;
+ public:
+  LayoutfileWriter(std::string layout_filename){
+    path  = "";
+    gridx = 0;
+    gridy = 0;
+    
+    std::size_t last_slash  = layout_filename.find_last_of(SLASH_CHAR);
+    std::size_t last_period = layout_filename.find_last_of(".");
+    if(last_slash!=std::string::npos)
+      path = layout_filename.substr(0,last_slash+1);
+    if(last_period!=std::string::npos)
+      layout_filename.replace(last_period+1, std::string::npos, "layout");
+
+    flout.open(layout_filename);
+  }
+
+  ~LayoutfileWriter(){
+    flout<<std::endl;
+  }
+
+  void addRow(){
+    if(gridx==0 && gridy==0)
+      return;
+    flout<<std::endl;
+    gridy++;
+    gridx = 0;
+  }
+
+  void addEntry(std::string filename){
+    //Get only the filename, not the path to it
+    std::size_t last_slash = filename.find_last_of(SLASH_CHAR);
+    if(last_slash!=std::string::npos)
+      filename = filename.substr(last_slash+1,std::string::npos);
+
+    if(gridx>0)
+      flout<<",";
+    flout<<filename;
+    gridx++;
+  }
+};
+
 #endif
