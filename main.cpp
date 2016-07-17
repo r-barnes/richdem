@@ -436,8 +436,7 @@ class ConsumerSpecifics {
     accum.resize(flowdirs,0);
     accum.setNoData(ACCUM_NO_DATA);
 
-    Array2D<dependency_t> dependencies;
-    dependencies.resize(flowdirs,0);
+    Array2D<dependency_t> dependencies(flowdirs,0);
     for(size_t y=0;y<flowdirs.height();y++)
     for(size_t x=0;x<flowdirs.width();x++){
       if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
