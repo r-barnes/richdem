@@ -480,35 +480,45 @@ class A2Array2D {
   void saveGDAL(std::string outputname_template) {
     int zero_count      = 0;
     int unvisited_count = 0;
-    for(size_t ty=0;ty<heightInTiles();ty++)
-    for(size_t tx=0;tx<widthInTiles();tx++){
-      auto& tile = data[ty][tx];
 
-      if(tile.null_tile)
-        continue;
+    auto new_layout_name = outputname_template;
+    new_layout_name.replace(new_layout_name.find("%f"),2,"layout");
+    std::ofstream flout(new_layout_name);
 
-      //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
+    LayoutfileWriter lfout(new_layout_name);
 
-      LoadTile(tx,ty);
+    for(size_t ty=0;ty<heightInTiles();ty++){
+      lfout.addRow();
+      for(size_t tx=0;tx<widthInTiles();tx++){
+        auto& tile = data[ty][tx];
 
-      //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
+        if(tile.null_tile)
+          continue;
 
-      tile.printStamp(5,"Before post-reorientation");
+        //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
 
-      if((tile.geotransform[0]<0) ^ flipH)
-        tile.flipHorz();
-      if((tile.geotransform[5]<0) ^ flipV)
-        tile.flipVert();
+        LoadTile(tx,ty);
 
-      tile.printStamp(5,"After post-reorientation");
+        //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
-      zero_count      += tile.countval(0);
-      unvisited_count += tile.countval(13);
+        tile.printStamp(5,"Before post-reorientation");
 
-      auto temp = outputname_template;
-      temp.replace(temp.find("%f"),2,tile.basename);
+        if((tile.geotransform[0]<0) ^ flipH)
+          tile.flipHorz();
+        if((tile.geotransform[5]<0) ^ flipV)
+          tile.flipVert();
 
-      tile.saveGDAL(temp, 0, 0);
+        tile.printStamp(5,"After post-reorientation");
+
+        zero_count      += tile.countval(0);
+        unvisited_count += tile.countval(13);
+
+        auto temp = outputname_template;
+        temp.replace(temp.find("%f"),2,tile.basename);
+        lfout.addEntry(temp);
+
+        tile.saveGDAL(temp, 0, 0);
+      }
     }
 
     std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
