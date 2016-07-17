@@ -547,13 +547,15 @@ class ConsumerSpecifics {
      print2d(flowdirs);
     #endif
 
+    flowdirs.printStamp(5,"LoadFromEvict() before reorientation");
+
     if(chunk.flip & FLIP_VERT)
       flowdirs.flipVert();
     if(chunk.flip & FLIP_HORZ)
       flowdirs.flipHorz();
     timer_io.stop();
 
-    flowdirs.printStamp(5);
+    flowdirs.printStamp(5,"LoadFromEvict() after reorientation");
 
     timer_calc.start();
     FlowAccumulation(flowdirs,accum);
@@ -683,12 +685,16 @@ class ConsumerSpecifics {
 
     //At this point we're done with the calculation! Boo-yeah!
 
+    accum.printStamp(5,"Saving output before reorientation");
+
     timer_io.start();
     if(chunk.flip & FLIP_HORZ)
       accum.flipHorz();
     if(chunk.flip & FLIP_VERT)
       accum.flipVert();
     timer_io.stop();
+
+    accum.printStamp(5,"Saving output after reorientation");
 
     timer_io.start();
     accum.saveGDAL(chunk.outputname, chunk.x, chunk.y);
