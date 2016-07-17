@@ -211,6 +211,10 @@ class ConsumerSpecifics {
     timer_calc.stop();
   }
 
+  void VerifyInputSanity(){
+    //Nothing to verify
+  }
+
   void SaveToCache(const ChunkInfo &chunk){
     timer_io.start();
     dem.setCacheFilename(chunk.retention+"dem.dat");
@@ -598,6 +602,7 @@ void Consumer(){
       job1.gridx = chunk.gridx;
 
       consumer.LoadFromEvict(chunk);
+      consumer.VerifyInputSanity();
 
       consumer.FirstRound(chunk, job1);
 
