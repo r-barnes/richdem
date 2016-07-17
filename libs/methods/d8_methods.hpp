@@ -152,7 +152,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
     if(dependency(nx,ny)==0)
       sources.emplace(nx,ny);
   }
-  std::cerr<<"Succeded in "<<progress.stop()<<std::endl;
+  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
 
   int loops=0;
   for(int i=-1;i>=-8;i--)
