@@ -1277,6 +1277,17 @@ void Preparer(
   std::string  filename;
   GDALDataType file_type; //All chunks must have a common file_type
 
+  std::string output_layout_name = output_name;
+  if(output_name.find("%f")!=std::string::npos){
+    output_layout_name.replace(output_layout_name.find("%f"), 2, "layout");
+  } else if(output_name.find("%n")!=std::string::npos){
+    output_layout_name.replace(output_layout_name.find("%n"), 2, "layout");
+  } else { //Should never happen
+    std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+    throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
+  }
+  LayoutfileWriter lfout(output_layout_name);
+
   if(many_or_one=="many"){
     int32_t chunk_width    = -1; //Width of 1st chunk. All chunks must equal this
     int32_t chunk_height   = -1; //Height of 1st chunk, all chunks must equal this
@@ -1287,8 +1298,10 @@ void Preparer(
     LayoutfileReader lf(input_file);
 
     while(lf.next()){
-      if(lf.newRow()) //Add a row to the grid of chunks
+      if(lf.newRow()){ //Add a row to the grid of chunks
         chunks.emplace_back();
+        lfout.addRow();
+      }
 
       if(lf.isNullTile()){
         chunks.back().emplace_back();
@@ -1351,6 +1364,8 @@ void Preparer(
         chunk_height,
         true
       );
+
+      lfout.addEntry(this_output_name);
 
       //Flip tiles if the geotransform demands it
       if(chunk_geotransform[0]<0)
