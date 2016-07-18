@@ -540,6 +540,17 @@ class ConsumerSpecifics {
     timer_io.start();
     flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
 
+    //TODO: Figure out a clever way to allow tiles of different widths/heights
+    if(flowdirs.width()!=chunk.width){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected width. Found "<<flowdirs.width()<<" expected "<<chunk.width<<std::endl;
+      throw std::runtime_error("Unexpected width.");
+    }
+
+    if(flowdirs.height()!=chunk.height){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected height. Found "<<flowdirs.height()<<" expected "<<chunk.height<<std::endl;
+      throw std::runtime_error("Unexpected height.");
+    }
+
     std::cerr<<"Loading with width="<<chunk.width<<", height="<<chunk.height<<std::endl;
 
     #ifdef DEBUG
