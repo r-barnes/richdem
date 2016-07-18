@@ -16,7 +16,7 @@
 #include "grid_cell.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
-const char* program_version = "13";
+const char* program_version = "14";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -918,9 +918,9 @@ void Preparer(
       lfout.addEntry(this_output_name);
 
       //Flip tiles if the geotransform demands it
-      if(chunk_geotransform[0]<0)
+      if(chunk_geotransform[0]>0)
         chunks.back().back().flip ^= FLIP_HORZ;
-      if(chunk_geotransform[5]<0)
+      if(chunk_geotransform[5]>0)
         chunks.back().back().flip ^= FLIP_VERT;
 
       //Flip (or reverse the above flip!) if the user demands it
