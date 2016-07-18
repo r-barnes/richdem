@@ -222,8 +222,8 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 //TODO: Remove
 template<class T>
 void print2d(const Array2D<T> &arr){
-  for(size_t y=0;y<arr.height();y++){
-    for(size_t x=0;x<arr.width();x++)
+  for(int32_t y=0;y<arr.height();y++){
+    for(int32_t x=0;x<arr.width();x++)
       std::cerr<<std::setw(5)<<(int)arr(x,y);
     std::cerr<<std::endl;
   }
@@ -435,8 +435,8 @@ class ConsumerSpecifics {
     accum.setNoData(ACCUM_NO_DATA);
 
     Array2D<dependency_t> dependencies(flowdirs,0);
-    for(size_t y=0;y<flowdirs.height();y++)
-    for(size_t x=0;x<flowdirs.width();x++){
+    for(int32_t y=0;y<flowdirs.height();y++)
+    for(int32_t x=0;x<flowdirs.width();x++){
       if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
         accum(x,y) = ACCUM_NO_DATA;
         continue;                
@@ -462,8 +462,8 @@ class ConsumerSpecifics {
     //cells are the peaks: the sources of flow. We make a note of where the peaks
     //are for later use.
     std::queue<GridCell> sources;
-    for(size_t y=0;y<dependencies.height();y++)
-    for(size_t x=0;x<dependencies.width();x++)
+    for(int32_t y=0;y<dependencies.height();y++)
+    for(int32_t x=0;x<dependencies.width();x++)
       //Valid cell with no dependencies: a peak!
       if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
         sources.emplace(x,y);
@@ -578,8 +578,8 @@ class ConsumerSpecifics {
 
   void VerifyInputSanity(){
     //Let's double-check that the flowdirs are valid
-    for(size_t y=0;y<flowdirs.height();y++)
-    for(size_t x=0;x<flowdirs.width();x++)
+    for(int32_t y=0;y<flowdirs.height();y++)
+    for(int32_t x=0;x<flowdirs.width();x++)
       if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
         throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
   }
@@ -601,7 +601,7 @@ class ConsumerSpecifics {
     //and find out where its flow goes to.
     timer_calc.start();
     if(!(chunk.edge & GRID_TOP))
-      for(size_t x=0;x<flowdirs.width();x++)
+      for(int32_t x=0;x<flowdirs.width();x++)
         FollowPath(x,0,chunk,flowdirs,links);
 
     //If we are the bottom segment, nothing can flow into us, so we do not
@@ -609,15 +609,15 @@ class ConsumerSpecifics {
     //otherhand, if we are not the bottom segment, then consider each cell of
     //the bottom row and find out where its flow goes to.
     if(!(chunk.edge & GRID_BOTTOM))
-      for(size_t x=0;x<flowdirs.width();x++)
+      for(int32_t x=0;x<flowdirs.width();x++)
         FollowPath(x,flowdirs.height()-1,chunk,flowdirs,links);
 
     if(!(chunk.edge & GRID_LEFT))
-      for(size_t y=0;y<flowdirs.height();y++)
+      for(int32_t y=0;y<flowdirs.height();y++)
         FollowPath(0,y,chunk,flowdirs,links);
 
     if(!(chunk.edge & GRID_RIGHT))
-      for(size_t y=0;y<flowdirs.height();y++)
+      for(int32_t y=0;y<flowdirs.height();y++)
         FollowPath(flowdirs.width()-1,y,chunk,flowdirs,links);
 
     job1.links = std::move(links);
@@ -1325,13 +1325,9 @@ void Preparer(
         //thousands of files is expensive. Therefore, we rely on the user to
         //check this beforehand if they want to. We will, however, verify that
         //things are correct in Consumer() as we open the files for reading.
-        if(getGDALDimensions(
-            lf.getFullPath(),
-            chunk_height,
-            chunk_width,
-            file_type,
-            chunk_geotransform.data()
-        )!=0){
+        try{
+          getGDALDimensions(lf.getFullPath(),chunk_height,chunk_width,file_type,chunk_geotransform.data());
+        } catch (...) {
           std::cerr<<"Error getting file information from '"<<lf.getFullPath()<<"'!"<<std::endl;
           CommAbort(-1); //TODO
         }
@@ -1377,9 +1373,9 @@ void Preparer(
       lfout.addEntry(this_output_name);
 
       //Flip tiles if the geotransform demands it
-      if(chunk_geotransform[0]<0)
+      if(chunk_geotransform[0]>0)
         chunks.back().back().flip ^= FLIP_HORZ;
-      if(chunk_geotransform[5]<0)
+      if(chunk_geotransform[5]>0)
         chunks.back().back().flip ^= FLIP_VERT;
 
       //Flip (or reverse the above flip!) if the user demands it
@@ -1414,7 +1410,9 @@ void Preparer(
     int32_t total_width;
 
     //Get the total dimensions of the input file
-    if(getGDALDimensions(input_file, total_height, total_width, file_type, NULL)!=0){
+    try {
+      getGDALDimensions(input_file, total_height, total_width, file_type, NULL);
+    } catch (...) {
       std::cerr<<"Error getting file information from '"<<input_file<<"'!"<<std::endl;
       CommAbort(-1); //TODO
     }
@@ -1507,6 +1505,8 @@ void Preparer(
   overall.stop();
   std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
 
+  std::cerr<<"!Flip horizontal: "<<((chunks[0][0].flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip vertical:   "<<((chunks[0][0].flip & FLIP_VERT)?"YES":"NO")<<std::endl;
   std::cerr<<"!Input data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
