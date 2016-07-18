@@ -13,7 +13,7 @@
 typedef uint8_t flowdirs_t;
 typedef int8_t  visited_t;
 
-#define UNVISITED    13
+const flowdirs_t UNVISITED = 13;
 
 const int fwidth=10;
 
