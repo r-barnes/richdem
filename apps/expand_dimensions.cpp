@@ -5,20 +5,23 @@
 
 template<class T>
 int PerformAlgorithm(std::string filename, std::string outname, int new_width, int new_height){
+  bool flipH = false; //TODO
+  bool flipV = false;
+
   Array2D<T> inp(filename,false);
 
-  if(new_width<inp.viewWidth()){
+  if(new_width<inp.width()){
     std::cerr<<"Desired width is smaller than DEM's current width!"<<std::endl;
     return -1;
   }
 
-  if(new_height<inp.viewHeight()){
+  if(new_height<inp.height()){
     std::cerr<<"Desired height is smaller than DEM's current height!"<<std::endl;
     return -1;
   }
 
   inp.expand(new_width,new_height,inp.noData());
-  
+
   inp.saveGDAL(outname,0,0);
   return 0;
 }
