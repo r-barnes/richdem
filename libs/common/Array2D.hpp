@@ -938,7 +938,7 @@ class Array2D {
     @return A vector containing a copy of the selected row
   */
   std::vector<T> getRowData(int32_t y) const {
-    return std::vector<T>(data.begin()+xyToI(y,0),data.begin()+xyToI(y,view_width));
+    return std::vector<T>(data.begin()+xyToI(0,y),data.begin()+xyToI(view_width,y));
   }
 
   /**
