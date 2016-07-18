@@ -42,7 +42,7 @@ int PerformAlgorithm(std::string filename, std::string flip){
 
 int main(int argc, char **argv){
   if(argc!=3){
-    std::cerr<<argv[0]<<" <Input file> <noflip/fliph/flipv/fliphv"<<std::endl;
+    std::cerr<<argv[0]<<" <Input file> <noflip/fliph/flipv/fliphv>"<<std::endl;
     return -1;
   }
 
