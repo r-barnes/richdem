@@ -10,6 +10,16 @@
 #include "Layoutfile.hpp"
 #include "communication.hpp"
 #include "memory.hpp"
+#include "timer.hpp"
+#include "Array2D.hpp"
+#include "grid_cell.hpp"
+
+//Used for indicating whether a block is on the edge of the larger DEM and which
+//edges it is adjacent to
+const uint8_t GRID_LEFT   = 1;
+const uint8_t GRID_TOP    = 2;
+const uint8_t GRID_RIGHT  = 4;
+const uint8_t GRID_BOTTOM = 8;
 
 const char* program_version = "1";
 
@@ -19,8 +29,6 @@ const char* program_version = "1";
 //at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
 //this is, after all, for use with large datasets.
 #include <cstdint>
-#include "Array2D.hpp"
-#include "common.hpp"
 //#define DEBUG 1
 
 //Define operating system appropriate directory separators
