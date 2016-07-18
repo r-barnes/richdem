@@ -92,7 +92,7 @@ void Zhou2015Labels(
   Array2D<label_t> labels;
   labels.resize(dem);
 
-  labels.init(0);
+  labels.setAll(0);
 
   std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > priorityQueue;
 

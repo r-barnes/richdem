@@ -5,6 +5,12 @@
 #include "../common/Array2D.hpp"
 #include "../common/constants.hpp"
 
+//TODO: Can these be merged with the regular D8 directions?
+///Definition of x offsets of D-inf neighbours
+static const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
+///Definition of y offsets of D-inf neighbours
+static const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
+
 /*
 We must convert the Dinf angle system to cells within the D8 system
 I use the following grid for the D8 system

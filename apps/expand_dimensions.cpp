@@ -5,9 +5,6 @@
 
 template<class T>
 int PerformAlgorithm(std::string filename, std::string outname, int new_width, int new_height){
-  bool flipH = false; //TODO
-  bool flipV = false;
-
   Array2D<T> inp(filename,false);
 
   if(new_width<inp.width()){

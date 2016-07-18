@@ -7,8 +7,8 @@ template<class T>
 void PerformAlgorithm(std::string filename, std::string outname, char *nodata){
   const int taudem_to_richdem[9] = {0,5,4,3,2,1,8,7,6};
   Array2D<T> inp(filename,false);
-  for(int y=0;y<inp.viewHeight();y++)
-  for(int x=0;x<inp.viewWidth();x++)
+  for(int y=0;y<inp.height();y++)
+  for(int x=0;x<inp.width();x++)
     if(!inp.isNoData(x,y)){
       if(!(0<=inp(x,y) && inp(x,y)<=8)){
         std::cerr<<"Invalid flow direction '"<<inp(x,y)<<"' found!"<<std::endl;
