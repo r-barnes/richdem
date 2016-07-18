@@ -118,9 +118,9 @@ class A2Array2D {
       tile.loadData();
       tile.printStamp(5,"Tile load, before reorientating"); //Print stamp before reorientating since this must match parallel_pf.exe
       if(readonly){
-        if((tile.geotransform[0]<0) ^ flipH)
+        if((tile.geotransform[0]>0) ^ flipH)
           tile.flipHorz();
-        if((tile.geotransform[5]<0) ^ flipV)
+        if((tile.geotransform[5]>0) ^ flipV)
           tile.flipVert();
       }
       tile.printStamp(5,"Tile load, after reorientating"); //Print stamp before reorientating since this must match parallel_pf.exe
@@ -503,9 +503,9 @@ class A2Array2D {
 
         tile.printStamp(5,"Saving, before reorientation");
 
-        if((tile.geotransform[0]<0) ^ flipH)
+        if((tile.geotransform[0]>0) ^ flipH)
           tile.flipHorz();
-        if((tile.geotransform[5]<0) ^ flipV)
+        if((tile.geotransform[5]>0) ^ flipV)
           tile.flipVert();
 
         tile.printStamp(5,"Saving, after reorientation");
