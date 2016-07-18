@@ -11,19 +11,13 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <unordered_set> //For printStamp
+#include "constants.hpp"
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #endif
-
-#ifndef d8flowdirs_dxdy
-#define d8flowdirs_dxdy
-const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
-const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
-#endif
-
 
 /**
   @brief  Determine data type of a GDAL file's first layer
