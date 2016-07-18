@@ -18,7 +18,7 @@ int main(int argc, char **argv){
   std::cout<<"Geotransform for '"<<argv[1]<<"': ";
   for(const auto x: geotransform)
     std::cout<<x<<" ";
-  std::cout<<std::endl;
+  std::cout<<width<<" "<<height<<std::endl;
 
   return 0;
 }
