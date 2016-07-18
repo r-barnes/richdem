@@ -1,5 +1,6 @@
 #include "Layoutfile.hpp"
 #include "Array2D.hpp"
+#include "constants.hpp"
 #include "A2Array2D.hpp"
 #include "common.hpp"
 #include <queue>
@@ -13,7 +14,6 @@ typedef uint8_t flowdirs_t;
 typedef int8_t  visited_t;
 
 #define UNVISITED    13
-#define FLOW_NO_DATA 255
 
 const int fwidth=10;
 
@@ -158,7 +158,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
-  fds.setNoData(FLOW_NO_DATA);
+  fds.setNoData(FLOWDIR_NO_DATA);
   fds.setAll(UNVISITED);
 
   int processed_cells = 0;
@@ -188,7 +188,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         continue;
 
       if(dem.isNoData(tx,ty,px,py)){
-        fds(tx,ty,px,py) = FLOW_NO_DATA;
+        fds(tx,ty,px,py) = FLOWDIR_NO_DATA;
         continue;
       }
 
