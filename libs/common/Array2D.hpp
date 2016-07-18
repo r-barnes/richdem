@@ -1070,6 +1070,36 @@ class Array2D {
     #endif
   }
 
+
+  /**
+    @brief Prints a square of cells centered at x,y. Useful for debugging.
+
+    @param[in]  radius   Output stamp will be 2*radius x 2*radius
+    @param[in]       x   X-coordinate of block center
+    @param[in]       y   Y-coordinate of block center
+    @parma[in]     msg   Optional message to print above the block
+  */
+  void printBlock(const size_t radius, const int x0, const int y0, bool color=false, const std::string msg="") const {
+    if(msg)
+      std::cerr<<msg<<std::endl;
+
+    int xmin = std::max(0,x0-size);
+    int ymin = std::max(0,y0-size);
+    int xmax = std::min(width(),x0+size);
+    int ymax = std::min(height(),y0+size);
+
+    for(int y=ymin;y<ymax;y++){
+      for(int x=xmin;x<xmax;x++){
+        if(color && x==x0 && y==y0)
+          std::cerr<<"\033[92m";
+        std::cerr<<std::setw(5)<<(int)data[y*view_width+x]<<" ";
+        if(color && x==x0 && y==y0)
+          std::cerr<<"\033[39m";
+      }
+      std::cerr<<std::endl;
+    }
+  }
+
   /**
     @brief Get the area of an individual cell in square projection units
 
