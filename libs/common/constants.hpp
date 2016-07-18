@@ -23,4 +23,11 @@ const uint8_t NO_FLOW = 0;
 
 const int32_t ACCUM_NO_DATA = -1;
 
+//Used for indicating whether a block is on the edge of the larger DEM and which
+//edges it is adjacent to
+const uint8_t GRID_LEFT   = 1;
+const uint8_t GRID_TOP    = 2;
+const uint8_t GRID_RIGHT  = 4;
+const uint8_t GRID_BOTTOM = 8;
+
 #endif
