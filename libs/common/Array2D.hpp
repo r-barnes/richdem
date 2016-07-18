@@ -754,7 +754,8 @@ class Array2D {
     @brief Makes a raster larger and retains the raster's old data, similar to resize.
 
     Note: Using this command requires RAM equal to the sum of the old raster and
-    the new raster.
+    the new raster. The old raster is placed in the upper-left of the new
+    raster.
 
     @param[in] new_width  New width of the raster. Must be >= the old width.
     @param[in] new_height New height of the raster. Must be >= the old height.
@@ -1043,8 +1044,8 @@ class Array2D {
   */
   void printStamp(size_t size, std::string msg="") const {
     #ifdef SHOW_STAMPS
-      const int sx = width()/2;
-      const int sy = height()/2;
+      const size_t sx = width()/2;
+      const size_t sy = height()/2;
 
       if(msg.size()>0)
         std::cerr<<msg<<std::endl;
@@ -1053,12 +1054,45 @@ class Array2D {
                <<"', dtype="<<GDALGetDataTypeName(myGDALType())
                <<" at "<<sx<<","<<sy<<"\n";
 
-      for(size_t y=sy;y<sy+size;y++){
-        for(size_t x=sx;x<sx+size;x++)
+      const size_t sxmax = std::min(width(), sx+size);
+      const size_t symax = std::min(height(),sy+size);
+
+      for(size_t y=sy;y<symax;y++){
+        for(size_t x=sx;x<sxmax;x++)
           std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[y*view_width+x]<<" ";
         std::cerr<<"\n";
       }
     #endif
+  }
+
+
+  /**
+    @brief Prints a square of cells centered at x,y. Useful for debugging.
+
+    @param[in]  radius   Output stamp will be 2*radius x 2*radius
+    @param[in]       x   X-coordinate of block center
+    @param[in]       y   Y-coordinate of block center
+    @parma[in]     msg   Optional message to print above the block
+  */
+  void printBlock(const size_t radius, const int x0, const int y0, bool color=false, const std::string msg="") const {
+    if(msg)
+      std::cerr<<msg<<std::endl;
+
+    int xmin = std::max(0,x0-size);
+    int ymin = std::max(0,y0-size);
+    int xmax = std::min(width(),x0+size);
+    int ymax = std::min(height(),y0+size);
+
+    for(int y=ymin;y<ymax;y++){
+      for(int x=xmin;x<xmax;x++){
+        if(color && x==x0 && y==y0)
+          std::cerr<<"\033[92m";
+        std::cerr<<std::setw(5)<<(int)data[y*view_width+x]<<" ";
+        if(color && x==x0 && y==y0)
+          std::cerr<<"\033[39m";
+      }
+      std::cerr<<std::endl;
+    }
   }
 
   /**
