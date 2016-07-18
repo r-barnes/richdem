@@ -7,19 +7,39 @@
 #include "../libs/methods/d8_methods.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string output){
+int PerformAlgorithm(std::string filename, std::string output, std::string flip){
   bool flipH = false; //TODO
   bool flipV = false;
 
+  if(flip=="fliph")
+    flipH=true;
+  else if(flip=="flipv")
+    flipV=true;
+  else if(flip=="fliphv")
+    flipH=flipV=true;
+  else if(flip!="noflip"){
+    std::cerr<<"Unrecognised flip directive."<<std::endl;
+    return -1;
+  }
+
   Array2D<T> flowdirs(filename,false);
+
+  std::cerr<<"Geotransform: ";
+  for(auto const x: flowdirs.geotransform)
+    std::cerr<<std::setw(5)<<std::setprecision(2)<<x<<" ";
+  std::cerr<<std::endl;
 
   flowdirs.printStamp(5,"Stamp before reorientation");
 
   //Flip tiles if the geotransform demands it
-  if( (flowdirs.geotransform[0]>0) ^ flipH)
+  if( (flowdirs.geotransform[1]<0) ^ flipH){
+    std::cerr<<"Flipping horizontally."<<std::endl;
     flowdirs.flipHorz();
-  if( (flowdirs.geotransform[5]>0) ^ flipV)
+  }
+  if( (flowdirs.geotransform[5]>0) ^ flipV){
+    std::cerr<<"Flipping vertically."<<std::endl;
     flowdirs.flipVert();
+  }
 
   flowdirs.printStamp(5,"Stamp after reorientation");
 
@@ -28,7 +48,7 @@ int PerformAlgorithm(std::string filename, std::string output){
 
   area.printStamp(5,"Output stamp before reorientation");
 
-  if( (area.geotransform[0]>0) ^ flipH)
+  if( (area.geotransform[1]<0) ^ flipH)
     area.flipHorz();
   if( (area.geotransform[5]>0) ^ flipV)
     area.flipVert();
@@ -41,8 +61,8 @@ int PerformAlgorithm(std::string filename, std::string output){
 }
 
 int main(int argc, char **argv){
-  if(argc!=3){
-    std::cerr<<argv[0]<<" <Flowdirs input file> <Output filename>"<<std::endl;
+  if(argc!=4){
+    std::cerr<<argv[0]<<" <Flowdirs input file> <Output filename> <noflip/fliph/flipv/fliphv>"<<std::endl;
     return -1;
   }
 
@@ -51,19 +71,19 @@ int main(int argc, char **argv){
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(argv[1]))<<std::endl;
       return -1;
     case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(argv[1],argv[2]);
+      return PerformAlgorithm<uint8_t >(argv[1],argv[2],argv[3]);
     case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(argv[1],argv[2]);
+      return PerformAlgorithm<uint16_t>(argv[1],argv[2],argv[3]);
     case GDT_Int16:
-      return PerformAlgorithm<int16_t >(argv[1],argv[2]);
+      return PerformAlgorithm<int16_t >(argv[1],argv[2],argv[3]);
     case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(argv[1],argv[2]);
+      return PerformAlgorithm<uint32_t>(argv[1],argv[2],argv[3]);
     case GDT_Int32:
-      return PerformAlgorithm<int32_t >(argv[1],argv[2]);
+      return PerformAlgorithm<int32_t >(argv[1],argv[2],argv[3]);
     case GDT_Float32:
-      return PerformAlgorithm<float   >(argv[1],argv[2]);
+      return PerformAlgorithm<float   >(argv[1],argv[2],argv[3]);
     case GDT_Float64:
-      return PerformAlgorithm<double  >(argv[1],argv[2]);
+      return PerformAlgorithm<double  >(argv[1],argv[2],argv[3]);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
