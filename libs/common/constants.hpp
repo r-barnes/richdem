@@ -1,6 +1,8 @@
 #ifndef _richdem_constants_
 #define _richdem_constants_
 
+//D8 Directions
+///x offsets of D8 neighbours, from a central cell
 const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
 const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
 
