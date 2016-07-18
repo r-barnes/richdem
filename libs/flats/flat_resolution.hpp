@@ -152,7 +152,7 @@ template<class U>
 static void BuildAwayGradient(
   const Array2D<U>       &flowdirs,
   Array2D<int32_t>       &flat_mask,
-  std::deque<grid_cell>  edges,
+  std::deque<GridCell>  edges,
   std::vector<int>       &flat_height,
   const Array2D<int32_t> &labels
 ){
@@ -160,7 +160,7 @@ static void BuildAwayGradient(
   timer.start();
 
   int loops = 1;
-  grid_cell iteration_marker(-1,-1);
+  GridCell iteration_marker(-1,-1);
 
   std::cerr<<"Performing Barnes flat resolution's away gradient..."<<std::flush;
 
@@ -188,7 +188,7 @@ static void BuildAwayGradient(
       if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
-        edges.push_back(grid_cell(nx,ny));
+        edges.push_back(GridCell(nx,ny));
     }
   }
 
@@ -242,7 +242,7 @@ template<class U>
 static void BuildTowardsCombinedGradient(
   const Array2D<U>       &flowdirs,
   Array2D<int32_t>       &flat_mask,
-  std::deque<grid_cell>  edges,
+  std::deque<GridCell>  edges,
   std::vector<int>       &flat_height,
   const Array2D<int32_t> &labels
 ){
@@ -250,7 +250,7 @@ static void BuildTowardsCombinedGradient(
   timer.start();
 
   int loops = 1;
-  grid_cell iteration_marker(-1,-1);
+  GridCell iteration_marker(-1,-1);
 
 
   std::cerr<<"Barnes flat resolution: toward and combined gradients..."<<std::flush;
@@ -289,7 +289,7 @@ static void BuildTowardsCombinedGradient(
       if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
-        edges.push_back(grid_cell(nx,ny));
+        edges.push_back(GridCell(nx,ny));
     }
   }
 
@@ -335,12 +335,12 @@ static void label_this(
   Array2D<int32_t> &labels,
   const Array2D<T> &elevations
 ){
-  std::queue<grid_cell> to_fill;
-  to_fill.push(grid_cell(x0,y0));
+  std::queue<GridCell> to_fill;
+  to_fill.push(GridCell(x0,y0));
   const T target_elevation = elevations(x0,y0);
 
   while(to_fill.size()>0){
-    grid_cell c = to_fill.front();
+    GridCell c = to_fill.front();
     to_fill.pop();
     if(elevations(c.x,c.y)!=target_elevation)
       continue;
@@ -349,7 +349,7 @@ static void label_this(
     labels(c.x,c.y)=label;
     for(int n=1;n<=8;n++)
       if(labels.inGrid(c.x+dx[n],c.y+dy[n]))
-        to_fill.push(grid_cell(c.x+dx[n],c.y+dy[n]));
+        to_fill.push(GridCell(c.x+dx[n],c.y+dy[n]));
   }
 }
 
@@ -379,8 +379,8 @@ static void label_this(
 */
 template <class T, class U>
 static void find_flat_edges(
-  std::deque<grid_cell> &low_edges,
-  std::deque<grid_cell> &high_edges,
+  std::deque<GridCell> &low_edges,
+  std::deque<GridCell> &high_edges,
   const Array2D<U>      &flowdirs,
   const Array2D<T>      &elevations
 ){
@@ -403,10 +403,10 @@ static void find_flat_edges(
         if(flowdirs(nx,ny)==flowdirs.noData()) continue;
 
         if(flowdirs(x,y)!=NO_FLOW && flowdirs(nx,ny)==NO_FLOW && elevations(nx,ny)==elevations(x,y)){
-          low_edges.push_back(grid_cell(x,y));
+          low_edges.push_back(GridCell(x,y));
           break;
         } else if(flowdirs(x,y)==NO_FLOW && elevations(x,y)<elevations(nx,ny)){
-          high_edges.push_back(grid_cell(x,y));
+          high_edges.push_back(GridCell(x,y));
           break;
         }
       }
@@ -453,7 +453,7 @@ void resolve_flats_barnes(
   Timer timer;
   timer.start();
 
-  std::deque<grid_cell> low_edges,high_edges;  //TODO: Need estimate of size
+  std::deque<GridCell> low_edges,high_edges;  //TODO: Need estimate of size
 
   std::cerr<<"\n###Barnes Flat Resolution"<<std::endl;
   std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009"<<std::endl;
@@ -491,7 +491,7 @@ void resolve_flats_barnes(
   std::cerr<<"Found "<<group_number<<" unique flats."<<std::endl;
 
   std::cerr<<"Removing flats without outlets from the queue..."<<std::flush;
-  std::deque<grid_cell> temp;
+  std::deque<GridCell> temp;
   for(auto i=high_edges.begin();i!=high_edges.end();++i)
     if(labels(i->x,i->y)!=0)
       temp.push_back(*i);

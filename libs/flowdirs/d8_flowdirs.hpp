@@ -4,54 +4,6 @@
 #include "../common/Array2D.hpp"
 #include "../common/interface.hpp"
 
-///Value used to indicate that a flow direction cell has no data
-#define d8_NO_DATA    113
-
-///Value used to indicate that a cell does not have a defined flow direction
-//(i.e. that it has no local gradient)
-#define NO_FLOW       0
-
-//Neighbour directions
-//345
-//102
-//876
-
-//Inverse neighbour directions
-//678
-//201
-//543
-
-///sqrt(2), used to generate distances from a central cell to its neighbours
-#define SQRT2         1.414213562373095048801688724209698078569671875376948
-
-//D8 Directions
-#ifndef d8flowdirs_dxdy
-#define d8flowdirs_dxdy
-///x offsets of D8 neighbours, from a central cell
-const int dx[9]={0,-1,1,-1,0,1,1,0,-1};  //TODO: These should be merged with my new dinf_d8 to reflect a uniform and intelligent directional system
-///y offsets of D8 neighbours, from a central cell
-const int dy[9]={0,0,0,-1,-1,-1,1,1,1};
-#endif
-///Arrows indicating flow directions
-const wchar_t fd[9]={L'·',L'←',L'↖',L'↑',L'↗',L'→',L'↘',L'↓',L'↙'};
-///Distances from a central cell to each of its 8 neighbours
-const double dr[9]={0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2}; //TODO: Check these for new D8 directions
-///dx[] and dy[] offsets are labeled 0-8. This maps the inverse path from each of those cells.
-const int inverse_flow[9]={0,2,6,7,8,1,3,4,5}; //Inverse of a given n from chart below
-//derived from the following neighbour directions
-//234
-//105
-//876
-
-
-
-
-
-
-//234
-//105
-//876
-//d8_FlowDir
 /**
   @brief  Calculates the D8 flow direction of a cell
   @author Richard Barnes (rbarnes@umn.edu)
@@ -142,7 +94,7 @@ void d8_flow_directions(
   std::cerr<<"Setting up the flow directions matrix..."<<std::flush;
   flowdirs.resize(elevations);
   flowdirs.init(NO_FLOW);
-  flowdirs.setNoData(d8_NO_DATA);
+  flowdirs.setNoData(FLOWDIR_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"%%Calculating D8 flow directions..."<<std::endl;

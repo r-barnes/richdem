@@ -35,7 +35,7 @@
 */
 template <class elev_t>
 void original_priority_flood(Array2D<elev_t> &elevations){
-  grid_cellz_pq<elev_t> open;
+  GridCellZ_pq<elev_t> open;
   unsigned long processed_cells=0;
   unsigned long pitc=0;
   ProgressBar progress;
@@ -46,19 +46,19 @@ void original_priority_flood(Array2D<elev_t> &elevations){
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
   std::cerr<<"Adding cells to the priority queue..."<<std::endl;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0) );
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y)  );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
@@ -67,7 +67,7 @@ void original_priority_flood(Array2D<elev_t> &elevations){
   std::cerr<<"%%Performing the original Priority Flood..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0){
-    grid_cellz<elev_t> c=open.top();
+    GridCellZ<elev_t> c=open.top();
     open.pop();
     processed_cells++;
 
@@ -81,7 +81,7 @@ void original_priority_flood(Array2D<elev_t> &elevations){
       closed(nx,ny)=true;
       if(elevations(nx,ny)<elevations(c.x,c.y)) ++pitc;
       elevations(nx,ny)=std::max(elevations(nx,ny),elevations(c.x,c.y));
-      open.push_cell(nx,ny,elevations(nx,ny));
+      open.emplace(nx,ny,elevations(nx,ny));
     }
     progress.update(processed_cells);
   }
@@ -119,8 +119,8 @@ void original_priority_flood(Array2D<elev_t> &elevations){
 */
 template <class elev_t>
 void improved_priority_flood(Array2D<elev_t> &elevations){
-  grid_cellz_pq<elev_t> open;
-  std::queue<grid_cellz<elev_t> > pit;
+  GridCellZ_pq<elev_t> open;
+  std::queue<GridCellZ<elev_t> > pit;
   unsigned long processed_cells=0;
   unsigned long pitc=0;
   ProgressBar progress;
@@ -132,19 +132,19 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
   std::cerr<<"Adding cells to the priority queue..."<<std::flush;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0) );
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y)  );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
@@ -153,7 +153,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
   std::cerr<<"%%Performing the improved Priority-Flood..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0 || pit.size()>0){
-    grid_cellz<elev_t> c;
+    GridCellZ<elev_t> c;
     if(pit.size()>0){
       c=pit.front();
       pit.pop();
@@ -176,9 +176,9 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
           ++pitc;
           elevations(nx,ny)=c.z;
         }
-        pit.push(grid_cellz<elev_t>(nx,ny,c.z));
+        pit.push(GridCellZ<elev_t>(nx,ny,c.z));
       } else
-        open.push_cell(nx,ny,elevations(nx,ny));
+        open.emplace(nx,ny,elevations(nx,ny));
     }
     progress.update(processed_cells);
   }
@@ -215,8 +215,8 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
 */
 template <class elev_t>
 void priority_flood_epsilon(Array2D<elev_t> &elevations){
-  grid_cellz_pq<elev_t> open;
-  std::queue<grid_cellz<elev_t> > pit;
+  GridCellZ_pq<elev_t> open;
+  std::queue<GridCellZ<elev_t> > pit;
   ProgressBar progress;
   unsigned long processed_cells = 0;
   unsigned long pitc            = 0;
@@ -230,19 +230,19 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
   std::cerr<<"Adding cells to the priority queue..."<<std::flush;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0) );
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y)  );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
@@ -251,7 +251,7 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   std::cerr<<"%%Performing Priority-Flood+Epsilon..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0 || pit.size()>0){
-    grid_cellz<elev_t> c;
+    GridCellZ<elev_t> c;
     if(pit.size()>0 && open.size()>0 && open.top().z==pit.front().z){
       c=open.top();
       open.pop();
@@ -279,16 +279,16 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
       closed(nx,ny)=true;
 
       if(elevations(nx,ny)==elevations.noData())
-        pit.push(grid_cellz<elev_t>(nx,ny,elevations.noData()));
+        pit.push(GridCellZ<elev_t>(nx,ny,elevations.noData()));
 
       else if(elevations(nx,ny)<=nextafterf(c.z,std::numeric_limits<float>::infinity())){
         if(PitTop!=elevations.noData() && PitTop<elevations(nx,ny) && nextafterf(c.z,std::numeric_limits<float>::infinity())>=elevations(nx,ny))
           ++false_pit_cells;
         ++pitc;
         elevations(nx,ny)=nextafterf(c.z,std::numeric_limits<float>::infinity());
-        pit.push(grid_cellz<elev_t>(nx,ny,elevations(nx,ny)));
+        pit.push(GridCellZ<elev_t>(nx,ny,elevations(nx,ny)));
       } else
-        open.push_cell(nx,ny,elevations(nx,ny));
+        open.emplace(nx,ny,elevations(nx,ny));
     }
     progress.update(processed_cells);
   }
@@ -359,7 +359,7 @@ void priority_flood_epsilon(Array2D<int32_t> &elevations){
 */
 template <class elev_t>
 void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> &flowdirs){
-  grid_cellzk_pq<elev_t> open;
+  GridCellZk_pq<elev_t> open;
   unsigned long processed_cells=0;
   ProgressBar progress;
 
@@ -375,22 +375,22 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
 
   std::cerr<<"Adding cells to the priority queue..."<<std::endl;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0));
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1));
+    open.emplace(x,0,elevations(x,0));
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1));
     flowdirs(x,0)=3;
     flowdirs(x,elevations.height()-1)=7;
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y) );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y) );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     flowdirs(0,y)=1;
     flowdirs(elevations.width()-1,y)=5;
     closed(0,y)=true;
@@ -407,7 +407,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
   std::cerr<<"%%Performing Priority-Flood+Flow Directions..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0){
-    grid_cellz<elev_t> c=open.top();
+    GridCellZ<elev_t> c=open.top();
     open.pop();
     processed_cells++;
 
@@ -424,9 +424,9 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
       if(elevations(nx,ny)==elevations.noData())
         flowdirs(nx,ny)=flowdirs.noData();
       else
-        flowdirs(nx,ny)=inverse_flow[n];
+        flowdirs(nx,ny)=d8_inverse[n];
 
-      open.push_cell(nx,ny,elevations(nx,ny));
+      open.emplace(nx,ny,elevations(nx,ny));
     }
     progress.update(processed_cells);
   }
@@ -469,8 +469,8 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
 */
 template <class elev_t>
 void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
-  grid_cellz_pq<elev_t> open;
-  std::queue<grid_cellz<elev_t> > pit;
+  GridCellZ_pq<elev_t> open;
+  std::queue<GridCellZ<elev_t> > pit;
   unsigned long processed_cells=0;
   unsigned long pitc=0;
   ProgressBar progress;
@@ -486,19 +486,19 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
   std::cerr<<"Adding cells to the priority queue..."<<std::flush;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0) );
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y)  );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
@@ -507,7 +507,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
   std::cerr<<"%%Performing the pit mask..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0 || pit.size()>0){
-    grid_cellz<elev_t> c;
+    GridCellZ<elev_t> c;
     if(pit.size()>0){
       c=pit.front();
       pit.pop();
@@ -528,10 +528,10 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
       if(elevations(nx,ny)<=c.z){
         if(elevations(nx,ny)<c.z)
           pit_mask(nx,ny)=1;
-        pit.push(grid_cellz<elev_t>(nx,ny,c.z));
+        pit.push(GridCellZ<elev_t>(nx,ny,c.z));
       } else{
         pit_mask(nx,ny)=0;
-        open.push_cell(nx,ny,elevations(nx,ny));
+        open.emplace(nx,ny,elevations(nx,ny));
       }
     }
 
@@ -581,8 +581,8 @@ template<class elev_t>
 void priority_flood_watersheds(
   Array2D<elev_t> &elevations, Array2D<int32_t> &labels, bool alter_elevations
 ){
-  grid_cellz_pq<elev_t> open;
-  std::queue<grid_cellz<elev_t> > pit;
+  GridCellZ_pq<elev_t> open;
+  std::queue<GridCellZ<elev_t> > pit;
   unsigned long processed_cells=0;
   unsigned long pitc=0,openc=0;
   int clabel=1;  //TODO: Thought this was more clear than zero in the results.
@@ -600,19 +600,19 @@ void priority_flood_watersheds(
   std::cerr<<"succeeded."<<std::endl;
 
   std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(grid_cellz<elev_t>))/1024/1024
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
            <<"MB of RAM."
            <<std::endl;
   std::cerr<<"Adding cells to the priority queue..."<<std::endl;
   for(int x=0;x<elevations.width();x++){
-    open.push_cell(x,0,elevations(x,0) );
-    open.push_cell(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
     closed(x,0)=true;
     closed(x,elevations.height()-1)=true;
   }
   for(int y=1;y<elevations.height()-1;y++){
-    open.push_cell(0,y,elevations(0,y)  );
-    open.push_cell(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
@@ -621,7 +621,7 @@ void priority_flood_watersheds(
   std::cerr<<"%%Performing Priority-Flood+Watershed Labels..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0 || pit.size()>0){
-    grid_cellz<elev_t> c;
+    GridCellZ<elev_t> c;
     if(pit.size()>0){
       c=pit.front();
       pit.pop();
@@ -655,9 +655,9 @@ void priority_flood_watersheds(
       if(elevations(nx,ny)<=c.z){
         if(alter_elevations)
           elevations(nx,ny)=c.z;
-        pit.push(grid_cellz<elev_t>(nx,ny,c.z));
+        pit.push(GridCellZ<elev_t>(nx,ny,c.z));
       } else
-        open.push(grid_cellz<elev_t>(nx,ny,elevations(nx,ny)));
+        open.push(GridCellZ<elev_t>(nx,ny,elevations(nx,ny)));
     }
     progress.update(processed_cells);
   }
