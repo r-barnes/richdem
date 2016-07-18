@@ -74,7 +74,7 @@ class ChunkInfo{
  public:
   uint8_t     edge;
   uint8_t     flip;
-  int32_t     x,y,width,height,gridx,gridy;
+  int32_t     x,y,gridx,gridy,width,height;
   bool        nullChunk;
   bool        many;
   label_t     label_offset,label_increment; //Used for convenience in Producer()
@@ -296,8 +296,8 @@ class ConsumerSpecifics {
 
   void SecondRound(const ChunkInfo &chunk, Job2<elev_t> &job2){
     timer_calc.start();
-    for(size_t y=0;y<dem.height();y++)
-    for(size_t x=0;x<dem.width();x++)
+    for(int32_t y=0;y<dem.height();y++)
+    for(int32_t x=0;x<dem.width();x++)
       if(labels(x,y)>1 && dem(x,y)<job2.at(labels(x,y)))
         dem(x,y) = job2.at(labels(x,y));
     timer_calc.stop();
@@ -866,13 +866,9 @@ void Preparer(
         //thousands of files is expensive. Therefore, we rely on the user to
         //check this beforehand if they want to. We will, however, verify that
         //things are correct in Consumer() as we open the files for reading.
-        if(getGDALDimensions(
-            lf.getFullPath(),
-            chunk_height,
-            chunk_width,
-            file_type,
-            chunk_geotransform.data()
-        )!=0){
+        try{
+          getGDALDimensions(lf.getFullPath(),chunk_height,chunk_width,file_type,chunk_geotransform.data());
+        } catch (...) {
           std::cerr<<"Error getting file information from '"<<lf.getFullPath()<<"'!"<<std::endl;
           CommAbort(-1); //TODO
         }
@@ -955,7 +951,9 @@ void Preparer(
     int32_t total_width;
 
     //Get the total dimensions of the input file
-    if(getGDALDimensions(input_file, total_height, total_width, file_type, NULL)!=0){
+    try {
+      getGDALDimensions(input_file, total_height, total_width, file_type, NULL);
+    } catch (...) {
       std::cerr<<"Error getting file information from '"<<input_file<<"'!"<<std::endl;
       CommAbort(-1); //TODO
     }

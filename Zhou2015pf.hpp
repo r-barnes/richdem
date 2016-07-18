@@ -156,13 +156,13 @@ void Zhou2015Labels(
 
   GridCellZ_pq<elev_t> priorityQueue;
 
-  for(size_t x=0;x<dem.width();x++){
+  for(int32_t x=0;x<dem.width();x++){
     const int height = dem.height()-1;
     priorityQueue.emplace(x,0,     dem(x,0     ));
     priorityQueue.emplace(x,height,dem(x,height));
   }
 
-  for(size_t y=1;y<dem.height()-1;y++){
+  for(int32_t y=1;y<dem.height()-1;y++){
     const int width = dem.width()-1;
     priorityQueue.emplace(0,    y,dem(0,    y));
     priorityQueue.emplace(width,y,dem(width,y));
@@ -203,22 +203,22 @@ void Zhou2015Labels(
   //knowing whether the tile has been flipped toe snure that we connect the
   //correct edges.
   if( ((edge & GRID_TOP)    && !flipV) || ((edge & GRID_BOTTOM) && flipV) )
-    for(size_t x=0;x<labels.width();x++)
+    for(int32_t x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,0),(label_t)1,dem(x,0),dem(x,0),my_graph);
 
   if( ((edge & GRID_BOTTOM) && !flipV) || ((edge & GRID_TOP)    && flipV) ){
     int bottom_row = labels.height()-1;
-    for(size_t x=0;x<labels.width();x++)
+    for(int32_t x=0;x<labels.width();x++)
       WatershedsMeet(labels(x,bottom_row),(label_t)1,dem(x,bottom_row),dem(x,bottom_row),my_graph);
   }
 
   if( ((edge & GRID_LEFT)  && !flipH) || ((edge & GRID_RIGHT) && flipH) )
-    for(size_t y=0;y<labels.height();y++)
+    for(int32_t y=0;y<labels.height();y++)
       WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
 
   if( ((edge & GRID_RIGHT) && !flipH) || ((edge & GRID_LEFT)  && flipH) ){
     int right_col = labels.width()-1;
-    for(size_t y=0;y<labels.height();y++)
+    for(int32_t y=0;y<labels.height();y++)
       WatershedsMeet(labels(right_col,y),(label_t)1,dem(right_col,y),dem(right_col,y),my_graph);
   }
 
