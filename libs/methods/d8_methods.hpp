@@ -2,6 +2,7 @@
 #define _richdem_d8_methods_hpp_
 
 #include "../common/Array2D.hpp"
+#include "../common/constants.hpp"
 
 /// Used with #d8_terrain_attribute to get an ill-defined curvature thing
 /// (TODO)
@@ -68,13 +69,13 @@ T sgn(T val){
 */
 template<class T, class U>
 void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
-  std::queue<grid_cell> sources;
+  std::queue<GridCell> sources;
   ProgressBar progress;
 
   std::cerr<<"\n###D8 Upslope Area"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.size()*((long)sizeof(grid_cell))/1024/1024)
+           <<(flowdirs.size()*((long)sizeof(GridCell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
   std::cerr<<"Resizing dependency matrix..."<<std::flush;
@@ -125,7 +126,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
   progress.start(flowdirs.numDataCells());
   long int ccount=0;
   while(sources.size()>0){
-    grid_cell c=sources.front();
+    GridCell c=sources.front();
     sources.pop();
 
     ccount++;
@@ -188,12 +189,12 @@ void d8_upslope_cells(
 ){
   std::cerr<<"Setting up the upslope_cells matrix..."<<std::flush;
   upslope_cells.resize(flowdirs);
-  upslope_cells.setAll(d8_NO_DATA);
-  upslope_cells.noData()=d8_NO_DATA;
+  upslope_cells.setAll(FLOWDIR_NO_DATA);
+  upslope_cells.setNoData(FLOWDIR_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
   ProgressBar progress;
 
-  std::queue<grid_cell> expansion;
+  std::queue<GridCell> expansion;
 
   if(x0>x1){
     std::swap(x0,x1);
@@ -212,11 +213,11 @@ void d8_upslope_cells(
   std::cerr<<"Line slope is "<<deltaerr<<std::endl;
   int y=y0;
   for(int x=x0;x<=x1;x++){
-    expansion.push(grid_cell(x,y));
+    expansion.push(GridCell(x,y));
     upslope_cells(x,y)=2;
     error+=deltaerr;
     if (error>=0.5) {
-      expansion.push(grid_cell(x+1,y));
+      expansion.push(GridCell(x+1,y));
       upslope_cells(x+1,y) = 2;
       y                   += sgn(deltay);
       error               -= 1;
@@ -226,7 +227,7 @@ void d8_upslope_cells(
   progress.start(flowdirs.data_cells);
   long int ccount=0;
   while(expansion.size()>0){
-    grid_cell c=expansion.front();
+    GridCell c=expansion.front();
     expansion.pop();
 
     progress.update(ccount++);
@@ -238,8 +239,8 @@ void d8_upslope_cells(
         continue;
       else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.noData())
         continue;
-      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.noData() && n==inverse_flow[flowdirs(c.x+dx[n],c.y+dy[n])]){
-        expansion.push(grid_cell(c.x+dx[n],c.y+dy[n]));
+      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.noData() && n==d8_inverse[flowdirs(c.x+dx[n],c.y+dy[n])]){
+        expansion.push(GridCell(c.x+dx[n],c.y+dy[n]));
         upslope_cells(c.x+dx[n],c.y+dy[n])=1;
       }
   }

@@ -3,11 +3,7 @@
 
 #include <cmath>
 #include "../common/Array2D.hpp"
-
-///Definition of x offsets of D-inf neighbours
-static const int dinf_dx[9]={1,1,0,-1,-1,-1,0,1,1};
-///Definition of y offsets of D-inf neighbours
-static const int dinf_dy[9]={0,-1,-1,-1,0,1,1,1,0};
+#include "../common/constants.hpp"
 
 /*
 We must convert the Dinf angle system to cells within the D8 system
@@ -106,13 +102,13 @@ void dinf_upslope_area(
   Array2D<float> &area
 ){
   Array2D<int8_t> dependency;
-  std::queue<grid_cell> sources;
+  std::queue<GridCell> sources;
   ProgressBar progress;
 
   std::cerr<<"\n###Dinf Upslope Area"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.width()*flowdirs.height()*((long)sizeof(grid_cell))/1024/1024)
+           <<(flowdirs.width()*flowdirs.height()*((long)sizeof(GridCell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
   std::cerr<<"Setting up the dependency matrix..."<<std::flush;
@@ -170,7 +166,7 @@ void dinf_upslope_area(
       else if(flowdirs(x,y)==NO_FLOW)
         continue;
       else if(dependency(x,y)==0)
-        sources.push(grid_cell(x,y));
+        sources.push(GridCell(x,y));
   }
   std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
 
@@ -178,7 +174,7 @@ void dinf_upslope_area(
   progress.start( flowdirs.numDataCells() );
   long int ccount=0;
   while(sources.size()>0){
-    grid_cell c=sources.front();
+    GridCell c=sources.front();
     sources.pop();
 
     ccount++;
@@ -208,12 +204,12 @@ void dinf_upslope_area(
       if(flowdirs.inGrid(nlx,nly) && flowdirs(nlx,nly)!=flowdirs.noData()){
         area(nlx,nly)+=area(c.x,c.y)*plow;
         if((--dependency(nlx,nly))==0)
-          sources.push(grid_cell(nlx,nly));
+          sources.push(GridCell(nlx,nly));
       }
     }
 
     if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
-      sources.push(grid_cell(nhx,nhy));
+      sources.push(GridCell(nhx,nhy));
   }
   std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
 }

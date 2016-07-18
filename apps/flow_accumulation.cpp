@@ -16,9 +16,9 @@ int PerformAlgorithm(std::string filename, std::string output){
   flowdirs.printStamp(5,"Stamp before reorientation");
 
   //Flip tiles if the geotransform demands it
-  if( (flowdirs.geotransform[0]<0) ^ flipH)
+  if( (flowdirs.geotransform[0]>0) ^ flipH)
     flowdirs.flipHorz();
-  if( (flowdirs.geotransform[5]<0) ^ flipV)
+  if( (flowdirs.geotransform[5]>0) ^ flipV)
     flowdirs.flipVert();
 
   flowdirs.printStamp(5,"Stamp after reorientation");
@@ -28,9 +28,9 @@ int PerformAlgorithm(std::string filename, std::string output){
 
   area.printStamp(5,"Output stamp before reorientation");
 
-  if( (area.geotransform[0]<0) ^ flipH)
+  if( (area.geotransform[0]>0) ^ flipH)
     area.flipHorz();
-  if( (area.geotransform[5]<0) ^ flipV)
+  if( (area.geotransform[5]>0) ^ flipV)
     area.flipVert();
 
   area.printStamp(5,"Output stamp after reorientation");

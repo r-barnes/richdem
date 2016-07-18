@@ -87,13 +87,13 @@ class GridCellZ<float>: public GridCell {
 /// Stores the (x,y,z) coordinates of a grid cell and a priority indicator k;
 /// used by grid_cellz_pq.
 template<class elev_t>
-class grid_cellzk : public GridCellZ<elev_t> {
+class GridCellZk : public GridCellZ<elev_t> {
   public:
     int k;           ///< Used to store an integer to make sorting stable
-    grid_cellzk(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
-    grid_cellzk(){}
-    bool operator< (const grid_cellzk<elev_t>& a) const { return GridCellZ<elev_t>::z< a.z || ( std::isnan(GridCellZ<elev_t>::z) && !std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k<a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k<a.k); }
-    bool operator> (const grid_cellzk<elev_t>& a) const { return GridCellZ<elev_t>::z> a.z || (!std::isnan(GridCellZ<elev_t>::z) &&  std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k>a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k>a.k); }
+    GridCellZk(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
+    GridCellZk(){}
+    bool operator< (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z< a.z || ( std::isnan(GridCellZ<elev_t>::z) && !std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k<a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k<a.k); }
+    bool operator> (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z> a.z || (!std::isnan(GridCellZ<elev_t>::z) &&  std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k>a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k>a.k); }
 };
 
 
@@ -105,23 +105,9 @@ template<typename elev_t>
 using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > >;
 
 
-
-
-
 ///A priority queue of grid_cells, sorted by ascending height or, if heights
 ///are equal, by the order of insertion
-template<class elev_t>
-class grid_cellzk_pq : public std::priority_queue<grid_cellzk<elev_t>, std::vector<grid_cellzk<elev_t> >, std::greater<grid_cellzk<elev_t> > > {
-  private:
-    int count;
-  public:
-    grid_cellzk_pq() : count(0) {}
-    void push(const GridCellZ<elev_t> &a){
-      std::priority_queue<grid_cellzk<elev_t>, std::vector<grid_cellzk<elev_t> >, std::greater<grid_cellzk<elev_t> > >::push(grid_cellzk<elev_t>(a.x,a.y,a.z,count++));
-    }
-    void push_cell(int x, int y, elev_t z){
-      std::priority_queue<grid_cellzk<elev_t>, std::vector<grid_cellzk<elev_t> >, std::greater<grid_cellzk<elev_t> > >::push(grid_cellzk<elev_t>(x,y,z,count++));
-    }
-};
+template<typename elev_t>
+using GridCellZk_pq = std::priority_queue<GridCellZk<elev_t>, std::vector<GridCellZk<elev_t> >, std::greater<GridCellZk<elev_t> > >;
 
 #endif
