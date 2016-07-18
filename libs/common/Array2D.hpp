@@ -760,7 +760,8 @@ class Array2D {
     @brief Makes a raster larger and retains the raster's old data, similar to resize.
 
     Note: Using this command requires RAM equal to the sum of the old raster and
-    the new raster.
+    the new raster. The old raster is placed in the upper-left of the new
+    raster.
 
     @param[in] new_width  New width of the raster. Must be >= the old width.
     @param[in] new_height New height of the raster. Must be >= the old height.
