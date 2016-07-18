@@ -874,8 +874,8 @@ class Array2D {
 
     @return A vector containing a copy of the top row of the raster
   */
-  std::vector<T> topRow() const {    
-    return std::vector<T>(data.begin(),data.begin()+view_width);
+  std::vector<T> topRow() const {  
+    return getRowData(0);  
   }
 
   /**
@@ -883,8 +883,8 @@ class Array2D {
 
     @return A vector containing a copy of the bottom row of the raster
   */
-  std::vector<T> bottomRow() const { 
-    return std::vector<T>(data.begin()+xyToI(view_height,0), data.begin()+xyToI(view_height,view_width));
+  std::vector<T> bottomRow() const {
+    return getRowData(view_height-1);
   }
 
   /**
