@@ -19,4 +19,8 @@ const uint8_t d8_arcgis[9] = {0,16,32,64,128,1,2,4,8};
 
 const uint8_t FLOWDIR_NO_DATA = 255;
 
+const uint8_t NO_FLOW = 0;
+
+const int32_t ACCUM_NO_DATA = -1;
+
 #endif
