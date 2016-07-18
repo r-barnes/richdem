@@ -194,6 +194,17 @@ class ConsumerSpecifics {
     dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height, chunk.many);
     timer_io.stop();
 
+    //TODO: Figure out a clever way to allow tiles of different widths/heights
+    if(dem.width()!=chunk.width){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected width. Found "<<dem.width()<<" expected "<<chunk.width<<std::endl;
+      throw std::runtime_error("Unexpected width.");
+    }
+
+    if(dem.height()!=chunk.height){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected height. Found "<<dem.height()<<" expected "<<chunk.height<<std::endl;
+      throw std::runtime_error("Unexpected height.");
+    }
+
     //These variables are needed by Priority-Flood. The internal
     //interconnections of labeled regions (named "graph") are also needed to
     //solve the problem, but that can be passed directly from the job object.
