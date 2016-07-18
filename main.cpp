@@ -47,11 +47,8 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
-#define NO_FLOW          0 //TODO: Explain and ensure it fits in flowdir_t
 #define FLOW_TERMINATES -3 //TODO: Explain and ensure it fits in link_t
 #define FLOW_EXTERNAL   -4 //TODO: Explain and ensure it fits in link_t
-
-const int ACCUM_NO_DATA = -1;
 
 typedef int32_t accum_t;
 typedef uint8_t dependency_t;
