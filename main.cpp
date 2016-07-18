@@ -14,13 +14,6 @@
 #include "Array2D.hpp"
 #include "grid_cell.hpp"
 
-//Used for indicating whether a block is on the edge of the larger DEM and which
-//edges it is adjacent to
-const uint8_t GRID_LEFT   = 1;
-const uint8_t GRID_TOP    = 2;
-const uint8_t GRID_RIGHT  = 4;
-const uint8_t GRID_BOTTOM = 8;
-
 const char* program_version = "1";
 
 //We use the cstdint library here to ensure that the program behaves as expected
