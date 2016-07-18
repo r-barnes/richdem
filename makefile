@@ -1,7 +1,7 @@
 export OMPI_CXX=g++
 
 compile: main.cpp
-	g++ -o parallel_flats.exe -g -O3 `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall #-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
+	g++ -o parallel_flats.exe -g -O3 -DSHOW_STAMPS `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall #-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
 
 compile_with_compression:
 	g++ -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall -lboost_iostreams -lz #-Wextra #-fsanitize=undefined #-Wextra -Wconversion
@@ -20,13 +20,6 @@ xsede_debug_with_compression:
 
 debug: main.cpp
 	g++ -o parallel_flats.exe -g `gdal-config --cflags` `gdal-config --libs` main.cpp -I. -lgdal --std=c++11 -Wall
-
-inspect: main.cpp
-	g++ -o inspect.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` inspect.cpp -I. -lgdal --std=c++11 -Wall #-Wextra #-fsanitize=undefined #-Wextra -Wconversion
-
-loop_check: main.cpp
-	g++ -o loop_check.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` loop_check.cpp -I. -lgdal --std=c++11 -Wall
-
 
 #auth_gen:
 #	mpic++ -o auth_gen.exe -g -O3 -DNDEBUG `gdal-config --cflags` `gdal-config --libs` auth_gen.cpp -I. -lgdal --std=c++11 -Wall
