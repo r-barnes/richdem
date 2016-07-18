@@ -79,10 +79,10 @@ class A2Array2D {
 
   LRU< WrappedArray2D* > lru;
 
-  size_t total_width_in_cells     = 0;
-  size_t total_height_in_cells    = 0;
-  size_t  per_tile_width          = 0;
-  size_t  per_tile_height         = 0;
+  int64_t total_width_in_cells    = 0;
+  int64_t total_height_in_cells   = 0;
+  int32_t  per_tile_width         = 0;
+  int32_t  per_tile_height        = 0;
   int32_t evictions               = 0;
   int64_t cells_in_not_null_tiles = 0;
   T       no_data_to_set; //Used to disguise null tiles
@@ -185,8 +185,8 @@ class A2Array2D {
     }
 
     bool good=true;
-    for(size_t y=0;y<heightInTiles()-1;y++)
-    for(size_t x=0;x<widthInTiles()-1;x++){
+    for(int32_t y=0;y<heightInTiles()-1;y++)
+    for(int32_t x=0;x<widthInTiles()-1;x++){
       if(data[y][x].null_tile)
         continue;
       if(data[y][x].width()!=per_tile_width){
@@ -245,9 +245,9 @@ class A2Array2D {
     flipV                 = other.flipV;
     flipH                 = other.flipH;
 
-    for(size_t y=0;y<other.heightInTiles();y++){
+    for(int32_t y=0;y<other.heightInTiles();y++){
       data.emplace_back();
-      for(size_t x=0;x<other.widthInTiles();x++){
+      for(int32_t x=0;x<other.widthInTiles();x++){
         data.back().emplace_back();
         auto &this_tile  = data.back().back();
         auto &other_tile = other.data[y][x];
@@ -319,7 +319,7 @@ class A2Array2D {
   //   return data[ty][tx](x,y);
   // }
 
-  T& operator()(size_t tx, size_t ty, size_t x, size_t y){
+  T& operator()(int32_t tx, int32_t ty, int32_t x, int32_t y){
     assert(tx>=0);
     assert(ty>=0);
     assert(tx<widthInTiles());
@@ -342,7 +342,7 @@ class A2Array2D {
     return data[ty][tx](x,y);
   }
 
-  T& operator()(size_t x, size_t y){
+  T& operator()(int32_t x, int32_t y){
     assert(x>=0);
     assert(y>=0);
     assert(x<total_width_in_cells);
@@ -350,10 +350,10 @@ class A2Array2D {
 
     //std::cerr<<"From ("<<x<<","<<y<<") derived ";
 
-    size_t tile_x = x/per_tile_width;
-    size_t tile_y = y/per_tile_height;
-    x             = x%per_tile_width;
-    y             = y%per_tile_height;
+    int32_t tile_x = x/per_tile_width;
+    int32_t tile_y = y/per_tile_height;
+    x              = x%per_tile_width;
+    y              = y%per_tile_height;
 
     //std::cerr<<"tile=("<<tile_x<<","<<tile_y<<") cell=("<<x<<","<<y<<")"<<std::endl;
 
@@ -390,23 +390,23 @@ class A2Array2D {
     return total_height_in_cells;
   }
 
-  size_t widthInTiles() const {
+  int32_t widthInTiles() const {
     return data.back().size();
   }
 
-  size_t heightInTiles() const {
+  int32_t heightInTiles() const {
     return data.size();
   }
 
-  int64_t tileWidth(size_t tx, size_t ty) const {
+  int64_t tileWidth(int32_t tx, int32_t ty) const {
     assert(tx>=0);
     assert(ty>=0);
-    assert(tx<data[0].size());
-    assert(ty<data.size());
+    assert(tx<(int32_t)data[0].size());
+    assert(ty<(int32_t)data.size());
     return data[ty][tx].width();
   }
 
-  int64_t tileHeight(size_t tx, size_t ty) const {
+  int64_t tileHeight(int32_t tx, int32_t ty) const {
     assert(tx>=0);
     assert(ty>=0);
     assert(tx<widthInTiles());
@@ -430,16 +430,16 @@ class A2Array2D {
     }
   }
 
-  bool isNoData(size_t x, size_t y){
+  bool isNoData(int32_t x, int32_t y){
     assert(x>=0);
     assert(y>=0);
     assert(x<total_width_in_cells);
     assert(y<total_height_in_cells);
 
-    size_t tile_x = x/per_tile_width;
-    size_t tile_y = y/per_tile_height;
-    x             = x%per_tile_width;
-    y             = y%per_tile_height;
+    int32_t tile_x = x/per_tile_width;
+    int32_t tile_y = y/per_tile_height;
+    x              = x%per_tile_width;
+    y              = y%per_tile_height;
 
     if(data[tile_y][tile_x].null_tile)
       return true;
@@ -449,11 +449,11 @@ class A2Array2D {
     return data[tile_y][tile_x].isNoData(x,y);
   }
 
-  bool isNoData(size_t tx, size_t ty, size_t px, size_t py){
+  bool isNoData(int32_t tx, int32_t ty, int32_t px, int32_t py){
     assert(tx>=0);
     assert(ty>=0);
-    assert(tx<data[0].size());
-    assert(ty<data.size());
+    assert(tx<(int32_t)data[0].size());
+    assert(ty<(int32_t)data.size());
 
     assert(px>=0);
     assert(py>=0);
@@ -468,7 +468,7 @@ class A2Array2D {
     return data[ty][tx].isNoData(px,py);
   }
 
-  bool in_grid(size_t x, size_t y) const {
+  bool in_grid(int32_t x, int32_t y) const {
     return (x>=0 && y>=0 && x<total_width_in_cells && y<total_height_in_cells);
   }
 
@@ -487,9 +487,9 @@ class A2Array2D {
 
     LayoutfileWriter lfout(new_layout_name);
 
-    for(size_t ty=0;ty<heightInTiles();ty++){
+    for(int32_t ty=0;ty<heightInTiles();ty++){
       lfout.addRow();
-      for(size_t tx=0;tx<widthInTiles();tx++){
+      for(int32_t tx=0;tx<widthInTiles();tx++){
         auto& tile = data[ty][tx];
 
         if(tile.null_tile)
@@ -536,17 +536,17 @@ class A2Array2D {
     return evictions;
   }
 
-  bool isNullTile(int tx, int ty) const {
+  bool isNullTile(int32_t tx, int32_t ty) const {
     return data[ty][tx].null_tile;
   }
 
-  bool isEdgeCell(size_t x, size_t y){
+  bool isEdgeCell(int32_t x, int32_t y){
     return x==0 || y==0 || x==total_width_in_cells-1 || y==total_height_in_cells-1;
   }
 
   void printStamp(int size){
-    for(size_t ty=0;ty<heightInTiles();ty++)
-    for(size_t tx=0;tx<widthInTiles();tx++){
+    for(int32_t ty=0;ty<heightInTiles();ty++)
+    for(int32_t tx=0;tx<widthInTiles();tx++){
       if(data[ty][tx].null_tile)
         continue;
 

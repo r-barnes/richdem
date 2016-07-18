@@ -163,8 +163,8 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   int processed_cells = 0;
 
-  for(size_t ty=0;ty<dem.heightInTiles();ty++)
-  for(size_t tx=0;tx<dem.widthInTiles(); tx++){
+  for(int32_t ty=0;ty<dem.heightInTiles();ty++)
+  for(int32_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
 
