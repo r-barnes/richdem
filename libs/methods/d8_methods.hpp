@@ -114,7 +114,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
       ++dependency(nx,ny);
     }
   }
-  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
   for(int y=0;y<flowdirs.height();y++)
@@ -153,7 +153,7 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
     if(dependency(nx,ny)==0)
       sources.emplace(nx,ny);
   }
-  std::cerr<<"Succeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
 
   int loops=0;
   for(int i=-1;i>=-8;i--)
@@ -605,7 +605,7 @@ void d8_terrain_attribute(
       }
     }
   }
-  std::cerr<<"succeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
 }
 
 
