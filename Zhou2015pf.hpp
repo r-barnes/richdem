@@ -2,7 +2,8 @@
 #define __distpdf_zhou2015pf_hp__
 
 #include "Array2D.hpp"
-#include "common.hpp"
+#include "constants.hpp"
+#include "grid_cell.hpp"
 #include <queue>
 #include <vector>
 #include <map>

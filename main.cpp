@@ -10,8 +10,11 @@
 #include "Layoutfile.hpp"
 #include "communication.hpp"
 #include "memory.hpp"
+#include "timer.hpp"
 #include "Zhou2015pf.hpp"
-#include "Barnes2014pf.hpp"
+#include "Array2D.hpp"
+#include "grid_cell.hpp"
+//#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
 const char* program_version = "13";
 
@@ -21,8 +24,6 @@ const char* program_version = "13";
 //at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
 //this is, after all, for use with large datasets.
 #include <cstdint>
-#include "Array2D.hpp"
-#include "common.hpp"
 //#define DEBUG 1
 
 //Define operating system appropriate directory separators
