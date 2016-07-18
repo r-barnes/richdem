@@ -1048,6 +1048,10 @@ void Preparer(
   overall.stop();
   std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
 
+  std::cerr<<"!Flip horizontal: "<<((chunks[0][0].flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip vertical:   "<<((chunks[0][0].flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Input data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+
   switch(file_type){
     case GDT_Unknown:
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
