@@ -596,7 +596,7 @@ void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, boo
 
   if(alter){  
     //NOTE: If this value appears anywhere an error's occurred
-    flowdirs.init(155);
+    flowdirs.setAll(155); //TODO
     d8_flats_alter_dem(flat_mask, labels, elevations);
     d8_flow_directions(elevations,flowdirs);
   } else {

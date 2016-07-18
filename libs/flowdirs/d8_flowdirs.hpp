@@ -93,7 +93,7 @@ void d8_flow_directions(
 
   std::cerr<<"Setting up the flow directions matrix..."<<std::flush;
   flowdirs.resize(elevations);
-  flowdirs.init(NO_FLOW);
+  flowdirs.setAll(NO_FLOW);
   flowdirs.setNoData(FLOWDIR_NO_DATA);
   std::cerr<<"succeeded."<<std::endl;
 

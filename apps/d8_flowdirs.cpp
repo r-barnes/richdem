@@ -17,8 +17,8 @@ int PerformAlgorithm(std::string filename, std::string output_prefix){
 
   barnes_flat_resolution_d8(elevations,flowdirs,false);
 
-  for(int y=0;y<flowdirs.viewHeight();y++){
-    for(int x=0;x<flowdirs.viewWidth();x++)
+  for(int32_t y=0;y<flowdirs.height();y++){
+    for(int32_t x=0;x<flowdirs.width();x++)
       std::cerr<<(int)flowdirs(x,y)<<" ";
     std::cerr<<std::endl;
   }
