@@ -2,7 +2,7 @@
 #include "Array2D.hpp"
 #include "constants.hpp"
 #include "A2Array2D.hpp"
-#include "common.hpp"
+#include "timer.hpp"
 #include <queue>
 #include <unordered_set>
 #include <iomanip>
