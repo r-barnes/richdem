@@ -484,7 +484,6 @@ class A2Array2D {
 
     auto new_layout_name = outputname_template;
     new_layout_name.replace(new_layout_name.find("%f"),2,"layout");
-    std::ofstream flout(new_layout_name);
 
     LayoutfileWriter lfout(new_layout_name);
 
