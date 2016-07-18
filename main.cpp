@@ -914,7 +914,7 @@ void Preparer(
       lfout.addEntry(this_output_name);
 
       //Flip tiles if the geotransform demands it
-      if(chunk_geotransform[0]>0)
+      if(chunk_geotransform[1]<0)
         chunks.back().back().flip ^= FLIP_HORZ;
       if(chunk_geotransform[5]>0)
         chunks.back().back().flip ^= FLIP_VERT;
