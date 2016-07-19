@@ -32,5 +32,8 @@ debug: main.cpp
 assemble_ascii:
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o assemble_ascii.exe assemble_ascii.cpp $(GDAL_LIBS)
 
+test:
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o test.exe test.cpp $(GDAL_LIBS)
+
 clean:
 	rm -f output* parallel_d8flow_accum.exe
