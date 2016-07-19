@@ -1,0 +1,14 @@
+#!/bin/bash  
+#SBATCH --job-name="srtm_r2"  
+#SBATCH --output="srtm_r2.%j.%N.out"  
+#SBATCH --partition=compute  
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=24  
+#SBATCH --export=ALL  
+#SBATCH -t 03:00:00
+
+module load boost/1.55.0
+module load intel/2015.2.164
+module load mvapich2_ib
+
+/home/rbarnes1/dist_flats/parallel_flats.exe /oasis/scratch/comet/rbarnes1/temp_project/srtm_region/Region_02/filled/Region_02.layout             500  /oasis/scratch/comet/rbarnes1/temp_project/temp/sr2-%f.tif /oasis/scratch/comet/rbarnes1/temp_project/srtm_r2_output/%f-d8.tif noflip

@@ -1,0 +1,14 @@
+#!/bin/bash  
+#SBATCH --job-name="pamap_pas"  
+#SBATCH --output="pamap_pas.%j.%N.out"  
+#SBATCH --partition=compute  
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=24  
+#SBATCH --export=ALL  
+#SBATCH -t 10:00:00
+
+module load boost/1.55.0
+module load intel/2015.2.164
+module load mvapich2_ib
+
+/home/rbarnes1/dist_flats/parallel_flats.exe /oasis/scratch/comet/rbarnes1/temp_project/pamap/pas/filled/pas_tiles.layout                         500  /oasis/scratch/comet/rbarnes1/temp_project/temp/pas-%f.tif /oasis/scratch/comet/rbarnes1/temp_project/pas_output/%f-d8.tif noflip
