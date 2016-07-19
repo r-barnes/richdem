@@ -20,6 +20,11 @@ xsede_debug_with_compression:
 debug: main.cpp
 	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g main.cpp $(GDAL_LIBS) 
 
+same_flowdirs: same_flowdirs.cpp
+	$(CXX) $(CXXFLAGS) -o same_flowdirs.exe -g same_flowdirs.cpp $(GDAL_LIBS) 
+
+merge_rasters_by_layout: merge_rasters_by_layout.cpp
+	$(CXX) $(CXXFLAGS) -o merge_rasters_by_layout.exe -g merge_rasters_by_layout.cpp $(GDAL_LIBS) 
 
 clean:
 	rm -f output* parallel_flats.exe
