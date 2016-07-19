@@ -967,6 +967,9 @@ class ProducerSpecifics {
 
       if( (--jobs1.at(gny).at(gnx).dependencies.at(ns))==0 )
         q.emplace(gnx,gny,ns);
+
+      assert(0<=jobs1.at(gny).at(gnx).dependencies.at(ns));
+      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)<=8);
     }
 
     std::cerr<<processed_peaks<<" peaks processed."<<std::endl;
