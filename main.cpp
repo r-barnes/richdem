@@ -883,7 +883,7 @@ class ProducerSpecifics {
       if(chunks.at(y).at(x).nullChunk)
         continue;
 
-      const int flowdir_size = jobs1.at(y).at(x).flowdirs.size()
+      const int flowdir_size = jobs1.at(y).at(x).flowdirs.size();
       for(int s=0;s<flowdir_size;s++){
         //Using -1 will hopefully cause problems if these variables are misused
         int ns  = -1; //Next cell in a tile, using a serialized coordinate
