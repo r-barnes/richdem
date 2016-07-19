@@ -50,7 +50,7 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
     std::cout<<std::setw(fwidth)<<y;
     for(int x=minx;x<=maxx;x++){
       if(cx==x && cy==y)
-        std::cout<<"\033[93m";
+        std::cout<<"\033[92m\033[1m\033[4m";
 
       if(NativeTypeToGDAL<T>()==GDT_Byte)
         std::cout<<std::setw(10)<<(int)inp(x,y);
@@ -58,7 +58,7 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
         std::cout<<std::setw(10)<<inp(x,y);
 
       if(cx==x && cy==y)
-        std::cout<<"\033[39m";
+        std::cout<<"\033[39m\033[21m\033[24m";
     }
     std::cout<<std::endl;
   }
