@@ -49,13 +49,49 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
-#define FLOW_TERMINATES -3 //TODO: Explain and ensure it fits in link_t
-#define FLOW_EXTERNAL   -4 //TODO: Explain and ensure it fits in link_t
+//Using int32_t here would allow a single cell to represent flow accumulations
+//stemming from a ~46,340^2 cell area. Using uint32_t bumps that to ~65,535^2
+//cells. This is easily exceeded in a rather large DEM. Therefore, we would like
+//to use int64_t, which allows 3,037,000,499^2 cells. However, GDAL is silly and
+//does not allow for 64-bit integers. Therefore, we use double. The IEEE754
+//double-precision floating-point type has a 53-bit significand. This is
+//sufficient to capture a 94,906,265^2 area.
+typedef double accum_t;
 
-typedef int32_t accum_t;
-typedef uint8_t dependency_t;
+//Valid flowdirs are in the range 0-8, inclusive. 0 is the center and 1-8,
+//inclusive, are the 8 cells around the central cell. An extra value is needed
+//to indicate NoData. Therefore, uint8_t is appropriate.
 typedef uint8_t flowdir_t;
-typedef int32_t link_t;
+
+//Links need to be able to hold values up to the length of the perimeter of a
+//tile of the DEM. uint16_t is therefore acceptable. It allows a perimeter of
+//length 65,535 (minus the constants defined below). This allows for sides of
+//~16,383.
+typedef uint16_t link_t;
+
+//Since, in a grid representation, up to eight cells may flow into a single
+//cell, uint8_t is appropriate for appropriate for tracking these dependencies.
+typedef uint8_t c_dependency_t;
+
+//In a perimeter representation, any number of cells on the perimeter may
+//ultimately flow into a single outlet cell. Therefore, we need this to uint16_t
+//for the same reasons discussed for link_t. We will assume that the top value
+//(65,535) is not usable in order to raise an assertion error if the dependency
+//count goes negative.
+typedef uint16_t p_dependency_t;
+
+///Used in the perimeter representation to indicate that a cell has no
+///downstream neighbour, for whatever reason
+const link_t FLOW_NO_DOWNSTREAM = (link_t)-1;
+
+///Used in the perimeter representation to indicate that flow going into this
+///cell will end somewhere internal to the tile. This situation arises if the
+///flow path leads to a NoData cell or a cell with NoFlow.
+const link_t FLOW_TERMINATES = (link_t)-2;
+
+///Used in the perimeter representation to indicate that this cell passes its
+///flow to a neighbouring tile, or off of the DEM entirely.
+const link_t FLOW_EXTERNAL   = (link_t)-3;
 
 class ChunkInfo{
  private:
@@ -149,11 +185,11 @@ class Job1 {
        gridx);
   }
  public:
-  std::vector<link_t   >    links;
-  std::vector<accum_t  >    accum;
-  std::vector<flowdir_t>    flowdirs;
-  std::vector<accum_t  >    accum_in;     //Not communicated, so not serialized. Here for convenience.
-  std::vector<dependency_t> dependencies; //Not communicated, so not serialized. Here for convenience.
+  std::vector<link_t   >      links;
+  std::vector<accum_t  >      accum;
+  std::vector<flowdir_t>      flowdirs;
+  std::vector<accum_t  >      accum_in;     //Used by produce, here for convenience, not communicated, so not serialized.
+  std::vector<p_dependency_t> dependencies; //Used by produce, here for convenience, not communicated, so not serialized.
   TimeInfo time_info;
   int gridy, gridx;
   Job1(){}
@@ -435,7 +471,7 @@ class ConsumerSpecifics {
     accum.resize(flowdirs,0);
     accum.setNoData(ACCUM_NO_DATA);
 
-    Array2D<dependency_t> dependencies(flowdirs,0);
+    Array2D<c_dependency_t> dependencies(flowdirs,0);
     for(int32_t y=0;y<flowdirs.height();y++)
     for(int32_t x=0;x<flowdirs.width();x++){
       if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
@@ -768,8 +804,8 @@ class ProducerSpecifics {
     const ChunkGrid   &chunks,
     const int gx,     //Grid tile x of cell we wish to find downstream cell of
     const int gy,     //Grid tile y of cell we wish to find downstream cell of
-    const int s,      //Array index of the cell in the tile in question
-    int &ns,          //Array index of downstream cell in the tile
+    const link_t s,   //Array index of the cell in the tile in question
+    link_t &ns,       //Array index of downstream cell in the tile
     int &gnx,         //Grid tile x of downstream cell
     int &gny          //Grid tile y of downstream cell
   ){
@@ -777,7 +813,7 @@ class ProducerSpecifics {
 
     assert(j.links.size()==j.flowdirs.size());
 
-    ns = -1;
+    ns = FLOW_NO_DOWNSTREAM;
 
     gnx = gx;
     gny = gy;
@@ -884,13 +920,13 @@ class ProducerSpecifics {
         continue;
 
       const int flowdir_size = jobs1.at(y).at(x).flowdirs.size();
-      for(int s=0;s<flowdir_size;s++){
+      for(link_t s=0;s<flowdir_size;s++){
         //Using -1 will hopefully cause problems if these variables are misused
-        int ns  = -1; //Next cell in a tile, using a serialized coordinate
-        int gnx = -1; //Next tile, x-coordinate
-        int gny = -1; //Next tile, y-coordinate
+        link_t ns = FLOW_NO_DOWNSTREAM; //Next cell in a tile, using a serialized coordinate
+        int gnx   = -1; //Next tile, x-coordinate
+        int gny   = -1; //Next tile, y-coordinate
         DownstreamCell(jobs1, chunks, x, y, s, ns, gnx, gny);
-        if(ns==-1 || chunks.at(gny).at(gnx).nullChunk) 
+        if(ns==FLOW_NO_DOWNSTREAM || chunks.at(gny).at(gnx).nullChunk) 
           continue;
 
         jobs1.at(gny).at(gnx).dependencies.at(ns)++;
@@ -910,10 +946,10 @@ class ProducerSpecifics {
     //of the grid
     class atype {
      public:
-      int gx; //X-coordinate of tile
-      int gy; //Y-coordinate of tile
-      int s;  //Serialized coordinate of cell's position on the tile's perimeter
-      atype(int gx, int gy, int s) : gx(gx), gy(gy), s(s) {};
+      int gx;   //X-coordinate of tile
+      int gy;   //Y-coordinate of tile
+      link_t s; //Serialized coordinate of cell's position on the tile's perimeter
+      atype(int gx, int gy, link_t s) : gx(gx), gy(gy), s(s) {};
     };
 
     //Queue of cells which are known to have no dependencies
@@ -928,8 +964,8 @@ class ProducerSpecifics {
 
       auto &this_job = jobs1.at(y).at(x);
 
-      for(size_t s=0;s<this_job.dependencies.size();s++){
-        if(this_job.dependencies.at(s)==0) // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
+      for(link_t s=0;s<this_job.dependencies.size();s++){
+        if(this_job.dependencies.at(s)==0){ // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
           q.emplace(x,y,s);
 
         //Accumulated flow at an input will be transfered to an output resulting
@@ -941,7 +977,7 @@ class ProducerSpecifics {
       //this_job.accum_orig = this_job.accum;
     }
 
-    std::cerr<<q.size()<<" peaks founds in aggregated problem."<<std::endl;
+    std::cerr<<q.size()<<" peaks found in aggregated problem."<<std::endl;
 
     int processed_peaks = 0;
     while(!q.empty()){
@@ -954,11 +990,11 @@ class ProducerSpecifics {
       ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
       assert(!ci.nullChunk);
 
-      int ns  = -1; //Initial value designed to cause devastation if misused
-      int gnx = -1; //Initial value designed to cause devastation if misused
-      int gny = -1; //Initial value designed to cause devastation if misused
+      link_t ns = FLOW_NO_DOWNSTREAM; //Initial value designed to cause devastation if misused
+      int gnx   = -1; //Initial value designed to cause devastation if misused
+      int gny   = -1; //Initial value designed to cause devastation if misused
       DownstreamCell(jobs1, chunks, c.gx, c.gy, c.s, ns, gnx, gny);
-      if(ns==-1 || chunks.at(gny).at(gnx).nullChunk)
+      if(ns==FLOW_NO_DOWNSTREAM || chunks.at(gny).at(gnx).nullChunk)
         continue;
 
       jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
@@ -968,8 +1004,9 @@ class ProducerSpecifics {
       if( (--jobs1.at(gny).at(gnx).dependencies.at(ns))==0 )
         q.emplace(gnx,gny,ns);
 
-      assert(0<=jobs1.at(gny).at(gnx).dependencies.at(ns));
-      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)<=8);
+      //This ensures that the dependency count is >=0 for both sign and unsigned
+      //types.
+      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)!=(p_dependency_t)-1); 
     }
 
     std::cerr<<processed_peaks<<" peaks processed."<<std::endl;
@@ -980,7 +1017,7 @@ class ProducerSpecifics {
       int unprocessed_dependencies=0;
       for(int y=0;y<gridheight;y++)
       for(int x=0;x<gridwidth;x++)
-      for(size_t s=0;s<jobs1[y][x].dependencies.size();s++)
+      for(link_t s=0;s<jobs1[y][x].dependencies.size();s++)
         unprocessed_dependencies+=jobs1[y][x].dependencies[s];
       std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
     #endif
