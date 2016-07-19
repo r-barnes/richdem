@@ -58,7 +58,7 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
         std::cout<<std::setw(10)<<inp(x,y);
 
       if(cx==x && cy==y)
-        std::cout<<"\033[39;21;24m";
+        std::cout<<"\033[39;21;24;22m";
     }
     std::cout<<std::endl;
   }
