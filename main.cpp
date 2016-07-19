@@ -2,7 +2,7 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
 #include "richdem/common/timer.hpp"
-#include "A2Array2D.hpp"
+#include "richdem/tiled/A2Array2D.hpp"
 #include <queue>
 #include <unordered_set>
 #include <iomanip>
