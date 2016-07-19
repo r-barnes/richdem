@@ -50,7 +50,7 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
     std::cout<<std::setw(fwidth)<<y;
     for(int x=minx;x<=maxx;x++){
       if(cx==x && cy==y)
-        std::cout<<"\033[93m";
+        std::cout<<"\033[92;1;4m";
 
       if(NativeTypeToGDAL<T>()==GDT_Byte)
         std::cout<<std::setw(10)<<(int)inp(x,y);
@@ -58,7 +58,7 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
         std::cout<<std::setw(10)<<inp(x,y);
 
       if(cx==x && cy==y)
-        std::cout<<"\033[39m";
+        std::cout<<"\033[39;21;24;22m";
     }
     std::cout<<std::endl;
   }
@@ -112,8 +112,8 @@ int main(int argc, char **argv){
     if(miny<0)
       throw std::invalid_argument("MinY must be >=0!");
   } catch (const std::invalid_argument &ia){
-    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Center X> <Center Y> <Radius>"<<std::endl;
-    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Min X> <Max X> <Min Y> <Max Y>"<<std::endl;
+    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Inputfile> <Center X> <Center Y> <Radius>"<<std::endl;
+    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Inputfile> <Min X> <Max X> <Min Y> <Max Y>"<<std::endl;
 
     std::cerr<<"###Error: "<<ia.what()<<std::endl;
 
