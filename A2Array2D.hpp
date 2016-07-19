@@ -1,9 +1,9 @@
 #ifndef _a2array2d_hpp_
 #define _a2array2d_hpp_
 
+#include "richdem/common/Layoutfile.hpp"
+#include "richdem/common/Array2D.hpp"
 #include "gdal_priv.h"
-#include "Layoutfile.hpp"
-#include "Array2D.hpp"
 #include "lru.hpp"
 
 GDALDataType peekLayoutType(const std::string &layout_filename) {

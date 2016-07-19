@@ -1,8 +1,8 @@
-#include "Layoutfile.hpp"
-#include "Array2D.hpp"
-#include "constants.hpp"
+#include "richdem/common/Layoutfile.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/constants.hpp"
+#include "richdem/common/timer.hpp"
 #include "A2Array2D.hpp"
-#include "timer.hpp"
 #include <queue>
 #include <unordered_set>
 #include <iomanip>
