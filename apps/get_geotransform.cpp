@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "../libs/common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 int main(int argc, char **argv){
   if(argc!=2){

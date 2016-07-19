@@ -2,8 +2,8 @@
 #define _richdem_dinf_methods_hpp_
 
 #include <cmath>
-#include "../common/Array2D.hpp"
-#include "../common/constants.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/constants.hpp"
 
 //TODO: Can these be merged with the regular D8 directions?
 ///Definition of x offsets of D-inf neighbours

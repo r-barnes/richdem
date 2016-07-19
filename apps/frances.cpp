@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include "../libs/flats/flat_resolution_dinf.hpp"
-#include "../libs/depressions/priority_flood.hpp"
-#include "../libs/common/Array2D.hpp"
-#include "../libs/methods/d8_methods.hpp"
-#include "../libs/methods/dinf_methods.hpp"
+#include "richdem/flats/flat_resolution_dinf.hpp"
+#include "richdem/depressions/priority_flood.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/methods/d8_methods.hpp"
+#include "richdem/methods/dinf_methods.hpp"
 
 template<class T>
 int PerformAlgorithm(std::string filename, std::string output_prefix, float zscale){

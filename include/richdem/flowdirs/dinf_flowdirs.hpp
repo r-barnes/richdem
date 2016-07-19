@@ -1,7 +1,7 @@
 #ifndef _richdem_dinf_flowdirs_hpp_
 #define _richdem_dinf_flowdirs_hpp_
 
-#include "../common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 #define dinf_NO_DATA 113
 

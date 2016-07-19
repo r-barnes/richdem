@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_set>
-#include "../libs/common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 #define NO_FLOW          0 //TODO: Explain and ensure it fits in flowdir_t
 

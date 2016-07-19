@@ -1,6 +1,6 @@
-#include "../common/interface.hpp"
-#include "../common/Array2D.hpp"
-#include "priority_flood.hpp"
+#include "richdem/common/interface.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/depressions/priority_flood.hpp"
 #include <string>
 #include <iostream>
 #include <cstdint>

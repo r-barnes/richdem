@@ -11,7 +11,7 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <unordered_set> //For printStamp
-#include "constants.hpp"
+#include "richdem/common/constants.hpp"
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
