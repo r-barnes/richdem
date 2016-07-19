@@ -112,8 +112,8 @@ int main(int argc, char **argv){
     if(miny<0)
       throw std::invalid_argument("MinY must be >=0!");
   } catch (const std::invalid_argument &ia){
-    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Center X> <Center Y> <Radius>"<<std::endl;
-    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Min X> <Max X> <Min Y> <Max Y>"<<std::endl;
+    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Inputfile> <Center X> <Center Y> <Radius>"<<std::endl;
+    std::cerr<<argv[0]<<" [--flipV] [--flipH] <Inputfile> <Min X> <Max X> <Min Y> <Max Y>"<<std::endl;
 
     std::cerr<<"###Error: "<<ia.what()<<std::endl;
 
