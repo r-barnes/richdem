@@ -22,8 +22,11 @@ do
   for i in `ls tests/dev/*d8 | sed 's/.*\///'`;
   do
     echo "Performing Test '$i' with $((p + 1)) processors"
-    mpirun -n $((p + 1)) ./parallel_d8_accum.exe one @evict "tests/dev/$i" /z/out-%n.tif -w 5 -h 5 &> "/z/test_output$i.log"
-    ./assemble_ascii.exe /z/out-%n.tif 1 1 > /z/out-combined
+    rm -f /z/tout-*.tif
+    mpirun -n $((p + 1)) ./parallel_d8_accum.exe one @evict "tests/dev/$i" /z/tout-%n.tif -w 5 -h 5 &> "/z/test_output$i.log"
+    width=`ls /z/tout-*tif | sed 's/.*-//' | sed 's/_.*//' | sort -k1 -n | tail -1`
+    height=`ls /z/tout-*tif | sed 's/.*_//' | sed 's/\..*//' | sort -k1 -n | tail -1`
+    ./assemble_ascii.exe /z/tout-%n.tif "$width" "$height" > /z/out-combined
     name=$(echo ${i} | cut -f 1 -d '.')
     if [ -a tests/dev/${name}.out ]
     then
