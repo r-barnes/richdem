@@ -1,8 +1,8 @@
 #ifndef _richdem_d8_methods_hpp_
 #define _richdem_d8_methods_hpp_
 
-#include "../common/Array2D.hpp"
-#include "../common/constants.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/constants.hpp"
 
 /// Used with #d8_terrain_attribute to get an ill-defined curvature thing
 /// (TODO)

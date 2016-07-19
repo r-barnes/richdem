@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_map>
-#include "../libs/common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 template<class T>
 int PerformAlgorithm(std::string filename){

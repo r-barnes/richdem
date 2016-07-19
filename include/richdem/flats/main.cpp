@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
-#include "../common/Array2D.hpp"
-#include "flat_resolution.hpp"
-#include "garbrecht.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/flats/flat_resolution.hpp"
+#include "richdem/flats/garbrecht.hpp"
 
 template<class T>
 int PerformAlgorithm(std::string alg, std::string filename, std::string output){

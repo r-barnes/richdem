@@ -1,8 +1,8 @@
 #ifndef pit_fill_include
 #define pit_fill_include
-#include "../common/Array2D.hpp"
-#include "../common/grid_cell.hpp"
-#include "../flowdirs/d8_flowdirs.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/grid_cell.hpp"
+#include "richdem/flowdirs/d8_flowdirs.hpp"
 #include <queue>
 #include <limits>
 #include <iostream>

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "../libs/common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 template<class T>
 void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flipV, bool flipH){

@@ -1,8 +1,8 @@
 #ifndef _richdem_flat_resolution_dinf_hpp_
 #define _richdem_flat_resolution_dinf_hpp_
 
-#include "flat_resolution.hpp"
-#include "../flowdirs/dinf_flowdirs.hpp"
+#include "richdem/flats/flat_resolution.hpp"
+#include "richdem/flowdirs/dinf_flowdirs.hpp"
 
 static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
 

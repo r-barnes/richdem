@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "../libs/common/Array2D.hpp"
+#include "richdem/common/Array2D.hpp"
 
 template<class T>
 int PerformAlgorithm(std::string filename, std::string flip){

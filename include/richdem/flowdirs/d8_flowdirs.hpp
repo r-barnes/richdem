@@ -1,8 +1,8 @@
 #ifndef _richdem_d8_flowdirs_hpp_
 #define _richdem_d8_flowdirs_hpp_
 
-#include "../common/Array2D.hpp"
-#include "../common/interface.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/interface.hpp"
 
 /**
   @brief  Calculates the D8 flow direction of a cell

@@ -10,9 +10,9 @@
 #ifndef _flat_resolution_included
 #define _flat_resolution_included
 
-#include "../common/interface.hpp"
-#include "../common/grid_cell.hpp"
-#include "../flowdirs/d8_flowdirs.hpp"
+#include "richdem/common/interface.hpp"
+#include "richdem/common/grid_cell.hpp"
+#include "richdem/flowdirs/d8_flowdirs.hpp"
 #include <deque>
 #include <vector>
 #include <queue>
