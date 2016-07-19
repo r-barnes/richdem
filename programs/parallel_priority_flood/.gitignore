@@ -1,0 +1,9 @@
+a.out
+*.exe
+tests/*/*.out
+out
+temp
+cereal/
+*.ipm.xml
+*.mpiP
+libmpiP.so
