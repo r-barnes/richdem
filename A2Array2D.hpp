@@ -382,11 +382,11 @@ class A2Array2D {
   //   return data[tile_y][tile_x](x,y);
   // }
 
-  int64_t width() const {
+  int32_t width() const {
     return total_width_in_cells;
   }
 
-  int64_t height() const {
+  int32_t height() const {
     return total_height_in_cells;
   }
 
@@ -398,7 +398,7 @@ class A2Array2D {
     return data.size();
   }
 
-  int64_t tileWidth(int32_t tx, int32_t ty) const {
+  int32_t tileWidth(int32_t tx, int32_t ty) const {
     assert(tx>=0);
     assert(ty>=0);
     assert(tx<(int32_t)data[0].size());
@@ -406,7 +406,7 @@ class A2Array2D {
     return data[ty][tx].width();
   }
 
-  int64_t tileHeight(int32_t tx, int32_t ty) const {
+  int32_t tileHeight(int32_t tx, int32_t ty) const {
     assert(tx>=0);
     assert(ty>=0);
     assert(tx<widthInTiles());
@@ -414,11 +414,11 @@ class A2Array2D {
     return data[ty][tx].height();
   }
 
-  int64_t stdTileHeight() const {
+  int32_t stdTileHeight() const {
     return per_tile_height;
   }
 
-  int64_t stdTileWidth() const {
+  int32_t stdTileWidth() const {
     return per_tile_width;
   }
 
