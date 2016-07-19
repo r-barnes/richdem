@@ -880,16 +880,15 @@ class ProducerSpecifics {
     std::cerr<<"Calculating dependencies..."<<std::endl;
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
-      auto &this_chunk = chunks.at(y).at(x);
-      if(this_chunk.nullChunk)
+      if(chunks.at(y).at(x).nullChunk)
         continue;
 
-      auto &this_job = jobs1.at(y).at(x);
-
-      for(int s=0;s<(int)this_job.flowdirs.size();s++){
-        int ns  = -1; //Initial values designed to cause devastation if misused
-        int gnx = -1;
-        int gny = -1;
+      const int flowdir_size = jobs1.at(y).at(x).flowdirs.size()
+      for(int s=0;s<flowdir_size;s++){
+        //Using -1 will hopefully cause problems if these variables are misused
+        int ns  = -1; //Next cell in a tile, using a serialized coordinate
+        int gnx = -1; //Next tile, x-coordinate
+        int gny = -1; //Next tile, y-coordinate
         DownstreamCell(jobs1, chunks, x, y, s, ns, gnx, gny);
         if(ns==-1 || chunks.at(gny).at(gnx).nullChunk) 
           continue;
@@ -907,15 +906,21 @@ class ProducerSpecifics {
       }
     #endif
 
+    //Used for storing the coordinates of cells in this perimeter representation
+    //of the grid
     class atype {
      public:
-      int gx,gy,s;
+      int gx; //X-coordinate of tile
+      int gy; //Y-coordinate of tile
+      int s;  //Serialized coordinate of cell's position on the tile's perimeter
       atype(int gx, int gy, int s) : gx(gx), gy(gy), s(s) {};
     };
 
+    //Queue of cells which are known to have no dependencies
     std::queue<atype> q;
 
-    //Search for cells without dependencies
+    //Search for cells without dependencies, these will constitute the set from
+    //which we will begin push accumulation to downstream cells
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
       if(chunks[y][x].nullChunk)
@@ -940,8 +945,8 @@ class ProducerSpecifics {
 
     int processed_peaks = 0;
     while(!q.empty()){
-      atype      c  = q.front();
-      Job1<T>   &j  = jobs1.at(c.gy).at(c.gx);
+      atype    c  = q.front();
+      Job1<T> &j  = jobs1.at(c.gy).at(c.gx);
       q.pop();
       processed_peaks++;
 
