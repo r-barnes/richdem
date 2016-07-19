@@ -1,9 +1,9 @@
 #ifndef __distpdf_zhou2015pf_hp__
 #define __distpdf_zhou2015pf_hp__
 
-#include "Array2D.hpp"
-#include "constants.hpp"
-#include "grid_cell.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/constants.hpp"
+#include "richdem/common/grid_cell.hpp"
 #include <queue>
 #include <vector>
 #include <map>

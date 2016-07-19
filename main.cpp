@@ -7,13 +7,13 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
-#include "Layoutfile.hpp"
-#include "communication.hpp"
-#include "memory.hpp"
-#include "timer.hpp"
+#include "richdem/common/Layoutfile.hpp"
+#include "richdem/common/communication.hpp"
+#include "richdem/common/memory.hpp"
+#include "richdem/common/timer.hpp"
+#include "richdem/common/Array2D.hpp"
+#include "richdem/common/grid_cell.hpp"
 #include "Zhou2015pf.hpp"
-#include "Array2D.hpp"
-#include "grid_cell.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
 const char* program_version = "14";
