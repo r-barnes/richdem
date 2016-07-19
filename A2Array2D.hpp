@@ -476,6 +476,11 @@ class A2Array2D {
     return readonly;
   }
 
+  ///Returns the GDAL data type of the A2Array2D template type
+  GDALDataType myGDALType() const {
+    return NativeTypeToGDAL<T>();
+  }
+
   //TODO: Use of checkval here is kinda gross. Is there a good way to get rid of
   //it?
   void saveGDAL(std::string outputname_template) {
@@ -523,6 +528,55 @@ class A2Array2D {
 
     std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
     std::cerr<<"Found "<<unvisited_count<<" cells that were unvisited."<<std::endl;
+  }
+
+  void saveUnifiedGDAL(const std::string outputname){
+    GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    if(poDriver==NULL){
+      std::cerr<<"Could not open GDAL driver!"<<std::endl;
+      throw std::runtime_error("Could not open GDAL driver!");
+    }
+    GDALDataset *fout    = poDriver->Create(outputname.c_str(), width(), height(), 1, myGDALType(), NULL);
+    if(fout==NULL){
+      std::cerr<<"Could not open file '"<<outputname<<"' for GDAL save!"<<std::endl;
+      throw std::runtime_error("Could not open file for GDAL save!");
+    }
+
+    auto no_data = data[0][0].noData();
+    for(int32_t ty=0;ty<heightInTiles();ty++)
+    for(int32_t tx=0;tx<widthInTiles();tx++)
+      if(data[ty][tx].noData()!=no_data)
+        throw std::runtime_error("Files had differing NoData values :-(");
+
+    auto out_geotransform = data[0][0].geotransform;
+
+    if(out_geotransform.size()!=6){
+      std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
+      throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+    }
+
+    fout->SetGeoTransform(out_geotransform.data());
+    fout->SetProjection(data[0][0].projection.c_str());
+
+    GDALRasterBand *oband = fout->GetRasterBand(1);
+    oband->SetNoDataValue(no_data);
+    oband->Fill(no_data);
+
+    for(int32_t ty=0;ty<heightInTiles();ty++)
+    for(int32_t tx=0;tx<widthInTiles();tx++){
+      auto& tile = data[ty][tx];
+
+      if(tile.null_tile)
+        continue;
+
+      LoadTile(tx,ty);
+
+      auto temp = oband->RasterIO(GF_Write, tx*stdTileWidth(), ty*stdTileHeight(), tileWidth(tx,ty), tileHeight(tx,ty), data[ty][tx].getData(), tileWidth(tx,ty), tileHeight(tx,ty), myGDALType(), 0, 0);
+      if(temp!=CE_None)
+        std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
+    }
+
+    GDALClose(fout);
   }
 
   void setNoData(const T &ndval){
