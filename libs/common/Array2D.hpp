@@ -423,6 +423,9 @@ class Array2D {
     }
   }
 
+  ///Returns a reference to the internal data array
+  T* getData() { return data.data(); }
+
   ///Number of cells in the DEM
   int64_t size() const { return (int64_t)view_width*(int64_t)view_height; }
 
