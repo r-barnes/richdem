@@ -3,7 +3,7 @@ export CXX=g++
 export MPICXX=mpic++
 export GDAL_LIBS=`gdal-config --libs`
 export GDAL_CFLAGS=`gdal-config --cflags`
-export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -Irichdem/include -I. -Wall -Wno-unknown-pragmas
+export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -I../../include -I. -Wall -Wno-unknown-pragmas
 export OPT_FLAGS=-g -O3 -DNDEBUG
 export DEBUG_FLAGS=-g
 export COMPRESSION_LIBS=-lboost_iostreams -lz
