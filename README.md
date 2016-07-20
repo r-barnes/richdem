@@ -50,6 +50,8 @@ Publications
 ============
 The algorithms used in RichDEM have been published in the following articles:
 
+* Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences. doi:[10.1016/j.cageo.2016.07.001](http://dx.doi.org/10.1016/j.cageo.2016.07.001)
+
 * Barnes, Lehman, Mulla. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
 
 * Barnes, Lehman, Mulla. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
