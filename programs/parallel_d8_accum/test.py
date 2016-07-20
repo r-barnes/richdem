@@ -84,10 +84,9 @@ def FillAndTest(
 
   nodata, dtype = FileInfo(outfiles[0])
 
-  output, err = doRaw("""gdal_merge.py -o temp/manycore_merged.tif -of GTiff -ot {dtype} -n {nodata} -a_nodata {nodata} {outfiles}""".format(
-              dtype    = dtype,
-              nodata   = nodata,
-              outfiles = ' '.join(outfiles)
+  output, err = doRaw("""./merge_rasters_by_layout.exe {layoutfile} 30 {outputfile} noflip""".format(
+              layoutfile = 'temp/manycore-layout.layout',
+              outputfile = 'temp/manycore_merged.tif'
       ))
   if err!=0:
     print("\033[91mError in merge!\033[39m".format(strat=strat,manyone=many_or_one,width=width,height=height))
@@ -143,7 +142,7 @@ def main():
   VERBOSE = args.verbose
 
 
-  if not os.path.exists('richdem/apps/flow_accumulation.exe'):
+  if not os.path.exists('../../apps/rd_flow_accumulation.exe'):
     print("The RichDEM flow accumulation app is missing!")
     sys.exit(-1)
     
@@ -171,12 +170,9 @@ def main():
       nodata, dtype = FileInfo(filetiles[0])
 
       #Merge all of the file tiles together using GDAL
-      output,err = doRaw("""gdal_merge.py -o temp/merged.tif -of GTiff \\
-                             -ot {dtype} -n {nodata} -a_nodata {nodata} \\
-                             {filetiles}""".format(
-                              dtype     = dtype,
-                              nodata    = nodata,
-                              filetiles = ' '.join(filetiles)))
+      output,err = doRaw("""./merge_rasters_by_layout.exe {layoutfile} 30 {outputfile} noflip""".format(
+                            layoutfile = args.inputfile,
+                            outputfile  = 'temp/merged.tif'))
       if err!=0:
         print('Error merging!')
         sys.exit(-1)
@@ -189,7 +185,7 @@ def main():
   print('Generating authoritative answer')
   if not os.path.exists('temp/auth.tif'):
     start_auth_gen = time.time()
-    output,err     = doRaw('./richdem/apps/flow_accumulation.exe {file} temp/auth.tif'.format(file=auth_input))
+    output,err     = doRaw('../../apps/rd_flow_accumulation.exe {file} temp/auth.tif noflip'.format(file=auth_input))
     stop_auth_gen  = time.time()
     if err!=0:
       print('Error generating authoritative answer!')

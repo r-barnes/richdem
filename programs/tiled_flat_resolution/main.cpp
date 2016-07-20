@@ -11,58 +11,8 @@
 #include <stdexcept>
 
 typedef uint8_t flowdirs_t;
-typedef int8_t  visited_t;
 
 const flowdirs_t UNVISITED = 13;
-
-const int fwidth=10;
-
-template<class T>
-void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius, int alsox, int alsoy){
-  int minx  = std::max(xcen-radius,0);
-  int maxx  = std::min(xcen+radius,(int)(arr.width()-1));
-  int miny  = std::max(ycen-radius,0);
-  int maxy  = std::min(ycen+radius,(int)(arr.height()-1));
-  std::cout<<std::setw(fwidth)<<" ";
-  for(int x=minx;x<=maxx;x++)
-    std::cout<<std::setw(fwidth)<<x;
-  std::cout<<std::endl;
-
-  for(int y=miny;y<=maxy;y++){
-    std::cout<<std::setw(fwidth)<<y;
-    for(int x=minx;x<=maxx;x++){
-      if(xcen==x && ycen==y)
-        std::cout<<"\033[93m";
-      if(alsox==x && alsoy==y)
-        std::cout<<"\033[92m";
-
-      if(NativeTypeToGDAL<T>()==GDT_Byte)
-        std::cout<<std::setw(10)<<(int)arr(x,y);
-      else
-        std::cout<<std::setw(10)<<arr(x,y);
-
-      if(xcen==x && ycen==y)
-        std::cout<<"\033[39m";
-      if(alsox==x && alsoy==y)
-        std::cout<<"\033[39m";
-    }
-    std::cout<<std::endl;
-  }
-}
-
-template<class T>
-void print2D(A2Array2D<T> &arr, int hx=1, int hy=-1){
-  for(int y=0;y<arr.height();y++){
-    for(int x=0;x<arr.width();x++){
-      if(hx==x && hy==y)
-        std::cout<<"\033[93m";
-      std::cerr<<std::setw(3)<<(int)arr(x,y)<<" ";
-      if(hx==x && hy==y)
-        std::cout<<"\033[39m";
-    }
-    std::cerr<<std::endl;
-  }
-}
 
 template<class T>
 void ProcessFlat(
@@ -135,7 +85,6 @@ static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
   else
     std::cerr<<"Should never reach this point!"<<std::endl;
   throw std::runtime_error("Requested edge direction not on an edge!");
-  return -199;
 }
 
 

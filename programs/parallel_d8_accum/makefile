@@ -32,6 +32,9 @@ debug: main.cpp
 assemble_ascii:
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o assemble_ascii.exe assemble_ascii.cpp $(GDAL_LIBS)
 
+merge_rasters_by_layout:
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o merge_rasters_by_layout.exe merge_rasters_by_layout.cpp $(GDAL_LIBS)
+
 test:
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o test.exe test.cpp $(GDAL_LIBS)
 
