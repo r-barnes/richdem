@@ -174,19 +174,14 @@ class A2Array2D {
       per_tile_height = std::max(per_tile_height,this_tile.height());
       per_tile_width  = std::max(per_tile_width, this_tile.width() );
 
-      if(lf.getY()==0)
-        total_width_in_cells += this_tile.width();
-      if(lf.getX()==0)
-        total_height_in_cells += this_tile.height();
-
       cells_in_not_null_tiles += per_tile_width*per_tile_height;
 
       this_tile.basename = lf.getBasename();
     }
 
     bool good=true;
-    for(int32_t y=0;y<heightInTiles()-1;y++)
-    for(int32_t x=0;x<widthInTiles()-1;x++){
+    for(int32_t y=0;y<heightInTiles();y++)
+    for(int32_t x=0;x<widthInTiles();x++){
       if(data[y][x].null_tile)
         continue;
       if(data[y][x].width()!=per_tile_width){
@@ -198,6 +193,9 @@ class A2Array2D {
         good = false;
       }
     }
+
+    total_width_in_cells  = widthInTiles()*stdTileWidth();
+    total_height_in_cells = heightInTiles()*stdTileHeight();
 
     if(!good){
       throw std::runtime_error("Not all tiles had the same dimensions!");
