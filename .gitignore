@@ -1,4 +1,2 @@
 *.exe
 doc/
-obj/
-test.cpp
