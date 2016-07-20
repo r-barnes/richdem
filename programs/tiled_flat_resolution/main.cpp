@@ -85,7 +85,6 @@ static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
   else
     std::cerr<<"Should never reach this point!"<<std::endl;
   throw std::runtime_error("Requested edge direction not on an edge!");
-  return -199;
 }
 
 
