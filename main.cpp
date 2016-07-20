@@ -965,7 +965,7 @@ class ProducerSpecifics {
       auto &this_job = jobs1.at(y).at(x);
 
       for(link_t s=0;s<this_job.dependencies.size();s++){
-        if(this_job.dependencies.at(s)==0){ // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
+        if(this_job.dependencies.at(s)==0) // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
           q.emplace(x,y,s);
 
         //Accumulated flow at an input will be transfered to an output resulting
