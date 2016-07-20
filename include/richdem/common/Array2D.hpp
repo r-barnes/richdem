@@ -92,7 +92,10 @@ void getGDALDimensions(
 ){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
+  if(fin!=NULL){
+    std::cerr<<"Could not open file '"<<filename<<"' to get dimensions."<<std::endl;
+    throw std::runtime_error("Could not open file got get dimensions");
+  }
 
   GDALRasterBand *band = fin->GetRasterBand(1);
   
