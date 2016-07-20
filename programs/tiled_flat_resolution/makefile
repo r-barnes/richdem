@@ -1,30 +1,32 @@
 export CXX=g++
 export GDAL_LIBS=`gdal-config --libs`
 export GDAL_CFLAGS=`gdal-config --cflags`
-export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -O3 -Wall -Wno-unknown-pragmas -I../../include -I.
+export OPT_FLAGS=-g -O3
+export DEBUG_FLAGS=-g
+export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -Wall -Wno-unknown-pragmas -I../../include -I.
 
 #-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
 
 compile: main.cpp
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 main.cpp $(GDAL_LIBS)  
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -g -O3 main.cpp $(GDAL_LIBS)  
 
 compile_with_compression:
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz
 
 xsede_with_compression:
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
 
 xsede_debug_with_compression:
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -g -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
 
 debug: main.cpp
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g main.cpp $(GDAL_LIBS) 
+	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o parallel_flats.exe -g main.cpp $(GDAL_LIBS) 
 
 same_flowdirs: same_flowdirs.cpp
-	$(CXX) $(CXXFLAGS) -o same_flowdirs.exe -g same_flowdirs.cpp $(GDAL_LIBS) 
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o same_flowdirs.exe -g same_flowdirs.cpp $(GDAL_LIBS) 
 
 merge_rasters_by_layout: merge_rasters_by_layout.cpp
-	$(CXX) $(CXXFLAGS) -o merge_rasters_by_layout.exe -g merge_rasters_by_layout.cpp $(GDAL_LIBS) 
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o merge_rasters_by_layout.exe -g merge_rasters_by_layout.cpp $(GDAL_LIBS) 
 
 clean:
 	rm -f output* parallel_flats.exe
