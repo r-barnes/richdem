@@ -979,12 +979,12 @@ class ProducerSpecifics {
 
     std::cerr<<q.size()<<" peaks found in aggregated problem."<<std::endl;
 
-    int processed_peaks = 0;
+    int processed_cells = 0;
     while(!q.empty()){
       atype    c  = q.front();
       Job1<T> &j  = jobs1.at(c.gy).at(c.gx);
       q.pop();
-      processed_peaks++;
+      processed_cells++;
 
       //TODO: Cut
       ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
@@ -1009,7 +1009,7 @@ class ProducerSpecifics {
       assert(jobs1.at(gny).at(gnx).dependencies.at(ns)!=(p_dependency_t)-1); 
     }
 
-    std::cerr<<processed_peaks<<" peaks processed."<<std::endl;
+    std::cerr<<processed_cells<<" perimeter cells processed."<<std::endl;
 
     //TODO: Remove this block as this should always be zero once I have things
     //right.
