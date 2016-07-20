@@ -143,7 +143,7 @@ def main():
   VERBOSE = args.verbose
 
 
-  if not os.path.exists('richdem/apps/flow_accumulation.exe'):
+  if not os.path.exists('../../apps/rd_flow_accumulation.exe'):
     print("The RichDEM flow accumulation app is missing!")
     sys.exit(-1)
     
@@ -189,7 +189,7 @@ def main():
   print('Generating authoritative answer')
   if not os.path.exists('temp/auth.tif'):
     start_auth_gen = time.time()
-    output,err     = doRaw('./richdem/apps/flow_accumulation.exe {file} temp/auth.tif'.format(file=auth_input))
+    output,err     = doRaw('../../apps/rd_flow_accumulation.exe {file} temp/auth.tif noflip'.format(file=auth_input))
     stop_auth_gen  = time.time()
     if err!=0:
       print('Error generating authoritative answer!')
