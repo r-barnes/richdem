@@ -6,7 +6,7 @@ export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -O3 -Wall -Wno-unknown-pragmas -I../.
 #-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
 
 compile: main.cpp
-	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 -DSHOW_STAMPS main.cpp $(GDAL_LIBS)  
+	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 main.cpp $(GDAL_LIBS)  
 
 compile_with_compression:
 	$(CXX) $(CXXFLAGS) -o parallel_flats.exe -g -O3 -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz
