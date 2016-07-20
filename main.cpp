@@ -23,7 +23,6 @@ const char* program_version = "1";
 //at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
 //this is, after all, for use with large datasets.
 #include <cstdint>
-//#define DEBUG 1
 
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
@@ -256,58 +255,6 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 }
 
 
-//TODO: Remove
-template<class T>
-void print2d(const Array2D<T> &arr){
-  for(int32_t y=0;y<arr.height();y++){
-    for(int32_t x=0;x<arr.width();x++)
-      std::cerr<<std::setw(5)<<(int)arr(x,y);
-    std::cerr<<std::endl;
-  }
-}
-
-//TODO: Remove
-// template<class T>
-// void print2dradius(const Array2D<T> &arr, int xcen, int ycen, int radius){
-//   int minx  = std::max(xcen-radius,0);
-//   int maxx  = std::min(xcen+radius,arr.width()-1);
-//   int miny  = std::max(ycen-radius,0);
-//   int maxy  = std::min(ycen+radius,arr.height()-1);
-//   for(int y=ymin;y<=ymax;y++){
-//     for(int x=xmin;x<=xmax;x++)
-//       std::cerr<<std::setw(5)<<(int)arr(x,y);
-//     std::cerr<<std::endl;
-//   }
-// }
-
-//TODO: Remove
-template<class T>
-void print1d(const std::vector<T> &v){
-  for(int x=0;x<(int)v.size();x++)
-    std::cerr<<std::setw(5)<<(int)v[x];
-  std::cerr<<std::endl;
-}
-
-//TODO: Remove
-template<class T>
-void print1das2d(const std::vector<T> &v, const int width, const int height){
-  for(int y=0;y<height;y++){
-    for(int x=0;x<width;x++){
-      if(! (x==0 || y==0 || x==width-1 || y==height-1))
-        std::cerr<<std::setw(5)<<" ";
-      else
-        std::cerr<<std::setw(5)<<(int)v.at(xyToSerial(x,y,width,height));
-    }
-    std::cerr<<std::endl;
-  }
-}
-
-
-
-
-
-
-
 
 
 
@@ -359,10 +306,6 @@ class ConsumerSpecifics {
 
     int x0y0serial = xyToSerial(x0,y0,flowdirs.width(),flowdirs.height());
 
-    #ifdef DEBUG
-      std::cerr<<std::endl<<"FP: "<<chunk.gridx<<","<<chunk.gridy<<": ("<<x0<<","<<y0<<")";
-    #endif
-
     const int max_path_length = flowdirs.width()*flowdirs.height(); //TODO: Should this have +1?
 
     //Follow the flow path until it terminates
@@ -385,10 +328,6 @@ class ConsumerSpecifics {
       //Flow direction was valid. Where does it lead?
       const int nx = x+dx[n]; //Get neighbour's x-coordinate.
       const int ny = y+dy[n]; //Get neighbour's y-coordinate.
-
-      #ifdef DEBUG
-        std::cerr<<" -- ("<<nx<<","<<ny<<")";
-      #endif
 
       //The neighbour cell is off one of the sides of the tile. Therefore, its
       //flow may be passed on to a neighbouring tile. Thus, we need to link this
@@ -586,13 +525,6 @@ class ConsumerSpecifics {
       throw std::runtime_error("Unexpected height.");
     }
 
-    std::cerr<<"Loading with width="<<chunk.width<<", height="<<chunk.height<<std::endl;
-
-    #ifdef DEBUG
-     std::cerr<<"Flowdirs raw: "<<std::endl;
-     print2d(flowdirs);
-    #endif
-
     flowdirs.printStamp(5,"LoadFromEvict() before reorientation");
 
     if(chunk.flip & FLIP_VERT)
@@ -606,11 +538,6 @@ class ConsumerSpecifics {
     timer_calc.start();
     FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
-
-    #ifdef DEBUG
-      std::cerr<<"Accum first: "<<std::endl;
-      print2d(accum);
-    #endif
   }
 
   void VerifyInputSanity(){
@@ -663,37 +590,6 @@ class ConsumerSpecifics {
     GridPerimToArray(flowdirs, job1.flowdirs);
     GridPerimToArray(accum,    job1.accum   );
     timer_calc.stop();
-
-    #ifdef DEBUG
-      std::cerr<<job1.gridx<<","<<job1.gridy<<" Links: ";
-      for(auto const x: job1.links)
-        std::cerr<<x<<" ";
-      std::cerr<<std::endl;
-
-      std::cerr<<job1.gridx<<","<<job1.gridy<<" Flowdirs: ";
-      for(auto const x: job1.flowdirs)
-        std::cerr<<x<<" ";
-      std::cerr<<std::endl;
-
-      std::cerr<<job1.gridx<<","<<job1.gridy<<" Accum: ";
-      for(auto const x: job1.accum)
-        std::cerr<<x<<" ";
-      std::cerr<<std::endl;
-    #endif
-
-    //TODO: Remove
-    #ifdef DEBUG
-      std::cerr<<"Flowdirs: "<<std::endl;
-      print2d(flowdirs);
-      std::cerr<<"Accum: "<<std::endl;
-      print2d(accum);
-      std::cerr<<"Flowdirs Perim: "<<std::endl;
-      print1d(job1.flowdirs);
-      std::cerr<<"Accum perim: "<<std::endl;
-      print1das2d(job1.accum,flowdirs.width(),flowdirs.height());
-      std::cerr<<"Links: "<<std::endl;
-      print1das2d(job1.links,flowdirs.width(),flowdirs.height());
-    #endif
   }
 
   void SecondRound(const ChunkInfo &chunk, Job2<T> &job2){
@@ -704,17 +600,6 @@ class ConsumerSpecifics {
 
     auto &accum_offset = job2;
 
-    #ifdef DEBUG
-      std::cerr<<"Received increments: "<<std::endl;
-      print1das2d(accum_offset,flowdirs.width(),flowdirs.height());
-
-      std::cerr<<"Accumulation"<<std::endl;
-      print2d(accum);
-
-      std::cerr<<"Adjusted accumulation"<<std::endl;
-      print2d(accum);
-    #endif
-
     for(int s=0;s<(int)accum_offset.size();s++){
       if(accum_offset.at(s)==0)
         continue;
@@ -722,12 +607,6 @@ class ConsumerSpecifics {
       serialToXY(s, x, y, accum.width(), accum.height());
       FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
-
-    //TODO: Remove
-    #ifdef DEBUG
-      std::cerr<<"Final accumulation"<<std::endl;
-      print2d(accum);
-    #endif
 
     //At this point we're done with the calculation! Boo-yeah!
 
@@ -872,14 +751,6 @@ class ProducerSpecifics {
       //Serialize the coordinates
       ns = xyToSerial(nx,ny,nc.width,nc.height);
 
-      #ifdef DEBUG
-        //Ensure that the serialization is valid
-        if(ns>=(int)jobs.at(gny).at(gnx).flowdirs.size()){
-          std::cerr<<nx<<" "<<ny<<" "<<nc.width<<" "<<nc.height<<std::endl;
-          std::cerr<<ns<<std::endl;
-          std::cerr<<(int)jobs.at(gny).at(gnx).flowdirs.size()<<std::endl;
-        }
-      #endif
       assert(ns<(int)jobs.at(gny).at(gnx).flowdirs.size());
     } else {
       //Flow goes to somewhere else on the perimeter of the same tile
@@ -893,18 +764,6 @@ class ProducerSpecifics {
   ){
     const int gridheight = chunks.size();
     const int gridwidth  = chunks[0].size();
-
-    #ifdef DEBUG
-      std::cerr<<std::endl;
-      std::cerr<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"======PRODUCER==========="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<std::endl;
-      std::cerr<<std::endl;
-    #endif
 
     //Set initial values for all dependencies to zero
     for(auto &row: jobs1)
@@ -932,15 +791,6 @@ class ProducerSpecifics {
         jobs1.at(gny).at(gnx).dependencies.at(ns)++;
       }
     }
-
-    //TODO: Remove
-    #ifdef DEBUG
-      for(int y=0;y<gridheight;y++)
-      for(int x=0;x<gridwidth;x++){
-        std::cerr<<"Dependencies of chunk ("<<x<<","<<y<<")"<<std::endl;
-        print1das2d(jobs1.at(y).at(x).dependencies,chunks.at(y).at(x).width,chunks.at(y).at(x).height);
-      }
-    #endif
 
     //Used for storing the coordinates of cells in this perimeter representation
     //of the grid
@@ -1011,30 +861,7 @@ class ProducerSpecifics {
 
     std::cerr<<processed_cells<<" perimeter cells processed."<<std::endl;
 
-    //TODO: Remove this block as this should always be zero once I have things
-    //right.
-    #ifdef DEBUG
-      int unprocessed_dependencies=0;
-      for(int y=0;y<gridheight;y++)
-      for(int x=0;x<gridwidth;x++)
-      for(link_t s=0;s<jobs1[y][x].dependencies.size();s++)
-        unprocessed_dependencies+=jobs1[y][x].dependencies[s];
-      std::cerr<<unprocessed_dependencies<<" unprocessed dependencies."<<std::endl;
-    #endif
-
     job2s_to_dist = std::move(jobs1);
-
-    #ifdef DEBUG
-      std::cerr<<std::endl;
-      std::cerr<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"==========DONE==========="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<"========================="<<std::endl;
-      std::cerr<<std::endl;
-      std::cerr<<std::endl;
-    #endif
   }
 
   Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
