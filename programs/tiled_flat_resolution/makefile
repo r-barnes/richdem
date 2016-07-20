@@ -1,7 +1,7 @@
 export CXX=g++
 export GDAL_LIBS=`gdal-config --libs`
 export GDAL_CFLAGS=`gdal-config --cflags`
-export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -O3 -Wall -Wno-unknown-pragmas -Irichdem/include -I.
+export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -O3 -Wall -Wno-unknown-pragmas -I../../include -I.
 
 #-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
 
