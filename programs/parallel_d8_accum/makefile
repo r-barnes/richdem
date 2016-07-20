@@ -2,7 +2,7 @@ export CXX=g++
 export MPICXX=mpic++
 export GDAL_LIBS=`gdal-config --libs`
 export GDAL_CFLAGS=`gdal-config --cflags`
-export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -Irichdem/include -I. -Wall -Wno-unknown-pragmas
+export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -I../../include -I. -Wall -Wno-unknown-pragmas
 export OPT_FLAGS=-O3
 export DEBUG_FLAGS=-g
 export COMPRESSION_LIBS=-lboost_iostreams -lz
@@ -31,6 +31,9 @@ debug: main.cpp
 
 assemble_ascii:
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o assemble_ascii.exe assemble_ascii.cpp $(GDAL_LIBS)
+
+merge_rasters_by_layout:
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o merge_rasters_by_layout.exe merge_rasters_by_layout.cpp $(GDAL_LIBS)
 
 test:
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o test.exe test.cpp $(GDAL_LIBS)
