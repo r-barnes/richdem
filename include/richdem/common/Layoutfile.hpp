@@ -68,9 +68,10 @@ class LayoutfileReader {
       gridy++;
       new_row = true;
 
-      if(row_width==-1)
-        gridx = -1;
-      else if(row_width!=gridx)
+      if(row_width==-1){
+        row_width = gridx;
+        gridx     = -1;
+      } else if(row_width!=gridx)
         throw std::runtime_error("Layout file's rows were not all of the same width!"); //TODO: Print out expected value
       else
         gridx = -1;
@@ -171,6 +172,7 @@ class LayoutfileWriter {
     gridx = 0;
   }
 
+  //Use filename="" to indicate a null tile
   void addEntry(std::string filename){
     //Get only the filename, not the path to it
     std::size_t last_slash = filename.find_last_of(SLASH_CHAR);
