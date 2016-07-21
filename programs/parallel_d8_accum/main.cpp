@@ -727,11 +727,20 @@ class ProducerSpecifics {
       //Ensure that the neighbouring tile is valid (TODO: nullChunk here?)
       //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
       if(gnx<0 || gny<0 || gnx==(int)jobs.front().size() || gny==(int)jobs.size()){
-        gnx=gny=ns=-1;
+        gnx = -1;
+        gny = -1;
+        ns  = FLOW_NO_DOWNSTREAM;
         return;
       }
 
       const auto &nc = chunks.at(gny).at(gnx);
+
+      if(nc.nullChunk){
+        gnx = -1;
+        gny = -1;
+        ns  = FLOW_NO_DOWNSTREAM;
+        return;
+      }
 
       //Now that we know the neighbouring tile, set the next-x and next-y
       //coordinates with reference to the bounds of that tile
