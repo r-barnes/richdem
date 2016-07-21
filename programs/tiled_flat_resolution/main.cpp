@@ -187,23 +187,29 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     }
   }
 
-  int no_flows = 0;
-  int loops    = 0;
-  for(int y=0;y<fds.height();y++)
-  for(int x=0;x<fds.width();x++){
-    auto my_n = fds(x,y);
-    if(my_n==NO_FLOW){
-      no_flows++;
-      continue;
-    }
+  // int no_flows = 0;
+  // int loops    = 0;
+  // for(int32_t ty=0;ty<dem.heightInTiles();ty++)
+  // for(int32_t tx=0;tx<dem.widthInTiles(); tx++)
+  // for(int py=0;py<dem.tileHeight(tx,ty);py++)
+  // for(int px=0;px<dem.tileWidth(tx,ty); px++){
 
-    int nx = x+dx[fds(x,y)];
-    int ny = y+dy[fds(x,y)];
-    if(fds.in_grid(nx,ny) && my_n==d8_inverse[fds(nx,ny)])
-      loops++;
-  }
-  std::cerr<<"Found "<<loops<<" loops."<<std::endl;
-  std::cerr<<"Found "<<no_flows<<" cells with no flow."<<std::endl;
+  //   const int y = ty*dem.stdTileHeight()+py;
+  //   const int x = tx*dem.stdTileWidth() +px;
+
+  //   auto my_fd = fds(tx,ty,px,py);
+  //   if(my_fd==NO_FLOW){
+  //     no_flows++;
+  //     continue;
+  //   }
+
+  //   int nx = x+dx[my_fd];
+  //   int ny = y+dy[my_fd];
+  //   if(fds.in_grid(nx,ny) && my_fd==d8_inverse[fds(nx,ny)])
+  //     loops++;
+  // }
+  // std::cerr<<"Found "<<loops<<" loops."<<std::endl;
+  // std::cerr<<"Found "<<no_flows<<" cells with no flow."<<std::endl;
 
   fds.printStamp(5); //TODO
 
