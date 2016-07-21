@@ -7,7 +7,6 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
-#include <csignal>
 #include "richdem/common/Layoutfile.hpp"
 #include "richdem/common/communication.hpp"
 #include "richdem/common/memory.hpp"
@@ -114,7 +113,7 @@ class ChunkInfo{
  public:
   uint8_t     edge;
   uint8_t     flip;
-  int32_t     x,y,width,height,gridx,gridy;
+  int32_t     x,y,gridx,gridy,width,height;
   bool        nullChunk;
   bool        many;
   std::string filename;
@@ -1187,6 +1186,7 @@ void Preparer(
 
       if(lf.isNullTile()){
         chunks.back().emplace_back();
+        lfout.addEntry(""); //Add a null tile to the output
         continue;
       }
 
