@@ -656,7 +656,7 @@ class ConsumerSpecifics {
     auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
     flowdirs   = std::move(temp.first);
     accum      = std::move(temp.second);
-    timer_io.start();
+    timer_io.stop();
   }
 };
 
