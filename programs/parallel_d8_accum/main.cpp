@@ -1163,7 +1163,8 @@ void Preparer(
 
   ChunkGrid chunks;
   std::string  filename;
-  GDALDataType file_type; //All chunks must have a common file_type
+  GDALDataType file_type;        //All chunks must have a common file_type
+  ChunkInfo *repchunk = nullptr; //Pointer to a representative chunk
 
   std::string output_layout_name = output_name;
   if(output_name.find("%f")!=std::string::npos){
@@ -1249,6 +1250,10 @@ void Preparer(
         chunk_height,
         true
       );
+
+      //Get a representative chunk, if we don't already have one
+      if(repchunk==nullptr)
+        repchunk = &chunks.back().back();
 
       lfout.addEntry(this_output_name);
 
@@ -1385,8 +1390,8 @@ void Preparer(
   overall.stop();
   std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
 
-  std::cerr<<"!Flip horizontal: "<<((chunks[0][0].flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
-  std::cerr<<"!Flip vertical:   "<<((chunks[0][0].flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip horizontal: "<<((repchunk->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip vertical:   "<<((repchunk->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
   std::cerr<<"!Input data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
