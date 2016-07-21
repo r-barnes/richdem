@@ -548,8 +548,6 @@ class ConsumerSpecifics {
   }
 
   void FirstRound(const ChunkInfo &chunk, Job1<T> &job1){
-    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
-
     //-2 removes duplicate cells on vertical edges which would otherwise
     //overlap horizontal edges
     links.resize(2*flowdirs.width()+2*(flowdirs.height()-2), FLOW_TERMINATES);
