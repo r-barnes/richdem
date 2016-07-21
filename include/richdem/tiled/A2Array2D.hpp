@@ -174,19 +174,14 @@ class A2Array2D {
       per_tile_height = std::max(per_tile_height,this_tile.height());
       per_tile_width  = std::max(per_tile_width, this_tile.width() );
 
-      if(lf.getY()==0)
-        total_width_in_cells += this_tile.width();
-      if(lf.getX()==0)
-        total_height_in_cells += this_tile.height();
-
       cells_in_not_null_tiles += per_tile_width*per_tile_height;
 
       this_tile.basename = lf.getBasename();
     }
 
     bool good=true;
-    for(int32_t y=0;y<heightInTiles()-1;y++)
-    for(int32_t x=0;x<widthInTiles()-1;x++){
+    for(int32_t y=0;y<heightInTiles();y++)
+    for(int32_t x=0;x<widthInTiles();x++){
       if(data[y][x].null_tile)
         continue;
       if(data[y][x].width()!=per_tile_width){
@@ -198,6 +193,9 @@ class A2Array2D {
         good = false;
       }
     }
+
+    total_width_in_cells  = widthInTiles()*stdTileWidth();
+    total_height_in_cells = heightInTiles()*stdTileHeight();
 
     if(!good){
       throw std::runtime_error("Not all tiles had the same dimensions!");
@@ -485,7 +483,6 @@ class A2Array2D {
   //it?
   void saveGDAL(std::string outputname_template) {
     int zero_count      = 0;
-    int unvisited_count = 0;
 
     auto new_layout_name = outputname_template;
     new_layout_name.replace(new_layout_name.find("%f"),2,"layout");
@@ -497,8 +494,10 @@ class A2Array2D {
       for(int32_t tx=0;tx<widthInTiles();tx++){
         auto& tile = data[ty][tx];
 
-        if(tile.null_tile)
+        if(tile.null_tile){
+          lfout.addEntry("");
           continue;
+        }
 
         //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
 
@@ -515,8 +514,7 @@ class A2Array2D {
 
         tile.printStamp(5,"Saving, after reorientation");
 
-        zero_count      += tile.countval(0);
-        unvisited_count += tile.countval(13);
+        zero_count += tile.countval(NO_FLOW);
 
         auto temp = outputname_template;
         temp.replace(temp.find("%f"),2,tile.basename);
@@ -527,7 +525,6 @@ class A2Array2D {
     }
 
     std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
-    std::cerr<<"Found "<<unvisited_count<<" cells that were unvisited."<<std::endl;
   }
 
   void saveUnifiedGDAL(const std::string outputname){

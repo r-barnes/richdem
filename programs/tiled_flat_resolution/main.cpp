@@ -11,58 +11,6 @@
 #include <stdexcept>
 
 typedef uint8_t flowdirs_t;
-typedef int8_t  visited_t;
-
-const flowdirs_t UNVISITED = 13;
-
-const int fwidth=10;
-
-template<class T>
-void print2dradius(A2Array2D<T> &arr, int xcen, int ycen, int radius, int alsox, int alsoy){
-  int minx  = std::max(xcen-radius,0);
-  int maxx  = std::min(xcen+radius,(int)(arr.width()-1));
-  int miny  = std::max(ycen-radius,0);
-  int maxy  = std::min(ycen+radius,(int)(arr.height()-1));
-  std::cout<<std::setw(fwidth)<<" ";
-  for(int x=minx;x<=maxx;x++)
-    std::cout<<std::setw(fwidth)<<x;
-  std::cout<<std::endl;
-
-  for(int y=miny;y<=maxy;y++){
-    std::cout<<std::setw(fwidth)<<y;
-    for(int x=minx;x<=maxx;x++){
-      if(xcen==x && ycen==y)
-        std::cout<<"\033[93m";
-      if(alsox==x && alsoy==y)
-        std::cout<<"\033[92m";
-
-      if(NativeTypeToGDAL<T>()==GDT_Byte)
-        std::cout<<std::setw(10)<<(int)arr(x,y);
-      else
-        std::cout<<std::setw(10)<<arr(x,y);
-
-      if(xcen==x && ycen==y)
-        std::cout<<"\033[39m";
-      if(alsox==x && alsoy==y)
-        std::cout<<"\033[39m";
-    }
-    std::cout<<std::endl;
-  }
-}
-
-template<class T>
-void print2D(A2Array2D<T> &arr, int hx=1, int hy=-1){
-  for(int y=0;y<arr.height();y++){
-    for(int x=0;x<arr.width();x++){
-      if(hx==x && hy==y)
-        std::cout<<"\033[93m";
-      std::cerr<<std::setw(3)<<(int)arr(x,y)<<" ";
-      if(hx==x && hy==y)
-        std::cout<<"\033[39m";
-    }
-    std::cerr<<std::endl;
-  }
-}
 
 template<class T>
 void ProcessFlat(
@@ -88,7 +36,7 @@ void ProcessFlat(
         continue;
       if(dem.isEdgeCell(nx,ny))
         continue;
-      if(fds(nx,ny)!=UNVISITED)
+      if(fds(nx,ny)!=NO_FLOW)
         continue;
       if(dem(nx,ny)!=flat_height)
         continue;
@@ -100,14 +48,8 @@ void ProcessFlat(
 
       fds(nx,ny) = d8_inverse[n];
 
-      if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)]){
-        std::cerr<<"Loop formed in flat resolution."<<std::endl;
-        // std::cerr<<"("<<c.first<<","<<c.second<<","<<dem(c.first,c.second)<<")="<<(int)fds(c.first,c.second)<<" linked to ("<<nx<<","<<ny<<","<<dem(nx,ny)<<")="<<(int)fds(nx,ny)<<std::endl;
-        // print2D(dem,c.first,c.second);
-        // std::cerr<<std::endl;
-        // print2D(fds,c.first,c.second);
-        // std::cerr<<"\n\n"<<std::endl;
-      }
+      if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)])
+        std::cerr<<"Loop formed in flat resolution at ("<<c.first<<","<<c.second<<")"<<std::endl;
 
       q.emplace(nx,ny);
     }
@@ -135,7 +77,6 @@ static int d8EdgeFlow(const A2Array2D<T> &elevations, const int x, const int y){
   else
     std::cerr<<"Should never reach this point!"<<std::endl;
   throw std::runtime_error("Requested edge direction not on an edge!");
-  return -199;
 }
 
 
@@ -154,12 +95,12 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   if(flip_style=="flipv" || flip_style=="fliphv")
     dem.flipV = true;
 
-  //dem.printStamp(5); //TODO
+  dem.printStamp(5);
 
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
   fds.setNoData(FLOWDIR_NO_DATA);
-  fds.setAll(UNVISITED);
+  fds.setAll(NO_FLOW);
 
   int processed_cells = 0;
 
@@ -167,8 +108,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   for(int32_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
-
-    //std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight(tx,ty)<<" "<<dem.tileWidth(tx,ty)<<std::endl;
 
     int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
     int processed_tiles   = ty*dem.widthInTiles()+tx;
@@ -184,7 +123,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
       processed_cells++;
 
-      if(fds(tx,ty,px,py)!=UNVISITED)
+      if(fds(tx,ty,px,py)!=NO_FLOW)
         continue;
 
       if(dem.isNoData(tx,ty,px,py)){
@@ -225,10 +164,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         int ny = y+dy[nlowest];
         if(fds.in_grid(nx,ny) && fds(nx,ny)==d8_inverse[nlowest]){
           std::cerr<<"Two cell loop detected!"<<std::endl;
-          // print2dradius(dem,x,y,4,nx,ny);
-          // std::cerr<<std::endl;
-          // print2dradius(fds,x,y,4,nx,ny);
-          // std::cerr<<"\n\n"<<std::endl;
         }
       }
 
@@ -240,20 +175,33 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     }
   }
 
-  int loops = 0;
-  for(int y=0;y<fds.height();y++)
-  for(int x=0;x<fds.width();x++){
-    int nx = x+dx[fds(x,y)];
-    int ny = y+dy[fds(x,y)];
-    if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
-      loops++;
-  }
-  std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
+  // int no_flows = 0;
+  // int loops    = 0;
+  // for(int32_t ty=0;ty<dem.heightInTiles();ty++)
+  // for(int32_t tx=0;tx<dem.widthInTiles(); tx++)
+  // for(int py=0;py<dem.tileHeight(tx,ty);py++)
+  // for(int px=0;px<dem.tileWidth(tx,ty); px++){
+
+  //   const int y = ty*dem.stdTileHeight()+py;
+  //   const int x = tx*dem.stdTileWidth() +px;
+
+  //   auto my_fd = fds(tx,ty,px,py);
+  //   if(my_fd==NO_FLOW){
+  //     no_flows++;
+  //     continue;
+  //   }
+
+  //   int nx = x+dx[my_fd];
+  //   int ny = y+dy[my_fd];
+  //   if(fds.in_grid(nx,ny) && my_fd==d8_inverse[fds(nx,ny)])
+  //     loops++;
+  // }
+  // std::cerr<<"Found "<<loops<<" loops."<<std::endl;
+  // std::cerr<<"Found "<<no_flows<<" cells with no flow."<<std::endl;
 
   fds.printStamp(5); //TODO
 
   std::cerr<<"Saving results..."<<std::endl;
-  //dem.saveGDAL(output_filename+"elev"); //TODO
   fds.saveGDAL(output_filename);
 
   total_time.stop();
@@ -276,10 +224,10 @@ int main(int argc, char **argv){
   std::string flip_style = argv[5];
 
   if(argv[2]==std::string("table")){
-    int dtype_size = GDALGetDataTypeSizeBytes(file_type);
-    int tile_size  = peekLayoutTileSize(argv[1]);
+    long dtype_size = GDALGetDataTypeSizeBytes(file_type);
+    long tile_size  = peekLayoutTileSize(argv[1]);
     for(int i=2;i<500;i++)
-      std::cerr<<std::setw(2)<<i<<"  "<<((dtype_size+sizeof(flowdirs_t)+sizeof(visited_t))*tile_size*i/1000000.0)<<" MB"<<std::endl;
+      std::cerr<<std::setw(2)<<i<<"  "<<((dtype_size+sizeof(flowdirs_t))*tile_size*i/1000000.0)<<" MB"<<std::endl;
     return -1;
   }
 

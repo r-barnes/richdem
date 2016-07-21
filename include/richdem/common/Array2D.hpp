@@ -92,7 +92,10 @@ void getGDALDimensions(
 ){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
+  if(fin==NULL){
+    std::cerr<<"Could not open file '"<<filename<<"' to get dimensions."<<std::endl;
+    throw std::runtime_error("Could not open file to get dimensions");
+  }
 
   GDALRasterBand *band = fin->GetRasterBand(1);
   
@@ -416,8 +419,10 @@ class Array2D {
 
       data.resize(view_width*view_height);
       auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
-      if(temp!=CE_None)
+      if(temp!=CE_None){
+        std::cerr<<"An error occured while trying to read '"<<filename<<"' into RAM."<<std::endl;
         throw std::runtime_error("Error reading file with GDAL!");
+      }
 
       GDALClose(fin);
     }

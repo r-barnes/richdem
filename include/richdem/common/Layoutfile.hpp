@@ -2,6 +2,7 @@
 #define _layoutfile_hpp_
 
 #include <string>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -37,12 +38,13 @@ static std::string GetBaseName(std::string filename){
 
 class LayoutfileReader {
  private:
-  std::ifstream     fin_layout;
-  std::stringstream cells;
-  int gridy     = -1;
-  int gridx     = -1;
-  int new_row   = false;
-  int row_width = -1;
+  //Stores the grid of filenames
+  std::vector< std::vector< std::string > > fgrid;
+
+  int gridy        = -1; //Gets incremented to 0 right away
+  int gridx        = -2; //Gets incremented to -1 right away, which then indicates a new row, the first row
+  int new_row      = false;
+
   std::string filename;
   std::string basename;
   std::string path;
@@ -55,46 +57,69 @@ class LayoutfileReader {
       path = layout_filename.substr(0,last_slash+1);
     std::cerr<<"Base path for layout-identified files: "<<path<<std::endl;
 
-    //Read each line of the layout file
-    fin_layout.open(layout_filename);
+    //Open file
+    std::ifstream fin_layout(layout_filename);
 
+    //Did the file open?
     if(!fin_layout.good())
       throw std::runtime_error("Problem opening layout file!");
+
+    //Read the entire file
+    while(fin_layout){
+      //Get a new line from the file.
+      std::string row;
+      if(!getline(fin_layout, row))
+        break;
+
+      //Add another row to the grid to store the data from this line
+      fgrid.emplace_back();
+      //Put the data somewhere we can process it
+      std::istringstream ss(row);
+
+      //While there is unprocessed data
+      while(ss){
+        //Create temporary item to store incoming datum
+        std::string item;
+        //Get the next comma-delimited item from the line. If there's data
+        //followed by no comma, this returns the data. If there's no data and no
+        //further comma, then we'll end with the line one item shorter than it
+        //should be. We'll fix this later.
+        if (!getline( ss, item, ',' ))
+          break;
+        //Add the item to the row, trimming off the whitespace
+        fgrid.back().push_back(trimStr(item));
+      }
+    }
+    //If we break out of the above loop but haven't reached eof(), then
+    //something went wrong.
+    if(!fin_layout.eof())
+      throw std::runtime_error("Failed to read the entire layout file!");
+
+    //Let's find the longest row
+    auto max_row_length = fgrid.front().size();
+    for(const auto &row: fgrid)
+      max_row_length = std::max(max_row_length,row.size());
+
+    for(auto &row: fgrid)
+      if(row.size()==max_row_length-1)   //If the line was one short of max, assume it ends blank
+        row.emplace_back();
+      else if(row.size()<max_row_length) //The line was more than one short of max: uh oh
+        throw std::runtime_error("Not all of the rows in the layout file had the same number of columns!");
   }
 
   bool next(){
-    new_row=false;
-    if(cells.peek() == decltype(cells)::traits_type::eof()){
+    new_row = false;
+    gridx++;
+
+    if(gridx==-1 || gridx==(int)fgrid.front().size()){
       gridy++;
+      gridx   = 0;
       new_row = true;
-
-      if(row_width==-1)
-        gridx = -1;
-      else if(row_width!=gridx)
-        throw std::runtime_error("Layout file's rows were not all of the same width!"); //TODO: Print out expected value
-      else
-        gridx = -1;
-      
-      std::string line;
-      std::getline(fin_layout, line); //Read a line from the layout
-
-      if(line.find_first_not_of("\t\n ")==std::string::npos)
+      if(gridy==(int)fgrid.size())
         return false;
-
-      //Reset stringstream
-      cells.str("");
-      cells.clear();
-
-      //Send another line into the stringstream
-      cells << line;
     }
 
-    std::getline(cells,filename,',');
-    gridx++;
-    filename = trimStr(filename);
-
-    //std::cerr<<"X="<<gridx<<" Y="<<gridy<<" fname='"<<filename<<"'"<<std::endl;
-
+    filename = fgrid[gridy][gridx];
     basename = GetBaseName(filename);
 
     return true;
@@ -171,6 +196,7 @@ class LayoutfileWriter {
     gridx = 0;
   }
 
+  //Use filename="" to indicate a null tile
   void addEntry(std::string filename){
     //Get only the filename, not the path to it
     std::size_t last_slash = filename.find_last_of(SLASH_CHAR);

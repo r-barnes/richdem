@@ -7,16 +7,15 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
+#include <csignal>
 #include "richdem/common/Layoutfile.hpp"
 #include "richdem/common/communication.hpp"
 #include "richdem/common/memory.hpp"
 #include "richdem/common/timer.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
-#include "Zhou2015pf.hpp"
-//#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
-const char* program_version = "14";
+const char* program_version = "1";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -24,7 +23,6 @@ const char* program_version = "14";
 //at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
 //this is, after all, for use with large datasets.
 #include <cstdint>
-//#define DEBUG 1
 
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
@@ -50,7 +48,49 @@ const int JOB_SECOND    = 3;
 const uint8_t FLIP_VERT   = 1;
 const uint8_t FLIP_HORZ   = 2;
 
-typedef uint32_t label_t;
+//Using int32_t here would allow a single cell to represent flow accumulations
+//stemming from a ~46,340^2 cell area. Using uint32_t bumps that to ~65,535^2
+//cells. This is easily exceeded in a rather large DEM. Therefore, we would like
+//to use int64_t, which allows 3,037,000,499^2 cells. However, GDAL is silly and
+//does not allow for 64-bit integers. Therefore, we use double. The IEEE754
+//double-precision floating-point type has a 53-bit significand. This is
+//sufficient to capture a 94,906,265^2 area.
+typedef double accum_t;
+
+//Valid flowdirs are in the range 0-8, inclusive. 0 is the center and 1-8,
+//inclusive, are the 8 cells around the central cell. An extra value is needed
+//to indicate NoData. Therefore, uint8_t is appropriate.
+typedef uint8_t flowdir_t;
+
+//Links need to be able to hold values up to the length of the perimeter of a
+//tile of the DEM. uint16_t is therefore acceptable. It allows a perimeter of
+//length 65,535 (minus the constants defined below). This allows for sides of
+//~16,383.
+typedef uint16_t link_t;
+
+//Since, in a grid representation, up to eight cells may flow into a single
+//cell, uint8_t is appropriate for appropriate for tracking these dependencies.
+typedef uint8_t c_dependency_t;
+
+//In a perimeter representation, any number of cells on the perimeter may
+//ultimately flow into a single outlet cell. Therefore, we need this to uint16_t
+//for the same reasons discussed for link_t. We will assume that the top value
+//(65,535) is not usable in order to raise an assertion error if the dependency
+//count goes negative.
+typedef uint16_t p_dependency_t;
+
+///Used in the perimeter representation to indicate that a cell has no
+///downstream neighbour, for whatever reason
+const link_t FLOW_NO_DOWNSTREAM = (link_t)-1;
+
+///Used in the perimeter representation to indicate that flow going into this
+///cell will end somewhere internal to the tile. This situation arises if the
+///flow path leads to a NoData cell or a cell with NoFlow.
+const link_t FLOW_TERMINATES = (link_t)-2;
+
+///Used in the perimeter representation to indicate that this cell passes its
+///flow to a neighbouring tile, or off of the DEM entirely.
+const link_t FLOW_EXTERNAL   = (link_t)-3;
 
 class ChunkInfo{
  private:
@@ -74,10 +114,9 @@ class ChunkInfo{
  public:
   uint8_t     edge;
   uint8_t     flip;
-  int32_t     x,y,gridx,gridy,width,height;
+  int32_t     x,y,width,height,gridx,gridy;
   bool        nullChunk;
   bool        many;
-  label_t     label_offset,label_increment; //Used for convenience in Producer()
   std::string filename;
   std::string outputname;
   std::string retention;
@@ -130,29 +169,26 @@ class TimeInfo {
   }
 };
 
+//TODO: Explain all of the variables
 template<class elev_t>
 class Job1 {
  private:
   friend class cereal::access;
   template<class Archive>
   void serialize(Archive & ar){
-    ar(top_elev,
-       bot_elev,
-       left_elev,
-       right_elev,
-       top_label,
-       bot_label,
-       left_label,
-       right_label,
-       graph,
+    ar(links,
+       accum,
+       flowdirs,
        time_info,
        gridy,
        gridx);
   }
  public:
-  std::vector<elev_t > top_elev,  bot_elev,  left_elev,  right_elev;  //TODO: Consider using std::array instead
-  std::vector<label_t> top_label, bot_label, left_label, right_label; //TODO: Consider using std::array instead
-  std::vector< std::map<label_t, elev_t> > graph;
+  std::vector<link_t   >      links;
+  std::vector<accum_t  >      accum;
+  std::vector<flowdir_t>      flowdirs;
+  std::vector<accum_t  >      accum_in;     //Used by produce, here for convenience, not communicated, so not serialized.
+  std::vector<p_dependency_t> dependencies; //Used by produce, here for convenience, not communicated, so not serialized.
   TimeInfo time_info;
   int gridy, gridx;
   Job1(){}
@@ -160,9 +196,9 @@ class Job1 {
 
 
 
-template<class elev_t> using Job1Grid    = std::vector< std::vector< Job1<elev_t> > >;
-template<class elev_t> using Job2        = std::vector<elev_t>;
-template<class elev_t> using StorageType = std::map<std::pair<int,int>, std::pair< Array2D<elev_t>, Array2D<label_t> > >;
+template<class T> using Job1Grid    = std::vector< std::vector< Job1<T> > >;
+template<class T> using Job2        = std::vector<accum_t>;
+template<class T> using StorageType = std::map<std::pair<int,int>, std::pair< Array2D<flowdir_t>, Array2D<accum_t> > >;
 
 
 
@@ -175,234 +211,602 @@ int SuggestTileSize(int selected, int size, int min){
 }
 
 
-template<class elev_t>
+
+
+
+
+
+
+//TODO: Explain
+int xyToSerial(const int x, const int y, const int width, const int height){
+  //Ensure cell is on the perimeter
+  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
+
+  if(y==0)                         //Top row
+    return x;
+
+  if(x==width-1)                   //Right hand side
+    return (width-1)+y;
+
+  if(y==height-1)                  //Bottom-row
+    return (width-1)+(height)+x;   
+
+  return 2*(width-1)+(height-1)+y; //Left-hand side
+}
+
+//TODO: Explain
+void serialToXY(const int serial, int &x, int &y, const int width, const int height){
+  if(serial<width){                        //Top row
+    x = serial;
+    y = 0;
+  } else if(serial<(width-1)+height){     //Right-hand side
+    x = width-1;
+    y = serial-(width-1);
+  } else if(serial<2*(width-1)+(height)){ //Bottom row
+    x = serial-(width-1)-(height-1)-1;
+    y = height-1;
+  } else {                                //Left-hand side
+    x = 0;
+    y = serial-2*(width-1)-(height-1);
+  }
+
+  //Ensure cell is on the perimeter
+  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class T>
 class ConsumerSpecifics {
  public:
-  Array2D<elev_t>     dem;
-  Array2D<label_t>    labels;
-  std::vector< std::map<label_t, elev_t> > spillover_graph;
   Timer timer_io;
   Timer timer_calc;
 
-  void LoadFromEvict(const ChunkInfo &chunk){
-    //The upper limit on unique watersheds is the number of edge cells. Resize
-    //the graph to this number. The Priority-Flood routines will shrink it to
-    //the actual number needed.
-    spillover_graph.resize(2*chunk.width+2*chunk.height);
+ private:
+  Array2D<flowdir_t>  flowdirs;
+  Array2D<accum_t  >  accum;
+  std::vector<link_t> links;
 
-    //Read in the data associated with the job
+
+  //TODO: Check this description
+  //This function takes a matrix of flow directions and an initial cell (x0,y0).
+  //Starting at the initial cell, it follows the path described by the flow
+  //direction matrix until it reaches an edge of the grid, a no_data cell, or a
+  //cell which does not flow into any neighbour.
+
+  //The initial cell is assumed to be on a top or bottom edge. If the flow path
+  //terminates at a top or bottom edge, the initial cell is marked as flowing into
+  //the terminal cell; otherwise, the initial cell is marked as terminating at an
+  //unimportant location.
+
+  //After running this function on all the top and bottom edge cells, we can
+  //quickly determine the ultimate destination of any initial cell.
+  template<class flowdir_t>
+  void FollowPath(
+    const int x0,                       //x-coordinate of initial cell
+    const int y0,                       //y-coordinate of initial cell
+    const ChunkInfo          &chunk,    //Used to determine which tile we are in
+    const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+    std::vector<link_t>      &links
+  ){
+    int x = x0;
+    int y = y0;
+
+    int path_len = 0;
+
+    int x0y0serial = xyToSerial(x0,y0,flowdirs.width(),flowdirs.height());
+
+    const int max_path_length = flowdirs.width()*flowdirs.height(); //TODO: Should this have +1?
+
+    //Follow the flow path until it terminates
+    while(path_len++<max_path_length){ //Follow the flow path until we reach its end
+      const int n = flowdirs(x,y);     //Neighbour the current cell flows towards
+
+      //Show the final part of the loop path (TODO)
+      if(path_len>max_path_length-10)
+        std::cerr<<"Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
+
+      //If the neighbour this cell flows into is a no_data cell or this cell does
+      //not flow into any neighbour, then mark the initial cell from which we
+      //began this flow path as terminating somewhere unimportant: its flow cannot
+      //pass to neighbouring segments/nodes for further processing.
+      if(flowdirs.isNoData(x,y) || n==NO_FLOW){
+        links.at(x0y0serial) = FLOW_TERMINATES;
+        return;
+      }
+
+      //Flow direction was valid. Where does it lead?
+      const int nx = x+dx[n]; //Get neighbour's x-coordinate.
+      const int ny = y+dy[n]; //Get neighbour's y-coordinate.
+
+      //The neighbour cell is off one of the sides of the tile. Therefore, its
+      //flow may be passed on to a neighbouring tile. Thus, we need to link this
+      //flow path's initial cell to this terminal cell.
+      if(!flowdirs.inGrid(nx,ny)) {
+        if(x==x0 && y==y0) {
+          //If (x,y)==(x0,y0), then this is the first cell and it points off of
+          //the grid. Mark it as being FLOW_EXTERNAL.
+          links.at(xyToSerial(x0,y0,flowdirs.width(),flowdirs.height())) = FLOW_EXTERNAL;
+        } else {
+          //The flow path entered the grid one place and left another. We mark
+          //only the start of the flow path since the end of the flow path will be
+          //handled by another call to this function
+          links.at(xyToSerial(x0,y0,flowdirs.width(),flowdirs.height())) = xyToSerial(x,y,flowdirs.width(),flowdirs.height());
+        }
+        return;
+      }
+
+      //The flow path has not yet terminated. Continue following it.
+      x = nx;
+      y = ny;
+    }
+
+    //The loop breaks with a return. This is only reached if more cells are
+    //visited than are in the tile, which implies that a loop must exist.
+    std::cerr<<"File "<<chunk.filename<<"("<<chunk.gridx<<","<<chunk.gridy<<") dimensions=("<<flowdirs.width()<<","<<flowdirs.height()<<") contains a loop!"<<std::endl;
+    throw std::logic_error("FollowPath() found a loop in the flow path!");
+  }
+
+  //As in the function above, we will start at an initial cell and follow its flow
+  //direction to its neighbour. Then we will follow the neighbour's flow direction
+  //to the neighbour's neighbour, and so on, until we can go no farther (as
+  //indicated by running of one of the edges of the segment or hitting a no_data
+  //cell).
+
+  //However, at this point we know how much flow accumulation to add to each cell.
+  //Therefore, we add this additional accumulation to each cell as we pass it.
+  void FollowPathAdd(
+    int x,                              //Initial x-coordinate
+    int y,                              //Initial y-coordinate
+    const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+    Array2D<accum_t>         &accum,    //Output: Accumulation matrix
+    const accum_t additional_accum      //Add this to every cell in the flow path
+  ){
+    //Follow the flow path until it terminates
+    while(true){
+      if(!flowdirs.inGrid(x,y))
+        return;
+
+      //Break when we reach a no_data cell
+      if(flowdirs.isNoData(x,y))
+        return;
+
+      //Add additional flow accumulation to this cell
+      accum(x,y) += additional_accum;
+
+      int n = flowdirs(x,y); //Get neighbour
+      if(n==NO_FLOW)          //This cell doesn't flow to a neighbour
+        return;              
+
+      x += dx[n];
+      y += dy[n];
+    }
+  }
+
+  void FlowAccumulation(
+    const Array2D<flowdir_t> &flowdirs,
+    Array2D<accum_t>         &accum
+  ){
+    //Each cell that flows points to a neighbouring cell. But not every cell
+    //is pointed at. Cells which are not pointed at are the peaks from which
+    //flow originates. In order to calculate the flow accumulation we begin at
+    //peaks and pass flow downwards. Once flow has been passed downwards, the
+    //cell receiving the flow no longer needs to wait for the cell which
+    //passed the flow. When the receiving cell has no cells on which it is
+    //waiting, it then becomes a peak itself. The number of cells pointing at
+    //a cell is its "dependency count". In this section of the code we find
+    //each cell's dependency count.
+
+    accum.resize(flowdirs,0);
+    accum.setNoData(ACCUM_NO_DATA);
+
+    Array2D<c_dependency_t> dependencies(flowdirs,0);
+    for(int32_t y=0;y<flowdirs.height();y++)
+    for(int32_t x=0;x<flowdirs.width();x++){
+      if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
+        accum(x,y) = ACCUM_NO_DATA;
+        continue;                
+      }         
+
+      int n = flowdirs(x,y);       //The neighbour this cell flows into
+      if(n==NO_FLOW)               //This cell does not flow into a neighbour
+        continue;
+
+      int nx = x+dx[n];            //x-coordinate of the neighbour
+      int ny = y+dy[n];            //y-coordinate of the neighbour
+        
+      //Neighbour is not on the grid
+      if(!flowdirs.inGrid(nx,ny))
+        continue;
+
+      //Neighbour is valid and is part of the grid. The neighbour depends on this
+      //cell, so increment its dependency count.
+      dependencies(nx,ny)++;
+    }
+
+    //Now that we know how many dependencies each cell has, we can determine which
+    //cells are the peaks: the sources of flow. We make a note of where the peaks
+    //are for later use.
+    std::queue<GridCell> sources;
+    for(int32_t y=0;y<dependencies.height();y++)
+    for(int32_t x=0;x<dependencies.width();x++)
+      //Valid cell with no dependencies: a peak!
+      if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
+        sources.emplace(x,y);
+
+    //Now that we know where the sources of flow are, we can start at this. Each
+    //cell will have at least an accumulation of 1: itself. It then passes this
+    //and any other accumulation it has gathered along its flow path to its
+    //neighbour and decrements the neighbours dependency count. When a neighbour
+    //has no more dependencies, it becomes a source.
+    while(!sources.empty()){         //There are sources remaining
+      GridCell c = sources.front();  //Grab a source. Order is not important here.
+      sources.pop();                 //We've visited this source. Discard it.
+
+      if(flowdirs.isNoData(c.x,c.y)) //Oh snap! This isn't a real cell!
+        continue;
+
+      accum(c.x,c.y)++;              //This is a real cell, and it accumulates
+                                     //one cell's worth of flow automatically.
+
+      int n = flowdirs(c.x,c.y);     //Who is this source's neighbour?
+
+      if(n==NO_FLOW)                 //This cell doesn't flow anywhere.
+        continue;                    //Move on to the next source.
+
+      int nx = c.x+dx[n];            //Okay, this cell is going somewhere.
+      int ny = c.y+dy[n];            //Make a note of where
+
+      //This cell flows of the edge of the grid. Move on to next source.
+      if(!flowdirs.inGrid(nx,ny))
+        continue;
+      //This cell flows into a no_data cell. Move on to next source.
+      if(flowdirs.isNoData(nx,ny))
+        continue;
+
+      //This cell has a neighbour it flows into. Add to its accumulation.
+      accum(nx,ny) += accum(c.x,c.y);
+      //Decrement the neighbour's dependencies.
+      dependencies(nx,ny)--;
+
+      //The neighbour has no more dependencies, so it has become a source
+      if(dependencies(nx,ny)==0)
+        sources.emplace(nx,ny);
+    }
+  }
+
+  template<class U>
+  void GridPerimToArray(const Array2D<U> &grid, std::vector<U> &vec){
+    assert(vec.size()==0); //Ensure receiving array is empty
+
+    std::vector<U> vec2copy;
+
+    vec2copy = grid.getRowData(0);                         //Top
+    vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
+
+    vec2copy = grid.getColData(grid.width()-1);        //Right
+    vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end());
+    
+    vec2copy = grid.getRowData(grid.height()-1);       //Bottom
+    vec.insert(vec.end(),vec2copy.begin(),vec2copy.end()-1);
+    
+    vec2copy = grid.getColData(0);                         //Left
+    vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end()-1);
+  }
+
+ public:
+  void LoadFromEvict(const ChunkInfo &chunk){
+    #ifdef DEBUG
+      std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+      std::cerr<<"Opening "<<chunk.filename<<" as flowdirs."<<std::endl;
+    #endif
+
     timer_io.start();
-    dem = Array2D<elev_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height, chunk.many);
-    timer_io.stop();
+    flowdirs = Array2D<flowdir_t>(chunk.filename, false, chunk.x, chunk.y, chunk.width, chunk.height);
 
     //TODO: Figure out a clever way to allow tiles of different widths/heights
-    if(dem.width()!=chunk.width){
-      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected width. Found "<<dem.width()<<" expected "<<chunk.width<<std::endl;
+    if(flowdirs.width()!=chunk.width){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected width. Found "<<flowdirs.width()<<" expected "<<chunk.width<<std::endl;
       throw std::runtime_error("Unexpected width.");
     }
 
-    if(dem.height()!=chunk.height){
-      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected height. Found "<<dem.height()<<" expected "<<chunk.height<<std::endl;
+    if(flowdirs.height()!=chunk.height){
+      std::cerr<<"Tile '"<<chunk.filename<<"' had unexpected height. Found "<<flowdirs.height()<<" expected "<<chunk.height<<std::endl;
       throw std::runtime_error("Unexpected height.");
     }
 
-    //These variables are needed by Priority-Flood. The internal
-    //interconnections of labeled regions (named "graph") are also needed to
-    //solve the problem, but that can be passed directly from the job object.
-    labels = Array2D<label_t>(dem,0);
+    flowdirs.printStamp(5,"LoadFromEvict() before reorientation");
 
-    //Perform the watershed Priority-Flood algorithm on the chunk. The variant
-    //by Zhou, Sun, and Fu (2015) is used for this; however, I have modified
-    //their algorithm to label watersheds similarly to what is described in
-    //Barnes, Lehman, and Mulla (2014). Note that the Priority-Flood needs to
-    //know whether the tile is being flipped since it uses this information to
-    //determine which edges connect to Special Watershed 1 (which is the
-    //outside of the DEM as a whole).
+    if(chunk.flip & FLIP_VERT)
+      flowdirs.flipVert();
+    if(chunk.flip & FLIP_HORZ)
+      flowdirs.flipHorz();
+    timer_io.stop();
+
+    flowdirs.printStamp(5,"LoadFromEvict() after reorientation");
+
     timer_calc.start();
-    Zhou2015Labels(dem, labels, spillover_graph, chunk.edge, chunk.flip & FLIP_HORZ, chunk.flip & FLIP_VERT);
+    FlowAccumulation(flowdirs,accum);
     timer_calc.stop();
   }
 
   void VerifyInputSanity(){
-    //Nothing to verify
+    //Let's double-check that the flowdirs are valid
+    for(int32_t y=0;y<flowdirs.height();y++)
+    for(int32_t x=0;x<flowdirs.width();x++)
+      if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
+        throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
+  }
+
+  void FirstRound(const ChunkInfo &chunk, Job1<T> &job1){
+    std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+
+    //-2 removes duplicate cells on vertical edges which would otherwise
+    //overlap horizontal edges
+    links.resize(2*flowdirs.width()+2*(flowdirs.height()-2), FLOW_TERMINATES);
+
+    //TODO: Although the following may consider a cell more than once, the
+    //repeated effort merely produces the same results in the same places
+    //twice, so it's okay.
+
+    //If we are the top segment, nothing can flow into us, so we do not need
+    //to know where flow paths originating at the top go to. On the otherhand,
+    //if we are not the top segment, then consider each cell of the top row
+    //and find out where its flow goes to.
+    timer_calc.start();
+    if(!(chunk.edge & GRID_TOP))
+      for(int32_t x=0;x<flowdirs.width();x++)
+        FollowPath(x,0,chunk,flowdirs,links);
+
+    //If we are the bottom segment, nothing can flow into us, so we do not
+    //need to know where flow paths originating at the bottom go to. On the
+    //otherhand, if we are not the bottom segment, then consider each cell of
+    //the bottom row and find out where its flow goes to.
+    if(!(chunk.edge & GRID_BOTTOM))
+      for(int32_t x=0;x<flowdirs.width();x++)
+        FollowPath(x,flowdirs.height()-1,chunk,flowdirs,links);
+
+    if(!(chunk.edge & GRID_LEFT))
+      for(int32_t y=0;y<flowdirs.height();y++)
+        FollowPath(0,y,chunk,flowdirs,links);
+
+    if(!(chunk.edge & GRID_RIGHT))
+      for(int32_t y=0;y<flowdirs.height();y++)
+        FollowPath(flowdirs.width()-1,y,chunk,flowdirs,links);
+
+    job1.links = std::move(links);
+
+    //Construct output arrays
+    GridPerimToArray(flowdirs, job1.flowdirs);
+    GridPerimToArray(accum,    job1.accum   );
+    timer_calc.stop();
+  }
+
+  void SecondRound(const ChunkInfo &chunk, Job2<T> &job2){
+    #ifdef DEBUG
+      std::cerr<<"SECOND ROUND"<<std::endl;
+      std::cerr<<"Grid tile: "<<chunk.gridx<<","<<chunk.gridy<<std::endl;
+    #endif
+
+    auto &accum_offset = job2;
+
+    for(int s=0;s<(int)accum_offset.size();s++){
+      if(accum_offset.at(s)==0)
+        continue;
+      int x,y;
+      serialToXY(s, x, y, accum.width(), accum.height());
+      FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
+    }
+
+    //At this point we're done with the calculation! Boo-yeah!
+
+    accum.printStamp(5,"Saving output before reorientation");
+
+    timer_io.start();
+    if(chunk.flip & FLIP_HORZ)
+      accum.flipHorz();
+    if(chunk.flip & FLIP_VERT)
+      accum.flipVert();
+    timer_io.stop();
+
+    accum.printStamp(5,"Saving output after reorientation");
+
+    timer_io.start();
+    accum.saveGDAL(chunk.outputname, chunk.x, chunk.y);
+    timer_io.stop();
   }
 
   void SaveToCache(const ChunkInfo &chunk){
     timer_io.start();
-    dem.setCacheFilename(chunk.retention+"dem.dat");
-    labels.setCacheFilename(chunk.retention+"dem.dat");
-    dem.dumpData();
-    labels.dumpData();
+    flowdirs.setCacheFilename(chunk.retention+"-flowdirs.dat");
+    accum.setCacheFilename(chunk.retention+"-accum.dat");
+    flowdirs.dumpData();
+    accum.dumpData();
     timer_io.stop();
   }
 
   void LoadFromCache(const ChunkInfo &chunk){
     timer_io.start();
-    dem    = Array2D<elev_t >(chunk.retention+"dem.dat"   ,true); //TODO: There should be an exception if this fails
-    labels = Array2D<label_t>(chunk.retention+"labels.dat",true);
+    flowdirs = Array2D<flowdir_t>(chunk.retention+"-flowdirs.dat", true);
+    accum    = Array2D<accum_t  >(chunk.retention+"-accum.dat",    true);
     timer_io.stop();
   }
 
-  void SaveToRetain(ChunkInfo &chunk, StorageType<elev_t> &storage){
+  void SaveToRetain(ChunkInfo &chunk, StorageType<T> &storage){
     auto &temp  = storage[std::make_pair(chunk.gridy,chunk.gridx)];
-    temp.first  = std::move(dem);
-    temp.second = std::move(labels);
+    temp.first  = std::move(flowdirs);
+    temp.second = std::move(accum);
   }
 
-  void LoadFromRetain(ChunkInfo &chunk, StorageType<elev_t> &storage){
+  void LoadFromRetain(ChunkInfo &chunk, StorageType<T> &storage){
     auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
-    dem        = std::move(temp.first);
-    labels     = std::move(temp.second);
-  }
-
-  void FirstRound(const ChunkInfo &chunk, Job1<elev_t> &job1){
-    job1.graph = std::move(spillover_graph);
-
-    //The chunk's edge info is needed to solve the global problem. Collect it.
-    job1.top_elev    = dem.topRow     ();
-    job1.bot_elev    = dem.bottomRow  ();
-    job1.left_elev   = dem.leftColumn ();
-    job1.right_elev  = dem.rightColumn();
-
-    job1.top_label   = labels.topRow     ();
-    job1.bot_label   = labels.bottomRow  ();
-    job1.left_label  = labels.leftColumn ();
-    job1.right_label = labels.rightColumn();
-
-
-    //Flip the tile if necessary. We could flip the entire tile, but this
-    //requires expensive memory shuffling. Instead, we flip just the perimeter
-    //of the tile and send the flipped perimeter to the Producer. Notice,
-    //though, that tiles adjacent to the edge of the DEM need to be treated
-    //specially, which is why the Priority-Flood performed on each tile
-    //(above) needs to have knowledge of whether the tile is being flipped.
-    if(chunk.flip & FLIP_VERT){
-      job1.top_elev.swap(job1.bot_elev);
-      job1.top_label.swap(job1.bot_label);
-      std::reverse(job1.left_elev.begin(),job1.left_elev.end());
-      std::reverse(job1.right_elev.begin(),job1.right_elev.end());
-      std::reverse(job1.left_label.begin(), job1.left_label.end());
-      std::reverse(job1.right_label.begin(),job1.right_label.end());
-    }
-    if(chunk.flip & FLIP_HORZ){
-      job1.left_elev.swap(job1.right_elev);
-      job1.left_label.swap(job1.right_label);
-      std::reverse(job1.top_elev.begin(),job1.top_elev.end());
-      std::reverse(job1.bot_elev.begin(),job1.bot_elev.end());
-      std::reverse(job1.top_label.begin(),job1.top_label.end());
-      std::reverse(job1.bot_label.begin(),job1.bot_label.end());
-    }
-  }
-
-  void SecondRound(const ChunkInfo &chunk, Job2<elev_t> &job2){
-    timer_calc.start();
-    for(int32_t y=0;y<dem.height();y++)
-    for(int32_t x=0;x<dem.width();x++)
-      if(labels(x,y)>1 && dem(x,y)<job2.at(labels(x,y)))
-        dem(x,y) = job2.at(labels(x,y));
-    timer_calc.stop();
-
-    //At this point we're done with the calculation! Boo-yeah!
-
-    dem.printStamp(5,"Unorientated output stamp");
-
-    timer_io.start();
-    dem.saveGDAL(chunk.outputname, chunk.x, chunk.y);
-    timer_io.stop();
+    flowdirs   = std::move(temp.first);
+    accum      = std::move(temp.second);
   }
 };
 
 
 
 
-template<class elev_t>
+
+
+
+
+
+
+
+
+
+
+
+template<class T>
 class ProducerSpecifics {
  public:
-  Timer timer_io, timer_calc;
+  Timer timer_calc;
+  Timer timer_io;
 
  private:
-  std::vector<elev_t> graph_elev;
+  Job1Grid<T> job2s_to_dist;
 
-  void HandleEdge(
-    const std::vector<elev_t>  &elev_a,
-    const std::vector<elev_t>  &elev_b,
-    const std::vector<label_t> &label_a,
-    const std::vector<label_t> &label_b,
-    std::vector< std::map<label_t, elev_t> > &mastergraph,
-    const label_t label_a_offset,
-    const label_t label_b_offset
+  void DownstreamCell(
+    const Job1Grid<T> &jobs,
+    const ChunkGrid   &chunks,
+    const int gx,     //Grid tile x of cell we wish to find downstream cell of
+    const int gy,     //Grid tile y of cell we wish to find downstream cell of
+    const link_t s,   //Array index of the cell in the tile in question
+    link_t &ns,       //Array index of downstream cell in the tile
+    int &gnx,         //Grid tile x of downstream cell
+    int &gny          //Grid tile y of downstream cell
   ){
-    //Guarantee that all vectors are of the same length
-    assert(elev_a.size ()==elev_b.size ());
-    assert(label_a.size()==label_b.size());
-    assert(elev_a.size ()==label_b.size());
+    const auto &j = jobs.at(gy).at(gx);
 
-    int len = elev_a.size();
+    assert(j.links.size()==j.flowdirs.size());
 
-    for(int i=0;i<len;i++){
-      auto c_l = label_a[i];
-      if(c_l>1) c_l+=label_a_offset;
+    ns = FLOW_NO_DOWNSTREAM;
 
-      for(int ni=i-1;ni<=i+1;ni++){
-        if(ni<0 || ni==len)
-          continue;
-        auto n_l = label_b[ni];
-        if(n_l>1) n_l+=label_b_offset;
-        //TODO: Does this really matter? We could just ignore these entries
-        if(c_l==n_l) //Only happens when labels are both 1
-          continue;
+    gnx = gx;
+    gny = gy;
 
-        auto elev_over = std::max(elev_a[i],elev_b[ni]);
-        if(mastergraph.at(c_l).count(n_l)==0 || elev_over<mastergraph.at(c_l)[n_l]){
-          mastergraph[c_l][n_l] = elev_over;
-          mastergraph[n_l][c_l] = elev_over;
-        }
+    if(j.links.at(s)==FLOW_TERMINATES || j.flowdirs.at(s)==NO_FLOW){
+      //Flow ends somewhere internal to the tile or this particular cell has no
+      //flow direction. The TERMINATES should also take care of NoData flowdirs
+      return;
+
+    } else if(j.links.at(s)==FLOW_EXTERNAL){
+      //Flow goes into a valid neighbouring tile
+      const auto &c = chunks.at(gy).at(gx);
+
+      int x,y;
+      serialToXY(s,x,y,c.width,c.height);
+
+      const int nfd = j.flowdirs.at(s);
+      int nx        = x+dx[nfd];
+      int ny        = y+dy[nfd];
+
+      //Since this is a FLOW_EXTERNAL, this cell must point off of the grid
+      assert(nx==-1 || ny==-1 || nx==c.width || ny==c.height);
+
+      //Identify which neighbouring tile the flow will be going to
+      if(nx==c.width)
+        gnx += 1;
+      else if(nx==-1)
+        gnx -= 1;
+      
+      if(ny==c.height)
+        gny += 1;
+      else if(ny==-1)
+        gny -= 1;
+
+      //Ensure that the neighbouring tile is valid (TODO: nullChunk here?)
+      //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
+      if(gnx<0 || gny<0 || gnx==(int)jobs.front().size() || gny==(int)jobs.size()){
+        gnx=gny=ns=-1;
+        return;
       }
+
+      const auto &nc = chunks.at(gny).at(gnx);
+
+      //Now that we know the neighbouring tile, set the next-x and next-y
+      //coordinates with reference to the bounds of that tile
+      if(nx==c.width)
+        nx = 0;
+      else if(nx==-1)
+        nx = nc.width-1;
+      
+      if(ny==c.height)
+        ny = 0;
+      else if(ny==-1)
+        ny = nc.height-1;
+
+      //Serialize the coordinates
+      ns = xyToSerial(nx,ny,nc.width,nc.height);
+
+      assert(ns<(int)jobs.at(gny).at(gnx).flowdirs.size());
+    } else {
+      //Flow goes to somewhere else on the perimeter of the same tile
+      ns = j.links.at(s);
     }
   }
-
-  void HandleCorner(
-    const elev_t  elev_a,
-    const elev_t  elev_b,
-    label_t       l_a,
-    label_t       l_b,
-    std::vector< std::map<label_t, elev_t> > &mastergraph,
-    const label_t l_a_offset,
-    const label_t l_b_offset
-  ){
-    if(l_a>1) l_a += l_a_offset;
-    if(l_b>1) l_b += l_b_offset;
-    auto elev_over = std::max(elev_a,elev_b);
-    if(mastergraph.at(l_a).count(l_b)==0 || elev_over<mastergraph.at(l_a)[l_b]){
-      mastergraph[l_a][l_b] = elev_over;
-      mastergraph[l_b][l_a] = elev_over;
-    }
-  }
-
  public:
-  void Calculations(ChunkGrid &chunks, Job1Grid<elev_t> &jobs1){
-    //Merge all of the graphs together into one very big graph. Clear information
-    //as we go in order to save space, though I am not sure if the map::clear()
-    //method is not guaranteed to release space.
-    std::cerr<<"Constructing mastergraph..."<<std::endl;
-    std::cerr<<"Merging graphs..."<<std::endl;
-    timer_calc.start();
-    Timer timer_mg_construct;
-    timer_mg_construct.start();
-
+  void Calculations(
+    ChunkGrid   &chunks,
+    Job1Grid<T> &jobs1
+  ){
     const int gridheight = chunks.size();
     const int gridwidth  = chunks[0].size();
-    
-    //Get a chunk size so we can calculate the max label
-    label_t maxlabel = 0;
+
+    //Set initial values for all dependencies to zero
+    for(auto &row: jobs1)
+    for(auto &this_job: row){
+      this_job.dependencies.resize(this_job.links.size(),0);      
+      this_job.accum_in.resize(this_job.links.size(),0);      
+    }
+
+    std::cerr<<"Calculating dependencies..."<<std::endl;
     for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++)
-      maxlabel+=jobs1[y][x].graph.size();
-    std::cerr<<"!Total labels required: "<<maxlabel<<std::endl;
+    for(int x=0;x<gridwidth;x++){
+      if(chunks.at(y).at(x).nullChunk)
+        continue;
 
-    std::vector< std::map<label_t, elev_t> > mastergraph(maxlabel);
+      const int flowdir_size = jobs1.at(y).at(x).flowdirs.size();
+      for(link_t s=0;s<flowdir_size;s++){
+        //Using -1 will hopefully cause problems if these variables are misused
+        link_t ns = FLOW_NO_DOWNSTREAM; //Next cell in a tile, using a serialized coordinate
+        int gnx   = -1; //Next tile, x-coordinate
+        int gny   = -1; //Next tile, y-coordinate
+        DownstreamCell(jobs1, chunks, x, y, s, ns, gnx, gny);
+        if(ns==FLOW_NO_DOWNSTREAM || chunks.at(gny).at(gnx).nullChunk) 
+          continue;
 
-    label_t label_offset = 0;
+        jobs1.at(gny).at(gnx).dependencies.at(ns)++;
+      }
+    }
+
+    //Used for storing the coordinates of cells in this perimeter representation
+    //of the grid
+    class atype {
+     public:
+      int gx;   //X-coordinate of tile
+      int gy;   //Y-coordinate of tile
+      link_t s; //Serialized coordinate of cell's position on the tile's perimeter
+      atype(int gx, int gy, link_t s) : gx(gx), gy(gy), s(s) {};
+    };
+
+    //Queue of cells which are known to have no dependencies
+    std::queue<atype> q;
+
+    //Search for cells without dependencies, these will constitute the set from
+    //which we will begin push accumulation to downstream cells
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
       if(chunks[y][x].nullChunk)
@@ -410,129 +814,62 @@ class ProducerSpecifics {
 
       auto &this_job = jobs1.at(y).at(x);
 
-      chunks[y][x].label_offset = label_offset;
+      for(link_t s=0;s<this_job.dependencies.size();s++){
+        if(this_job.dependencies.at(s)==0) // && jobs1.at(y).at(x).links.at(s)==FLOW_EXTERNAL) //TODO
+          q.emplace(x,y,s);
 
-      for(int l=0;l<(int)this_job.graph.size();l++)
-      for(auto const &skey: this_job.graph[l]){
-        label_t first_label  = l;
-        label_t second_label = skey.first;
-        if(first_label >1) first_label +=label_offset;
-        if(second_label>1) second_label+=label_offset;
-        //We insert both ends of the bidirectional edge because in the watershed
-        //labeling process, we only inserted one. We need both here because we
-        //don't know which end of the edge we will approach from as we traverse
-        //the spillover graph.
-        mastergraph.at(first_label)[second_label] = skey.second;
-        mastergraph.at(second_label)[first_label] = skey.second;
+        //Accumulated flow at an input will be transfered to an output resulting
+        //in double-counting (TODO: More logical place to put this?)
+        if(this_job.links.at(s)!=FLOW_EXTERNAL)  //TODO: NO_FLOW
+          this_job.accum.at(s) = 0;
       }
-      chunks[y][x].label_increment = this_job.graph.size();
-      label_offset                += this_job.graph.size();
-      this_job.graph.clear();
+
+      //this_job.accum_orig = this_job.accum;
     }
 
-    std::cerr<<"Handling adjacent edges and corners..."<<std::endl;
-    for(int y=0;y<gridheight;y++)
-    for(int x=0;x<gridwidth;x++){
-      if(chunks[y][x].nullChunk)
+    std::cerr<<q.size()<<" peaks found in aggregated problem."<<std::endl;
+
+    int processed_cells = 0;
+    while(!q.empty()){
+      atype    c  = q.front();
+      Job1<T> &j  = jobs1.at(c.gy).at(c.gx);
+      q.pop();
+      processed_cells++;
+
+      //TODO: Cut
+      ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
+      assert(!ci.nullChunk);
+
+      link_t ns = FLOW_NO_DOWNSTREAM; //Initial value designed to cause devastation if misused
+      int gnx   = -1; //Initial value designed to cause devastation if misused
+      int gny   = -1; //Initial value designed to cause devastation if misused
+      DownstreamCell(jobs1, chunks, c.gx, c.gy, c.s, ns, gnx, gny);
+      if(ns==FLOW_NO_DOWNSTREAM || chunks.at(gny).at(gnx).nullChunk)
         continue;
 
-      auto &c = jobs1[y][x];
+      jobs1.at(gny).at(gnx).accum.at(ns) += j.accum.at(c.s);
+      if(gny!=c.gy || gnx!=c.gx)
+        jobs1.at(gny).at(gnx).accum_in.at(ns) += j.accum.at(c.s);
 
-      if(y>0            && !chunks[y-1][x].nullChunk)
-        HandleEdge(c.top_elev,   jobs1[y-1][x].bot_elev,   c.top_label,   jobs1[y-1][x].bot_label,   mastergraph, chunks[y][x].label_offset, chunks[y-1][x].label_offset);
+      if( (--jobs1.at(gny).at(gnx).dependencies.at(ns))==0 )
+        q.emplace(gnx,gny,ns);
 
-      if(y<gridheight-1 && !chunks[y+1][x].nullChunk)
-        HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, chunks[y][x].label_offset, chunks[y+1][x].label_offset);
-      
-      if(x>0            && !chunks[y][x-1].nullChunk)
-        HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph, chunks[y][x].label_offset, chunks[y][x-1].label_offset);
-      
-      if(x<gridwidth-1  && !chunks[y][x+1].nullChunk)
-        HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph, chunks[y][x].label_offset, chunks[y][x+1].label_offset);
-
-
-      //I wish I had wrote it all in LISP.
-      //Top left
-      if(y>0 && x>0                      && !chunks[y-1][x-1].nullChunk)   
-        HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph, chunks[y][x].label_offset, chunks[y-1][x-1].label_offset);
-      
-      //Bottom right
-      if(y<gridheight-1 && x<gridwidth-1 && !chunks[y+1][x+1].nullChunk) 
-        HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph, chunks[y][x].label_offset, chunks[y+1][x+1].label_offset);
-      
-      //Top right
-      if(y>0 && x<gridwidth-1            && !chunks[y-1][x+1].nullChunk)            
-        HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph, chunks[y][x].label_offset, chunks[y-1][x+1].label_offset);
-      
-      //Bottom left
-      if(x>0 && y<gridheight-1           && !chunks[y+1][x-1].nullChunk) 
-        HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph, chunks[y][x].label_offset, chunks[y+1][x-1].label_offset);
+      //This ensures that the dependency count is >=0 for both sign and unsigned
+      //types.
+      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)!=(p_dependency_t)-1); 
     }
-    timer_mg_construct.stop();
 
-    std::cerr<<"!Mastergraph constructed in "<<timer_mg_construct.accumulated()<<"s. "<<std::endl;
+    std::cerr<<processed_cells<<" perimeter cells processed."<<std::endl;
 
-    //Clear the jobs1 data from memory since we no longer need it
-    jobs1.clear();
-    jobs1.shrink_to_fit();
-
-
-    std::cerr<<"Performing aggregated priority flood"<<std::endl;
-    Timer agg_pflood_timer;
-    agg_pflood_timer.start();
-    typedef std::pair<elev_t, label_t>  graph_node;
-    std::priority_queue<graph_node, std::vector<graph_node>, std::greater<graph_node> > open;
-    std::queue<graph_node> pit;
-    std::vector<bool>   visited(maxlabel,false); //TODO
-    graph_elev.resize(maxlabel);                 //TODO
-
-    open.emplace(std::numeric_limits<elev_t>::lowest(),1);
-
-    while(open.size()>0 || pit.size()>0){
-      graph_node c;
-      if(pit.size()>0){
-        c = pit.front();
-        pit.pop();
-      } else {
-        c = open.top();
-        open.pop();
-      }
-
-      auto my_elev       = c.first;
-      auto my_vertex_num = c.second;
-      if(visited[my_vertex_num])
-        continue;
-
-      graph_elev[my_vertex_num] = my_elev;
-      visited   [my_vertex_num] = true;
-
-      for(auto &n: mastergraph[my_vertex_num]){
-        auto n_vertex_num = n.first;
-        auto n_elev       = n.second;
-        if(visited[n_vertex_num])
-          continue;
-        open.emplace(std::max(my_elev,n_elev),n_vertex_num);
-        //Turning on these lines activates the improved priority flood. It is
-        //disabled to make the algorithm easier to verify by inspection, and
-        //because it made little difference in the overall speed of the algorithm.
-
-        // if(n_elev<=my_elev){
-        //   pit.emplace(my_elev,n_vertex_num);
-        // } else {
-        //   open.emplace(n_elev,n_vertex_num);
-        // }
-      }
-    }
-    agg_pflood_timer.stop();
-    std::cerr<<"!Aggregated priority flood time: "<<agg_pflood_timer.accumulated()<<"s."<<std::endl;
-    timer_calc.stop();
+    job2s_to_dist = std::move(jobs1);
   }
 
-  Job2<elev_t> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
-    timer_calc.start();
-    auto job2 = Job2<elev_t>(graph_elev.begin()+chunks[ty][tx].label_offset,graph_elev.begin()+chunks[ty][tx].label_offset+chunks[ty][tx].label_increment);
-    timer_calc.stop();
-    return job2;
+  Job2<T> DistributeJob2(const ChunkGrid &chunks, int tx, int ty){
+    auto &this_job = job2s_to_dist.at(ty).at(tx);
+    // for(size_t s=0;s<this_job.accum.size();s++)
+    //   this_job.accum[s] -= this_job.accum_orig[s];
+
+    return this_job.accum_in;
   }
 };
 
@@ -707,12 +1044,7 @@ void Producer(ChunkGrid &chunks){
     jobs_out++;
   }
 
-  //NOTE: As each job returns partial reductions could be done on the data to
-  //reduce the amount of memory required by the master node. That is, the full
-  //reduction below, which is done on all of the collected data at once, could
-  //be broken up. The downside to this would be a potentially significant
-  //increase in the complexity of this code. I have opted for a more resource-
-  //intensive implementation in order to try to keep the code simple.
+  std::cerr<<jobs_out<<" jobs out."<<std::endl;
 
   //Grid to hold returned jobs
   Job1Grid<T> jobs1(chunks.size(), std::vector< Job1<T> >(chunks[0].size()));
@@ -855,7 +1187,6 @@ void Preparer(
 
       if(lf.isNullTile()){
         chunks.back().emplace_back();
-        lfout.addEntry(""); //Add a null tile to the output
         continue;
       }
 
@@ -978,16 +1309,16 @@ void Preparer(
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       chunks.emplace_back(std::vector<ChunkInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
-        if(total_height-y<100){
-          std::cerr<<"At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
-          std::cerr<<"I suggest you use bheight="<<SuggestTileSize(bheight, total_height, 100)<<std::endl;
-          throw std::logic_error("Tile height too small!");
-        }
-        if(total_width -x<100){
-          std::cerr<<"At least one tile is <100 cells in width. Please change rectangle size to avoid this!"<<std::endl;
-          std::cerr<<"I suggest you use bwidth="<<SuggestTileSize(bwidth, total_width, 100)<<std::endl;
-          throw std::logic_error("Tile width too small!");
-        }
+        //if(total_height-y<100){
+        //  std::cerr<<"At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
+        //  std::cerr<<"I suggest you use bheight="<<SuggestTileSize(bheight, total_height, 100)<<std::endl;
+        //  throw std::logic_error("Tile height too small!");
+        //}
+        //if(total_width -x<100){
+        //  std::cerr<<"At least one tile is <100 cells in width. Please change rectangle size to avoid this!"<<std::endl;
+        //  std::cerr<<"I suggest you use bwidth="<<SuggestTileSize(bwidth, total_width, 100)<<std::endl;
+        //  throw std::logic_error("Tile width too small!");
+        //}
 
         if(retention[0]!='@' && retention.find("%n")==std::string::npos){
           std::cerr<<"In <one> mode '%n' must be present in the retention path."<<std::endl;
@@ -1111,16 +1442,16 @@ int main(int argc, char **argv){
           if(i+1==argc)
             throw std::invalid_argument("-w followed by no argument.");
           bwidth = std::stoi(argv[i+1]);
-          if(bwidth<300 && bwidth!=-1)
-            throw std::invalid_argument("Width must be at least 500.");
+          // if(bwidth<300 && bwidth!=-1) //TODO
+          //   throw std::invalid_argument("Width must be at least 500.");
           i++;
           continue;
         } else if(strcmp(argv[i],"--bheight")==0 || strcmp(argv[i],"-h")==0){
           if(i+1==argc)
             throw std::invalid_argument("-h followed by no argument.");
           bheight = std::stoi(argv[i+1]);
-          if(bheight<300 && bheight!=-1)
-            throw std::invalid_argument("Height must be at least 500.");
+          // if(bheight<300 && bheight!=-1) //TODO
+          //   throw std::invalid_argument("Height must be at least 500.");
           i++;
           continue;
         } else if(strcmp(argv[i],"--help")==0){
