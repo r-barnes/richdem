@@ -541,10 +541,12 @@ class ConsumerSpecifics {
 
   void VerifyInputSanity(){
     //Let's double-check that the flowdirs are valid
+    timer_calc.start();
     for(int32_t y=0;y<flowdirs.height();y++)
     for(int32_t x=0;x<flowdirs.width();x++)
       if(!flowdirs.isNoData(x,y) && !(1<=flowdirs(x,y) && flowdirs(x,y)<=8) && !(flowdirs(x,y)==NO_FLOW))
         throw std::domain_error("Invalid flow direction found: "+std::to_string(flowdirs(x,y)));
+    timer_calc.stop();
   }
 
   void FirstRound(const ChunkInfo &chunk, Job1<T> &job1){
@@ -597,6 +599,7 @@ class ConsumerSpecifics {
 
     auto &accum_offset = job2;
 
+    timer_calc.start();
     for(int s=0;s<(int)accum_offset.size();s++){
       if(accum_offset.at(s)==0)
         continue;
@@ -604,6 +607,7 @@ class ConsumerSpecifics {
       serialToXY(s, x, y, accum.width(), accum.height());
       FollowPathAdd(x,y,flowdirs,accum,accum_offset.at(s));
     }
+    timer_calc.stop();
 
     //At this point we're done with the calculation! Boo-yeah!
 
@@ -640,15 +644,19 @@ class ConsumerSpecifics {
   }
 
   void SaveToRetain(ChunkInfo &chunk, StorageType<T> &storage){
+    timer_io.start();
     auto &temp  = storage[std::make_pair(chunk.gridy,chunk.gridx)];
     temp.first  = std::move(flowdirs);
     temp.second = std::move(accum);
+    timer_io.stop();
   }
 
   void LoadFromRetain(ChunkInfo &chunk, StorageType<T> &storage){
+    timer_io.start();
     auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
     flowdirs   = std::move(temp.first);
     accum      = std::move(temp.second);
+    timer_io.start();
   }
 };
 
@@ -1158,8 +1166,8 @@ void Preparer(
   int flipH,
   int flipV
 ){
-  Timer overall;
-  overall.start();
+  Timer timer_overall;
+  timer_overall.start();
 
   ChunkGrid chunks;
   std::string  filename;
@@ -1387,8 +1395,8 @@ void Preparer(
   }
 
   CommBroadcast(&file_type,0);
-  overall.stop();
-  std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
+  timer_overall.stop();
+  std::cerr<<"!Preparer time: "<<timer_overall.accumulated()<<"s."<<std::endl;
 
   std::cerr<<"!Flip horizontal: "<<((repchunk->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
   std::cerr<<"!Flip vertical:   "<<((repchunk->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
@@ -1439,8 +1447,8 @@ int main(int argc, char **argv){
     int         flipH     = false;
     int         flipV     = false;
 
-    Timer master_time;
-    master_time.start();
+    Timer timer_master;
+    timer_master.start();
 
     std::cerr<<"!Running program version: "<<program_version<<std::endl;
 
@@ -1535,8 +1543,8 @@ int main(int argc, char **argv){
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
-    master_time.stop();
-    std::cerr<<"!TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
+    timer_master.stop();
+    std::cerr<<"!TimeInfo: Total wall-time was "<<timer_master.accumulated()<<"s."<<std::endl;
 
   } else {
     int good_to_go;
