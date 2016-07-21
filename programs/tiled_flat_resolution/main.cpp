@@ -49,7 +49,7 @@ void ProcessFlat(
       fds(nx,ny) = d8_inverse[n];
 
       if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)])
-        std::cerr<<"Loop formed in flat resolution."<<std::endl;
+        std::cerr<<"Loop formed in flat resolution at ("<<c.first<<","<<c.second<<")"<<std::endl;
 
       q.emplace(nx,ny);
     }
