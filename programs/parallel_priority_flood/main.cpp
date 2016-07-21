@@ -18,6 +18,9 @@
 
 const char* program_version = "14";
 
+const std::string algname  = "Parallel Priority-Flood";
+const std::string citation = "Barnes, R., 2016. \"Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters\". Computers & Geosciences. doi:10.1016/j.cageo.2016.07.001";
+
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
 //for data set sizes and labels. For instance, in C++, a signed integer must be
@@ -717,17 +720,19 @@ void Producer(ChunkGrid &chunks){
   //increase in the complexity of this code. I have opted for a more resource-
   //intensive implementation in order to try to keep the code simple.
 
+  std::cerr<<"m Jobs created = "<<jobs_out<<std::endl;
+
   //Grid to hold returned jobs
   Job1Grid<T> jobs1(chunks.size(), std::vector< Job1<T> >(chunks[0].size()));
   while(jobs_out--){
-    std::cerr<<jobs_out<<" jobs left to receive."<<std::endl;
+    std::cerr<<"p Jobs remaining = "<<jobs_out<<std::endl;
     Job1<T> temp;
     CommRecv(&temp, nullptr, -1);
     jobs1.at(temp.gridy).at(temp.gridx) = temp;
   }
 
-  std::cerr<<"!First stage: "<<CommBytesSent()<<"B sent."<<std::endl;
-  std::cerr<<"!First stage: "<<CommBytesRecv()<<"B received."<<std::endl;
+  std::cerr<<"n First stage Tx = "<<CommBytesSent()<<" B"<<std::endl;
+  std::cerr<<"n First stage Rx = "<<CommBytesRecv()<<" B"<<std::endl;
   CommBytesReset();
 
   //Get timing info
@@ -766,7 +771,7 @@ void Producer(ChunkGrid &chunks){
   TimeInfo time_second_total;
 
   while(jobs_out--){
-    std::cerr<<jobs_out<<" jobs left to receive."<<std::endl;
+    std::cerr<<"p Jobs left to receive = "<<jobs_out<<std::endl;
     TimeInfo temp;
     CommRecv(&temp, nullptr, -1);
     time_second_total += temp;
@@ -781,28 +786,28 @@ void Producer(ChunkGrid &chunks){
 
   timer_overall.stop();
 
-  std::cout<<"!TimeInfo: First stage total overall time="<<time_first_total.overall<<std::endl;
-  std::cout<<"!TimeInfo: First stage total io time="     <<time_first_total.io     <<std::endl;
-  std::cout<<"!TimeInfo: First stage total calc time="   <<time_first_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: First stage peak child VmPeak=" <<time_first_total.vmpeak <<std::endl;
-  std::cout<<"!TimeInfo: First stage peak child VmHWM="  <<time_first_total.vmhwm  <<std::endl;
+  std::cerr<<"t First stage total overall time = "<<time_first_total.overall<<" s"<<std::endl;
+  std::cerr<<"t First stage total io time = "     <<time_first_total.io     <<" s"<<std::endl;
+  std::cerr<<"t First stage total calc time = "   <<time_first_total.calc   <<" s"<<std::endl;
+  std::cerr<<"r First stage peak child VmPeak = " <<time_first_total.vmpeak <<std::endl;
+  std::cerr<<"r First stage peak child VmHWM = "  <<time_first_total.vmhwm  <<std::endl;
 
-  std::cout<<"!Second stage: "<<CommBytesSent()<<"B sent."<<std::endl;
-  std::cout<<"!Second stage: "<<CommBytesRecv()<<"B received."<<std::endl;
+  std::cerr<<"n Second stage Tx = "<<CommBytesSent()<<" B"<<std::endl;
+  std::cerr<<"n Second stage Rx = "<<CommBytesRecv()<<" B"<<std::endl;
 
-  std::cout<<"!TimeInfo: Second stage total overall time="<<time_second_total.overall<<std::endl;
-  std::cout<<"!TimeInfo: Second stage total IO time="     <<time_second_total.io     <<std::endl;
-  std::cout<<"!TimeInfo: Second stage total calc time="   <<time_second_total.calc   <<std::endl;
-  std::cout<<"!TimeInfo: Second stage peak child VmPeak=" <<time_second_total.vmpeak <<std::endl;
-  std::cout<<"!TimeInfo: Second stage peak child VmHWM="  <<time_second_total.vmhwm  <<std::endl;
+  std::cerr<<"t Second stage total overall time = "<<time_second_total.overall<<" s"<<std::endl;
+  std::cerr<<"t Second stage total IO time = "     <<time_second_total.io     <<" s"<<std::endl;
+  std::cerr<<"t Second stage total calc time = "   <<time_second_total.calc   <<" s"<<std::endl;
+  std::cerr<<"r Second stage peak child VmPeak = " <<time_second_total.vmpeak <<std::endl;
+  std::cerr<<"r Second stage peak child VmHWM = "  <<time_second_total.vmhwm  <<std::endl;
 
-  std::cout<<"!TimeInfo: Producer overall="<<timer_overall.accumulated()       <<std::endl;
-  std::cout<<"!TimeInfo: Producer calc="   <<producer.timer_calc.accumulated() <<std::endl;
+  std::cerr<<"t Producer overall time = "<<timer_overall.accumulated()       <<" s"<<std::endl;
+  std::cerr<<"t Producer calc time = "   <<producer.timer_calc.accumulated() <<" s"<<std::endl;
 
   long vmpeak, vmhwm;
   ProcessMemUsage(vmpeak,vmhwm);
-  std::cout<<"!TimeInfo: Producer's VmPeak="   <<vmpeak <<std::endl;
-  std::cout<<"!TimeInfo: Producer's VmHWM="    <<vmhwm  <<std::endl;
+  std::cerr<<"r Producer's VmPeak = "   <<vmpeak <<std::endl;
+  std::cerr<<"r Producer's VmHWM = "    <<vmhwm  <<std::endl;
 }
 
 
@@ -837,7 +842,7 @@ void Preparer(
   } else if(output_name.find("%n")!=std::string::npos){
     output_layout_name.replace(output_layout_name.find("%n"), 2, "layout");
   } else { //Should never happen
-    std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+    std::cerr<<"E Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
     throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
   }
   LayoutfileWriter lfout(output_layout_name);
@@ -874,7 +879,7 @@ void Preparer(
         try{
           getGDALDimensions(lf.getFullPath(),chunk_height,chunk_width,file_type,chunk_geotransform.data());
         } catch (...) {
-          std::cerr<<"Error getting file information from '"<<lf.getFullPath()<<"'!"<<std::endl;
+          std::cerr<<"E Error getting file information from '"<<lf.getFullPath()<<"'!"<<std::endl;
           CommAbort(-1); //TODO
         }
       }
@@ -889,7 +894,7 @@ void Preparer(
       } else if(retention[0]=='@') {
         this_retention = retention;
       } else { //Should never happen
-        std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+        std::cerr<<"E Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
         throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
       }
 
@@ -899,7 +904,7 @@ void Preparer(
       } else if(output_name.find("%n")!=std::string::npos){
         this_output_name.replace(this_output_name.find("%n"), 2, lf.getGridLocName());
       } else { //Should never happen
-        std::cerr<<"Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
+        std::cerr<<"E Outputname for mode-many must contain '%f' or '%n'!"<<std::endl;
         throw std::runtime_error("Outputname for mode-many must contain '%f' or '%n'!");
       }
 
@@ -935,9 +940,9 @@ void Preparer(
         chunks.back().back().flip ^= FLIP_VERT;
     }
 
-    std::cerr<<"!Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
-    std::cerr<<"!Total cells to be processed: "<<cell_count<<std::endl;
-    std::cerr<<"!Number of tiles which were not null: "<<not_null_tiles<<std::endl;
+    std::cerr<<"c Loaded "<<chunks.size()<<" rows each of which had "<<chunks[0].size()<<" columns."<<std::endl;
+    std::cerr<<"m Total cells to be processed = "<<cell_count<<std::endl;
+    std::cerr<<"m Number of tiles which were not null = "<<not_null_tiles<<std::endl;
 
     //nullChunks imply that the chunks around them have edges, as though they
     //are on the edge of the raster.
@@ -963,7 +968,7 @@ void Preparer(
     try {
       getGDALDimensions(input_file, total_height, total_width, file_type, NULL);
     } catch (...) {
-      std::cerr<<"Error getting file information from '"<<input_file<<"'!"<<std::endl;
+      std::cerr<<"E Error getting file information from '"<<input_file<<"'!"<<std::endl;
       CommAbort(-1); //TODO
     }
 
@@ -975,11 +980,11 @@ void Preparer(
     if(bheight==-1)
       bheight = total_height;
 
-    std::cerr<<"!Total width:  "<<total_width <<"\n";
-    std::cerr<<"!Total height: "<<total_height<<"\n";
-    std::cerr<<"!Block width:  "<<bwidth      <<"\n";
-    std::cerr<<"!Block height: "<<bheight     <<std::endl;
-    std::cerr<<"!Total cells to be processed: "<<(total_width*total_height)<<std::endl;
+    std::cerr<<"m Total width =  "<<total_width <<"\n";
+    std::cerr<<"m Total height = "<<total_height<<"\n";
+    std::cerr<<"m Block width =  "<<bwidth      <<"\n";
+    std::cerr<<"m Block height = "<<bheight     <<std::endl;
+    std::cerr<<"m Total cells to be processed = "<<(total_width*total_height)<<std::endl;
 
     //Create a grid of jobs
     //TODO: Avoid creating extremely narrow or small strips
@@ -998,12 +1003,12 @@ void Preparer(
         }
 
         if(retention[0]!='@' && retention.find("%n")==std::string::npos){
-          std::cerr<<"In <one> mode '%n' must be present in the retention path."<<std::endl;
+          std::cerr<<"E In <one> mode '%n' must be present in the retention path."<<std::endl;
           throw std::invalid_argument("'%n' not found in retention path!");
         }
 
         if(output_name.find("%n")==std::string::npos){
-          std::cerr<<"In <one> mode '%n' must be present in the output path."<<std::endl;
+          std::cerr<<"E In <one> mode '%n' must be present in the output path."<<std::endl;
           throw std::invalid_argument("'%n' not found in output path!");
         }
 
@@ -1015,7 +1020,7 @@ void Preparer(
           this_retention.replace(this_retention.find("%n"), 2, coord_string);
         std::string this_output_name = output_name;
         if(this_output_name.find("%n")==std::string::npos){
-          std::cerr<<"Outputname must include '%n' for <one> mode."<<std::endl;
+          std::cerr<<"E Outputname must include '%n' for <one> mode."<<std::endl;
           throw std::runtime_error("Outputname must include '%n' for <one> mode.");
         }
         this_output_name.replace(this_output_name.find("%n"),2,coord_string);
@@ -1053,15 +1058,15 @@ void Preparer(
 
   CommBroadcast(&file_type,0);
   timer_overall.stop();
-  std::cerr<<"!Preparer time: "<<timer_overall.accumulated()<<"s."<<std::endl;
+  std::cerr<<"t Preparer time = "<<timer_overall.accumulated()<<" s"<<std::endl;
 
-  std::cerr<<"!Flip horizontal: "<<((repchunk->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
-  std::cerr<<"!Flip vertical:   "<<((repchunk->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
-  std::cerr<<"!Input data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+  std::cerr<<"c Flip horizontal = "<<((repchunk->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+  std::cerr<<"c Flip vertical =   "<<((repchunk->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  std::cerr<<"c Input data type = "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
     case GDT_Unknown:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
     case GDT_Byte:
       return Producer<uint8_t >(chunks);
@@ -1081,10 +1086,10 @@ void Preparer(
     case GDT_CInt32:
     case GDT_CFloat32:
     case GDT_CFloat64:
-      std::cerr<<"Complex types are not supported. Sorry!"<<std::endl;
+      std::cerr<<"E Complex types are not supported. Sorry!"<<std::endl;
       CommAbort(-1); //TODO
     default:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
+      std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
   }
 }
@@ -1107,7 +1112,10 @@ int main(int argc, char **argv){
     Timer timer_master;
     timer_master.start();
 
-    std::cerr<<"!Running program version: "<<program_version<<std::endl;
+    std::cerr<<"A "<<algname <<std::endl;
+    std::cerr<<"C "<<citation<<std::endl;
+
+    std::cerr<<"c Running program version: "<<program_version<<std::endl;
 
     std::string help=
     #include "help.txt"
@@ -1179,7 +1187,7 @@ int main(int argc, char **argv){
       std::cerr<<"parallel_pflood.exe [--flipV] [--flipH] [--bwidth #] [--bheight #] <many/one> <retention> <input> <output>"<<std::endl;
       std::cerr<<"\tUse '--help' to show help."<<std::endl;
 
-      std::cerr<<"###Error: "<<output_err<<std::endl;
+      std::cerr<<"E "<<output_err<<std::endl;
 
       int good_to_go=0;
       CommBroadcast(&good_to_go,0);
@@ -1188,20 +1196,20 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"!Running with "            <<CommSize()<<" processes."<<std::endl;
-    std::cerr<<"!Many or one: "            <<many_or_one<<std::endl;
-    std::cerr<<"!Input file: "             <<input_file<<std::endl;
-    std::cerr<<"!Retention strategy: "     <<retention <<std::endl;
-    std::cerr<<"!Block width: "            <<bwidth    <<std::endl;
-    std::cerr<<"!Block height: "           <<bheight   <<std::endl;
-    std::cerr<<"!Flip horizontal: "        <<flipH     <<std::endl;
-    std::cerr<<"!Flip vertical: "          <<flipV     <<std::endl;
-    std::cerr<<"!World Size: "             <<CommSize()<<std::endl;
+    std::cerr<<"c Running with = "            <<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
+    std::cerr<<"c Input file = "             <<input_file<<std::endl;
+    std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
+    std::cerr<<"c Block width = "            <<bwidth    <<std::endl;
+    std::cerr<<"c Block height = "           <<bheight   <<std::endl;
+    std::cerr<<"c Flip horizontal = "        <<flipH     <<std::endl;
+    std::cerr<<"c Flip vertical = "          <<flipV     <<std::endl;
+    std::cerr<<"c World Size = "             <<CommSize()<<std::endl;
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
     timer_master.stop();
-    std::cerr<<"!TimeInfo: Total wall-time was "<<timer_master.accumulated()<<"s."<<std::endl;
+    std::cerr<<"t Total wall-time = "<<timer_master.accumulated()<<" s"<<std::endl;
 
   } else {
     int good_to_go;

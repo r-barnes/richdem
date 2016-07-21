@@ -50,6 +50,9 @@ The design of RichDEM is guided by these principles:
   design algorithms. The code contains extensive internal documentation which is
   DOxygen compatible.
 
+* **Programs and algorithms will provide useful feedback.** Progress bars will 
+  appear if desired and the output will be optimized for machine parsing.
+
 
 
 Using It
@@ -71,6 +74,44 @@ Testing Methodology
 ===================
 
 TODO
+
+Parsable Output
+===================
+
+Every line of output from RichDEM begins with one of the following characters,
+making it easy to parse with a machine.
+
+ * **c**: Configuration information: program version, input files, and command
+          line options, &c.
+
+ * **p**: Progress information: inform the user to keep calm because we're
+          carrying on.
+
+ * **t**: Timing information: How long stuff took
+
+ * **i**: I/O: Amount of data loaded from disk
+
+ * **n**: I/O: Amount of data transferred through a network
+
+ * **r**: Amount of RAM used
+
+ * **A**: Algorithm name
+
+ * **C**: Citation for algorithm
+
+ * **m**: Miscallaneous counts
+
+ * **E**: Indicates an error condition
+
+ * **W**: Indicates a warning
+
+ * **d**: Debugging info
+
+All output data shall have the form:
+
+    <INDICATOR CHARACTER> <MESSAGE/MEASUREMENT NAME> [= <VALUE> [UNIT]]
+
+The amount of whitespce may very for aesthetic purposes.
 
 Specific Algorithms
 ===================
