@@ -1,23 +1,23 @@
 export CXX=g++
 export GDAL_LIBS=`gdal-config --libs`
 export GDAL_CFLAGS=`gdal-config --cflags`
-export OPT_FLAGS=-g -O3
+export OPT_FLAGS=-g -O3 -DNDEBUG
 export DEBUG_FLAGS=-g
 export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11 -Wall -Wno-unknown-pragmas -I../../include -I.
 
-#-Wextra #-fsanitize=undefined #-Wextra -Wconversion #-DNDEBUG
+#-Wextra #-fsanitize=undefined #-Wextra -Wconversion
 
 compile: main.cpp
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe main.cpp $(GDAL_LIBS)  
 
 compile_with_compression:
-	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz
 
 xsede_with_compression:
-	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_flats.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
 
 xsede_debug_with_compression:
-	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o parallel_flats.exe -DNDEBUG -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
+	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o parallel_flats.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) -lboost_iostreams -lz -L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mvapich2_ib/include
 
 debug: main.cpp
 	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o parallel_flats.exe main.cpp $(GDAL_LIBS) 
