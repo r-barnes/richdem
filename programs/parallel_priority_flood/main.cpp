@@ -855,6 +855,7 @@ void Preparer(
 
       if(lf.isNullTile()){
         chunks.back().emplace_back();
+        lfout.addEntry(""); //Add a null tile to the output
         continue;
       }
 
