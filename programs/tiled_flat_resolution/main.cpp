@@ -48,14 +48,8 @@ void ProcessFlat(
 
       fds(nx,ny) = d8_inverse[n];
 
-      if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)]){
+      if(fds(c.first,c.second)==d8_inverse[fds(nx,ny)])
         std::cerr<<"Loop formed in flat resolution."<<std::endl;
-        // std::cerr<<"("<<c.first<<","<<c.second<<","<<dem(c.first,c.second)<<")="<<(int)fds(c.first,c.second)<<" linked to ("<<nx<<","<<ny<<","<<dem(nx,ny)<<")="<<(int)fds(nx,ny)<<std::endl;
-        // print2D(dem,c.first,c.second);
-        // std::cerr<<std::endl;
-        // print2D(fds,c.first,c.second);
-        // std::cerr<<"\n\n"<<std::endl;
-      }
 
       q.emplace(nx,ny);
     }
@@ -101,7 +95,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   if(flip_style=="flipv" || flip_style=="fliphv")
     dem.flipV = true;
 
-  //dem.printStamp(5); //TODO
+  dem.printStamp(5);
 
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
@@ -114,8 +108,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   for(int32_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
-
-    //std::cerr<<"Tile ("<<tx<<","<<ty<<") has dimensions "<<dem.tileHeight(tx,ty)<<" "<<dem.tileWidth(tx,ty)<<std::endl;
 
     int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
     int processed_tiles   = ty*dem.widthInTiles()+tx;
@@ -172,10 +164,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
         int ny = y+dy[nlowest];
         if(fds.in_grid(nx,ny) && fds(nx,ny)==d8_inverse[nlowest]){
           std::cerr<<"Two cell loop detected!"<<std::endl;
-          // print2dradius(dem,x,y,4,nx,ny);
-          // std::cerr<<std::endl;
-          // print2dradius(fds,x,y,4,nx,ny);
-          // std::cerr<<"\n\n"<<std::endl;
         }
       }
 
@@ -214,7 +202,6 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   fds.printStamp(5); //TODO
 
   std::cerr<<"Saving results..."<<std::endl;
-  //dem.saveGDAL(output_filename+"elev"); //TODO
   fds.saveGDAL(output_filename);
 
   total_time.stop();
