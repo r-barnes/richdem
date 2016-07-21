@@ -24,7 +24,6 @@ const char* program_version = "14";
 //at least 16 bits, but not necessarily more. We force a minimum of 32 bits as
 //this is, after all, for use with large datasets.
 #include <cstdint>
-//#define DEBUG 1
 
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
