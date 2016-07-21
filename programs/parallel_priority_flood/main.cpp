@@ -243,15 +243,19 @@ class ConsumerSpecifics {
   }
 
   void SaveToRetain(ChunkInfo &chunk, StorageType<elev_t> &storage){
+    timer_io.start();
     auto &temp  = storage[std::make_pair(chunk.gridy,chunk.gridx)];
     temp.first  = std::move(dem);
     temp.second = std::move(labels);
+    timer_io.stop();
   }
 
   void LoadFromRetain(ChunkInfo &chunk, StorageType<elev_t> &storage){
+    timer_io.start();
     auto &temp = storage.at(std::make_pair(chunk.gridy,chunk.gridx));
     dem        = std::move(temp.first);
     labels     = std::move(temp.second);
+    timer_io.stop();
   }
 
   void FirstRound(const ChunkInfo &chunk, Job1<elev_t> &job1){
@@ -819,12 +823,13 @@ void Preparer(
   int flipH,
   int flipV
 ){
-  Timer overall;
-  overall.start();
+  Timer timer_overall;
+  timer_overall.start();
 
   ChunkGrid chunks;
   std::string  filename;
-  GDALDataType file_type; //All chunks must have a common file_type
+  GDALDataType file_type;        //All chunks must have a common file_type
+  ChunkInfo *repchunk = nullptr; //Pointer to a representative chunk
 
   std::string output_layout_name = output_name;
   if(output_name.find("%f")!=std::string::npos){
@@ -910,6 +915,10 @@ void Preparer(
         chunk_height,
         true
       );
+
+      //Get a representative chunk, if we don't already have one
+      if(repchunk==nullptr)
+        repchunk = &chunks.back().back();
 
       lfout.addEntry(this_output_name);
 
@@ -1043,11 +1052,11 @@ void Preparer(
   }
 
   CommBroadcast(&file_type,0);
-  overall.stop();
-  std::cerr<<"!Preparer time: "<<overall.accumulated()<<"s."<<std::endl;
+  timer_overall.stop();
+  std::cerr<<"!Preparer time: "<<timer_overall.accumulated()<<"s."<<std::endl;
 
-  std::cerr<<"!Flip horizontal: "<<((chunks[0][0].flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
-  std::cerr<<"!Flip vertical:   "<<((chunks[0][0].flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip horizontal: "<<((repchunk->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+  std::cerr<<"!Flip vertical:   "<<((repchunk->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
   std::cerr<<"!Input data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
@@ -1095,8 +1104,8 @@ int main(int argc, char **argv){
     int         flipH     = false;
     int         flipV     = false;
 
-    Timer master_time;
-    master_time.start();
+    Timer timer_master;
+    timer_master.start();
 
     std::cerr<<"!Running program version: "<<program_version<<std::endl;
 
@@ -1191,8 +1200,8 @@ int main(int argc, char **argv){
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
-    master_time.stop();
-    std::cerr<<"!TimeInfo: Total wall-time was "<<master_time.accumulated()<<"s."<<std::endl;
+    timer_master.stop();
+    std::cerr<<"!TimeInfo: Total wall-time was "<<timer_master.accumulated()<<"s."<<std::endl;
 
   } else {
     int good_to_go;
