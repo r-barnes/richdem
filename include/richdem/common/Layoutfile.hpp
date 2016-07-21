@@ -2,6 +2,7 @@
 #define _layoutfile_hpp_
 
 #include <string>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
