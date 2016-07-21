@@ -20,10 +20,10 @@ timing:
 	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_d8_accum.exe main.cpp -lipm $(GDAL_LIBS)
 
 xsede: main.cpp
-	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_pit_fill.exe main.cpp $(GDAL_LIBS) $(XSEDE_MPI_LIBS)
+	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_d8_accum.exe main.cpp $(GDAL_LIBS) $(XSEDE_MPI_LIBS)
 
 xsede_with_compression:
-	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_pit_fill.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) $(XSEDE_MPI_LIBS) $(COMPRESSION_LIBS)
+	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_d8_accum.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) $(XSEDE_MPI_LIBS) $(COMPRESSION_LIBS)
 
 debug: main.cpp
 	$(MPICXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o parallel_d8_accum.exe main.cpp $(GDAL_LIBS)
