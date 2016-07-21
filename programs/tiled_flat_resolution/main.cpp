@@ -12,8 +12,6 @@
 
 typedef uint8_t flowdirs_t;
 
-const flowdirs_t UNVISITED = 13;
-
 template<class T>
 void ProcessFlat(
   A2Array2D<T>          &dem,
@@ -38,7 +36,7 @@ void ProcessFlat(
         continue;
       if(dem.isEdgeCell(nx,ny))
         continue;
-      if(fds(nx,ny)!=UNVISITED)
+      if(fds(nx,ny)!=NO_FLOW)
         continue;
       if(dem(nx,ny)!=flat_height)
         continue;
@@ -108,7 +106,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   A2Array2D<flowdirs_t> fds(temp_fds_name,dem,cachesize);
 
   fds.setNoData(FLOWDIR_NO_DATA);
-  fds.setAll(UNVISITED);
+  fds.setAll(NO_FLOW);
 
   int processed_cells = 0;
 
@@ -133,7 +131,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
       processed_cells++;
 
-      if(fds(tx,ty,px,py)!=UNVISITED)
+      if(fds(tx,ty,px,py)!=NO_FLOW)
         continue;
 
       if(dem.isNoData(tx,ty,px,py)){
@@ -189,15 +187,23 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
     }
   }
 
-  int loops = 0;
+  int no_flows = 0;
+  int loops    = 0;
   for(int y=0;y<fds.height();y++)
   for(int x=0;x<fds.width();x++){
+    auto my_n = fds(x,y);
+    if(my_n==NO_FLOW){
+      no_flows++;
+      continue;
+    }
+
     int nx = x+dx[fds(x,y)];
     int ny = y+dy[fds(x,y)];
-    if(fds.in_grid(nx,ny) && fds(x,y)==d8_inverse[fds(nx,ny)])
+    if(fds.in_grid(nx,ny) && my_n==d8_inverse[fds(nx,ny)])
       loops++;
   }
-  std::cerr<<"FOUND "<<loops<<" loops."<<std::endl;
+  std::cerr<<"Found "<<loops<<" loops."<<std::endl;
+  std::cerr<<"Found "<<no_flows<<" cells with no flow."<<std::endl;
 
   fds.printStamp(5); //TODO
 
