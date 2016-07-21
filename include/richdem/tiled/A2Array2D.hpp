@@ -495,8 +495,10 @@ class A2Array2D {
       for(int32_t tx=0;tx<widthInTiles();tx++){
         auto& tile = data[ty][tx];
 
-        if(tile.null_tile)
+        if(tile.null_tile){
+          lf.addEntry("");
           continue;
+        }
 
         //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
 
