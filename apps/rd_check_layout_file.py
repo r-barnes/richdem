@@ -34,21 +34,9 @@ print("Data tile count: {0}".format(len(layout)))
 path, layout_filename = os.path.split(sys.argv[1])
 print("Base path of layout file: {0}".format(path))
 
-#After this, files will contain all of the files in the directory
-for root, dirs, files in os.walk(path):
-  break
-
-layout_set = set(layout)
-files      = set(files)
-
-if len(layout_set)!=len(set(layout)):
+if len(layout)!=len(set(layout)):
   print("Warning: Layout contained duplicate filenames!")
 
-not_in_disk = layout_set.difference(files)
-
-if len(not_in_disk)>0:
-  print("Warning: The following files were specified by the layout, but not present on disk:")
-  for x in not_in_disk:
-    print(x)
-else:
-  print("Good: All files specified by the layout were present.")
+for x in layout:
+  if not os.path.exists(os.path.join(path,x)):
+    print("Warning: File '{0}' does not exist!".format(x))
