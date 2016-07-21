@@ -496,7 +496,7 @@ class A2Array2D {
         auto& tile = data[ty][tx];
 
         if(tile.null_tile){
-          lf.addEntry("");
+          lfout.addEntry("");
           continue;
         }
 
