@@ -79,10 +79,11 @@ class A2Array2D {
 
   LRU< WrappedArray2D* > lru;
 
+  int32_t not_null_tiles          = 0;
   int64_t total_width_in_cells    = 0;
   int64_t total_height_in_cells   = 0;
-  int32_t  per_tile_width         = 0;
-  int32_t  per_tile_height        = 0;
+  int32_t per_tile_width          = 0;
+  int32_t per_tile_height         = 0;
   int32_t evictions               = 0;
   int64_t cells_in_not_null_tiles = 0;
   T       no_data_to_set; //Used to disguise null tiles
@@ -142,8 +143,6 @@ class A2Array2D {
   A2Array2D(std::string layoutfile, int cachesize){
     lru.setCapacity(cachesize);
     readonly = true;
-
-    int     not_null_tiles = 0;
 
     LayoutfileReader lf(layoutfile);
     while(lf.next()){
@@ -394,6 +393,10 @@ class A2Array2D {
 
   int32_t heightInTiles() const {
     return data.size();
+  }
+
+  int32_t notNullTiles() const {
+    return not_null_tiles;
   }
 
   int32_t tileWidth(int32_t tx, int32_t ty) const {

@@ -103,18 +103,20 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   fds.setAll(NO_FLOW);
 
   int processed_cells = 0;
+  int processed_tiles = 0;
 
   for(int32_t ty=0;ty<dem.heightInTiles();ty++)
   for(int32_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
 
-    int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
-    int processed_tiles   = ty*dem.widthInTiles()+tx;
-    double est_total_time = (total_time.lap()/(double)processed_tiles)*(double)total_tiles;
+    double est_total_time = (total_time.lap()/(double)processed_tiles)*(double)dem.notNullTiles();
     double time_left      = est_total_time-total_time.lap();
-    std::cerr<<"Processed: "<<processed_tiles<<" of "<<total_tiles<<" tiles "
+    std::cerr<<"Processed: "<<processed_tiles<<" of "<<dem.notNullTiles()<<" tiles "
              <<time_left<<"s/"<<est_total_time<<"s ("<<(time_left/3600)<<"hr/"<<(est_total_time/3600)<<"hr)"<<std::endl;
+
+    processed_tiles++;
+
     for(int py=0;py<dem.tileHeight(tx,ty);py++)
     for(int px=0;px<dem.tileWidth(tx,ty); px++){
 
