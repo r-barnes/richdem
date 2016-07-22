@@ -210,10 +210,11 @@ class A2Array2D {
       throw std::runtime_error("Not all tiles had the same dimensions!");
     }
 
-    std::cerr<<"Total width: " <<total_width_in_cells<<std::endl;
-    std::cerr<<"Total height: "<<total_height_in_cells<<std::endl;
+    std::cerr<<"m Total width = " <<total_width_in_cells<<std::endl;
+    std::cerr<<"m Total height = "<<total_height_in_cells<<std::endl;
 
-    std::cerr<<not_null_tiles<<" of "<<(data[0].size()*data.size())<<" tiles were not null."<<std::endl;
+    std::cerr<<"m Tiles that were not null = "<<not_null_tiles<<std::endl;
+    std::cerr<<"m Total tiles = "<<(data[0].size()*data.size())<<std::endl;
   }
 
   A2Array2D(std::string prefix, int per_tile_width, int per_tile_height, int width, int height, int cachesize){
@@ -522,7 +523,7 @@ class A2Array2D {
       }
     }
 
-    std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
+    std::cerr<<"m Cells with no flow = "<<zero_count<<std::endl;
   }
 
   void saveUnifiedGDAL(const std::string outputname){
