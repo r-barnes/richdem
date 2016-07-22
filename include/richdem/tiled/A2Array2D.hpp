@@ -303,19 +303,6 @@ class A2Array2D {
   //   return data[ty][tx](x,y);
   // }
 
-  // const T& operator()(int tx, int ty, int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<per_tile_width);
-  //   assert(y<per_tile_height);
-  //   assert(tx>=0);
-  //   assert(ty>=0);
-  //   assert(tx<widthInTiles());
-  //   assert(ty<heightInTiles());
-  //   LoadTile(tx, ty);
-  //   return data[ty][tx](x,y);
-  // }
-
   T& operator()(int32_t tx, int32_t ty, int32_t x, int32_t y){
     assert(tx>=0);
     assert(ty>=0);
@@ -363,21 +350,6 @@ class A2Array2D {
 
     return data[tile_y][tile_x](x,y);
   }
-
-  // const T& operator()(int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<total_width_in_cells);
-  //   assert(y<total_height_in_cells);
-  //   int tile_x = x/per_tile_width;
-  //   int tile_y = y/per_tile_height;
-  //   x          = x%per_tile_width;
-  //   y          = y%per_tile_height;
-  //   if(data[tile_y][tile_x].null_tile)
-  //     return no_data;
-  //   LoadTile(tile_x, tile_y);
-  //   return data[tile_y][tile_x](x,y);
-  // }
 
   int32_t width() const {
     return total_width_in_cells;
