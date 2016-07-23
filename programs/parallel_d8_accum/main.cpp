@@ -847,6 +847,7 @@ class ProducerSpecifics {
 
     std::cerr<<"m Peaks found in aggregated problem = "<<q.size()<<std::endl;
 
+    //TODO: Detect loops!
     int processed_cells = 0;
     while(!q.empty()){
       atype    c  = q.front();
