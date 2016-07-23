@@ -736,7 +736,7 @@ class ProducerSpecifics {
       else if(ny==-1)
         gny -= 1;
 
-      //Ensure that the neighbouring tile is valid (TODO: nullChunk here?)
+      //Ensure that we are within the bounds of the grid
       //NOTE: gridwidth=jobs.front().size() and gridheight=jobs.size()
       if(gnx<0 || gny<0 || gnx==(int)jobs.front().size() || gny==(int)jobs.size()){
         gnx = -1;
@@ -747,6 +747,7 @@ class ProducerSpecifics {
 
       const auto &nc = chunks.at(gny).at(gnx);
 
+      //Ensure that the neighbouring tile is not null
       if(nc.nullChunk){
         gnx = -1;
         gny = -1;
