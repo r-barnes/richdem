@@ -1327,7 +1327,6 @@ void Preparer(
     std::cerr<<"m Total cells to be processed = "<<(total_width*total_height)<<std::endl;
 
     //Create a grid of jobs
-    //TODO: Avoid creating extremely narrow or small strips
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       tiles.emplace_back(std::vector<TileInfo>());
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
