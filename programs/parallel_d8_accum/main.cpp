@@ -308,7 +308,7 @@ class ConsumerSpecifics {
 
     int x0y0serial = xyToSerial(x0,y0,flowdirs.width(),flowdirs.height());
 
-    const int max_path_length = flowdirs.width()*flowdirs.height(); //TODO: Should this have +1?
+    const int max_path_length = flowdirs.width()*flowdirs.height();
 
     //Follow the flow path until it terminates
     while(path_len++<max_path_length){ //Follow the flow path until we reach its end
