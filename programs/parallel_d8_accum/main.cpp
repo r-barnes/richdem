@@ -944,7 +944,7 @@ void Consumer(){
   //blocking receive to wait.
   while(true){
     // When probe returns, the status object has the size and other attributes
-    // of the incoming message. Get the message size. TODO
+    // of the incoming message. Get the message size.
     int the_job = CommGetTag(0);
 
     //This message indicates that everything is done and the Consumer should shut
