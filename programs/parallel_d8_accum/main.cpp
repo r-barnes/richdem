@@ -837,13 +837,12 @@ class ProducerSpecifics {
         if(this_job.dependencies.at(s)==0)
           q.emplace(x,y,s);
 
-        //Accumulated flow at an input will be transfered to an output resulting
-        //in double-counting (TODO: More logical place to put this?)
+        //We are just receiving information about the tiles' perimeters now. Any
+        //flow at an input cell has already been transferred to output cells.
+        //So, to prevent double-counting, we zero the inputs.
         if(this_job.links.at(s)!=FLOW_EXTERNAL)  //TODO: NO_FLOW
           this_job.accum.at(s) = 0;
       }
-
-      //this_job.accum_orig = this_job.accum;
     }
 
     std::cerr<<"m Peaks found in aggregated problem = "<<q.size()<<std::endl;
