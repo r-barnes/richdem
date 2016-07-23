@@ -314,7 +314,7 @@ class ConsumerSpecifics {
     while(path_len++<max_path_length){ //Follow the flow path until we reach its end
       const int n = flowdirs(x,y);     //Neighbour the current cell flows towards
 
-      //Show the final part of the loop path (TODO)
+      //Show the final part of the loop path
       if(path_len>max_path_length-10)
         std::cerr<<"E Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
 
