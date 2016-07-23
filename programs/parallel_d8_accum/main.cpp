@@ -853,9 +853,7 @@ class ProducerSpecifics {
       q.pop();
       processed_cells++;
 
-      //TODO: Cut
-      ChunkInfo &ci = chunks.at(c.gy).at(c.gx);
-      assert(!ci.nullChunk);
+      assert(!chunks.at(c.gy).at(c.gx).nullChunk);
 
       link_t ns = FLOW_NO_DOWNSTREAM; //Initial value designed to cause devastation if misused
       int gnx   = -1; //Initial value designed to cause devastation if misused
