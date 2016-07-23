@@ -557,9 +557,10 @@ class ConsumerSpecifics {
     //overlap horizontal edges
     links.resize(2*flowdirs.width()+2*(flowdirs.height()-2), FLOW_TERMINATES);
 
-    //TODO: Although the following may consider a cell more than once, the
-    //repeated effort merely produces the same results in the same places
-    //twice, so it's okay.
+    //The following considers corner cells more than once. That's okay, though:
+    //the repeated effort merely produces the same results in the same places
+    //twice and the loss in efficiency is small since at most 4 cells are
+    //repeated.
 
     //If we are the top segment, nothing can flow into us, so we do not need
     //to know where flow paths originating at the top go to. On the otherhand,
