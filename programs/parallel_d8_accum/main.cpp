@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <queue>
+#include <stack>
 #include <vector>
 #include <limits>
 #include <fstream> //For reading layout files
@@ -395,10 +395,14 @@ class ConsumerSpecifics {
     }
   }
 
+
   void FlowAccumulation(
     const Array2D<flowdir_t> &flowdirs,
     Array2D<accum_t>         &accum
   ){
+    typedef Array2D<flowdir_t>::i_t i_t;
+    auto NO_I = Array2D<flowdir_t>::NO_I;
+
     //Each cell that flows points to a neighbouring cell. But not every cell
     //is pointed at. Cells which are not pointed at are the peaks from which
     //flow originates. In order to calculate the flow accumulation we begin at
@@ -412,39 +416,37 @@ class ConsumerSpecifics {
     accum.resize(flowdirs,0);
     accum.setNoData(ACCUM_NO_DATA);
 
-    Array2D<c_dependency_t> dependencies(flowdirs,0);
-    for(int32_t y=0;y<flowdirs.height();y++)
-    for(int32_t x=0;x<flowdirs.width();x++){
-      if(flowdirs.isNoData(x,y)){  //This cell is a no_data cell
-        accum(x,y) = ACCUM_NO_DATA;
+    std::vector<c_dependency_t> dependencies(flowdirs.size(),0);
+
+    for(i_t i=0;i<flowdirs.size();i++){
+      if(flowdirs.isNoData(i)){    //This cell is a no_data cell
+        accum(i) = ACCUM_NO_DATA;
         continue;                
       }         
 
-      int n = flowdirs(x,y);       //The neighbour this cell flows into
+      int n = flowdirs(i);         //The neighbour this cell flows into
       if(n==NO_FLOW)               //This cell does not flow into a neighbour
         continue;
 
-      int nx = x+dx[n];            //x-coordinate of the neighbour
-      int ny = y+dy[n];            //y-coordinate of the neighbour
+      auto ni = flowdirs.getN(i,n);
         
       //Neighbour is not on the grid
-      if(!flowdirs.inGrid(nx,ny))
+      if(ni==NO_I)
         continue;
 
       //Neighbour is valid and is part of the grid. The neighbour depends on this
       //cell, so increment its dependency count.
-      dependencies(nx,ny)++;
+      dependencies[ni]++;
     }
 
     //Now that we know how many dependencies each cell has, we can determine which
     //cells are the peaks: the sources of flow. We make a note of where the peaks
     //are for later use.
-    std::queue<GridCell> sources;
-    for(int32_t y=0;y<dependencies.height();y++)
-    for(int32_t x=0;x<dependencies.width();x++)
+    std::stack<i_t> sources;
+    for(i_t i=0;i<dependencies.size();i++)
       //Valid cell with no dependencies: a peak!
-      if(dependencies(x,y)==0 && !flowdirs.isNoData(x,y))
-        sources.emplace(x,y);
+      if(dependencies[i]==0 && !flowdirs.isNoData(i))
+        sources.emplace(i);
 
     //Now that we know where the sources of flow are, we can start at this. Each
     //cell will have at least an accumulation of 1: itself. It then passes this
@@ -452,40 +454,41 @@ class ConsumerSpecifics {
     //neighbour and decrements the neighbours dependency count. When a neighbour
     //has no more dependencies, it becomes a source.
     while(!sources.empty()){         //There are sources remaining
-      GridCell c = sources.front();  //Grab a source. Order is not important here.
+      auto i = sources.top();        //Grab a source. Order is not important here.
       sources.pop();                 //We've visited this source. Discard it.
 
-      if(flowdirs.isNoData(c.x,c.y)) //Oh snap! This isn't a real cell!
+      if(flowdirs.isNoData(i))       //Oh snap! This isn't a real cell!
         continue;
 
-      accum(c.x,c.y)++;              //This is a real cell, and it accumulates
+      accum(i)++;                    //This is a real cell, and it accumulates
                                      //one cell's worth of flow automatically.
 
-      int n = flowdirs(c.x,c.y);     //Who is this source's neighbour?
+      int n = flowdirs(i);           //Who is this source's neighbour?
 
       if(n==NO_FLOW)                 //This cell doesn't flow anywhere.
         continue;                    //Move on to the next source.
 
-      int nx = c.x+dx[n];            //Okay, this cell is going somewhere.
-      int ny = c.y+dy[n];            //Make a note of where
+      auto ni = flowdirs.getN(i,n);  //Okay, this cell is going somewhere.
+                                     //Make a note of where
 
       //This cell flows of the edge of the grid. Move on to next source.
-      if(!flowdirs.inGrid(nx,ny))
+      if(ni==NO_I)
         continue;
       //This cell flows into a no_data cell. Move on to next source.
-      if(flowdirs.isNoData(nx,ny))
+      if(flowdirs.isNoData(ni))
         continue;
 
       //This cell has a neighbour it flows into. Add to its accumulation.
-      accum(nx,ny) += accum(c.x,c.y);
+      accum(ni) += accum(i);
       //Decrement the neighbour's dependencies.
-      dependencies(nx,ny)--;
+      dependencies[ni]--;
 
       //The neighbour has no more dependencies, so it has become a source
-      if(dependencies(nx,ny)==0)
-        sources.emplace(nx,ny);
+      if(dependencies[ni]==0)
+        sources.emplace(ni);
     }
   }
+
 
   template<class U>
   void GridPerimToArray(const Array2D<U> &grid, std::vector<U> &vec){
@@ -822,8 +825,8 @@ class ProducerSpecifics {
       atype(int gx, int gy, link_t s) : gx(gx), gy(gy), s(s) {};
     };
 
-    //Queue of cells which are known to have no dependencies
-    std::queue<atype> q;
+    //Stack of cells which are known to have no dependencies
+    std::stack<atype> q;
 
     //Search for cells without dependencies, these will constitute the set from
     //which we will begin push accumulation to downstream cells
@@ -851,7 +854,7 @@ class ProducerSpecifics {
     //TODO: Detect loops!
     int processed_cells = 0;
     while(!q.empty()){
-      atype    c  = q.front();
+      atype    c  = q.top();
       Job1<T> &j  = jobs1.at(c.gy).at(c.gx);
       q.pop();
       processed_cells++;
