@@ -6,7 +6,7 @@
 #include <queue>
 
 typedef uint8_t flowdir_t;
-typedef int64_t accum_t;
+typedef double  accum_t;
 typedef uint8_t c_dependency_t;
 
 void FlowAccumulation(
@@ -115,6 +115,8 @@ int main(int argc, char **argv){
   timer_calc.start();
   FlowAccumulation(fds,accum);
   timer_calc.stop();
+
+  accum.saveGDAL("/z/out.tif", 0, 0);
 
   std::cout<<"Calc time: "<<timer_calc.accumulated()<<std::endl;
 }
