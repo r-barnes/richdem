@@ -1541,7 +1541,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"c Running with = "            <<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"c Running with = "            <<CommSize()<<" processes"<<std::endl;
     std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
     std::cerr<<"c Input file = "             <<input_file<<std::endl;
     std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
