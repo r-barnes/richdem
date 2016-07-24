@@ -781,6 +781,7 @@ class ProducerSpecifics {
     TileGrid   &tiles,
     Job1Grid<T> &jobs1
   ){
+    timer_calc.start();
     const int gridheight = tiles.size();
     const int gridwidth  = tiles[0].size();
 
@@ -879,6 +880,7 @@ class ProducerSpecifics {
     std::cerr<<"m Perimeter cells processed = "<<processed_cells<<std::endl;
 
     job2s_to_dist = std::move(jobs1);
+    timer_calc.stop();
   }
 
   Job2<T> DistributeJob2(const TileGrid &tiles, int tx, int ty){
