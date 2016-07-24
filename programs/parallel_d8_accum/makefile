@@ -11,9 +11,6 @@ export XSEDE_BOOST_LIBS=-L/opt/boost/intel/mvapich2_ib/lib
 
 #-DNDEBUG -DSHOW_STAMPS
 
-mpic++ -g --std=c++11  `gdal-config --cflags` -I/opt/boost/intel/mvapich2_ib/include/ -I../../include -I. -Wall -Wno-unknown-pragmas -DWITH_COMPRESSION main.cpp -L/opt/boost/intel/mvapich2_ib/lib/  -lboost_iostreams -lz `gdal-config --libs`  -o parallel_d8_accum.exe 
-
-
 compile: main.cpp
 	$(MPICXX) $(OPT_FLAGS) $(CXXFLAGS) -o parallel_d8_accum.exe main.cpp $(GDAL_LIBS)
 
