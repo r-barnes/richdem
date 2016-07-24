@@ -558,7 +558,8 @@ class Array2D {
 
     @return i-coordinate of the neighbour. Usually referred to as 'ni'
   */
-  int64_t getN(int64_t i, int32_t n) const {
+  int64_t getN(int64_t i, uint8_t n) const {
+    assert(0<=n && n<=8);
     int32_t x = i%view_width+dx[n];
     int32_t y = i/view_width+dy[n];
     if(x<0 || y<0 || x==view_width || y==view_height)
