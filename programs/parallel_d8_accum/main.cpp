@@ -14,7 +14,7 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
 
-const char* program_version = "1";
+const char* program_version = "2";
 
 const std::string algname  = "Parallel Flow Accumulation";
 const std::string citation = "Barnes, R. 2016. \"Parallel D8 Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters\". In-progress.";
