@@ -177,15 +177,15 @@ class Array2D {
   std::vector<double> geotransform; ///Geotransform of the raster
   std::string projection;           ///Projection of the raster
 
- private:
-  template<typename> friend class Array2D;
-
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
   typedef int32_t  xy_t;            ///xy-addressing data type
   typedef uint32_t i_t;             ///i-addressing data type
 
   static const i_t NO_I = std::numeric_limits<i_t>::max();
+
+ private:
+  template<typename> friend class Array2D;
 
   std::vector<T> data;              ///Holds the raster data in a 1D array
                                     ///this improves caching versus a 2D array
@@ -847,7 +847,7 @@ class Array2D {
   */
   T& operator()(i_t i){
     assert(i>=0);
-    assert(i<view_width*view_height);
+    assert(i<(i_t)view_width*view_height);
     return data[i];
   }
 
@@ -860,7 +860,7 @@ class Array2D {
   */
   T operator()(i_t i) const {
     assert(i>=0);
-    assert(i<view_width*view_height);
+    assert(i<(i_t)view_width*view_height);
     return data[i];
   }
 
