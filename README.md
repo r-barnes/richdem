@@ -134,13 +134,17 @@ Publications
 ============
 The algorithms used in RichDEM have been published in the following articles:
 
+* Barnes, R., 2016. Non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. In Review.
+
 * Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences. doi:[10.1016/j.cageo.2016.07.001](http://dx.doi.org/10.1016/j.cageo.2016.07.001)
 
-* Barnes, Lehman, Mulla. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
+* Barnes, Lehman, Mulla. 2013. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
 
-* Barnes, Lehman, Mulla. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
+* Barnes, Lehman, Mulla. 2013. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
 
-* Barnes, Lehman, Mulla. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
+* Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
+
+* Barnes, Lehman, Mulla. 2011. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
 
 Requires:
  * OpenMP
