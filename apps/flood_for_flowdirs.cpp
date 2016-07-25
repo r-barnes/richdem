@@ -7,24 +7,24 @@
 #include "richdem/methods/d8_methods.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string output_prefix){
+int PerformAlgorithm(std::string filename, std::string outputname){
 
   Array2D<T> elevations(filename,false);
 
   improved_priority_flood(elevations);
 
-  Array2D<float> flowdirs;
+  Array2D<uint8_t> flowdirs;
 
   barnes_flat_resolution_d8(elevations,flowdirs,false);
 
-  flowdirs.saveGDAL(output_prefix+"-flowdirs.tif", 0, 0);
+  flowdirs.saveGDAL(outputname, 0, 0);
 
   return 0;
 }
 
 int main(int argc, char **argv){
   if(argc!=3){
-    std::cerr<<argv[0]<<" <INPUT> <OUTPUT_PREFIX>"<<std::endl;
+    std::cerr<<argv[0]<<" <Input filename> <Output filename>"<<std::endl;
     return -1;
   }
 
