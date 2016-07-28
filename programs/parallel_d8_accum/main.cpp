@@ -1133,7 +1133,7 @@ void Producer(TileGrid &tiles){
   timer_overall.stop();
 
   std::cerr<<"t First stage total overall time = "<<time_first_total.overall<<" s"<<std::endl;
-  std::cerr<<"t First stage total io time = "     <<time_first_total.io     <<" s"<<std::endl;
+  std::cerr<<"t First stage total IO time = "     <<time_first_total.io     <<" s"<<std::endl;
   std::cerr<<"t First stage total calc time = "   <<time_first_total.calc   <<" s"<<std::endl;
   std::cerr<<"r First stage peak child VmPeak = " <<time_first_total.vmpeak <<std::endl;
   std::cerr<<"r First stage peak child VmHWM = "  <<time_first_total.vmhwm  <<std::endl;
@@ -1541,7 +1541,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"c Running with = "            <<CommSize()<<" processes"<<std::endl;
+    std::cerr<<"c Processes = "              <<CommSize()<<std::endl;
     std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
     std::cerr<<"c Input file = "             <<input_file<<std::endl;
     std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
@@ -1549,7 +1549,13 @@ int main(int argc, char **argv){
     std::cerr<<"c Block height = "           <<bheight   <<std::endl;
     std::cerr<<"c Flip horizontal = "        <<flipH     <<std::endl;
     std::cerr<<"c Flip vertical = "          <<flipV     <<std::endl;
-    std::cerr<<"c World Size = "             <<CommSize()<<std::endl;
+
+    #ifdef WITH_COMPRESSION
+      std::cerr<<"c Cache compression = TRUE"<<std::endl;
+    #else
+      std::cerr<<"c Cache compression = FALSE"<<std::endl;
+    #endif
+
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
 
