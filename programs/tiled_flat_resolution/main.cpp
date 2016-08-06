@@ -103,18 +103,20 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
   fds.setAll(NO_FLOW);
 
   int processed_cells = 0;
+  int processed_tiles = 0;
 
   for(int32_t ty=0;ty<dem.heightInTiles();ty++)
   for(int32_t tx=0;tx<dem.widthInTiles(); tx++){
     if(dem.isNullTile(tx,ty))
       continue;
 
-    int total_tiles       = dem.heightInTiles() * dem.widthInTiles();
-    int processed_tiles   = ty*dem.widthInTiles()+tx;
-    double est_total_time = (total_time.lap()/(double)processed_tiles)*(double)total_tiles;
+    double est_total_time = (total_time.lap()/(double)processed_tiles)*(double)dem.notNullTiles();
     double time_left      = est_total_time-total_time.lap();
-    std::cerr<<"Processed: "<<processed_tiles<<" of "<<total_tiles<<" tiles "
+    std::cerr<<"p Processed: "<<processed_tiles<<" of "<<dem.notNullTiles()<<" tiles "
              <<time_left<<"s/"<<est_total_time<<"s ("<<(time_left/3600)<<"hr/"<<(est_total_time/3600)<<"hr)"<<std::endl;
+
+    processed_tiles++;
+
     for(int py=0;py<dem.tileHeight(tx,ty);py++)
     for(int px=0;px<dem.tileWidth(tx,ty); px++){
 
@@ -201,20 +203,22 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 
   fds.printStamp(5); //TODO
 
-  std::cerr<<"Saving results..."<<std::endl;
+  std::cerr<<"p Saving results..."<<std::endl;
   fds.saveGDAL(output_filename);
 
   total_time.stop();
 
-  std::cerr<<"Processed cells: "<<processed_cells<<std::endl;
+  std::cerr<<"m Processed cells = "<<processed_cells<<std::endl;
 
-  std::cerr<<"Total time: "<<total_time.accumulated()<<"s ("<<(total_time.accumulated()/3600)<<"hr)"<<std::endl;
+  std::cerr<<"t Total time = "<<total_time.accumulated()<<" s ("<<(total_time.accumulated()/3600)<<"hr)"<<std::endl;
 
-  std::cerr<<"dem evictions: "<<dem.getEvictions()<<std::endl;
-  std::cerr<<"fds evictions: "<<fds.getEvictions()<<std::endl;
+  std::cerr<<"m dem evictions = "<<dem.getEvictions()<<std::endl;
+  std::cerr<<"m fds evictions = "<<fds.getEvictions()<<std::endl;
 }
 
 int main(int argc, char **argv){
+  std::cerr<<"A Tiled Flat Resolution (Greedy Resolution)"<<std::endl;
+  std::cerr<<"C Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"<<std::endl;
   if(argc!=6){
     std::cerr<<"Syntax: "<<argv[0]<<" <Layout File> <Cache size> <Temp Files> <Output Files> <noflip/fliph/flipv/fliphv>"<<std::endl;
     std::cerr<<"\tor use 'table' for cache size"<<std::endl;

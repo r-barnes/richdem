@@ -55,14 +55,16 @@ class LayoutfileReader {
     std::size_t last_slash = layout_filename.find_last_of(SLASH_CHAR);
     if(last_slash!=std::string::npos)
       path = layout_filename.substr(0,last_slash+1);
-    std::cerr<<"Base path for layout-identified files: "<<path<<std::endl;
+    std::cerr<<"c Base path for layout-identified files = "<<path<<std::endl;
 
     //Open file
     std::ifstream fin_layout(layout_filename);
 
     //Did the file open?
-    if(!fin_layout.good())
+    if(!fin_layout.good()){
+      std::cerr<<"E Problem opening layout file '"<<layout_filename<<"'"<<std::endl;
       throw std::runtime_error("Problem opening layout file!");
+    }
 
     //Read the entire file
     while(fin_layout){
@@ -92,8 +94,10 @@ class LayoutfileReader {
     }
     //If we break out of the above loop but haven't reached eof(), then
     //something went wrong.
-    if(!fin_layout.eof())
+    if(!fin_layout.eof()){
+      std::cerr<<"E Failed to read the entire layout file!"<<std::endl;
       throw std::runtime_error("Failed to read the entire layout file!");
+    }
 
     //Let's find the longest row
     auto max_row_length = fgrid.front().size();
@@ -103,8 +107,10 @@ class LayoutfileReader {
     for(auto &row: fgrid)
       if(row.size()==max_row_length-1)   //If the line was one short of max, assume it ends blank
         row.emplace_back();
-      else if(row.size()<max_row_length) //The line was more than one short of max: uh oh
+      else if(row.size()<max_row_length){ //The line was more than one short of max: uh oh
+        std::cerr<<"E Not all of the rows in the layout file had the same number of columns!"<<std::endl;
         throw std::runtime_error("Not all of the rows in the layout file had the same number of columns!");
+      }
   }
 
   bool next(){

@@ -50,6 +50,9 @@ The design of RichDEM is guided by these principles:
   design algorithms. The code contains extensive internal documentation which is
   DOxygen compatible.
 
+* **Programs and algorithms will provide useful feedback.** Progress bars will 
+  appear if desired and the output will be optimized for machine parsing.
+
 
 
 Using It
@@ -72,6 +75,44 @@ Testing Methodology
 
 TODO
 
+Parsable Output
+===================
+
+Every line of output from RichDEM begins with one of the following characters,
+making it easy to parse with a machine.
+
+ * **c**: Configuration information: program version, input files, and command
+          line options, &c.
+
+ * **p**: Progress information: inform the user to keep calm because we're
+          carrying on.
+
+ * **t**: Timing information: How long stuff took
+
+ * **i**: I/O: Amount of data loaded from disk
+
+ * **n**: I/O: Amount of data transferred through a network
+
+ * **r**: Amount of RAM used
+
+ * **A**: Algorithm name
+
+ * **C**: Citation for algorithm
+
+ * **m**: Miscallaneous counts
+
+ * **E**: Indicates an error condition
+
+ * **W**: Indicates a warning
+
+ * **d**: Debugging info
+
+All output data shall have the form:
+
+    <INDICATOR CHARACTER> <MESSAGE/MEASUREMENT NAME> [= <VALUE> [UNIT]]
+
+The amount of whitespce may very for aesthetic purposes.
+
 Specific Algorithms
 ===================
 Many of the algorithms used in RichDEM are documented in journal or conference
@@ -93,13 +134,17 @@ Publications
 ============
 The algorithms used in RichDEM have been published in the following articles:
 
+* Barnes, R., 2016. Non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. In Review.
+
 * Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences. doi:[10.1016/j.cageo.2016.07.001](http://dx.doi.org/10.1016/j.cageo.2016.07.001)
 
-* Barnes, Lehman, Mulla. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
+* Barnes, Lehman, Mulla. 2013. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
 
-* Barnes, Lehman, Mulla. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences, 2013. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
+* Barnes, Lehman, Mulla. 2013. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
 
-* Barnes, Lehman, Mulla. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
+* Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
+
+* Barnes, Lehman, Mulla. 2011. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
 
 Requires:
  * OpenMP

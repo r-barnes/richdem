@@ -58,6 +58,10 @@ class A2Array2D {
  private:
   template<typename U> friend class A2Array2D;
 
+  std::vector<bool> null_tile_quick;
+  int quick_width_in_tiles;
+  int quick_height_in_tiles;
+
   class WrappedArray2D : public Array2D<T> {
    public:
     using Array2D<T>::Array2D;
@@ -79,20 +83,22 @@ class A2Array2D {
 
   LRU< WrappedArray2D* > lru;
 
+  int32_t not_null_tiles          = 0;
   int64_t total_width_in_cells    = 0;
   int64_t total_height_in_cells   = 0;
-  int32_t  per_tile_width         = 0;
-  int32_t  per_tile_height        = 0;
+  int32_t per_tile_width          = 0;
+  int32_t per_tile_height         = 0;
   int32_t evictions               = 0;
   int64_t cells_in_not_null_tiles = 0;
   T       no_data_to_set; //Used to disguise null tiles
 
   bool readonly = true;
 
-  void LoadTile(int tile_x, int tile_y){
-    auto& tile = data[tile_y][tile_x];
-    if(tile.null_tile)
+  void _LoadTile(int tile_x, int tile_y){
+    if(isNullTile(tile_x,tile_y))
       return;
+
+    auto& tile = data[tile_y][tile_x];
 
     if(tile.loaded){
       lru.insert(&data[tile_y][tile_x]);
@@ -143,8 +149,6 @@ class A2Array2D {
     lru.setCapacity(cachesize);
     readonly = true;
 
-    int     not_null_tiles = 0;
-
     LayoutfileReader lf(layoutfile);
     while(lf.next()){
       if(lf.newRow()) //Add a row to the grid of chunks
@@ -179,17 +183,22 @@ class A2Array2D {
       this_tile.basename = lf.getBasename();
     }
 
+    quick_width_in_tiles  = widthInTiles();
+    quick_height_in_tiles = heightInTiles();
+    null_tile_quick.resize(quick_width_in_tiles*quick_height_in_tiles, false);
+
     bool good=true;
-    for(int32_t y=0;y<heightInTiles();y++)
-    for(int32_t x=0;x<widthInTiles();x++){
-      if(data[y][x].null_tile)
+    for(int32_t ty=0;ty<heightInTiles();ty++)
+    for(int32_t tx=0;tx<widthInTiles();tx++){
+      null_tile_quick[ty*quick_width_in_tiles+tx] = data[ty][tx].null_tile;
+      if(data[ty][tx].null_tile)
         continue;
-      if(data[y][x].width()!=per_tile_width){
-        std::cerr<<data[y][x].filename<<" has a non-standard width. Found "<<data[y][x].width()<<" expected "<<per_tile_width<<"."<<std::endl;
+      if(data[ty][tx].width()!=per_tile_width){
+        std::cerr<<data[ty][tx].filename<<" has a non-standard width. Found "<<data[ty][tx].width()<<" expected "<<per_tile_width<<"."<<std::endl;
         good = false;
       }
-      if(data[y][x].height()!=per_tile_height){
-        std::cerr<<data[y][x].filename<<" has a non-standard height. Found "<<data[y][x].height()<<" expected "<<per_tile_height<<"."<<std::endl;
+      if(data[ty][tx].height()!=per_tile_height){
+        std::cerr<<data[ty][tx].filename<<" has a non-standard height. Found "<<data[ty][tx].height()<<" expected "<<per_tile_height<<"."<<std::endl;
         good = false;
       }
     }
@@ -201,10 +210,11 @@ class A2Array2D {
       throw std::runtime_error("Not all tiles had the same dimensions!");
     }
 
-    std::cerr<<"Total width: " <<total_width_in_cells<<std::endl;
-    std::cerr<<"Total height: "<<total_height_in_cells<<std::endl;
+    std::cerr<<"m Total width = " <<total_width_in_cells<<std::endl;
+    std::cerr<<"m Total height = "<<total_height_in_cells<<std::endl;
 
-    std::cerr<<not_null_tiles<<" of "<<(data[0].size()*data.size())<<" tiles were not null."<<std::endl;
+    std::cerr<<"m Tiles that were not null = "<<not_null_tiles<<std::endl;
+    std::cerr<<"m Total tiles = "<<(data[0].size()*data.size())<<std::endl;
   }
 
   A2Array2D(std::string prefix, int per_tile_width, int per_tile_height, int width, int height, int cachesize){
@@ -242,6 +252,10 @@ class A2Array2D {
     total_height_in_cells = other.total_height_in_cells;
     flipV                 = other.flipV;
     flipH                 = other.flipH;
+
+    quick_width_in_tiles  = other.quick_width_in_tiles;
+    quick_height_in_tiles = other.quick_height_in_tiles;
+    null_tile_quick       = other.null_tile_quick;
 
     for(int32_t y=0;y<other.heightInTiles();y++){
       data.emplace_back();
@@ -300,20 +314,7 @@ class A2Array2D {
   //   assert(ty>=0);
   //   assert(tx<widthInTiles());
   //   assert(ty<heightInTiles());
-  //   LoadTile(tx, ty);
-  //   return data[ty][tx](x,y);
-  // }
-
-  // const T& operator()(int tx, int ty, int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<per_tile_width);
-  //   assert(y<per_tile_height);
-  //   assert(tx>=0);
-  //   assert(ty>=0);
-  //   assert(tx<widthInTiles());
-  //   assert(ty<heightInTiles());
-  //   LoadTile(tx, ty);
+  //   _LoadTile(tx, ty);
   //   return data[ty][tx](x,y);
   // }
 
@@ -325,12 +326,12 @@ class A2Array2D {
     assert(widthInTiles()>0);
     assert(heightInTiles()>0);
 
-    if(data[ty][tx].null_tile){
+    if(isNullTile(tx,ty)){
       no_data_to_set = data[ty][tx].noData();
       return no_data_to_set;
     }
 
-    LoadTile(tx, ty);
+    _LoadTile(tx, ty);
 
     assert(x>=0);
     assert(y>=0);
@@ -355,30 +356,28 @@ class A2Array2D {
 
     //std::cerr<<"tile=("<<tile_x<<","<<tile_y<<") cell=("<<x<<","<<y<<")"<<std::endl;
 
-    if(data[tile_y][tile_x].null_tile){
+    if(isNullTile(tile_x,tile_y)){
       no_data_to_set = data[tile_y][tile_x].noData();
       return no_data_to_set;
     }
 
-    LoadTile(tile_x, tile_y);
+    _LoadTile(tile_x, tile_y);
 
     return data[tile_y][tile_x](x,y);
   }
 
-  // const T& operator()(int x, int y) const {
-  //   assert(x>=0);
-  //   assert(y>=0);
-  //   assert(x<total_width_in_cells);
-  //   assert(y<total_height_in_cells);
-  //   int tile_x = x/per_tile_width;
-  //   int tile_y = y/per_tile_height;
-  //   x          = x%per_tile_width;
-  //   y          = y%per_tile_height;
-  //   if(data[tile_y][tile_x].null_tile)
-  //     return no_data;
-  //   LoadTile(tile_x, tile_y);
-  //   return data[tile_y][tile_x](x,y);
-  // }
+  void makeQuadIndex(int32_t x, int32_t y, int32_t &tx, int32_t &ty, int32_t &px, int32_t &py) const {
+    assert(x>=0);
+    assert(y>=0);
+    assert(x<total_width_in_cells);
+    assert(y<total_height_in_cells);
+
+    tx = x/per_tile_width;
+    px = x%per_tile_width;
+
+    ty = y/per_tile_height;
+    py = y%per_tile_height;
+  }
 
   int32_t width() const {
     return total_width_in_cells;
@@ -394,6 +393,10 @@ class A2Array2D {
 
   int32_t heightInTiles() const {
     return data.size();
+  }
+
+  int32_t notNullTiles() const {
+    return not_null_tiles;
   }
 
   int32_t tileWidth(int32_t tx, int32_t ty) const {
@@ -439,10 +442,10 @@ class A2Array2D {
     x              = x%per_tile_width;
     y              = y%per_tile_height;
 
-    if(data[tile_y][tile_x].null_tile)
+    if(isNullTile(tile_x,tile_y))
       return true;
 
-    LoadTile(tile_x, tile_y);
+    _LoadTile(tile_x, tile_y);
 
     return data[tile_y][tile_x].isNoData(x,y);
   }
@@ -458,16 +461,12 @@ class A2Array2D {
     assert(px<data[ty][tx].width() );
     assert(py<data[ty][tx].height());
 
-    if(data[ty][tx].null_tile)
+    if(isNullTile(tx,ty))
       return true;
 
-    LoadTile(tx, ty);
+    _LoadTile(tx, ty);
 
     return data[ty][tx].isNoData(px,py);
-  }
-
-  bool in_grid(int32_t x, int32_t y) const {
-    return (x>=0 && y>=0 && x<total_width_in_cells && y<total_height_in_cells);
   }
 
   bool isReadonly() const {
@@ -501,7 +500,7 @@ class A2Array2D {
 
         //std::cerr<<"Trying to save tile with basename '"<<tile.basename<<"'"<<std::endl;
 
-        LoadTile(tx,ty);
+        _LoadTile(tx,ty);
 
         //std::cerr<<"\tMin: "<<(int)tile.min()<<" zeros="<<tile.countval(0)<<std::endl;
 
@@ -524,7 +523,7 @@ class A2Array2D {
       }
     }
 
-    std::cerr<<"Found "<<zero_count<<" cells with no flow."<<std::endl;
+    std::cerr<<"m Cells with no flow = "<<zero_count<<std::endl;
   }
 
   void saveUnifiedGDAL(const std::string outputname){
@@ -566,7 +565,7 @@ class A2Array2D {
       if(tile.null_tile)
         continue;
 
-      LoadTile(tx,ty);
+      _LoadTile(tx,ty);
 
       auto temp = oband->RasterIO(GF_Write, tx*stdTileWidth(), ty*stdTileHeight(), tileWidth(tx,ty), tileHeight(tx,ty), data[ty][tx].getData(), tileWidth(tx,ty), tileHeight(tx,ty), myGDALType(), 0, 0);
       if(temp!=CE_None)
@@ -587,24 +586,36 @@ class A2Array2D {
     return evictions;
   }
 
-  bool isNullTile(int32_t tx, int32_t ty) const {
-    return data[ty][tx].null_tile;
+  inline bool isNullTile(int32_t tx, int32_t ty) const {
+    return null_tile_quick[ty*quick_width_in_tiles+tx];
   }
 
-  bool isEdgeCell(int32_t x, int32_t y){
+  bool isEdgeCell(int32_t x, int32_t y) const {
     return x==0 || y==0 || x==total_width_in_cells-1 || y==total_height_in_cells-1;
+  }
+
+  bool in_grid(int32_t x, int32_t y) const {
+    return (x>=0 && y>=0 && x<total_width_in_cells && y<total_height_in_cells);
+  }
+
+  bool isInteriorCell(int32_t x, int32_t y) const {
+    return (1<=x && 1<=y && x<total_width_in_cells-1 && y<total_height_in_cells-1);
   }
 
   void printStamp(int size){
     for(int32_t ty=0;ty<heightInTiles();ty++)
     for(int32_t tx=0;tx<widthInTiles();tx++){
-      if(data[ty][tx].null_tile)
+      if(isNullTile(tx,ty))
         continue;
 
-      LoadTile(tx, ty);
+      _LoadTile(tx, ty);
 
       data[ty][tx].printStamp(size);
     }
+  }
+
+  void loadTile(int tx, int ty){
+    _LoadTile(tx,ty);
   }
 };
 
