@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_map>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
@@ -19,6 +20,8 @@ int PerformAlgorithm(std::string filename){
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   if(argc!=2){
     std::cerr<<argv[0]<<" <Flowdirs input file>"<<std::endl;
     return -1;

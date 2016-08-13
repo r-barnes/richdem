@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
@@ -44,6 +45,8 @@ int PerformAlgorithm(std::string filename, std::string flip){
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   if(argc!=3){
     std::cerr<<argv[0]<<" <Input file> <noflip/fliph/flipv/fliphv>"<<std::endl;
     return -1;

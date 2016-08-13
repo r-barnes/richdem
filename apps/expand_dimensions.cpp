@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
@@ -24,6 +25,8 @@ int PerformAlgorithm(std::string filename, std::string outname, int new_width, i
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   if(argc!=5){
     std::cerr<<argv[0]<<" <Input> <Output name> <Width> <Height>"<<std::endl;
     return -1;

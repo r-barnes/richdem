@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
@@ -65,6 +66,8 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   int32_t total_height;
   int32_t total_width;
   GDALDataType file_type;

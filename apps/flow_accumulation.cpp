@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include "richdem/common/version.hpp"
 #include "richdem/depressions/priority_flood.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/flats/flat_resolution.hpp"
@@ -61,6 +62,8 @@ int PerformAlgorithm(std::string filename, std::string output, std::string flip)
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   if(argc!=4){
     std::cerr<<argv[0]<<" <Flowdirs input file> <Output filename> <noflip/fliph/flipv/fliphv>"<<std::endl;
     return -1;

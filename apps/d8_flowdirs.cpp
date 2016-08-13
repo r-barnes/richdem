@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include "richdem/common/version.hpp"
 #include "richdem/depressions/priority_flood.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/flats/flat_resolution.hpp"
@@ -30,6 +31,8 @@ int PerformAlgorithm(std::string filename, std::string output_prefix){
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+
   if(argc!=3){
     std::cerr<<argv[0]<<" <INPUT> <OUTPUT_PREFIX>"<<std::endl;
     return -1;

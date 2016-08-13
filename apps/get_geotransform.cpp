@@ -1,8 +1,11 @@
 #include <iostream>
 #include <vector>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   if(argc!=2){
     std::cerr<<argv[0]<<" <Input>"<<std::endl;
     return -1;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_set>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 #define NO_FLOW          0 //TODO: Explain and ensure it fits in flowdir_t
@@ -55,6 +56,8 @@ void Master(std::string input){
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+  
   int32_t total_height;
   int32_t total_width;
   GDALDataType file_type;

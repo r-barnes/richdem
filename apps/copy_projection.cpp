@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
@@ -25,6 +26,8 @@ int PerformAlgorithm(std::string templatefile, std::string inputfile, std::strin
 }
 
 int main(int argc, char **argv){
+  PrintRichdemHeader();
+
   if(argc!=5){
     std::cerr<<argv[0]<<" <Template file> <Input File> <Output File> <fliph/flipv/fliphv/noflip>"<<std::endl;
     return -1;
