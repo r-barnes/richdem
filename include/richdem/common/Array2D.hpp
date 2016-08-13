@@ -113,7 +113,6 @@ void getGDALDimensions(
   GDALClose(fin);
 }
 
-
 /**
   @brief  Convert Array2D or any other template to its GDAL data type
   @author Richard Barnes (rbarnes@umn.edu)
@@ -223,8 +222,8 @@ class Array2D {
 
     geotransform.resize(6);
     if(fin->GetGeoTransform(geotransform.data())!=CE_None){
-      std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
-      throw std::runtime_error("Error getting geotransform!");
+      std::cerr<<"Warning, could not get a geotransform from '"<<filename<<"'!"<<std::endl;
+      geotransform.clear();
     }
 
     const char* projection_string=fin->GetProjectionRef();
@@ -1024,23 +1023,27 @@ class Array2D {
     //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
     //position is the top left corner of the top left pixel of the raster.
 
-    auto out_geotransform = geotransform;
+    if(!geotransform.empty()){
+      auto out_geotransform = geotransform;
 
-    if(out_geotransform.size()!=6){
-      std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
-      throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+      if(out_geotransform.size()!=6){
+        std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
+        throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+      }
+
+      //We shift the top-left pixel of hte image eastward to the appropriate
+      //coordinate
+      out_geotransform[0] += xoffset*geotransform[1];
+
+      //We shift the top-left pixel of the image southward to the appropriate
+      //coordinate
+      out_geotransform[3] += yoffset*geotransform[5];
+
+      fout->SetGeoTransform(out_geotransform.data());
     }
 
-    //We shift the top-left pixel of hte image eastward to the appropriate
-    //coordinate
-    out_geotransform[0] += xoffset*geotransform[1];
-
-    //We shift the top-left pixel of the image southward to the appropriate
-    //coordinate
-    out_geotransform[3] += yoffset*geotransform[5];
-
-    fout->SetGeoTransform(out_geotransform.data());
-    fout->SetProjection(projection.c_str());
+    if(!projection.empty())
+      fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3]<< std::endl;
