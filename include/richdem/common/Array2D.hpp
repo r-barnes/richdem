@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <limits>
+#include <ctime>         //Used for timestamping output files
 #include <unordered_set> //For printStamp
 #include "richdem/common/constants.hpp"
 
@@ -1014,6 +1015,20 @@ class Array2D {
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
+
+    //This could be used to copy metadata
+    //poDstDS->SetMetadata( poSrcDS->GetMetadata() );
+
+    //TIFFTAG_SOFTWARE
+    //TIFFTAG_ARTIST
+    {
+      std::time_t the_time = std::time(nullptr);
+      char time_str[64];
+      std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S UTC", std::gmtime(&the_time));
+      const std::string progname = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
+      fout->SetMetadataItem("TIFFTAG_DATETIME", time_str);
+      fout->SetMetadataItem("TIFFTAG_SOFTWARE", progname.c_str());
+    }
 
     //The geotransform maps each grid cell to a point in an affine-transformed
     //projection of the actual terrain. The geostransform is specified as follows:
