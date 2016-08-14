@@ -19,22 +19,29 @@
 #endif
 
 ///Richdem vX.X.X
-const std::string program_name       = "Richdem v0.0.0";
+const std::string program_name = "RichDEM v0.0.0";
 
 ///Richard Barnes
-const std::string author_name        = "Richard Barnes";
+const std::string author_name  = "Richard Barnes";
 
 ///Richard Barnes © 2016
-const std::string copyright          = "Richard Barnes © 2016";
+const std::string copyright    = "Richard Barnes © 2016";
 
 ///Richdem vX.X.X (hash=GIT HASH, compiled=COMPILATION DATE TIME)
 const std::string program_identifier = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
 
-void PrintRichdemHeader(){
+std::string PrintRichdemHeader(int argc, char **argv){
+  std::string analysis;
+  for(int i=0;i<argc;i++)
+    analysis += std::string(argv[i])+" ";
+
   std::cout<<"c Program name       = " <<program_name        <<std::endl;
   std::cout<<"c Script compiled at = " <<compilation_datetime<<std::endl;
   std::cout<<"c Git hash           = " <<git_hash            <<std::endl;
   std::cout<<"c Copyright          = " <<copyright           <<std::endl;
+  std::cout<<"a Analysis command   = " <<analysis            <<std::endl;
+
+  return analysis;
 }
 
 #endif

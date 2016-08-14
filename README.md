@@ -53,6 +53,12 @@ The design of RichDEM is guided by these principles:
 * **Programs and algorithms will provide useful feedback.** Progress bars will 
   appear if desired and the output will be optimized for machine parsing.
 
+* **Analyses will be reproducible." Every time you run a RichDEM command that
+  command is logged and timestamped in the output data, along with the version
+  of the program you created the output with. Additionally, a history of all
+  previous manipulations to the data is kept. Use `rd_view_processing_history`
+  to see this.
+
 
 
 Using It
@@ -81,31 +87,34 @@ Parsable Output
 Every line of output from RichDEM begins with one of the following characters,
 making it easy to parse with a machine.
 
+ * **A**: Algorithm name
+
+ * **a**: Analysis command: the command line used to run the program
+
  * **c**: Configuration information: program version, input files, and command
           line options, &c.
 
- * **p**: Progress information: inform the user to keep calm because we're
-          carrying on.
-
- * **t**: Timing information: How long stuff took
-
- * **i**: I/O: Amount of data loaded from disk
-
- * **n**: I/O: Amount of data transferred through a network
-
- * **r**: Amount of RAM used
-
- * **A**: Algorithm name
-
  * **C**: Citation for algorithm
+
+ * **d**: Debugging info
+
+ * **E**: Indicates an error condition
+ 
+ * **i**: I/O: Amount of data loaded from disk
+          carrying on.
 
  * **m**: Miscallaneous counts
 
- * **E**: Indicates an error condition
+ * **n**: I/O: Amount of data transferred through a network
+
+ * **p**: Progress information: inform the user to keep calm because we're
+ 
+ * **r**: Amount of RAM used
+
+ * **t**: Timing information: How long stuff took
 
  * **W**: Indicates a warning
 
- * **d**: Debugging info
 
 All output data shall have the form:
 

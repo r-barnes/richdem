@@ -26,16 +26,12 @@ int PerformAlgorithm(std::string templatefile, std::string inputfile, std::strin
 }
 
 int main(int argc, char **argv){
-  PrintRichdemHeader();
+  std::string analysis = PrintRichdemHeader(argc, argv);
 
   if(argc!=5){
     std::cerr<<argv[0]<<" <Template file> <Input File> <Output File> <fliph/flipv/fliphv/noflip>"<<std::endl;
     return -1;
   }
-
-  std::string analysis;
-  for(int i=0;i<argc;i++)
-    analysis += std::string(argv[i])+" ";
 
   switch(peekGDALType(argv[2])){
     case GDT_Byte:
