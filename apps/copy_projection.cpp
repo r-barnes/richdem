@@ -25,29 +25,23 @@ int PerformAlgorithm(std::string templatefile, std::string inputfile, std::strin
   return 0;
 }
 
-int main(int argc, char **argv){
-  std::string analysis = PrintRichdemHeader(argc, argv);
-
-  if(argc!=5){
-    std::cerr<<argv[0]<<" <Template file> <Input File> <Output File> <fliph/flipv/fliphv/noflip>"<<std::endl;
-    return -1;
-  }
-
-  switch(peekGDALType(argv[2])){
+template< typename... Arguments >
+int Router(std::string inputfile, Arguments ... args){
+  switch(peekGDALType(inputfile)){
     case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<uint8_t >(args...);
     case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<uint16_t>(args...);
     case GDT_Int16:
-      return PerformAlgorithm<int16_t >(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<int16_t >(args...);
     case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<uint32_t>(args...);
     case GDT_Int32:
-      return PerformAlgorithm<int32_t >(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<int32_t >(args...);
     case GDT_Float32:
-      return PerformAlgorithm<float   >(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<float   >(args...);
     case GDT_Float64:
-      return PerformAlgorithm<double  >(argv[1],argv[2],argv[3],argv[4],analysis);
+      return PerformAlgorithm<double  >(args...);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
@@ -56,9 +50,20 @@ int main(int argc, char **argv){
       return -1;
     case GDT_Unknown:
     default:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(argv[2]))<<std::endl;
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
       return -1;
   }
+}
+
+int main(int argc, char **argv){
+  std::string analysis = PrintRichdemHeader(argc, argv);
+
+  if(argc!=5){
+    std::cerr<<argv[0]<<" <Template file> <Input File> <Output File> <fliph/flipv/fliphv/noflip>"<<std::endl;
+    return -1;
+  }
+
+  Router(argv[2],argv[1],argv[2],argv[3],argv[4],analysis)
 
   return 0;
 }

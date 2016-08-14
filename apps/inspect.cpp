@@ -4,7 +4,7 @@
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
-void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flipV, bool flipH){
+void PerformAlgorithm(std::string input, int minx, int maxx, int miny, int maxy, bool flipV, bool flipH){
   Array2D<T> inp(input, 0, 0, 0, 0, false);
 
   const int fwidth = 10;
@@ -65,8 +65,38 @@ void Master(std::string input, int minx, int maxx, int miny, int maxy, bool flip
   }
 }
 
+template< typename... Arguments >
+int Router(std::string inputfile, Arguments ... args){
+  switch(peekGDALType(inputfile)){
+    case GDT_Byte:
+      return PerformAlgorithm<uint8_t >(args...);
+    case GDT_UInt16:
+      return PerformAlgorithm<uint16_t>(args...);
+    case GDT_Int16:
+      return PerformAlgorithm<int16_t >(args...);
+    case GDT_UInt32:
+      return PerformAlgorithm<uint32_t>(args...);
+    case GDT_Int32:
+      return PerformAlgorithm<int32_t >(args...);
+    case GDT_Float32:
+      return PerformAlgorithm<float   >(args...);
+    case GDT_Float64:
+      return PerformAlgorithm<double  >(args...);
+    case GDT_CInt16:
+    case GDT_CInt32:
+    case GDT_CFloat32:
+    case GDT_CFloat64:
+      std::cerr<<"Complex types are unsupported. Sorry!"<<std::endl;
+      return -1;
+    case GDT_Unknown:
+    default:
+      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
+      return -1;
+  }
+}
+
 int main(int argc, char **argv){
-  PrintRichdemHeader();
+  std::string analysis = PrintRichdemHeader(argc,argv);
   
   int32_t total_height;
   int32_t total_width;
@@ -126,23 +156,5 @@ int main(int argc, char **argv){
   //Get the total dimensions of the input file
   getGDALDimensions(inputfile, total_height, total_width, file_type, NULL);
 
-  switch(file_type){
-    case GDT_Byte:
-      Master<uint8_t >(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_UInt16:
-      Master<uint16_t>(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_Int16:
-      Master<int16_t >(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_UInt32:
-      Master<uint32_t>(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_Int32:
-      Master<int32_t >(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_Float32:
-      Master<float   >(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    case GDT_Float64:
-      Master<double  >(inputfile,minx,maxx,miny,maxy, flipV, flipH);break;
-    default:
-      std::cerr<<"Unrecognised data type!"<<std::endl;
-      return -1;
-  }
+  return Router(inputfile,inputfile,minx,maxx,miny,maxy,flipV,flipH);
 }
