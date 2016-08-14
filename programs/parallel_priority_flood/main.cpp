@@ -7,6 +7,7 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Layoutfile.hpp"
 #include "richdem/common/communication.hpp"
 #include "richdem/common/memory.hpp"
@@ -15,8 +16,6 @@
 #include "richdem/common/grid_cell.hpp"
 #include "Zhou2015pf.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
-
-const char* program_version = "14";
 
 const std::string algname  = "Parallel Priority-Flood";
 const std::string citation = "Barnes, R., 2016. \"Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters\". Computers & Geosciences. doi:10.1016/j.cageo.2016.07.001";
@@ -71,7 +70,8 @@ class TileInfo{
        filename,
        outputname,
        retention,
-       many);
+       many,
+       analysis);
   }
  public:
   uint8_t     edge;
@@ -83,11 +83,12 @@ class TileInfo{
   std::string filename;
   std::string outputname;
   std::string retention;
+  std::string analysis;   //Command line command used to invoke everything
   TileInfo(){
     nullTile = true;
   }
-  TileInfo(std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many){
-    this->nullTile  = false;
+  TileInfo(std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many, std::string analysis){
+    this->nullTile   = false;
     this->edge       = 0;
     this->x          = x;
     this->y          = y;
@@ -100,6 +101,7 @@ class TileInfo{
     this->retention  = retention;
     this->flip       = 0;
     this->many       = many;
+    this->analysis   = analysis;
   }
 };
 
@@ -313,7 +315,7 @@ class ConsumerSpecifics {
     dem.printStamp(5,"Unorientated output stamp");
 
     timer_io.start();
-    dem.saveGDAL(tile.outputname, tile.x, tile.y);
+    dem.saveGDAL(tile.outputname, tile.analysis, tile.x, tile.y);
     timer_io.stop();
   }
 };
@@ -826,7 +828,8 @@ void Preparer(
   int bwidth,
   int bheight,
   int flipH,
-  int flipV
+  int flipV,
+  std::string analysis
 ){
   Timer timer_overall;
   timer_overall.start();
@@ -848,8 +851,8 @@ void Preparer(
   LayoutfileWriter lfout(output_layout_name);
 
   if(many_or_one=="many"){
-    int32_t tile_width    = -1; //Width of 1st tile. All tiles must equal this
-    int32_t tile_height   = -1; //Height of 1st tile, all tiles must equal this
+    int32_t tile_width     = -1; //Width of 1st tile. All tiles must equal this
+    int32_t tile_height    = -1; //Height of 1st tile, all tiles must equal this
     long    cell_count     = 0;
     int     not_null_tiles = 0;
     std::vector<double> tile_geotransform(6);
@@ -918,7 +921,8 @@ void Preparer(
         0,
         tile_width,
         tile_height,
-        true
+        true,
+        analysis
       );
 
       //Get a representative tile, if we don't already have one
@@ -1035,7 +1039,8 @@ void Preparer(
           y,
           (total_width-x >=bwidth )?bwidth :total_width -x, //TODO: Check
           (total_height-y>=bheight)?bheight:total_height-y,
-          false
+          false,
+          analysis
         );
       }
     }
@@ -1065,9 +1070,6 @@ void Preparer(
   std::cerr<<"c Input data type = "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
-    case GDT_Unknown:
-      std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
-      CommAbort(-1); //TODO
     case GDT_Byte:
       return Producer<uint8_t >(tiles);
     case GDT_UInt16:
@@ -1088,6 +1090,7 @@ void Preparer(
     case GDT_CFloat64:
       std::cerr<<"E Complex types are not supported. Sorry!"<<std::endl;
       CommAbort(-1); //TODO
+    case GDT_Unknown:
     default:
       std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
@@ -1112,10 +1115,10 @@ int main(int argc, char **argv){
     Timer timer_master;
     timer_master.start();
 
+    std::string analysis = PrintRichdemHeader(argc,argv);
+
     std::cerr<<"A "<<algname <<std::endl;
     std::cerr<<"C "<<citation<<std::endl;
-
-    std::cerr<<"c Running program version: "<<program_version<<std::endl;
 
     std::string help=
     #include "help.txt"
@@ -1173,8 +1176,8 @@ int main(int argc, char **argv){
         throw std::invalid_argument("Must run program with at least two processes!");
       if( !((output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos)) )
         throw std::invalid_argument("Output filename must indicate either file number (%n) or name (%f).");
-      if(retention[0]!='@' && retention.find("%n")==std::string::npos)
-        throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
+      if(retention[0]!='@' && retention.find("%n")==std::string::npos && retention.find("%f")==std::string::npos)
+        throw std::invalid_argument("Retention filename must indicate file number with '%n' or '%f'.");
       if(retention==output_name)
         throw std::invalid_argument("Retention and output filenames must differ.");
     } catch (const std::invalid_argument &ia){
@@ -1196,7 +1199,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"c Running with = "            <<CommSize()<<" processes."<<std::endl;
+    std::cerr<<"c Running with = "           <<CommSize()<<" processes"<<std::endl;
     std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
     std::cerr<<"c Input file = "             <<input_file<<std::endl;
     std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
@@ -1206,7 +1209,7 @@ int main(int argc, char **argv){
     std::cerr<<"c Flip vertical = "          <<flipV     <<std::endl;
     std::cerr<<"c World Size = "             <<CommSize()<<std::endl;
     CommBroadcast(&good_to_go,0);
-    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
+    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV, analysis);
 
     timer_master.stop();
     std::cerr<<"t Total wall-time = "<<timer_master.accumulated()<<" s"<<std::endl;

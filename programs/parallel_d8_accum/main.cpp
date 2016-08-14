@@ -7,14 +7,13 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
+#include "richdem/common/version.hpp"
 #include "richdem/common/Layoutfile.hpp"
 #include "richdem/common/communication.hpp"
 #include "richdem/common/memory.hpp"
 #include "richdem/common/timer.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
-
-const char* program_version = "2";
 
 const std::string algname  = "Parallel Flow Accumulation";
 const std::string citation = "Barnes, R. 2016. \"Parallel D8 Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters\". In-progress.";
@@ -111,7 +110,8 @@ class TileInfo{
        filename,
        outputname,
        retention,
-       many);
+       many,
+       analysis);
   }
  public:
   uint8_t     edge;
@@ -122,11 +122,12 @@ class TileInfo{
   std::string filename;
   std::string outputname;
   std::string retention;
+  std::string analysis;   //Command line command used to invoke everything
   TileInfo(){
     nullTile = true;
   }
-  TileInfo(std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many){
-    this->nullTile  = false;
+  TileInfo(std::string filename, std::string outputname, std::string retention, int32_t gridx, int32_t gridy, int32_t x, int32_t y, int32_t width, int32_t height, bool many, std::string analysis){
+    this->nullTile   = false;
     this->edge       = 0;
     this->x          = x;
     this->y          = y;
@@ -139,6 +140,7 @@ class TileInfo{
     this->retention  = retention;
     this->flip       = 0;
     this->many       = many;
+    this->analysis   = analysis;
   }
 };
 
@@ -630,7 +632,7 @@ class ConsumerSpecifics {
     accum.printStamp(5,"Saving output after reorientation");
 
     timer_io.start();
-    accum.saveGDAL(tile.outputname, tile.x, tile.y);
+    accum.saveGDAL(tile.outputname, tile.analysis, tile.x, tile.y);
     timer_io.stop();
   }
 
@@ -950,7 +952,7 @@ void Consumer(){
   //blocking receive to wait.
   while(true){
     // When probe returns, the status object has the size and other attributes
-    // of the incoming message. Get the message size.
+    // of the incoming message. Get the message size. TODO
     int the_job = CommGetTag(0);
 
     //This message indicates that everything is done and the Consumer should shut
@@ -1172,7 +1174,8 @@ void Preparer(
   int bwidth,
   int bheight,
   int flipH,
-  int flipV
+  int flipV,
+  std::string analysis
 ){
   Timer timer_overall;
   timer_overall.start();
@@ -1264,7 +1267,8 @@ void Preparer(
         0,
         tile_width,
         tile_height,
-        true
+        true,
+        analysis
       );
 
       //Get a representative tile, if we don't already have one
@@ -1380,7 +1384,8 @@ void Preparer(
           y,
           (total_width-x >=bwidth )?bwidth :total_width -x, //TODO: Check
           (total_height-y>=bheight)?bheight:total_height-y,
-          false
+          false,
+          analysis
         );
       }
     }
@@ -1410,9 +1415,6 @@ void Preparer(
   std::cerr<<"c Input data type = "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
-    case GDT_Unknown:
-      std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
-      CommAbort(-1); //TODO
     case GDT_Byte:
       return Producer<uint8_t >(tiles);
     case GDT_UInt16:
@@ -1433,6 +1435,7 @@ void Preparer(
     case GDT_CFloat64:
       std::cerr<<"E Complex types are not supported. Sorry!"<<std::endl;
       CommAbort(-1); //TODO
+    case GDT_Unknown:
     default:
       std::cerr<<"E Unrecognised data type: "<<GDALGetDataTypeName(file_type)<<std::endl;
       CommAbort(-1); //TODO
@@ -1457,10 +1460,10 @@ int main(int argc, char **argv){
     Timer timer_master;
     timer_master.start();
 
+    std::string analysis = PrintRichdemHeader(argc,argv);
+
     std::cerr<<"A "<<algname <<std::endl;
     std::cerr<<"C "<<citation<<std::endl;
-
-    std::cerr<<"c Running program version: "<<program_version<<std::endl;
 
     std::string help=
     #include "help.txt"
@@ -1519,7 +1522,7 @@ int main(int argc, char **argv){
       if( !((output_name.find("%f")==std::string::npos) ^ (output_name.find("%n")==std::string::npos)) )
         throw std::invalid_argument("Output filename must indicate either file number (%n) or name (%f).");
       if(retention[0]!='@' && retention.find("%n")==std::string::npos && retention.find("%f")==std::string::npos)
-        throw std::invalid_argument("Retention filename must indicate file number with '%n'.");
+        throw std::invalid_argument("Retention filename must indicate file number with '%n' or '%f'.");
       if(retention==output_name)
         throw std::invalid_argument("Retention and output filenames must differ.");
     } catch (const std::invalid_argument &ia){
@@ -1541,7 +1544,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"c Running with = "            <<CommSize()<<" processes"<<std::endl;
+    std::cerr<<"c Running with = "           <<CommSize()<<" processes"<<std::endl;
     std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
     std::cerr<<"c Input file = "             <<input_file<<std::endl;
     std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
@@ -1551,7 +1554,7 @@ int main(int argc, char **argv){
     std::cerr<<"c Flip vertical = "          <<flipV     <<std::endl;
     std::cerr<<"c World Size = "             <<CommSize()<<std::endl;
     CommBroadcast(&good_to_go,0);
-    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV);
+    Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV, analysis);
 
     timer_master.stop();
     std::cerr<<"t Total wall-time = "<<timer_master.accumulated()<<" s"<<std::endl;

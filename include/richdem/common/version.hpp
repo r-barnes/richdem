@@ -6,7 +6,7 @@
 
 #ifndef RICHDEM_GIT_HASH
   #message Compiling without a git hash!
-  const std::string richdem_git_hash = "NO HASH SPECIFIED!";
+  const std::string git_hash = "NO HASH SPECIFIED!";
 #else
   const std::string git_hash = std::string(RICHDEM_GIT_HASH).substr(0,16);
 #endif
