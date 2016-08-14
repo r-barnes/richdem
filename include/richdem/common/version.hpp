@@ -18,9 +18,17 @@
   const std::string compilation_datetime = RICHDEM_COMPILE_TIME;
 #endif
 
-const std::string program_name    = "Richdem v0.0.0";
-const std::string author_name     = "Richard Barnes";
-const std::string copyright       = "Richard Barnes © 2016";
+///Richdem vX.X.X
+const std::string program_name       = "Richdem v0.0.0";
+
+///Richard Barnes
+const std::string author_name        = "Richard Barnes";
+
+///Richard Barnes © 2016
+const std::string copyright          = "Richard Barnes © 2016";
+
+///Richdem vX.X.X (hash=GIT HASH, compiled=COMPILATION DATE TIME)
+const std::string program_identifier = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
 
 void PrintRichdemHeader(){
   std::cout<<"c Program name       = " <<program_name        <<std::endl;

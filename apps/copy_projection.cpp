@@ -4,7 +4,7 @@
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string templatefile, std::string inputfile, std::string outputfile, std::string flip){
+int PerformAlgorithm(std::string templatefile, std::string inputfile, std::string outputfile, std::string flip, std::string analysis){
   Array2D<T>      raster(inputfile,false);
   Array2D<int8_t> temp  (templatefile,false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
 
@@ -20,7 +20,7 @@ int PerformAlgorithm(std::string templatefile, std::string inputfile, std::strin
     return -1;
   }
 
-  raster.saveGDAL(outputfile,0,0);
+  raster.saveGDAL(outputfile,analysis);
 
   return 0;
 }
@@ -33,21 +33,25 @@ int main(int argc, char **argv){
     return -1;
   }
 
+  std::string analysis;
+  for(int i=0;i<argc;i++)
+    analysis += std::string(argv[i])+" ";
+
   switch(peekGDALType(argv[2])){
     case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<uint8_t >(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<uint16_t>(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_Int16:
-      return PerformAlgorithm<int16_t >(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<int16_t >(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<uint32_t>(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_Int32:
-      return PerformAlgorithm<int32_t >(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<int32_t >(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_Float32:
-      return PerformAlgorithm<float   >(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<float   >(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_Float64:
-      return PerformAlgorithm<double  >(argv[1],argv[2],argv[3],argv[4]);
+      return PerformAlgorithm<double  >(argv[1],argv[2],argv[3],argv[4],analysis);
     case GDT_CInt16:
     case GDT_CInt32:
     case GDT_CFloat32:
