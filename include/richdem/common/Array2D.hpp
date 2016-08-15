@@ -1011,12 +1011,16 @@ class Array2D {
   }
 
   void saveGDAL(const std::string &filename, const std::string &metadata="", xy_t xoffset=0, xy_t yoffset=0){
+    char **papszOptions = NULL;
+    //papszOptions = CSLSetNameValue( papszOptions, "COMPRESS", "DEFLATE" );
+    //papszOptions = CSLSetNameValue( papszOptions, "ZLEVEL",   "1" );
+
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(poDriver==NULL){
       std::cerr<<"Could not open GDAL driver!"<<std::endl;
       throw std::runtime_error("Could not open GDAL driver!");
     }
-    GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), NULL);
+    GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), papszOptions);
     if(fout==NULL){
       std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
       throw std::runtime_error("Could not open file for GDAL save!");
