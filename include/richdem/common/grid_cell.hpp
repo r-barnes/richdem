@@ -1,7 +1,6 @@
 /**
   @file
-  Template code defining data structures used throughout the package.
-  Defines grid cells.
+  Defines grid cells data structures and the queues that hold them.
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */

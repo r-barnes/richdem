@@ -1,10 +1,24 @@
+/**
+  @file
+  Defines fucntions to calculate how much memory a process is using. Used by
+  various code performance metrics.
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
 #ifndef _memory_hpp_
 #define _memory_hpp_
 
 #include <fstream>
 #include <string>
 
-//http://stackoverflow.com/a/671389/752843
+/**
+  @brief Return memory statistics of the process
+
+  This code is drawn from "http://stackoverflow.com/a/671389/752843"
+
+  @param[out]   vmpeak    Peak virtual memory size (kB)
+  @param[out]   vmhwm     Peak resident set size (kB)
+*/
 void ProcessMemUsage(long &vmpeak, long &vmhwm){
   #if defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
     vmpeak = 0;

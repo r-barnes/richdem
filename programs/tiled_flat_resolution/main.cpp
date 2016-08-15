@@ -1,3 +1,4 @@
+#include "richdem/common/version.hpp"
 #include "richdem/common/Layoutfile.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
@@ -217,6 +218,7 @@ void Master(std::string layoutfile, int cachesize, std::string tempfile_name, st
 }
 
 int main(int argc, char **argv){
+  std::string analysis = PrintRichdemHeader(argc,argv);
   std::cerr<<"A Tiled Flat Resolution (Greedy Resolution)"<<std::endl;
   std::cerr<<"C Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"<<std::endl;
   if(argc!=6){

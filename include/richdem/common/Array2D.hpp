@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <limits>
+#include <ctime>         //Used for timestamping output files
 #include <unordered_set> //For printStamp
 #include "richdem/common/constants.hpp"
 
@@ -113,7 +114,6 @@ void getGDALDimensions(
   GDALClose(fin);
 }
 
-
 /**
   @brief  Convert Array2D or any other template to its GDAL data type
   @author Richard Barnes (rbarnes@umn.edu)
@@ -176,6 +176,7 @@ class Array2D {
   std::string basename;             ///Filename without path or extension
   std::vector<double> geotransform; ///Geotransform of the raster
   std::string projection;           ///Projection of the raster
+  std::string processing_history;   ///List of commands previously run on this dataset
 
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
@@ -223,9 +224,12 @@ class Array2D {
 
     geotransform.resize(6);
     if(fin->GetGeoTransform(geotransform.data())!=CE_None){
-      std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
-      throw std::runtime_error("Error getting geotransform!");
+      std::cerr<<"Warning, could not get a geotransform from '"<<filename<<"'!"<<std::endl;
+      geotransform.clear();
     }
+
+    if(fin->GetMetadataItem("PROCESSING_HISTORY"))
+      processing_history = fin->GetMetadataItem("PROCESSING_HISTORY");
 
     const char* projection_string=fin->GetProjectionRef();
     projection = std::string(projection_string);
@@ -234,7 +238,7 @@ class Array2D {
 
     xy_t total_width  = band->GetXSize();         //Returns an int
     xy_t total_height = band->GetYSize();         //Returns an int
-    no_data              = band->GetNoDataValue();
+    no_data           = band->GetNoDataValue();
 
     if(exact && (total_width-xOffset!=part_width || total_height-yOffset!=part_height))
       throw std::runtime_error("Tile dimensions did not match expectations!");
@@ -378,13 +382,14 @@ class Array2D {
   */
   template<class U>
   Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
-    view_width   = other.view_width;
-    view_height  = other.view_height;
-    view_xoff    = other.view_xoff;
-    view_yoff    = other.view_yoff;
-    geotransform = other.geotransform;
-    projection   = other.projection;
-    basename     = other.basename;
+    view_width         = other.view_width;
+    view_height        = other.view_height;
+    view_xoff          = other.view_xoff;
+    view_yoff          = other.view_yoff;
+    geotransform       = other.geotransform;
+    processing_history = other.processing_history;
+    projection         = other.projection;
+    basename           = other.basename;
     resize(other.width(), other.height(), val);
   }
 
@@ -596,14 +601,16 @@ class Array2D {
   */
   template<class U>
   T& operator=(const Array2D<U> &o){
-    data = std::vector<T>(o.data.begin(),o.data.end());
-    view_height    = o.view_height;
-    view_width     = o.view_width;
-    view_xoff      = o.view_xoff;
-    view_yoff      = o.view_yoff;
-    num_data_cells = o.num_data_cells;
-    geotransform   = o.geotransform;
-    no_data        = (T)o.no_data;
+    data               = std::vector<T>(o.data.begin(),o.data.end());
+    view_height        = o.view_height;
+    view_width         = o.view_width;
+    view_xoff          = o.view_xoff;
+    view_yoff          = o.view_yoff;
+    num_data_cells     = o.num_data_cells;
+    geotransform       = o.geotransform;
+    projection         = o.projection;
+    processing_history = o.processing_history;
+    no_data            = (T)o.no_data;
     return *this;
   }
 
@@ -772,8 +779,9 @@ class Array2D {
   template<class U>
   void resize(const Array2D<U> &other, const T& val = T()){
     resize(other.width(), other.height(), val);
-    geotransform = other.geotransform;
-    projection   = other.projection;
+    geotransform       = other.geotransform;
+    projection         = other.projection;
+    processing_history = other.processing_history;
   }
 
   /**
@@ -996,12 +1004,13 @@ class Array2D {
   */
   template<class U>
   void templateCopy(const Array2D<U> &other){
-    geotransform = other.geotransform;
-    projection   = other.projection;
-    basename     = other.basename;
+    geotransform       = other.geotransform;
+    projection         = other.projection;
+    basename           = other.basename;
+    processing_history = other.processing_history;
   }
 
-  void saveGDAL(const std::string &filename, xy_t xoffset, xy_t yoffset){
+  void saveGDAL(const std::string &filename, const std::string &metadata="", xy_t xoffset=0, xy_t yoffset=0){
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(poDriver==NULL){
       std::cerr<<"Could not open GDAL driver!"<<std::endl;
@@ -1016,6 +1025,27 @@ class Array2D {
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
 
+    //This could be used to copy metadata
+    //poDstDS->SetMetadata( poSrcDS->GetMetadata() );
+
+    //TIFFTAG_SOFTWARE
+    //TIFFTAG_ARTIST
+    {
+      std::time_t the_time = std::time(nullptr);
+      char time_str[64];
+      std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S UTC", std::gmtime(&the_time));
+      fout->SetMetadataItem("TIFFTAG_DATETIME",   time_str);
+      fout->SetMetadataItem("TIFFTAG_SOFTWARE",   program_identifier.c_str());
+
+      auto out_processing_history = processing_history + "\n" + std::string(time_str) + " | " + program_identifier + " | ";
+      if(!metadata.empty())
+        out_processing_history += metadata;
+      else
+        out_processing_history += "Unspecified Operation";
+
+      fout->SetMetadataItem("PROCESSING_HISTORY", out_processing_history.c_str());
+    }
+
     //The geotransform maps each grid cell to a point in an affine-transformed
     //projection of the actual terrain. The geostransform is specified as follows:
     //    Xgeo = GT(0) + Xpixel*GT(1) + Yline*GT(2)
@@ -1024,23 +1054,27 @@ class Array2D {
     //the GT(1) is pixel width, and GT(5) is pixel height. The (GT(0),GT(3))
     //position is the top left corner of the top left pixel of the raster.
 
-    auto out_geotransform = geotransform;
+    if(!geotransform.empty()){
+      auto out_geotransform = geotransform;
 
-    if(out_geotransform.size()!=6){
-      std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
-      throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+      if(out_geotransform.size()!=6){
+        std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
+        throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
+      }
+
+      //We shift the top-left pixel of hte image eastward to the appropriate
+      //coordinate
+      out_geotransform[0] += xoffset*geotransform[1];
+
+      //We shift the top-left pixel of the image southward to the appropriate
+      //coordinate
+      out_geotransform[3] += yoffset*geotransform[5];
+
+      fout->SetGeoTransform(out_geotransform.data());
     }
 
-    //We shift the top-left pixel of hte image eastward to the appropriate
-    //coordinate
-    out_geotransform[0] += xoffset*geotransform[1];
-
-    //We shift the top-left pixel of the image southward to the appropriate
-    //coordinate
-    out_geotransform[3] += yoffset*geotransform[5];
-
-    fout->SetGeoTransform(out_geotransform.data());
-    fout->SetProjection(projection.c_str());
+    if(!projection.empty())
+      fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
       std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3]<< std::endl;

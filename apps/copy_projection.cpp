@@ -1,20 +1,26 @@
 #include <iostream>
-#include <string>
-#include <cstdlib>
+#include <iomanip>
 #include "richdem/common/version.hpp"
-#include "richdem/depressions/priority_flood.hpp"
-#include "richdem/depressions/Zhou2015pf.hpp"
 #include "richdem/common/Array2D.hpp"
-//#include "richdem/flats/flat_resolution.hpp"
-//#include "richdem/methods/d8_methods.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string outputname, std::string analysis){
-  Array2D<T> elevation(filename,false);
+int PerformAlgorithm(std::string templatefile, std::string inputfile, std::string outputfile, std::string flip, std::string analysis){
+  Array2D<T>      raster(inputfile,false);
+  Array2D<int8_t> temp  (templatefile,false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
 
-  improved_priority_flood(elevation);  
+  raster.projection   = temp.projection;
+  raster.geotransform = temp.geotransform;
 
-  elevation.saveGDAL(outputname,analysis);
+  if(flip=="fliph" || flip=="fliphv")
+    raster.flipHorz();
+  if(flip=="flipv" || flip=="fliphv")
+    raster.flipVert();
+  if(flip!="fliph" && flip!="flipv" && flip!="fliphv" && flip!="noflip"){
+    std::cerr<<"Unrecognised flip directive!"<<std::endl;
+    return -1;
+  }
+
+  raster.saveGDAL(outputfile,analysis);
 
   return 0;
 }
@@ -49,14 +55,15 @@ int Router(std::string inputfile, Arguments ... args){
   }
 }
 
-
 int main(int argc, char **argv){
-  std::string analysis = PrintRichdemHeader(argc,argv);
-  
-  if(argc!=3){
-    std::cerr<<argv[0]<<" <Input> <Output name>"<<std::endl;
+  std::string analysis = PrintRichdemHeader(argc, argv);
+
+  if(argc!=5){
+    std::cerr<<argv[0]<<" <Template file> <Input File> <Output File> <fliph/flipv/fliphv/noflip>"<<std::endl;
     return -1;
   }
 
-  return Router(argv[1],argv[1],argv[2],analysis);
+  Router(argv[2],argv[1],argv[2],argv[3],argv[4],analysis)
+
+  return 0;
 }
