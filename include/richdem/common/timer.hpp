@@ -8,6 +8,7 @@
 #define _richdem_timer_
 
 #include <sys/time.h>
+#include <stdexcept>
 
 /**
 The timer class is used to time how intervals in code, such as how long it takes
@@ -35,7 +36,7 @@ class Timer{
     ///Start the timer. Throws an exception if timer was already running.
     void start(){
       if(running)
-        throw "Timer was already started!";
+        throw std::runtime_error("Timer was already started!");
       running=true;
       gettimeofday(&start_time, NULL);
     }
@@ -44,7 +45,7 @@ class Timer{
     ///Calling this adds to the timer's accumulated time.
     void stop(){
       if(!running)
-        throw "Timer was already stopped!";
+        throw std::runtime_error("Timer was already stopped!");
       running=false;
       timeval end_time;
       gettimeofday(&end_time, NULL);
@@ -56,7 +57,7 @@ class Timer{
     ///running.
     double accumulated(){
       if(running)
-        throw "Timer is still running!";
+        throw std::runtime_error("Timer is still running!");
       return accumulated_time;
     }
 
@@ -64,7 +65,7 @@ class Timer{
     ///moment. Throws an exception if the timer is not running.
     double lap(){
       if(!running)
-        throw "Timer was not started!";
+        throw std::runtime_error("Timer was not started!");
       timeval lap_time;
       gettimeofday(&lap_time, NULL);
       return timediff(start_time,lap_time);
