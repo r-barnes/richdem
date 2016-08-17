@@ -299,7 +299,7 @@ class ConsumerSpecifics {
   void FollowPath(
     const int x0,                       //x-coordinate of initial cell
     const int y0,                       //y-coordinate of initial cell
-    const TileInfo          &tile,    //Used to determine which tile we are in
+    const TileInfo          &tile,      //Used to determine which tile we are in
     const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
     std::vector<link_t>      &links
   ){
@@ -319,6 +319,7 @@ class ConsumerSpecifics {
       //Show the final part of the loop path
       if(path_len>max_path_length-10)
         std::cerr<<"E Path: "<<x<<","<<y<<" with flowdir "<<n<<std::endl;
+
 
       //If the neighbour this cell flows into is a no_data cell or this cell does
       //not flow into any neighbour, then mark the initial cell from which we
@@ -415,7 +416,7 @@ class ConsumerSpecifics {
     //a cell is its "dependency count". In this section of the code we find
     //each cell's dependency count.
 
-    accum.resize(flowdirs,0);
+    accum.resize(flowdirs,0); //TODO: Is the initialization needed?
     accum.setNoData(ACCUM_NO_DATA);
 
     std::vector<c_dependency_t> dependencies(flowdirs.size(),0);
@@ -797,6 +798,14 @@ class ProducerSpecifics {
       this_job.accum_in.resize(this_job.links.size(),0);      
     }
 
+    for(size_t y=0;y<jobs1.size();y++)
+    for(size_t x=0;x<jobs1[0].size();x++){
+      std::cerr<<"AccumOrig: "<<x<<" "<<y<<" ";
+      for(const auto x: jobs1[y][x].accum)
+        std::cerr<<x<<" ";
+      std::cerr<<"\n";
+    }
+
     std::cerr<<"p Calculating dependencies..."<<std::endl;
     for(int y=0;y<gridheight;y++)
     for(int x=0;x<gridwidth;x++){
@@ -851,6 +860,18 @@ class ProducerSpecifics {
       }
     }
 
+    //TODO
+    for(size_t y=0;y<jobs1.size();y++)
+    for(size_t x=0;x<jobs1[0].size();x++){
+      std::cerr<<"Accum: "<<x<<" "<<y<<" ";
+      for(const auto x: jobs1[y][x].accum)
+        std::cerr<<x<<" ";
+      std::cerr<<"\nLinks: "<<x<<" "<<y<<" ";
+      for(const auto x: jobs1[y][x].links)
+        std::cerr<<x<<" ";
+      std::cerr<<"\n";
+    }
+
     std::cerr<<"m Peaks found in aggregated problem = "<<q.size()<<std::endl;
 
     //TODO: Detect loops!
@@ -892,6 +913,10 @@ class ProducerSpecifics {
     auto &this_job = job2s_to_dist.at(ty).at(tx);
     // for(size_t s=0;s<this_job.accum.size();s++)
     //   this_job.accum[s] -= this_job.accum_orig[s];
+    std::cerr<<"AccumEnd: "<<tx<<" "<<ty<<" "; //TODO
+    for(const auto x: this_job.accum_in)
+      std::cerr<<x<<" ";
+    std::cerr<<"\n";
 
     return this_job.accum_in;
   }
@@ -1135,7 +1160,7 @@ void Producer(TileGrid &tiles){
   timer_overall.stop();
 
   std::cerr<<"t First stage total overall time = "<<time_first_total.overall<<" s"<<std::endl;
-  std::cerr<<"t First stage total io time = "     <<time_first_total.io     <<" s"<<std::endl;
+  std::cerr<<"t First stage total IO time = "     <<time_first_total.io     <<" s"<<std::endl;
   std::cerr<<"t First stage total calc time = "   <<time_first_total.calc   <<" s"<<std::endl;
   std::cerr<<"r First stage peak child VmPeak = " <<time_first_total.vmpeak <<std::endl;
   std::cerr<<"r First stage peak child VmHWM = "  <<time_first_total.vmhwm  <<std::endl;
@@ -1410,8 +1435,10 @@ void Preparer(
   timer_overall.stop();
   std::cerr<<"t Preparer time = "<<timer_overall.accumulated()<<" s"<<std::endl;
 
-  std::cerr<<"c Flip horizontal = "<<((reptile->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
-  std::cerr<<"c Flip vertical =   "<<((reptile->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  if(reptile!=nullptr){
+    std::cerr<<"c Flip horizontal = "<<((reptile->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+    std::cerr<<"c Flip vertical =   "<<((reptile->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  }
   std::cerr<<"c Input data type = "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
@@ -1544,7 +1571,7 @@ int main(int argc, char **argv){
     }
 
     int good_to_go = 1;
-    std::cerr<<"c Running with = "           <<CommSize()<<" processes"<<std::endl;
+    std::cerr<<"c Processes = "              <<CommSize()<<std::endl;
     std::cerr<<"c Many or one = "            <<many_or_one<<std::endl;
     std::cerr<<"c Input file = "             <<input_file<<std::endl;
     std::cerr<<"c Retention strategy = "     <<retention <<std::endl;
@@ -1552,7 +1579,13 @@ int main(int argc, char **argv){
     std::cerr<<"c Block height = "           <<bheight   <<std::endl;
     std::cerr<<"c Flip horizontal = "        <<flipH     <<std::endl;
     std::cerr<<"c Flip vertical = "          <<flipV     <<std::endl;
-    std::cerr<<"c World Size = "             <<CommSize()<<std::endl;
+
+    #ifdef WITH_COMPRESSION
+      std::cerr<<"c Cache compression = TRUE"<<std::endl;
+    #else
+      std::cerr<<"c Cache compression = FALSE"<<std::endl;
+    #endif
+
     CommBroadcast(&good_to_go,0);
     Preparer(many_or_one, retention, input_file, output_name, bwidth, bheight, flipH, flipV, analysis);
 
