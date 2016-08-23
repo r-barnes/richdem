@@ -5,14 +5,14 @@
 #include <iostream>
 
 #ifndef RICHDEM_GIT_HASH
-  #message Compiling without a git hash!
+  #pragma message "Compiling without a git hash!"
   const std::string git_hash = "NO HASH SPECIFIED!";
 #else
   const std::string git_hash = std::string(RICHDEM_GIT_HASH).substr(0,16);
 #endif
 
 #ifndef RICHDEM_COMPILE_TIME
-  #message Compiling without UTC compile time falling back to local!
+  #pragma message "Compiling without UTC compile time falling back to local!"
   const std::string compilation_datetime = __DATE__ " " __TIME__;
 #else
   const std::string compilation_datetime = RICHDEM_COMPILE_TIME;
