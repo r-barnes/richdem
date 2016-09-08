@@ -9,7 +9,6 @@ int PerformAlgorithm(std::string templatefile, std::string inputfile, std::strin
   Array2D<int8_t> temp  (templatefile,false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
 
   raster.projection   = temp.projection;
-  raster.geotransform = temp.geotransform;
 
   if(flip=="fliph" || flip=="fliphv")
     raster.flipHorz();
