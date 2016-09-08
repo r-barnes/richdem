@@ -24,8 +24,11 @@ Processing Techniques and Applications.
 #define _richdem_dinf_methods_hpp_
 
 #include <cmath>
+#include <queue>
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
+#include "richdem/common/interface.hpp"
+#include "richdem/common/grid_cell.hpp"
 
 //TODO: Can these be merged with the regular D8 directions?
 //X- and Y-offests of D-inf neighbours (TODO: More explanation, and why there are 9)
@@ -136,10 +139,10 @@ bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
   @param[in]  flowdirs   A grid of D-infinite flow directions
   @param[out] &area      A grid of flow accumulation values
 */
-template <class T>
+template <class T, class U>
 void dinf_upslope_area(
-  const Array2D<float> &flowdirs,
-  Array2D<float> &area
+  const Array2D<T> &flowdirs,
+  Array2D<U> &area
 ){
   Array2D<int8_t> dependency;
   std::queue<GridCell> sources;
@@ -268,7 +271,7 @@ void dinf_upslope_area(
     }
 
     if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
-      sources.emplace(nhx,ny);
+      sources.emplace(nhx,nhy);
   }
   std::cerr<<"p succeeded in "<<progress.stop()<<"s."<<std::endl;
 }

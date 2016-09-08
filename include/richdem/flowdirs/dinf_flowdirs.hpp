@@ -19,6 +19,7 @@ Processing Techniques and Applications.
 #define _richdem_dinf_flowdirs_hpp_
 
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/interface.hpp"
 
 ///Value used to indicate that a flow direction cell has no data
 #define dinf_NO_DATA -1
@@ -89,7 +90,7 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
 
     const double s1 = (e0-e1)/d1;
     const double s2 = (e1-e2)/d2;
-    const double r  = atan2(s2,s1);
+    double r        = atan2(s2,s1);
 
     double s;
 
@@ -133,9 +134,7 @@ void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs
   ProgressBar progress;
 
   std::cerr<<"\nA Dinf Flow Directions"<<std::endl;
-  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and
-upslope areas in grid digital elevation models. Water Resources Research.
-Vol. 33. pp 309-319."<<std::endl;
+  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
 
   std::cerr<<"p Setting up the Dinf flow directions matrix..."<<std::endl;
   flowdirs.resize(elevations);
