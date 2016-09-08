@@ -31,7 +31,8 @@
 GDALDataType peekGDALType(const std::string &filename) {
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
+  if(fin==NULL)
+    throw std::runtime_error("Unable to open file '"+filename+"'!");
 
   GDALRasterBand *band   = fin->GetRasterBand(1);
   GDALDataType data_type = band->GetRasterDataType();
