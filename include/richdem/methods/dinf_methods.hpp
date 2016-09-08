@@ -103,6 +103,18 @@ bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
   return false;
 }*/
 
+
+
+/**
+  @brief  Calculate each cell's flow accumulation value
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    TODO
+
+  @param[in]  flowdirs   A grid of D-infinite flow directions
+  @param[out] &area      A grid of flow accumulation values
+*/
+template <class T>
 void dinf_upslope_area(
   const Array2D<float> &flowdirs,
   Array2D<float> &area
@@ -131,19 +143,28 @@ void dinf_upslope_area(
   bool has_cells_without_flow_directions=false;
   std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
   progress.start( flowdirs.width()*flowdirs.height() );
+
+  ///////////////////////
+  //Calculate the number of "dependencies" each cell has. That is, count the
+  //number of cells which flow into each cell.
+
   #pragma omp parallel for reduction(|:has_cells_without_flow_directions)
   for(int x=0;x<flowdirs.width();x++){
     progress.update( x*flowdirs.height() );
     for(int y=0;y<flowdirs.height();y++){
+      //If the flow direction of the cell is NoData, mark its area as NoData
       if(flowdirs(x,y)==flowdirs.noData()){
         area(x,y)       = area.noData();
-        dependency(x,y) = 9;  //Note: This is an unnecessary safety precaution
-        continue;
+        dependency(x,y) = 9;  //This prevents the cell from ever being enqueued (an unnecessary safe guard? TODO)
+        continue;             //Only necessary if there are bugs below (TODO)
       }
+
+      //If the cell has no flow direction, note that so we can warn the user
       if(flowdirs(x,y)==NO_FLOW){
         has_cells_without_flow_directions=true;
         continue;
       }
+
       int n_high,n_low;
       int nhx,nhy,nlx,nly;
       where_do_i_flow(flowdirs(x,y),n_high,n_low);
@@ -159,8 +180,13 @@ void dinf_upslope_area(
     }
   }
   std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
+
   if(has_cells_without_flow_directions)
     std::cerr<<"\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
+
+  ///////////////////////
+  //Find those cells which have no dependencies. These are the places to start
+  //the flow accumulation calculation.
 
   std::cerr<<"%%Locating source cells..."<<std::endl;
   progress.start( flowdirs.width()*flowdirs.height() );
@@ -172,19 +198,27 @@ void dinf_upslope_area(
       else if(flowdirs(x,y)==NO_FLOW)
         continue;
       else if(dependency(x,y)==0)
-        sources.push(GridCell(x,y));
+        sources.emplace(x,y);
   }
   std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
+
+
+
+
+
+  ///////////////////////
+  //Calculate the flow accumulation by "pouring" a cell's flow accumulation
+  //value into the cells below it, as indicated by the D-infinite flow routing
+  //method.
 
   std::cerr<<"%%Calculating up-slope areas..."<<std::endl;
   progress.start( flowdirs.numDataCells() );
   long int ccount=0;
   while(sources.size()>0){
-    GridCell c=sources.front();
+    auto c=sources.front();
     sources.pop();
 
-    ccount++;
-    progress.update(ccount);
+    progress.update(ccount++);
 
     if(flowdirs(c.x,c.y)==flowdirs.noData())  //TODO: This line shouldn't be necessary since NoData's do not get added below
       continue;

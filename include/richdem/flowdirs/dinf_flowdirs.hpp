@@ -5,22 +5,31 @@
 
 #define dinf_NO_DATA 113
 
-//Table 1 of Tarboton
-static const int    dy_e1[8] = {0,-1,-1,0,0,1,1,0};
-static const int    dx_e1[8] = {1,0,0,-1,-1,0,0,1};
-static const int    dy_e2[8] = {-1,-1,-1,-1,1,1,1,1};
-static const int    dx_e2[8] = {1,1,-1,-1,-1,-1,1,1};
-static const double ac   [8] = {0.,1.,1.,2.,2.,3.,3.,4.};
-static const double af   [8] = {1.,-1.,1.,-1.,1.,-1.,1.,-1.};
+//Table 1 of Tarboton (1997), Barnes TODO
+//                Column #: 0    1    2    3    4    5   6    7
+static const int dy_e1[8]={ 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
+static const int dx_e1[8]={ 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
+static const int dy_e2[8]={-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
+static const int dx_e2[8]={ 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
+static const double ac[8]={ 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
+static const double af[8]={ 1., -1.,  1., -1.,  1., -1., 1., -1.};
 
+/**
+  @brief  Determine the D-infinite flow direction of a cell
+  @author Implementation by Richard Barnes (rbarnes@umn.edu)
+
+    This function determines the D-infinite flow direction of a cell, as
+    described by Tarboton (1997) and Barnes (2013, TODO). TODO
+
+  @param[in] &elevations  A 2D grid of elevation data
+  @param[in] x            x-coordinate of cell to determine flow direction for
+  @param[in] y            y-coordinate of cell to determine flow direction for
+
+  @return A floating-point value between [0,2*Pi) indicating flow direction
+*/
 template <class T>
 float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
-  double smax = 0;
-  int    nmax = -1;
-  double rmax = 0;
-
-  double e0,e1,e2,d1,d2,s1,s2,r,s;
-
+  //Ensure that flow is pulled off the edge of the grid
   if (elevations.isEdgeCell(x,y)){
     if(x==0 && y==0)
       return 3*M_PI/4;  //D8: 2
@@ -39,6 +48,11 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
     else if(y==elevations.height()-1)
       return 6*M_PI/4;  //D8: 7
   }
+
+  int    nmax = -1;
+  double smax = 0;
+  double rmax = 0;
+
   
   //Since I am not on the edge of the grid if I've made it this far, may neighbours cannot be off the grid
   //Yes, this should be 0-8, this is the Tarboton neighbour system
@@ -49,20 +63,26 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
     //Therefore, these lines are not really necessary.
     //I leave them here to make it very clear that they are not necessary.
 
-    e0 = elevations(x,y);
-    e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
-    e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
-    d1 = 1;
-    d2 = 1;
-    s1 = (e0-e1)/d1;
-    s2 = (e1-e2)/d2;
-    r  = atan2(s2,s1);
+    //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
+    double e0 = elevations(x,y);
+    double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
+    double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
+
+    //Assumes that the width and height of grid cells are equal and scaled to 1.
+    double d1 = 1;
+    double d2 = 1;
+
+    double s1 = (e0-e1)/d1;
+    double s2 = (e1-e2)/d2;
+    double r  = atan2(s2,s1);
+
+    double s;
 
     if(r<0){
       r = 0;
       s = s1;
     } else if(r>atan2(d2,d1)){
-      r = atan2(d2,d1);
+      r = atan2(d2,d1); //TODO: This is a constant
       s = (e0-e2)/sqrt(d1*d1+d2*d2);
     } else {
       s = sqrt(s1*s1+s2*s2);
@@ -82,6 +102,17 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
   return rg;
 }
 
+
+/**
+  @brief  Determine the D-infinite flow direction of every cell in a grid
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    This function runs dinf_FlowDir() on every cell in a grid which has a data
+    value.
+
+  @param[in]  &elevations  A 2D grid of elevation data
+  @param[out] &flowdirs    A 2D grid which will contain the flow directions
+*/
 template <class T>
 void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs){
   ProgressBar progress;
