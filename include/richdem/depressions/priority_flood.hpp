@@ -224,16 +224,11 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   int false_pit_cells           = 0;
 
   std::cerr<<"\n###Priority-Flood+Epsilon"<<std::endl;
-  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"Setting up boolean flood array matrix..."<<std::flush;
+  std::cerr<<"C Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
+  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"The priority queue will require approximately "
-           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
-  std::cerr<<"Adding cells to the priority queue..."<<std::flush;
+  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -246,9 +241,8 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"%%Performing Priority-Flood+Epsilon..."<<std::endl;
+  std::cerr<<"p Performing Priority-Flood+Epsilon..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
@@ -292,10 +286,10 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
+  std::cerr<<"\t\033[96mt succeeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
   std::cerr<<processed_cells<<" cells processed. "<<pitc<<" in pits."<<std::endl;
   if(false_pit_cells)
-    std::cerr<<"\033[91mIn assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m"<<std::endl;
+    std::cerr<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m"<<std::endl;
 }
 
 
