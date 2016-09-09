@@ -194,7 +194,7 @@ class Array2D {
                                     ///this improves caching versus a 2D array
 
   T   no_data;                      ///NoData value of the raster
-  i_t num_data_cells = 0;           ///Number of cells which are not NoData
+  i_t num_data_cells = NO_I;        ///Number of cells which are not NoData
 
   xy_t view_width;               ///Height of raster in cells
   xy_t view_height;              ///Width of raster in cells
@@ -831,7 +831,7 @@ class Array2D {
     @return Returns the number of cells which are not NoData.
   */
   i_t numDataCells(){
-    if(num_data_cells==-1)
+    if(num_data_cells==NO_I)
       countDataCells();
     return num_data_cells;
   }
