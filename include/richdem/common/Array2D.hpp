@@ -1140,6 +1140,7 @@ class Array2D {
     @param[in]  radius   Output stamp will be 2*radius x 2*radius
     @param[in]       x   X-coordinate of block center
     @param[in]       y   Y-coordinate of block center
+    @param[in]   color   Print the (x,y) cell in colour?
     @parma[in]     msg   Optional message to print above the block
   */
   void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
