@@ -1165,6 +1165,22 @@ class Array2D {
   }
 
   /**
+    @brief Prints the entire array
+
+    @parma[in]     msg   Optional message to print above the block
+  */
+  void printAll(const std::string msg="") const {
+    if(!msg.empty())
+      std::cerr<<msg<<std::endl;
+
+    for(xy_t y=0;y<height();y++){
+      for(xy_t x=0;x<width();x++)
+        std::cerr<<std::setw(5)<<data[xyToI(x,y)]<<" ";
+      std::cerr<<std::endl;
+    }
+  }
+
+  /**
     @brief Get the area of an individual cell in square projection units
 
     @return The area of the cell in square projection units
