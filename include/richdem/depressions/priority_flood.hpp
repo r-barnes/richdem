@@ -295,7 +295,7 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
   std::cerr<<processed_cells<<" cells processed. "<<pitc<<" in pits."<<std::endl;
   if(false_pit_cells)
-    std::cerr<<"\033[91mIn assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<std::endl;
+    std::cerr<<"\033[91mIn assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m"<<std::endl;
 }
 
 
