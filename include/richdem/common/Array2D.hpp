@@ -725,6 +725,16 @@ class Array2D {
     return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
+  bool isTopLeft    (xy_t x, xy_t y) const { return x==0         && y==0;          }
+  bool isTopRight   (xy_t x, xy_t y) const { return x==width()-1 && y==0;          }
+  bool isBottomLeft (xy_t x, xy_t y) const { return x==0         && y==height()-1; }
+  bool isBottomRight(xy_t x, xy_t y) const { return x==width()-1 && y==height()-1; }
+
+  bool isTopRow    (xy_t x, xy_t y) const { return y==0;          }
+  bool isBottomRow (xy_t x, xy_t y) const { return y==height()-1; }
+  bool isLeftCol   (xy_t x, xy_t y) const { return x==0;          }
+  bool isRightCol  (xy_t x, xy_t y) const { return x==width()-1;  }
+
   /**
     @brief Test whether a cell lies on the boundary of the raster
 
