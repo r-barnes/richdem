@@ -6,7 +6,7 @@
 //105
 //876
 
-///x offsets of D8 neighbours, from a central cell
+///x and y offsets of D8 neighbours, from a central cell
 const int dx[9]={0, -1, -1,  0,  1, 1, 1, 0, -1};
 const int dy[9]={0,  0, -1, -1, -1, 0, 1, 1,  1};
 

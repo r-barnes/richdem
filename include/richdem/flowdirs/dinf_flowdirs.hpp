@@ -1,26 +1,54 @@
+/**
+This file implements the D-infinite flow routing method originally described by
+Tarboton (1997). It incorporates minor alterations and additional safe-guards
+described in Barnes (TODO).
+
+Bibliography:
+
+Tarboton, D.G. 1997. A new method for the determination of flow directions and
+upslope areas in grid digital elevation models. Water Resources Research.
+Vol. 33. pp 309-319.
+
+Wallis, C., Watson, D., Tarboton, D., Wallace, R. 2009. Parallel Flow-Direction
+and Contributing Area Calculation for Hydrology Analysis in Digital Elevation
+Models. Proceedings of the Intn'l Conference on Parallel and Distributed
+Processing Techniques and Applications.
+*/
+
 #ifndef _richdem_dinf_flowdirs_hpp_
 #define _richdem_dinf_flowdirs_hpp_
 
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/interface.hpp"
 
-#define dinf_NO_DATA 113
+///Value used to indicate that a flow direction cell has no data
+#define dinf_NO_DATA -1
 
-//Table 1 of Tarboton
-static const int    dy_e1[8] = {0,-1,-1,0,0,1,1,0};
-static const int    dx_e1[8] = {1,0,0,-1,-1,0,0,1};
-static const int    dy_e2[8] = {-1,-1,-1,-1,1,1,1,1};
-static const int    dx_e2[8] = {1,1,-1,-1,-1,-1,1,1};
-static const double ac   [8] = {0.,1.,1.,2.,2.,3.,3.,4.};
-static const double af   [8] = {1.,-1.,1.,-1.,1.,-1.,1.,-1.};
+//Table 1 of Tarboton (1997), Barnes TODO
+//              Column #  =   0    1    2    3    4    5   6    7
+static const int dy_e1[8] = { 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
+static const int dx_e1[8] = { 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
+static const int dy_e2[8] = {-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
+static const int dx_e2[8] = { 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
+static const double ac[8] = { 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
+static const double af[8] = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
 
+/**
+  @brief  Determine the D-infinite flow direction of a cell
+  @author Implementation by Richard Barnes (rbarnes@umn.edu)
+
+    This function determines the D-infinite flow direction of a cell, as
+    described by Tarboton (1997) and Barnes (2013, TODO). TODO
+
+  @param[in] elevations   A 2D grid of elevation data
+  @param[in] x            x-coordinate of cell to determine flow direction for
+  @param[in] y            y-coordinate of cell to determine flow direction for
+
+  @return A floating-point value between [0,2*Pi) indicating flow direction
+*/
 template <class T>
 float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
-  double smax = 0;
-  int    nmax = -1;
-  double rmax = 0;
-
-  double e0,e1,e2,d1,d2,s1,s2,r,s;
-
+  //Ensure that flow is pulled off the edge of the grid
   if (elevations.isEdgeCell(x,y)){
     if(x==0 && y==0)
       return 3*M_PI/4;  //D8: 2
@@ -39,30 +67,38 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
     else if(y==elevations.height()-1)
       return 6*M_PI/4;  //D8: 7
   }
-  
-  //Since I am not on the edge of the grid if I've made it this far, may neighbours cannot be off the grid
-  //Yes, this should be 0-8, this is the Tarboton neighbour system
-  for(int n=0;n<8;n++){
-    //Very negative no_data's should be acceptable, and suck water of the grid.
-    //if(elevations(x+dx_e1[n],y+dy_e1[n])==elevations.no_data) continue;
-    //if(elevations(x+dx_e2[n],y+dy_e2[n])==elevations.no_data) continue;
-    //Therefore, these lines are not really necessary.
-    //I leave them here to make it very clear that they are not necessary.
 
-    e0 = elevations(x,y);
-    e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
-    e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
-    d1 = 1;
-    d2 = 1;
-    s1 = (e0-e1)/d1;
-    s2 = (e1-e2)/d2;
-    r  = atan2(s2,s1);
+  int    nmax = -1;
+  double smax = 0;
+  double rmax = 0;
+
+  //I am not on the edge of the grid. All my neighbours can be examined.
+
+  for(int n=0;n<8;n++){
+    //Is is assumed that cells with a value of NoData have very negative
+    //elevations with the result that they draw flow off of the grid.
+
+    //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
+    const double e0 = elevations(x,y);
+    const double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
+    const double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
+
+    //TODO: Assumes that the width and height of grid cells are equal and scaled
+    //to 1.
+    const double d1 = 1;
+    const double d2 = 1;
+
+    const double s1 = (e0-e1)/d1;
+    const double s2 = (e1-e2)/d2;
+    double r        = atan2(s2,s1);
+
+    double s;
 
     if(r<0){
       r = 0;
       s = s1;
     } else if(r>atan2(d2,d1)){
-      r = atan2(d2,d1);
+      r = atan2(d2,d1); //TODO: This is a constant
       s = (e0-e2)/sqrt(d1*d1+d2*d2);
     } else {
       s = sqrt(s1*s1+s2*s2);
@@ -75,26 +111,37 @@ float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
     }
   }
 
-  double rg=NO_FLOW;
+  double rg = NO_FLOW;
   if(nmax!=-1)
-    rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
+    rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
 
   return rg;
 }
 
+
+/**
+  @brief  Determine the D-infinite flow direction of every cell in a grid
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    This function runs dinf_FlowDir() on every cell in a grid which has a data
+    value.
+
+  @param[in]  &elevations  A 2D grid of elevation data
+  @param[out] &flowdirs    A 2D grid which will contain the flow directions
+*/
 template <class T>
 void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs){
   ProgressBar progress;
 
-  std::cerr<<"\n###Dinf Flow Directions"<<std::endl;
+  std::cerr<<"\nA Dinf Flow Directions"<<std::endl;
+  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
 
-  std::cerr<<"Setting up the Dinf flow directions matrix..."<<std::flush;
+  std::cerr<<"p Setting up the Dinf flow directions matrix..."<<std::endl;
   flowdirs.resize(elevations);
   flowdirs.setNoData(dinf_NO_DATA);
   flowdirs.setAll(NO_FLOW);
-  std::cerr<<"succeeded.\n"<<std::endl;
 
-  std::cerr<<"%%Calculating Dinf flow directions..."<<std::flush;
+  std::cerr<<"p Calculating Dinf flow directions..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
   for(int x=0;x<elevations.width();x++){

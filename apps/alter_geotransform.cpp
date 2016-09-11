@@ -4,42 +4,27 @@
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string flip){
-  bool flipH = false; //TODO
-  bool flipV = false;
+int PerformAlgorithm(
+  std::string inputfile,
+  std::string outputfile,
+  std::string geo1,
+  std::string geo2,
+  std::string geo3,
+  std::string geo4,
+  std::string geo5,
+  std::string geo6,
+  std::string analysis
+){
+  Array2D<T> raster(inputfile,false);
 
-  if(flip=="fliph")
-    flipH=true;
-  else if(flip=="flipv")
-    flipV=true;
-  else if(flip=="fliphv")
-    flipH=flipV=true;
-  else if(flip!="noflip"){
-    std::cerr<<"Unrecognised flip directive."<<std::endl;
-    return -1;
-  }
+  if(geo1!="x") raster.geotransform[0] = std::stod(geo1);
+  if(geo2!="x") raster.geotransform[1] = std::stod(geo2);
+  if(geo3!="x") raster.geotransform[2] = std::stod(geo3);
+  if(geo4!="x") raster.geotransform[3] = std::stod(geo4);
+  if(geo5!="x") raster.geotransform[4] = std::stod(geo5);
+  if(geo6!="x") raster.geotransform[5] = std::stod(geo6);
 
-
-  Array2D<T> raster(filename,false);
-
-  std::cerr<<"Geotransform: ";
-  for(auto const x: raster.geotransform)
-    std::cerr<<std::setw(6)<<std::setprecision(2)<<x<<" ";
-  std::cerr<<std::endl;
-
-  //Flip tiles if the geotransform demands it
-  if( (raster.geotransform[1]<0) ^ flipH)
-    raster.flipHorz();
-  if( (raster.geotransform[5]>0) ^ flipV)
-    raster.flipVert();
-
-  raster.printStamp(5)
-
-  for(int y=0;y<raster.height();y++){
-    for(int x=0;x<raster.width();x++)
-      std::cout<<std::setw(6)<<std::setprecision(2)<<(int)raster(x,y)<<" ";
-    std::cout<<"\n";
-  }
+  raster.saveGDAL(outputfile,analysis);
 
   return 0;
 }
@@ -76,13 +61,22 @@ int Router(std::string inputfile, Arguments ... args){
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
-  
-  if(argc!=3){
-    std::cerr<<argv[0]<<" <Input file> <noflip/fliph/flipv/fliphv>"<<std::endl;
+
+  if(argc==2){
+    Array2D<int8_t> temp(argv[1],false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
+    for(auto v: temp.geotransform)
+      std::cout<<std::setw(10)<<v<<" ";
+    std::cout<<std::endl;
+    return 0;
+  }
+
+  if(argc!=9){
+    std::cerr<<argv[0]<<" <Display geotransform of this file>"<<std::endl;
+    std::cerr<<argv[0]<<" <Input file> <Output File> <Geo1> <Geo2> <Geo3> <Geo4> <Geo5> <Geo6>"<<std::endl;
     return -1;
   }
 
-  Router(argv[1],argv[1],argv[2]);
+  Router(argv[1],argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argv[7],argv[8],analysis);
 
   return 0;
 }
