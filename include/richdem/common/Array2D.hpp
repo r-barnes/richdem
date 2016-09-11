@@ -1,5 +1,5 @@
-#ifndef _array_2d_hpp_
-#define _array_2d_hpp_
+#ifndef _richdem_array_2d_hpp_
+#define _richdem_array_2d_hpp_
 
 #include "gdal_priv.h"
 #include <vector>
@@ -174,30 +174,30 @@ GDALDataType NativeTypeToGDAL() {
 template<class T>
 class Array2D {
  public:
-  std::string filename;             ///TODO
-  std::string basename;             ///Filename without path or extension
-  std::vector<double> geotransform; ///Geotransform of the raster
-  std::string projection;           ///Projection of the raster
-  std::string processing_history;   ///List of commands previously run on this dataset
+  std::string filename;             ///< TODO
+  std::string basename;             ///< Filename without path or extension
+  std::vector<double> geotransform; ///< Geotransform of the raster
+  std::string projection;           ///< Projection of the raster
+  std::string processing_history;   ///< List of commands previously run on this dataset
 
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
-  typedef int32_t  xy_t;            ///xy-addressing data type
-  typedef uint32_t i_t;             ///i-addressing data type
+  typedef int32_t  xy_t;            ///< xy-addressing data type
+  typedef uint32_t i_t;             ///< i-addressing data type
 
   static const i_t NO_I = std::numeric_limits<i_t>::max();
 
  private:
   template<typename> friend class Array2D;
 
-  std::vector<T> data;              ///Holds the raster data in a 1D array
-                                    ///this improves caching versus a 2D array
+  std::vector<T> data;              ///< Holds the raster data in a 1D array
+                                    ///< this improves caching versus a 2D array
 
-  T   no_data;                      ///NoData value of the raster
-  i_t num_data_cells = 0;           ///Number of cells which are not NoData
+  T   no_data;                      ///< NoData value of the raster
+  i_t num_data_cells = 0;           ///< Number of cells which are not NoData
 
-  xy_t view_width;               ///Height of raster in cells
-  xy_t view_height;              ///Width of raster in cells
+  xy_t view_width;               ///< Height of raster in cells
+  xy_t view_height;              ///< Width of raster in cells
 
   ///@{ A rectangular subregion of a larger raster can be extracted. These
   ///   variables store the offsets of this subregion in case the subregion
@@ -206,9 +206,9 @@ class Array2D {
   xy_t view_yoff;
   ///@}
   
-  bool from_cache;  ///If TRUE, loadData() loads data from the cache assuming 
-                    ///the Native format. Otherwise, it assumes it is loading
-                    ///from a GDAL file.
+  ///If TRUE, loadData() loads data from the cache assuming  the Native format.
+  ///Otherwise, it assumes it is loading from a GDAL file.
+  bool from_cache;
 
   ///TODO
   void loadGDAL(const std::string &filename, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true){

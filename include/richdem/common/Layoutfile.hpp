@@ -1,5 +1,25 @@
-#ifndef _layoutfile_hpp_
-#define _layoutfile_hpp_
+/**
+  @file
+  @brief Defines classes used for reading and writing tiled datasets.
+
+  A layout file is a text file with the format:
+
+      file1.tif, file2.tif, file3.tif,
+      file4.tif, file5.tif, file6.tif, file7.tif
+               , file8.tif,          ,
+
+  where each of fileX.tif is a tile of the larger DEM collectively described by
+  all of the files. All of fileX.tif must have the same shape; the layout file
+  specifies how fileX.tif are arranged in relation to each other in space.
+  Blanks between commas indicate that there is no tile there: the algorithm will
+  treat such gaps as places to route flow towards (as if they are oceans). Note
+  that the files need not have TIF format: they can be of any type which GDAL
+  can read. Paths to fileX.tif are taken to be relative to the layout file.
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
+#ifndef _richdem_layoutfile_hpp_
+#define _richdem_layoutfile_hpp_
 
 #include <string>
 #include <vector>
@@ -11,11 +31,12 @@
 
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
-  #define SLASH_CHAR "/"
+  #define RICHDEM_SLASH_CHAR "/"
 #elif defined(__WIN32__)
-  #define SLASH_CHAR "\\"
+  #define RICHDEM_SLASH_CHAR "\\"
 #endif
 
+///Eliminate spaces from the beginning and end of str
 static std::string trimStr(std::string const& str){
   if(str.empty())
       return str;
@@ -26,6 +47,8 @@ static std::string trimStr(std::string const& str){
   return str.substr(first, last-first+1);
 }
 
+///Get only the filename without its extension. That is, convert
+///"path/to/file.ext" to "file"
 static std::string GetBaseName(std::string filename){
   auto last_slash  = filename.find_last_of(SLASH_CHAR);
   auto last_period = filename.find_last_of(".");
@@ -36,19 +59,27 @@ static std::string GetBaseName(std::string filename){
   return filename;
 }
 
+///Used for reading a layoutfile describing a tiled dataset. The class acts as a
+///generator. The layoutfile is read on construction and its contents retrieved
+///with next(). The Layoutfile specification can be found in Layoutfile.hpp.
 class LayoutfileReader {
  private:
-  //Stores the grid of filenames
+  ///Stores the grid of filenames extracted from the layoutfile
   std::vector< std::vector< std::string > > fgrid;
 
-  int gridy        = -1; //Gets incremented to 0 right away
-  int gridx        = -2; //Gets incremented to -1 right away, which then indicates a new row, the first row
-  int new_row      = false;
+  int gridy        = -1;    //Gets incremented to 0 right away
+  int gridx        = -2;    //Gets incremented to -1 right away, which then indicates a new row, the first row
+  int new_row      = false; //If true, then the current entry is the beginning of a new row. Gets set to true right away.
 
-  std::string filename;
-  std::string basename;
-  std::string path;
+  std::string filename;     //Of "path/to/file.ext" this is "file.ext"
+  std::string basename;     //Of "path/to/file.ext" this is "file"
+  std::string path;         //Of "path/to/file.ext" this is "path/to/"
  public:
+
+  ///@brief  Construct a new LayoutfileReader object reading from a given file.
+  ///@author Richard Barnes
+  ///
+  ///@param  layout_filename Layoutfile to read from.
   LayoutfileReader(std::string layout_filename){
     assert(layout_filename.size()>0);
     path = "";
@@ -113,6 +144,8 @@ class LayoutfileReader {
       }
   }
 
+  ///@brief Advance the reader to the next layoutfile entry.
+  ///@return True if reader advanced successfully; false if not.
   bool next(){
     new_row = false;
     gridx++;
@@ -131,50 +164,71 @@ class LayoutfileReader {
     return true;
   }
 
+  ///@return True if the current entry is the beginning of a new row.
   bool newRow() const {
     return new_row;
   }
 
+  ///@return The current entry's filename without the path (e.g. "file.ext").
   const std::string& getFilename() const {
     return filename;
   }
 
+  ///@return The current entry's filename without the path or extension (e.g. "file").
   const std::string& getBasename() const {
     return basename;
   }
 
+  ///@return The current entry's path + filename (e.g. "path/to/file.ext").
   const std::string  getFullPath() const {
     return path + filename;
   }
 
+  ///@brief Return a string representation of the current entry's coordinates.
+  ///
+  ///A layoutfile is a 2D grid of file names. This method returns the current
+  ///entry's position in that grid as `<X>_<Y>`
+  ///
+  ///@return Current entry's position as a string of the form <X>_<Y>
   const std::string  getGridLocName() const {
     return std::to_string(gridx)+"_"+std::to_string(gridy);
   }
 
+  ///@return Path of layoutfile: of "path/to/layoutfile.layout" returns "path/to/".
   const std::string& getPath() const {
     return path;
   }
 
+  ///@return True if the current entry was a blank
   bool isNullTile() const {
     return filename.size()==0;
   }
 
+  ///@return X-coordinate of the current entry.
   int getX() const {
     return gridx;
   }
 
+  ///@return Y-coordinate of the current entry.
   int getY() const {
     return gridy;
   }
 };
 
+///Used for creating a layoutfile describing a tiled dataset. The class acts as
+///an inverse generator. The layoutfile is created on construction and its
+///contents appended to with addEntry(). The Layoutfile specification can be
+///found in Layoutfile.hpp.
 class LayoutfileWriter {
  private:
-  int gridx;
-  int gridy;
-  std::string path;
-  std::ofstream flout;
+  int gridx;           ///Current column being written to
+  int gridy;           ///Current row being written to
+  std::string path;    ///Path of layoutfile
+  std::ofstream flout; ///File output stream for the layout file
  public:
+
+  ///@brief Constructs a new writer object
+  ///@param layout_filename Path+Filename of layoutfile to write
   LayoutfileWriter(std::string layout_filename){
     path  = "";
     gridx = 0;
@@ -194,6 +248,7 @@ class LayoutfileWriter {
     flout<<std::endl;
   }
 
+  ///@brief Adds a new row to the layoutfile
   void addRow(){
     if(gridx==0 && gridy==0)
       return;
@@ -202,7 +257,8 @@ class LayoutfileWriter {
     gridx = 0;
   }
 
-  //Use filename="" to indicate a null tile
+  ///@brief Add a new entry to the layout file.
+  ///@param filename File to add. Use `filename=""` to indicate a null tile.
   void addEntry(std::string filename){
     //Get only the filename, not the path to it
     std::size_t last_slash = filename.find_last_of(SLASH_CHAR);

@@ -1,3 +1,10 @@
+/**
+  @file
+  @brief Defines RichDEM version, git hash, compilation time. Used for 
+         program/app headers and for processing history entries.
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
 #ifndef _richdem_version_hpp_
 #define _richdem_version_hpp_
 
@@ -6,15 +13,19 @@
 
 #ifndef RICHDEM_GIT_HASH
   #pragma message "Compiling without a git hash!"
+  ///Git hash of program's source (used if RICHDEM_GIT_HASH is undefined)
   const std::string git_hash = "NO HASH SPECIFIED!";
 #else
+  ///Git hash of program's source (Used if RICHDEM_GIT_HASH is defined)
   const std::string git_hash = std::string(RICHDEM_GIT_HASH).substr(0,16);
 #endif
 
 #ifndef RICHDEM_COMPILE_TIME
   #pragma message "Compiling without UTC compile time falling back to local!"
+  ///Date and time of when the program was compiled (used if RICHDEM_COMPILE_TIME is undefined)
   const std::string compilation_datetime = __DATE__ " " __TIME__;
 #else
+  ///Date and imte of when the program was compiled
   const std::string compilation_datetime = RICHDEM_COMPILE_TIME;
 #endif
 
@@ -30,6 +41,9 @@ const std::string copyright    = "Richard Barnes © 2016";
 ///Richdem vX.X.X (hash=GIT HASH, compiled=COMPILATION DATE TIME)
 const std::string program_identifier = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
 
+///Takes the program's command line arguments and prints to stdout a header with
+///a variety of useful information for identifying the particulars of what was
+///run.
 std::string PrintRichdemHeader(int argc, char **argv){
   std::string analysis;
   for(int i=0;i<argc;i++)

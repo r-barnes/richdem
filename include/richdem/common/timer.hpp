@@ -1,6 +1,6 @@
 /**
   @file
-  Defines the Timer class, which is used through RichDEM for timing code.
+  @brief Defines the Timer class, which is used for timing code.
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
@@ -16,9 +16,9 @@ a given function to run, or how long I/O has taken.
 */
 class Timer{
   private:
-    timeval start_time;      ///<Last time the timer was started
-    double accumulated_time; ///<Accumulated running time since creation
-    bool running;            ///<True when the timer is running
+    timeval start_time;      ///< Last time the timer was started
+    double accumulated_time; ///< Accumulated running time since creation
+    bool running;            ///< True when the timer is running
 
     ///Number of (fractional) seconds between two time objects
     double timediff(timeval beginning, timeval end){

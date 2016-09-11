@@ -1,7 +1,6 @@
 /**
   @file
-  Defines fucntions to calculate how much memory a process is using. Used by
-  various code performance metrics.
+  @brief Defines functions for calculating memory usage.
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
