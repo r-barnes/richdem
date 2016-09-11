@@ -4,7 +4,7 @@
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
-#define NO_FLOW          0 //TODO: Explain and ensure it fits in flowdir_t
+const uint8_t NO_FLOW = 0 //TODO: Explain and ensure it fits in flowdir_t
 
 template<class flowdir_t>
 void FollowPath(

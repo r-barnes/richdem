@@ -194,7 +194,7 @@ class Array2D {
                                     ///< this improves caching versus a 2D array
 
   T   no_data;                      ///< NoData value of the raster
-  i_t num_data_cells = 0;           ///< Number of cells which are not NoData
+  i_t num_data_cells = NO_I;        ///< Number of cells which are not NoData
 
   xy_t view_width;               ///< Height of raster in cells
   xy_t view_height;              ///< Width of raster in cells
@@ -725,6 +725,16 @@ class Array2D {
     return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
+  bool isTopLeft    (xy_t x, xy_t y) const { return x==0         && y==0;          }
+  bool isTopRight   (xy_t x, xy_t y) const { return x==width()-1 && y==0;          }
+  bool isBottomLeft (xy_t x, xy_t y) const { return x==0         && y==height()-1; }
+  bool isBottomRight(xy_t x, xy_t y) const { return x==width()-1 && y==height()-1; }
+
+  bool isTopRow    (xy_t x, xy_t y) const { return y==0;          }
+  bool isBottomRow (xy_t x, xy_t y) const { return y==height()-1; }
+  bool isLeftCol   (xy_t x, xy_t y) const { return x==0;          }
+  bool isRightCol  (xy_t x, xy_t y) const { return x==width()-1;  }
+
   /**
     @brief Test whether a cell lies on the boundary of the raster
 
@@ -831,7 +841,7 @@ class Array2D {
     @return Returns the number of cells which are not NoData.
   */
   i_t numDataCells(){
-    if(num_data_cells==-1)
+    if(num_data_cells==NO_I)
       countDataCells();
     return num_data_cells;
   }
@@ -1140,6 +1150,7 @@ class Array2D {
     @param[in]  radius   Output stamp will be 2*radius x 2*radius
     @param[in]       x   X-coordinate of block center
     @param[in]       y   Y-coordinate of block center
+    @param[in]   color   Print the (x,y) cell in colour?
     @parma[in]     msg   Optional message to print above the block
   */
   void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
@@ -1159,6 +1170,22 @@ class Array2D {
         if(color && x==x0 && y==y0)
           std::cerr<<"\033[39m";
       }
+      std::cerr<<std::endl;
+    }
+  }
+
+  /**
+    @brief Prints the entire array
+
+    @parma[in]     msg   Optional message to print above the block
+  */
+  void printAll(const std::string msg="") const {
+    if(!msg.empty())
+      std::cerr<<msg<<std::endl;
+
+    for(xy_t y=0;y<height();y++){
+      for(xy_t x=0;x<width();x++)
+        std::cerr<<std::setw(5)<<data[xyToI(x,y)]<<" ";
       std::cerr<<std::endl;
     }
   }
