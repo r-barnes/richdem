@@ -1,8 +1,8 @@
 /**
   @file
-  Defines timing functions and progress bars.
+  @brief Defines a handy progress bar so the user doesn't get bored or panicked.
 
-  Richard Barnes (rbarnes@umn.edu), 2016
+  Richard Barnes (rbarnes@umn.edu), 2015
 */
 #ifndef _richdem_utility_hpp_
 #define _richdem_utility_hpp_
@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <sys/time.h>
 #include <stdexcept>
+#include "richdem/common/timer.hpp"
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -19,57 +20,6 @@
   #define omp_get_thread_num()  0
   #define omp_get_num_threads() 1
 #endif
-
-class Timer{
- private:
-  timeval start_time;      ///<Last time the timer was started
-  double accumulated_time; ///<Accumulated running time since creation
-  bool running;            ///<True when the timer is running
-
-  ///Number of seconds between two time objects
-  double timediff(timeval beginning, timeval end){
-    long seconds, useconds;
-    seconds  = end.tv_sec  - beginning.tv_sec;
-    useconds = end.tv_usec - beginning.tv_usec;
-    return seconds + useconds/1000000.0;
-  }
- public:
-  Timer(){
-    accumulated_time = 0;
-    running          = false;
-  }
-  void start(){
-    if(running)
-      std::logic_error("Timer was already started!");
-    running=true;
-    gettimeofday(&start_time, NULL);
-  }
-  double stop(){
-    if(!running)
-      std::logic_error("Timer was already stopped!");
-    running=false;
-    timeval end_time;
-    gettimeofday(&end_time, NULL);
-
-    accumulated_time += timediff(start_time,end_time);
-
-    return accumulated_time;
-  }
-  double accumulated(){
-    if(running)
-      std::logic_error("Timer is still running!");
-    return accumulated_time;
-  }
-  double lap(){
-    if(!running)
-      std::logic_error("Timer was not started!");
-    timeval lap_time;
-    gettimeofday(&lap_time, NULL);
-    return timediff(start_time,lap_time);
-  }
-};
-
-#define PROGRESS_BAR "=================================================="
 
 class ProgressBar{
   private:
