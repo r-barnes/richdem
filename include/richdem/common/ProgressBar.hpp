@@ -1,11 +1,11 @@
 /**
   @file
-  @brief Defines a handy progress bar so the user doesn't get bored or panicked.
+  @brief Defines a handy progress bar object so users don't get impatient.
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
-#ifndef _richdem_utility_hpp_
-#define _richdem_utility_hpp_
+#ifndef _richdem_progress_bar_hpp_
+#define _richdem_progress_bar_hpp_
 
 #include <string>
 #include <iostream>
@@ -21,6 +21,7 @@
   #define omp_get_num_threads() 1
 #endif
 
+///The progress bar object accepts
 class ProgressBar{
   private:
     long total_work;
