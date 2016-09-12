@@ -42,7 +42,8 @@ class Timer{
 
     ///Stop the timer. Throws an exception if timer was already stopped.
     ///Calling this adds to the timer's accumulated time.
-    void stop(){
+    ///@return The accumulated time in seconds.
+    double stop(){
       if(!running)
         throw std::runtime_error("Timer was already stopped!");
       running=false;
@@ -50,6 +51,8 @@ class Timer{
       gettimeofday(&end_time, NULL);
 
       accumulated_time+=timediff(start_time,end_time);
+
+      return accumulated_time;
     }
 
     ///Returns the timer's accumulated time. Throws an exception if the timer is
