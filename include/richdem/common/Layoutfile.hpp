@@ -59,9 +59,11 @@ static std::string GetBaseName(std::string filename){
   return filename;
 }
 
-///Used for reading a layoutfile describing a tiled dataset. The class acts as a
-///generator. The layoutfile is read on construction and its contents retrieved
-///with next(). The Layoutfile specification can be found in Layoutfile.hpp.
+///@brief Used for reading a layoutfile describing a tiled dataset.
+///
+///The class acts as a generator. The layoutfile is read on construction and its
+///contents retrieved with next(). The Layoutfile specification can be found in
+///Layoutfile.hpp.
 class LayoutfileReader {
  private:
   ///Stores the grid of filenames extracted from the layoutfile
@@ -215,10 +217,11 @@ class LayoutfileReader {
   }
 };
 
-///Used for creating a layoutfile describing a tiled dataset. The class acts as
-///an inverse generator. The layoutfile is created on construction and its
-///contents appended to with addEntry(). The Layoutfile specification can be
-///found in Layoutfile.hpp.
+///@brief Used for creating a layoutfile describing a tiled dataset.
+///
+///The class acts as an inverse generator. The layoutfile is created on
+///construction and its contents appended to with addEntry(). The Layoutfile
+///specification can be found in Layoutfile.hpp.
 class LayoutfileWriter {
  private:
   int gridx;           ///Current column being written to

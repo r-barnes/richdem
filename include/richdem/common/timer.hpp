@@ -10,10 +10,9 @@
 #include <sys/time.h>
 #include <stdexcept>
 
-/**
-The timer class is used to time how intervals in code, such as how long it takes
-a given function to run, or how long I/O has taken.
-*/
+///@brief Used to time how intervals in code.
+///
+///Such as how long it takes a given function to run, or how long I/O has taken.
 class Timer{
   private:
     timeval start_time;      ///< Last time the timer was started

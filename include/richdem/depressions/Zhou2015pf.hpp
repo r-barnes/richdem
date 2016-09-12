@@ -1,5 +1,13 @@
-#ifndef __distpdf_zhou2015pf_hp__
-#define __distpdf_zhou2015pf_hp__
+/**
+  @file
+  @brief Defines the Priority-Flood algorithm described by Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021.
+
+    The code herein has been extensive modified by Richard Barnes (rbarnes@umn.edu) for inclusion with RichDEM.
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
+#ifndef _richdem_zhou2015pf_hpp_
+#define _richdem_zhou2015pf_hpp_
 
 #include "richdem/common/Array2D.hpp"
 #include <queue>
@@ -10,9 +18,14 @@
 typedef char label_t;
 
 template<class elev_t>
-void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<int> &traceQueue, std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue){
+void ProcessTraceQue_onepass(
+  Array2D<elev_t> &dem,
+  Array2D<label_t> &labels,
+  std::queue<int> &traceQueue,
+  std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue
+){
   while (!traceQueue.empty()){
-    int c = traceQueue.front();
+    auto c = traceQueue.front();
     traceQueue.pop();
 
     bool bInPQ = false;
@@ -54,9 +67,16 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
 }
 
 template<class elev_t>
-void ProcessPit_onepass(elev_t c_elev, Array2D<elev_t> &dem, Array2D<label_t> &labels, std::queue<int> &depressionQue, std::queue<int> &traceQueue, std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue){
+void ProcessPit_onepass(
+  elev_t c_elev,
+  Array2D<elev_t> &dem,
+  Array2D<label_t> &labels,
+  std::queue<int> &depressionQue,
+  std::queue<int> &traceQueue,
+  std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue
+){
   while (!depressionQue.empty()){
-    int c = depressionQue.front();
+    auto c = depressionQue.front();
     depressionQue.pop();
 
     for(int n=1;n<=8;n++){
@@ -79,12 +99,35 @@ void ProcessPit_onepass(elev_t c_elev, Array2D<elev_t> &dem, Array2D<label_t> &l
   }
 }
 
+/**
+  @brief  Fills all pits and removes all digital dams from a DEM, quickly
+  @author G. Zhou, Z. Sun, S. Fu, Richard Barnes (this implementation)
+
+    Works similarly to the Priority-Flood described by Barnes et al. (2014), but
+    reduces the number of items which must pass through the priority queue, thus
+    achieving greater efficiencies.
+
+  @param[in,out]  &elevations   A grid of cell elevations
+
+  @pre
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM. Note that the _NoData_ value is assumed to
+       be a negative number less than any actual data value.
+
+  @post
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM.
+    2. **elevations** contains no landscape depressions or digital dams.
+*/
 template<class elev_t>
-void Zhou2015Labels(
-  Array2D<elev_t>                         &dem
+void Zhou2016(
+  Array2D<elev_t> &dem
 ){
   std::queue<int> traceQueue;
   std::queue<int> depressionQue;
+
+  std::cerr<<"A Priority-Flood (Zhou2016 version)"<<std::endl;
+  std::cerr<<"C Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021"<<std::endl;
 
   Timer timer;
   timer.start();
@@ -141,7 +184,7 @@ void Zhou2015Labels(
   }
 
   timer.stop();
-  std::cerr<<"Zhou2015 completed in "<<timer.accumulated()<<"s."<<std::endl;
+  std::cerr<<"t Zhou2016 wall-time = "<<timer.accumulated()<<" s"<<std::endl;
 }
 
 #endif

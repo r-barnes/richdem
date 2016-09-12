@@ -1,3 +1,9 @@
+/**
+  @file
+  @brief Defines a 2D array object with many convenient methods for working with raster data, along with several functions for checking file data types.
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
 #ifndef _richdem_array_2d_hpp_
 #define _richdem_array_2d_hpp_
 
@@ -457,7 +463,7 @@ class Array2D {
   ///Returns a reference to the internal data array
   T* getData() { return data.data(); }
 
-  ///Number of cells in the DEM
+  ///@brief Number of cells in the DEM
   i_t size() const { return view_width*view_height; }
 
   ///Width of the raster
