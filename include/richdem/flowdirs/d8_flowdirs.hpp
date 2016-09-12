@@ -1,3 +1,9 @@
+/**
+  @file
+  @brief Functions for calculating D8 flow directions
+
+  Richard Barnes (rbarnes@umn.edu), 2015
+*/
 #ifndef _richdem_d8_flowdirs_hpp_
 #define _richdem_d8_flowdirs_hpp_
 
@@ -26,21 +32,21 @@ static int d8_FlowDir(const Array2D<T> &elevations, const int x, const int y){
   int flowdir         = NO_FLOW;
 
   if (elevations.isEdgeCell(x,y)){
-    if(x==0 && y==0)
+    if(elevations.isTopLeft(x,y))
       return 2;
-    else if(x==0 && y==elevations.height()-1)
+    else if(elevations.isBottomLeft(x,y))
       return 8;
-    else if(x==elevations.width()-1 && y==0)
+    else if(elevations.isTopRight(x,y))
       return 4;
-    else if(x==elevations.width()-1 && y==elevations.height()-1)
+    else if(elevations.isBottomRight(x,y))
       return 6;
-    else if(x==0)
+    else if(elevations.isLeftCol(x,y))
       return 1;
-    else if(x==elevations.width()-1)
+    else if(elevations.isRightCol(x,y))
       return 5;
-    else if(y==0)
+    else if(elevations.isTopRow(x,y))
       return 3;
-    else if(y==elevations.height()-1)
+    else if(elevations.isBottomRow(x,y))
       return 7;
   }
 
@@ -91,24 +97,26 @@ void d8_flow_directions(
 ){
   ProgressBar progress;
 
-  std::cerr<<"Setting up the flow directions matrix..."<<std::flush;
+  std::cerr<<"A D8 Flow Directions"<<std::endl;
+  std::cerr<<"C TODO"<<std::endl;
+
+  std::cerr<<"p Setting up the flow directions matrix..."<<std::endl;
   flowdirs.resize(elevations);
   flowdirs.setAll(NO_FLOW);
   flowdirs.setNoData(FLOWDIR_NO_DATA);
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"%%Calculating D8 flow directions..."<<std::endl;
+  std::cerr<<"p Calculating D8 flow directions..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
-  for(int x=0;x<elevations.width();x++){
-    progress.update( x*elevations.height() );
-    for(int y=0;y<elevations.height();y++)
+  for(int y=0;y<elevations.height();y++){
+    progress.update( y*elevations.width() );
+    for(int x=0;x<elevations.width();x++)
       if(elevations(x,y)==elevations.noData())
-        flowdirs(x,y)=flowdirs.noData();
+        flowdirs(x,y) = flowdirs.noData();
       else
-        flowdirs(x,y)=d8_FlowDir(elevations,x,y);
+        flowdirs(x,y) = d8_FlowDir(elevations,x,y);
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 #endif

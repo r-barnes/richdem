@@ -14,7 +14,6 @@
 #include "richdem/common/ProgressBar.hpp"
 #include <queue>
 
-//sgn
 /**
   @brief  Returns the sign (+1, -1, 0) of a number. Branchless.
   @author Richard Barnes (rbarnes@umn.edu)
@@ -25,7 +24,7 @@
     -1 for a negative input, +1 for a positive input, and 0 for a zero input
 */
 template <class T>
-T sgn(T val){
+static T sgn(T val){
   return (T(0) < val) - (val < T(0));
 }
 

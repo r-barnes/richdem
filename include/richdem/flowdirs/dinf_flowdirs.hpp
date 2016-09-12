@@ -1,20 +1,13 @@
 /**
-This file implements the D-infinite flow routing method originally described by
+  @file
+  @brief Defines the D-infinite flow routing method described by Tarboton (1997)
+
+  This file implements the D-infinite flow routing method originally described by
 Tarboton (1997). It incorporates minor alterations and additional safe-guards
 described in Barnes (TODO).
 
-Bibliography:
-
-Tarboton, D.G. 1997. A new method for the determination of flow directions and
-upslope areas in grid digital elevation models. Water Resources Research.
-Vol. 33. pp 309-319.
-
-Wallis, C., Watson, D., Tarboton, D., Wallace, R. 2009. Parallel Flow-Direction
-and Contributing Area Calculation for Hydrology Analysis in Digital Elevation
-Models. Proceedings of the Intn'l Conference on Parallel and Distributed
-Processing Techniques and Applications.
+  Richard Barnes (rbarnes@umn.edu), 2015
 */
-
 #ifndef _richdem_dinf_flowdirs_hpp_
 #define _richdem_dinf_flowdirs_hpp_
 
@@ -47,7 +40,7 @@ static const double af[8] = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
   @return A floating-point value between [0,2*Pi) indicating flow direction
 */
 template <class T>
-float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
+static float dinf_FlowDir(const Array2D<T> &elevations, const int x, const int y){
   //Ensure that flow is pulled off the edge of the grid
   if (elevations.isEdgeCell(x,y)){
     if(x==0 && y==0)
@@ -142,17 +135,17 @@ void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs
   flowdirs.setAll(NO_FLOW);
 
   std::cerr<<"p Calculating Dinf flow directions..."<<std::endl;
-  progress.start( elevations.width()*elevations.height() );
+  progress.start( elevations.size() );
   #pragma omp parallel for
-  for(int x=0;x<elevations.width();x++){
-    progress.update( x*elevations.height() );
-    for(int y=0;y<elevations.height();y++)
+  for(int y=0;y<elevations.height();y++){
+    progress.update( y*elevations.width() );
+    for(int x=0;x<elevations.width();x++)
       if(elevations(x,y)==elevations.noData())
         flowdirs(x,y) = flowdirs.noData();
       else
         flowdirs(x,y) = dinf_FlowDir(elevations,x,y);
   }
-  std::cerr<<"succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 #endif
