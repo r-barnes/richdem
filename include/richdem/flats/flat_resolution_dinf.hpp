@@ -1,3 +1,8 @@
+/**
+  @file
+  @brief Couples the Barnes (2014) flat resolution algorithm with the Tarboton (1997) D-infinity flow metric
+  @author Richard Barnes
+*/
 #ifndef _richdem_flat_resolution_dinf_hpp_
 #define _richdem_flat_resolution_dinf_hpp_
 

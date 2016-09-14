@@ -1,3 +1,8 @@
+/**
+  @file
+  @brief Experimental tile manager for large datasets (TODO)
+  @author Richard Barnes
+*/
 #ifndef _a2array2d_hpp_
 #define _a2array2d_hpp_
 

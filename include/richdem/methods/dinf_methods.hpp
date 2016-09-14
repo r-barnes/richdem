@@ -1,25 +1,12 @@
 /**
-This file implements the D-infinite flow routing method originally described by
-Tarboton (1997). It incorporates minor alterations and additional safe-guards
-described in Barnes (2013, TODO).
+  @file
+  @brief Terrain attributes that can only be calculated with Tarboton's D-infinity flow metric
+  @author Richard Barnes (rbarnes@umn.edu), 2015
 
-The flow accumulation algorithm is the original work of Barnes. Although other
-authors, such as Tarboton (1997) and Wallis (2009), have described or used
-D-infinite flow accumulation algorithms, few details have been provided.
-
-
-Bibliography:
-
-Tarboton, D.G. 1997. A new method for the determination of flow directions and
-upslope areas in grid digital elevation models. Water Resources Research.
-Vol. 33. pp 309-319.
-
-Wallis, C., Watson, D., Tarboton, D., Wallace, R. 2009. Parallel Flow-Direction
-and Contributing Area Calculation for Hydrology Analysis in Digital Elevation
-Models. Proceedings of the Intn'l Conference on Parallel and Distributed
-Processing Techniques and Applications.
+  This file implements the D-infinite flow routing method originally described by
+  Tarboton (1997). It incorporates minor alterations and additional safe-guards
+  described in Barnes (2013, TODO).
 */
-
 #ifndef _richdem_dinf_methods_hpp_
 #define _richdem_dinf_methods_hpp_
 
@@ -56,22 +43,6 @@ To convert Dinf to this, take
 //point rounding errors occassionally result in the 9th element being accessed.
 
 
-//round
-/**
-  @brief  Rounds floating value to the nearest integer
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  @param[in]  val  Input value
-
-  @return val rounded to the nearest integer
-*/
-template <class T>
-T round(T val) {
-  return floor(val+0.5);
-}
-
-
-
 
 
 //321
@@ -90,7 +61,7 @@ static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 
   if(fabs(flowdir-(int)flowdir)<1e-6){
     nlow  = -1;
-    nhigh = (int)round(flowdir);
+    nhigh = (int)std::round(flowdir);
   } else {
     nlow  = (int)flowdir;
     nhigh = nlow+1;
@@ -131,8 +102,8 @@ bool is_loop(const float_2d &flowdirs, int n, int x, int y, int c2x, int c2y){
 
 
 /**
-  @brief  Calculate each cell's flow accumulation value
-  @author Richard Barnes (rbarnes@umn.edu)
+  @brief  Calculate each cell's D-infinity flow accumulation value
+  @author Tarboton (1997), Richard Barnes (rbarnes@umn.edu)
 
     TODO
 
@@ -148,8 +119,8 @@ void dinf_upslope_area(
   std::queue<GridCell> sources;
   ProgressBar progress;
 
-  std::cerr<<"\nA Dinf Upslope Area"<<std::endl;
-  std::cerr<<"C TODO"<<std::endl;
+  std::cerr<<"\nA D-infinity Upslope Area"<<std::endl;
+  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
 
   std::cerr<<"p Setting up the dependency matrix..."<<std::endl;
   dependency.resize(flowdirs);
@@ -162,18 +133,18 @@ void dinf_upslope_area(
 
   bool has_cells_without_flow_directions=false;
   std::cerr<<"p Calculating dependency matrix & setting noData() cells..."<<std::endl;
-  progress.start( flowdirs.width()*flowdirs.height() );
+  progress.start( flowdirs.size() );
 
   ///////////////////////
   //Calculate the number of "dependencies" each cell has. That is, count the
   //number of cells which flow into each cell.
 
   #pragma omp parallel for reduction(|:has_cells_without_flow_directions)
-  for(int x=0;x<flowdirs.width();x++){
-    progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++){
+  for(int y=0;y<flowdirs.height();y++){
+    progress.update( y*flowdirs.width() );
+    for(int x=0;x<flowdirs.width();x++){
       //If the flow direction of the cell is NoData, mark its area as NoData
-      if(flowdirs(x,y)==flowdirs.noData()){
+      if(flowdirs.isNoData(x,y)){
         area(x,y)       = area.noData();
         dependency(x,y) = 9;  //TODO: This is an unnecessary safety precaution. This prevents the cell from ever being enqueued (an unnecessary safe guard? TODO)
         continue;             //Only necessary if there are bugs below (TODO)
@@ -201,7 +172,7 @@ void dinf_upslope_area(
         dependency(nhx,nhy)++;
     }
   }
-  std::cerr<<"t Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 
   if(has_cells_without_flow_directions)
     std::cerr<<"W \033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
@@ -211,10 +182,10 @@ void dinf_upslope_area(
   //the flow accumulation calculation.
 
   std::cerr<<"p Locating source cells..."<<std::endl;
-  progress.start( flowdirs.width()*flowdirs.height() );
-  for(int x=0;x<flowdirs.width();x++){
+  progress.start( flowdirs.size() );
+  for(int y=0;y<flowdirs.height();y++){
     progress.update( x*flowdirs.height() );
-    for(int y=0;y<flowdirs.height();y++)
+    for(int x=0;x<flowdirs.width();x++)
       if(flowdirs(x,y)==flowdirs.noData())
         continue;
       else if(flowdirs(x,y)==NO_FLOW)
@@ -222,7 +193,7 @@ void dinf_upslope_area(
       else if(dependency(x,y)==0)
         sources.emplace(x,y);
   }
-  std::cerr<<"t Source cells located "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Source cells located in = "<<progress.stop()<<" s"<<std::endl;
 
 
 
@@ -242,7 +213,7 @@ void dinf_upslope_area(
 
     progress.update(ccount++);
 
-    if(flowdirs(c.x,c.y)==flowdirs.noData())  //TODO: This line shouldn't be necessary since NoData's do not get added below
+    if(flowdirs.isNoData(c.x,c.y))  //TODO: This line shouldn't be necessary since NoData's do not get added below
       continue;
 
     area(c.x,c.y)+=1;
@@ -273,7 +244,7 @@ void dinf_upslope_area(
     if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
       sources.emplace(nhx,nhy);
   }
-  std::cerr<<"p succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 #endif

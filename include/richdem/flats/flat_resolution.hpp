@@ -1,14 +1,13 @@
 /**
   @file
-  Flat Resolution
-
-  Richard Barnes (rbarnes@umn.edu), 2012
+  @brief Resolve flats according to Barnes (2014)
+  @author Richard Barnes (rbarnes@umn.edu), 2012
 
   Contains code to generate an elevation mask which is guaranteed to drain
   a flat using a convergent flow pattern (unless it's a mesa)
 */
-#ifndef _flat_resolution_included
-#define _flat_resolution_included
+#ifndef _richdem_flat_resolution_hpp_
+#define _richdem_flat_resolution_hpp_
 
 #include "richdem/common/interface.hpp"
 #include "richdem/common/grid_cell.hpp"

@@ -64,17 +64,39 @@ The design of RichDEM is guided by these principles:
 Using It
 ========
 
-Casual users will be interested in the **dist/** directory which contains
-pre-compiled Windows binaries and an ArcGIS toolbox for performing pit-filling,
-flow accumulation, CTI, and SPI caclulations under both the D8 and D-finite
-paradigms.
+As A Library
+------------
 
-More advanced users will appreciate the ability to run **DOxygen** on
-**doxy.conf** to generate thorough documentation. Browsing "main.cpp" should be
-sufficient to familiarize oneself with many of the functions and interface
-styles of the code. Throughout, the code is written in what I hope is an
-easy-to-follow style and many functions include extensive (and growing!)
-documentation.
+Upon compilation, point your library search path to the `include` directory.
+Include various files using, e.g.
+
+    #include "richdem/common/Array2D.hpp"
+
+All files include extensive documentation. At this stage the location of certain
+functions may be subject to change. This will be noted in the `NEWS` file. (TODO)
+
+As A Handy Collection of Tools
+------------------------------
+
+Running `make` in the `apps` directory will produce a large number of useful
+scripts which are essentially wrappers around standard uses of the RichDEM
+libraries. The [apps/README.md](apps/README.md) file and the apps themselves
+contain documentation explaining what they all do.
+
+For Processing Large Datasets
+-----------------------------
+
+The `programs` directory contains several programs which have not been converted
+to libraries. This is usually because their functionality is specific and they
+are unlikely to be useful as a library. Each directory contains a makefile and a
+readme explaining the purpose of the program.
+
+
+Documentation
+-------------
+
+Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
+
 
 Testing Methodology
 ===================
@@ -138,10 +160,12 @@ These are available as follows:
 
  * Flat-resolution algorithm. [Link](https://github.com/r-barnes/Barnes2013-FlatSurfaces)
  * Depression-filling algorithm. [Link](https://github.com/r-barnes/Barnes2013-Depressions)
+ * Large dataset depression-filling algorithm. [Link](https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood)
+ * Large dataset flow accumulation algorithm. [Link](https://github.com/r-barnes/Barnes2016-ParallelFlowAccum)
 
 Publications
 ============
-The algorithms used in RichDEM have been published in the following articles:
+The algorithms used in RichDEM have been published in the following articles. Every algorithm/program will provide its relevant citation information when run.
 
 * Barnes, R., 2016. Non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. In Review.
 
@@ -154,6 +178,12 @@ The algorithms used in RichDEM have been published in the following articles:
 * Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
 
 * Barnes, Lehman, Mulla. 2011. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
+
+* Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319.
+
+* Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918
+
+* Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
 
 Requires:
  * OpenMP

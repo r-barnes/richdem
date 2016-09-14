@@ -461,8 +461,8 @@ class TerrainAttributator {
   double aspect(const Array2D<T> &elevations, int x, int y){
     setup(elevations,x,y);
 
-    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8;
-    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8;
+    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8; //TODO? Divide by delta x, according to Horn
+    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8; //TODO? Divide by delta y, according to Horn
     aspect      = 180.0/M_PI*atan2(dzdy,-dzdx);
     if(aspect<0)
       return 90-aspect;
@@ -472,16 +472,18 @@ class TerrainAttributator {
       return 90.0-aspect;
   }
 
-  ///@brief  Calculates slope in rise/run in the manner of Horn 1981
-  ///@return Slope in rise/run in the manner of Horn 1981
+  ///@brief  Calculates the rise/run slope along the maximum gradient on a fitted surface over a 3x3 be neighbourhood in the manner of Horn 1981
+  ///@return Rise/run slope
   double slope_riserun(const Array2D<T> &elevations, int x, int y){
     setup(elevations,x,y);
 
     //But cellsize is accounted for in slope
-    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8;
-    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8;
+    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8; //TODO? Divide by delta x, according to Horn
+    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8; //TODO? Divide by delta y, according to Horn
 
-    //TODO: Incorporate zscale
+    //TODO: Incorporate zscale. The above should do it.
+    //The above fits are surface to a 3x3 neighbour hood. This returns the slope
+    //along the direction of maximum gradient.
     return sqrt(dzdx*dzdx+dzdy*dzdy);
   }
 
@@ -627,7 +629,7 @@ void d8_slope_degrees(
   float zscale
 ){
   std::cerr<<"\nA Slope calculation (degrees)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_degree);
 }
@@ -649,7 +651,7 @@ void d8_slope_radians(
   float zscale
 ){
   std::cerr<<"\nA Slope calculation (radians)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_radian);
 }
@@ -671,7 +673,7 @@ void d8_aspect(
   float zscale
 ){
   std::cerr<<"\nA Aspect attribute calculation"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, aspects, &TerrainAttributator<T>::aspect);
 }
@@ -693,7 +695,7 @@ void d8_curvature(
   float zscale
 ){
   std::cerr<<"\nA Curvature attribute calculation"<<std::endl;
-  std::cerr<<"C Zevenbergen and Thorne 1987"<<std::endl;
+  std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, curvatures, &TerrainAttributator<T>::curvature);
 }
@@ -716,7 +718,7 @@ void d8_planform_curvature(
   float zscale
 ){
   std::cerr<<"\nA Planform curvature attribute calculation"<<std::endl;
-  std::cerr<<"C Zevenbergen and Thorne 1987"<<std::endl;
+  std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, planform_curvatures, &TerrainAttributator<T>::planform_curvature);
 }
@@ -738,7 +740,7 @@ void d8_profile_curvature(
   float zscale
 ){
   std::cerr<<"\nA Profile curvature attribute calculation"<<std::endl;
-  std::cerr<<"C Zevenbergen and Thorne 1987"<<std::endl;
+  std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, profile_curvatures, &TerrainAttributator<T>::profile_curvature);
 }
