@@ -18,6 +18,9 @@
 #ifndef _richdem_constants_hpp_
 #define _richdem_constants_hpp_
 
+//Constant used to hold D8 flow directions
+typedef uint8_t d8_flowdir_t;
+
 //D8 Neighbour Directions
 
 //Facet            0   1   2   3   4  5  6  7   8
@@ -46,7 +49,7 @@ const uint8_t FLOWDIR_NO_DATA = 255;
 
 ///Value used to indicate that a cell does not have a defined flow direction
 //(i.e. that it has no local gradient)
-const uint8_t NO_FLOW = 0;
+const d8_flowdir_t NO_FLOW = 0;
 
 ///Value used to indicate that a flow accumulation cell is NoData
 const int32_t ACCUM_NO_DATA = -1;
