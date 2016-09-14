@@ -14,7 +14,7 @@
 #include "richdem/common/timer.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
-#include "Zhou2015pf.hpp"
+#include "Zhou2016pf.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
 const std::string algname  = "Parallel Priority-Flood";

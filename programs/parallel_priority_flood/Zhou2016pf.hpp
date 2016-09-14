@@ -1,5 +1,5 @@
-#ifndef __distpdf_zhou2015pf_hp__
-#define __distpdf_zhou2015pf_hp__
+#ifndef __distpdf_zhou2016pf_hp__
+#define __distpdf_zhou2016pf_hp__
 
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
