@@ -50,7 +50,7 @@ static std::string trimStr(std::string const& str){
 ///Get only the filename without its extension. That is, convert
 ///"path/to/file.ext" to "file"
 static std::string GetBaseName(std::string filename){
-  auto last_slash  = filename.find_last_of(SLASH_CHAR);
+  auto last_slash  = filename.find_last_of(RICHDEM_SLASH_CHAR);
   auto last_period = filename.find_last_of(".");
   if(last_period!=std::string::npos)
     filename.replace(last_period, std::string::npos, "");
@@ -85,7 +85,7 @@ class LayoutfileReader {
   LayoutfileReader(std::string layout_filename){
     assert(layout_filename.size()>0);
     path = "";
-    std::size_t last_slash = layout_filename.find_last_of(SLASH_CHAR);
+    std::size_t last_slash = layout_filename.find_last_of(RICHDEM_SLASH_CHAR);
     if(last_slash!=std::string::npos)
       path = layout_filename.substr(0,last_slash+1);
     std::cerr<<"c Base path for layout-identified files = "<<path<<std::endl;
@@ -237,7 +237,7 @@ class LayoutfileWriter {
     gridx = 0;
     gridy = 0;
     
-    std::size_t last_slash  = layout_filename.find_last_of(SLASH_CHAR);
+    std::size_t last_slash  = layout_filename.find_last_of(RICHDEM_SLASH_CHAR);
     std::size_t last_period = layout_filename.find_last_of(".");
     if(last_slash!=std::string::npos)
       path = layout_filename.substr(0,last_slash+1);
@@ -264,7 +264,7 @@ class LayoutfileWriter {
   ///@param filename File to add. Use `filename=""` to indicate a null tile.
   void addEntry(std::string filename){
     //Get only the filename, not the path to it
-    std::size_t last_slash = filename.find_last_of(SLASH_CHAR);
+    std::size_t last_slash = filename.find_last_of(RICHDEM_SLASH_CHAR);
     if(last_slash!=std::string::npos)
       filename = filename.substr(last_slash+1,std::string::npos);
 
