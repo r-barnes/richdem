@@ -410,7 +410,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
   std::cerr<<"p Performing Priority-Flood+Flow Directions..."<<std::endl;
   progress.start( elevations.size() );
   while(open.size()>0){
-    GridCellZ<elev_t> c=open.top();
+    auto c=open.top();
     open.pop();
     processed_cells++;
 
