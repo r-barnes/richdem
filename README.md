@@ -75,6 +75,38 @@ The design of RichDEM is guided by these principles:
 Using It
 ========
 
+
+
+Citing It
+---------
+
+As of 883ea734e957, David A. Wheeler's SLOCCount estimates the value of RichDEM
+at $240,481 and 1.78 person-years of development effort. This value is yours to
+use, but citations are encouraged.
+
+General usage of the library can be cited as:
+
+    Barnes, Richard. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem
+
+An example BibTeX entry is:
+
+    @manual{RichDEM,
+      title        = {RichDEM: Terrain Analysis Software},
+      author       = {Richard Barnes},
+      year         = {2016},
+      url          = {​http://github.com/r-barnes/richdem}, 
+    }
+
+This information will be updated as versioned releases become available.
+
+Users are also encouraged to cite the particular algorithms used. Citations to
+these will be printed whenever an app, program, or library function is run.
+Although I have written all of the code in this library, some of the algorithms
+were discovered or invented by others, and they deserve credit for their good
+work.
+
+
+
 As A Library
 ------------
 
@@ -86,6 +118,8 @@ Include various files using, e.g.
 All files include extensive documentation. At this stage the location of certain
 functions may be subject to change. This will be noted in the `NEWS` file. (TODO)
 
+
+
 As A Handy Collection of Tools
 ------------------------------
 
@@ -94,6 +128,8 @@ scripts which are essentially wrappers around standard uses of the RichDEM
 libraries. The [apps/README.md](apps/README.md) file and the apps themselves
 contain documentation explaining what they all do.
 
+
+
 For Processing Large Datasets
 -----------------------------
 
@@ -101,6 +137,7 @@ The `programs` directory contains several programs which have not been converted
 to libraries. This is usually because their functionality is specific and they
 are unlikely to be useful as a library. Each directory contains a makefile and a
 readme explaining the purpose of the program.
+
 
 
 Documentation
