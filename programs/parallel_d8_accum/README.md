@@ -8,8 +8,7 @@ Flexibly Distributed Priority-Flood Depression Filling For Teracell DEMs
 
 **Corresponding Author**: Richard Barnes (rbarnes@umn.edu)
 
-**DOI Number of Manuscript**
-TODO
+**DOI Number of Manuscript**: [arXiv 1608.04431](https://arxiv.org/abs/1608.04431)
 
 **Code Repositories**
  * [Author's GitHub Repository](https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood)
