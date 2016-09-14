@@ -6,8 +6,8 @@
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
-#ifndef _richdem_zhou2015pf_hpp_
-#define _richdem_zhou2015pf_hpp_
+#ifndef _richdem_zhou2016pf_hpp_
+#define _richdem_zhou2016pf_hpp_
 
 #include "richdem/common/Array2D.hpp"
 #include <queue>
