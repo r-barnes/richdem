@@ -1,4 +1,4 @@
-RichDem
+RichDEM
 =======
 
 Author: Richard Barnes (rbarnes@umn.edu)
