@@ -11,9 +11,20 @@ RichDEM can use both the D8 and D-infinite (Tarboton) flow metrics. It can
 resolve terrain depressions (or pits) either by filling or by channel carving.
 It can calculate contributing/up-slope areas, slopes, curvatures, and aspects.
 
-Future versions may use Intel's Thread Building Blocks to achieve additional
-increases in speed.
+Current State of the Repo
+=========================
 
+The branch `oldmaster` contains what was, until recently, the master branch. It
+is designed as a limited, simple set of programs. The current master branch
+recasts all of this code as a set of header-only libraries.
+
+Unless otherwise noted, I consider the code available here as correct. However,
+documentation and testing efforts are on-going; functions may move between
+files. Users are encouraged to double-check results and feedback is very much
+welcome. As correctness testing is completed, functions will be marked
+accordingly. (TODO)
+
+Improvements targeted at achieving the design philosophy below are underway.
 
 
 Design Philosophy
@@ -185,5 +196,11 @@ The algorithms used in RichDEM have been published in the following articles. Ev
 
 * Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
 
-Requires:
- * OpenMP
+Feedback
+========
+
+_If you see something, say something._
+
+Users are encouraged to report any issues experienced with the code via Github's
+issue tracker. Feedback is also accepted via email (rbarnes@umn.edu), though
+this should be used only in cases wherein the issue tracker is not available.
