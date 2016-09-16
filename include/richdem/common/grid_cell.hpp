@@ -90,7 +90,17 @@ using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCell
 
 
 ///@brief A priority queue of GridCellZk, sorted by ascending height or, if heights are equal, by the order of insertion.
-template<typename elev_t>
-using GridCellZk_pq = std::priority_queue<GridCellZk<elev_t>, std::vector<GridCellZk<elev_t> >, std::greater<GridCellZk<elev_t> > >;
+template<typename T>
+class GridCellZk_pq : public std::priority_queue<GridCellZk<T>, std::vector< GridCellZk<T> >, std::greater<GridCellZk<T> > > {
+ private:
+  uint64_t count = 0;
+ public:
+  void push(){ //TODO: Is there a way to stop compilation, but only if this function is used
+    throw std::runtime_error("push() to GridCellZk_pq is not allowed!");
+  }
+  void emplace(int x, int y, T z){
+    std::priority_queue<GridCellZk<T>, std::vector< GridCellZk<T> >, std::greater<GridCellZk<T> > >::emplace(x,y,z,++count);
+  }
+};
 
 #endif
