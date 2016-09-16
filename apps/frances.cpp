@@ -29,7 +29,7 @@ int PerformAlgorithm(std::string filename, std::string output_prefix, float zsca
   flowdirs.saveGDAL(output_prefix+"-flowdirs.tif", analysis);
 
   Array2D<float> slope;
-  d8_slope(elevations,slope,TATTRIB_SLOPE_RISERUN,zscale);
+  d8_slope_riserun(elevations,slope,zscale);
 
   slope.saveGDAL(output_prefix+"-slope.tif",analysis);
 
@@ -79,7 +79,7 @@ int Router(std::string inputfile, Arguments ... args){
 }
 
 int main(int argc, char **argv){
-  std::string analysis PrintRichdemHeader(argc, argv);
+  std::string analysis = PrintRichdemHeader(argc, argv);
   
   if(argc!=4){
     std::cerr<<argv[0]<<" <ZSCALE> <INPUT> <OUTPUT_PREFIX>"<<std::endl;
@@ -88,7 +88,7 @@ int main(int argc, char **argv){
 
   float zscale = std::strtof(argv[1],NULL);
 
-  Router(argv[2],argv[2],argv[3],zscale);
+  Router(argv[2],argv[2],argv[3],zscale,analysis);
 
   return 0;
 }

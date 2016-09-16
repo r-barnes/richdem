@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <stdexcept>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
 
@@ -11,10 +12,8 @@ int PerformAlgorithm(std::string filename, std::string outname, char *nodata, st
   for(int y=0;y<inp.height();y++)
   for(int x=0;x<inp.width();x++)
     if(!inp.isNoData(x,y)){
-      if(!(0<=inp(x,y) && inp(x,y)<=8)){
-        std::cerr<<"Invalid flow direction '"<<inp(x,y)<<"' found!"<<std::endl;
-        return;
-      }
+      if(!(0<=inp(x,y) && inp(x,y)<=8))
+        throw std::runtime_error("Invalid flow direction '"+std::to_string(inp(x,y))+"' found!");
       inp(x,y) = taudem_to_richdem[(int)inp(x,y)];
     }
   inp.saveGDAL(outname,analysis);

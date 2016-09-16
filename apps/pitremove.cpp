@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include "richdem/common/version.hpp"
 #include "richdem/depressions/priority_flood.hpp"
-#include "richdem/depressions/Zhou2015pf.hpp"
+#include "richdem/depressions/Zhou2016pf.hpp"
 #include "richdem/common/Array2D.hpp"
 //#include "richdem/flats/flat_resolution.hpp"
 //#include "richdem/methods/d8_methods.hpp"
@@ -12,7 +12,7 @@ template<class T>
 int PerformAlgorithm(std::string filename, std::string outputname, std::string analysis){
   Array2D<T> elevation(filename,false);
 
-  improved_priority_flood(elevation);  
+  Zhou2016(elevation);  
 
   elevation.saveGDAL(outputname,analysis);
 

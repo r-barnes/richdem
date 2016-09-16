@@ -14,7 +14,7 @@
 #include <queue>
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
-#include "richdem/common/interface.hpp"
+#include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/grid_cell.hpp"
 
 //TODO: Can these be merged with the regular D8 directions?
@@ -184,7 +184,7 @@ void dinf_upslope_area(
   std::cerr<<"p Locating source cells..."<<std::endl;
   progress.start( flowdirs.size() );
   for(int y=0;y<flowdirs.height();y++){
-    progress.update( x*flowdirs.height() );
+    progress.update( y*flowdirs.width() );
     for(int x=0;x<flowdirs.width();x++)
       if(flowdirs(x,y)==flowdirs.noData())
         continue;

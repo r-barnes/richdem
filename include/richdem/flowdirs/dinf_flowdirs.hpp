@@ -12,7 +12,7 @@ described in Barnes (TODO).
 #define _richdem_dinf_flowdirs_hpp_
 
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/interface.hpp"
+#include "richdem/common/ProgressBar.hpp"
 
 ///Value used to indicate that a flow direction cell has no data
 #define dinf_NO_DATA -1

@@ -69,7 +69,7 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  Router(argv[1],argv[1],argv[2]);
+  Router(argv[1],argv[1],argv[2],analysis);
 
   return 0;
 }
