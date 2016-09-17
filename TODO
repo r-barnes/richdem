@@ -1,30 +1,8 @@
-RichDEM: Speaking of, I think one of the only other improvements you could make would be to load the output grids created automatically as a default.  Otherwise, you could add a check box asking people if they did or didn’t want them to load after processing.
-
-CALL_GRAPH = YES in doxygen output
-
-fma, fmaf, fmal   also     fenv
-
-Speaking of, I think one of the only other improvements you could make would be to load the output grids created automatically as a default.  Otherwise, you could add a check box asking people if they did or didn’t want them to load after processing.  Something like “Add files after processing?” or what not.
-
-print_and_highlight is duplicitous with print_dem
-
 Add Dinf support for the pit-carving thing
 
 Add checks for "edge contamination" to the D8 and Dinf area methods
 
 Add checks for digital dams to d8 methods like they are in dinf methods in the flow_area functions
-
-sizeof returns a result of type size_t, which varies from system to system. Using the iostream operators for output would likely eliminate warnings thrown by this. Otherwise, find some way to make things work with printf/fprintf
-
-The 'collapse' directive on the parallel for loop thing may be useful
-Look into uBLAS "release mode" (http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm)
-"http://www.boost.org/doc/libs/1_49_0/libs/numeric/ublas/doc/index.htm"
-mmap or boost::mapped_file
-
-Useful for printing output
-out.width(width);
-out.precision(precision);
-out.setf(ios::fixed,ios::floatfield);
 
 ArcGIS has a more complicated method of determining D8 flow directions than I do
 http://webhelp.esri.com/arcgiSDEsktop/9.3/index.cfm?TopicName=Determining_flow_direction

@@ -8,7 +8,7 @@ template<class T>
 int PerformAlgorithm(std::string filename){
   std::unordered_map<T,int> counts;
   Array2D<T> rast(filename,false);
-  for(int i=0;i<rast.size();i++)
+  for(unsigned int i=0;i<rast.size();i++)
     counts[rast(i)]++;
 
   std::cout<<"Nodata: "<<(int)rast.noData()<<std::endl;
@@ -51,7 +51,7 @@ int Router(std::string inputfile, Arguments ... args){
 }
 
 int main(int argc, char **argv){
-  std::string PrintRichdemHeader(argc,argv);
+  std::string analysis = PrintRichdemHeader(argc,argv);
   
   if(argc!=2){
     std::cerr<<argv[0]<<" <Flowdirs input file>"<<std::endl;

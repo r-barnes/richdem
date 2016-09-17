@@ -33,7 +33,7 @@ int PerformAlgorithm(std::string filename, std::string flip){
   if( (raster.geotransform[5]>0) ^ flipV)
     raster.flipVert();
 
-  raster.printStamp(5)
+  raster.printStamp(5);
 
   for(int y=0;y<raster.height();y++){
     for(int x=0;x<raster.width();x++)
