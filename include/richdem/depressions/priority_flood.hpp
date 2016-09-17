@@ -37,6 +37,9 @@
     1. **elevations** contains the elevations of every cell or a value _NoData_
        for cells not part of the DEM.
     2. **elevations** contains no landscape depressions or digital dams.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
 void original_priority_flood(Array2D<elev_t> &elevations){
@@ -91,9 +94,9 @@ void original_priority_flood(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+  std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
+  std::cerr<<"m Cells processed = "<<processed_cells       <<std::endl;
+  std::cerr<<"m Cells in pits   = "<<pitc                  <<std::endl;
 }
 
 
@@ -122,6 +125,9 @@ void original_priority_flood(Array2D<elev_t> &elevations){
     1. **elevations** contains the elevations of every cell or a value _NoData_
        for cells not part of the DEM.
     2. **elevations** contains no landscape depressions or digital dams.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
 void improved_priority_flood(Array2D<elev_t> &elevations){
@@ -188,7 +194,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96msucceeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<"s.\033[39m"<<std::endl;
+  std::cerr<<"t Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s"<<std::endl;
   std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
   std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
 }
@@ -218,6 +224,9 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     1. **elevations** contains the elevations of every cell or a value _NoData_
        for cells not part of the DEM.
     2. **elevations** has no landscape depressions, digital dams, or flats.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
 void priority_flood_epsilon(Array2D<elev_t> &elevations){
@@ -361,6 +370,9 @@ void priority_flood_epsilon(Array2D<int32_t> &elevations){
        _NO_FLOW_ for those cells which are not part of the DEM.
     2. **flowdirs** has no cells which are not part of a continuous flow
        path leading to the edge of the DEM.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
 void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> &flowdirs){
@@ -468,6 +480,9 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> 
   @post
     1. **pit_mask** contains a 1 for each cell which is in a pit and a 0 for
        each cell which is not.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 //TODO: Can I use a smaller data type?
 template <class elev_t>
@@ -579,6 +594,9 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
        **alter_elevations** was set.
     2. **labels** contains a label for each cell indicating its membership in a
        given watershed. Cells bearing common labels drain to common points.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
 */
 template<class elev_t>
 void priority_flood_watersheds(
