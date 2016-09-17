@@ -375,7 +375,7 @@ void priority_flood_epsilon(Array2D<int32_t> &elevations){
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<int8_t> &flowdirs){
+void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowdir_t> &flowdirs){
   GridCellZk_pq<elev_t> open;
   uint64_t processed_cells = 0;
   ProgressBar progress;

@@ -9,7 +9,7 @@
 #ifndef _richdem_flat_resolution_hpp_
 #define _richdem_flat_resolution_hpp_
 
-#include "richdem/common/interface.hpp"
+#include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/grid_cell.hpp"
 #include "richdem/flowdirs/d8_flowdirs.hpp"
 #include <deque>

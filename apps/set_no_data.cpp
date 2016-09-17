@@ -5,10 +5,10 @@
 #include "richdem/common/Array2D.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string outname, char *nodata){
+int PerformAlgorithm(std::string filename, std::string outname, char *nodata, std::string analysis){
   Array2D<T> inp(filename,false);
   inp.setNoData((T)std::stoi(nodata));
-  inp.saveGDAL(outname,0,0);
+  inp.saveGDAL(outname,analysis);
   return 0;
 }
 

@@ -66,7 +66,7 @@ int main(int argc, char **argv){
   int new_width  = std::stoi(argv[3]);
   int new_height = std::stoi(argv[4]);
 
-  Router(argv[1],argv[1],argv[2],new_width,new_height,analysis)
+  Router(argv[1],argv[1],argv[2],new_width,new_height,analysis);
 
   return 0;
 }
