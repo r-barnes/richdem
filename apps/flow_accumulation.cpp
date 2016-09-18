@@ -45,7 +45,7 @@ int PerformAlgorithm(std::string filename, std::string output, std::string flip,
   flowdirs.printStamp(5,"Stamp after reorientation");
 
   Array2D<int> area;
-  d8_upslope_area(flowdirs, area);
+  d8_flow_accum(flowdirs, area);
 
   area.printStamp(5,"Output stamp before reorientation");
 

@@ -9,5 +9,4 @@ export CXXFLAGS=$(GDAL_CFLAGS) --std=c++17 -O3 -Wall -Wno-unknown-pragmas -I../i
 #-DNOPROGRESS -DNDEBUG
 
 tests:
-	$(CXX) $(CXXFLAGS) test_compare.cpp -o test_compare.exe $(LIBS)
 	$(CXX) $(CXXFLAGS) tests.cpp -o tests.exe $(LIBS)

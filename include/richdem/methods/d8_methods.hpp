@@ -33,39 +33,37 @@ static T sgn(T val){
 
 
 
-//d8_upslope_area
 /**
-  @brief  Calculates the D8 up-slope area, given the D8 flow directions
+  @brief  Calculates the D8 flow accumulation, given the D8 flow directions
   @author Richard Barnes (rbarnes@umn.edu)
 
-  This calculates the D8 up-slope area of a grid of D8 flow directions using
-  by calculating each cell's dependency on its neighbours and then using
-  a priority-queue to process cells in a top-of-the-watershed-down fashion
+  This calculates the D8 flow accumulation of a grid of D8 flow directions by
+  calculating each cell's dependency on its neighbours and then using a
+  priority-queue to process cells in a top-of-the-watershed-down fashion
 
   @param[in]  &flowdirs  A D8 flowdir grid from d8_flow_directions()
   @param[out] &area      Returns the up-slope area of each cell
 */
 template<class T, class U>
-void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
+void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::queue<GridCell> sources;
   ProgressBar progress;
 
-  std::cerr<<"\n###D8 Upslope Area"<<std::endl;
+  std::cerr<<"\nA D8 Flow Accumulation"<<std::endl;
+  std::cerr<<"C TODO"<<std::endl;
 
   std::cerr<<"The sources queue will require at most approximately "
            <<(flowdirs.size()*((long)sizeof(GridCell))/1024/1024)
            <<"MB of RAM."<<std::endl;
 
-  std::cerr<<"Resizing dependency matrix..."<<std::flush;
+  std::cerr<<"p Resizing dependency matrix..."<<std::endl;
   Array2D<int8_t> dependency(flowdirs,0);
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"Setting up the area matrix..."<<std::flush;
+  std::cerr<<"p Setting up the area matrix..."<<std::endl;
   area.resize(flowdirs,0);
   area.setNoData(-1);
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"%%Calculating dependency matrix & setting noData() cells..."<<std::endl;
+  std::cerr<<"p Calculating dependency matrix & setting noData() cells..."<<std::endl;
   progress.start( flowdirs.size() );
   #pragma omp parallel for
   for(int y=0;y<flowdirs.height();y++){
@@ -92,15 +90,15 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
       ++dependency(nx,ny);
     }
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Dependency calculation time = "<<progress.stop()<<" s"<<std::endl;
 
-  std::cerr<<"%%Locating source cells..."<<std::endl;
+  std::cerr<<"p Locating source cells..."<<std::endl;
   for(int y=0;y<flowdirs.height();y++)
   for(int x=0;x<flowdirs.width();x++)
     if(dependency(x,y)==0 && !flowdirs.isNoData(x,y))
       sources.emplace(x,y);
 
-  std::cerr<<"%%Calculating up-slope areas..."<<std::endl;
+  std::cerr<<"p Calculating flow accumulation areas..."<<std::endl;
   progress.start(flowdirs.numDataCells());
   long int ccount=0;
   while(sources.size()>0){
@@ -131,12 +129,13 @@ void d8_upslope_area(const Array2D<T> &flowdirs, Array2D<U> &area){
     if(dependency(nx,ny)==0)
       sources.emplace(nx,ny);
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Flow accumulation calculation time = "<<progress.stop()<<" s"<<std::endl;
 
+  //TODO: Explain this better
   int loops=0;
   for(int i=-1;i>=-8;i--)
     loops+=dependency.countval(-1);
-  std::cerr<<"Input contained at least "<<loops<<" loops."<<std::endl;
+  std::cerr<<"m Input contained at least = "<<loops<<" loops"<<std::endl;
 }
 
 

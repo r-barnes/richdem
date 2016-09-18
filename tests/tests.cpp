@@ -82,19 +82,9 @@ TEST_CASE("Checking flow accumulation", "[FlowAcc]") {
         Array2D<d8_flowdir_t> fds(this_path, false);
         Array2D<int32_t>   correct_ans(this_path.replace_extension("out"), false);
         Array2D<int32_t>   my_ans;
-        d8_upslope_area(fds,my_ans);
+        d8_flow_accum(fds,my_ans);
         REQUIRE( correct_ans == my_ans );
       }
     }
   }  
-}
-
-SCENARIO( "Checking flow accumulation", "[FlowAcc]" ) {
-
-
-    // {
-    //     Array2D<flowdir_t> arr()
-    //     Array2D<int32_t>   garr
-    //   d8_upslope_area
-    // }
 }
