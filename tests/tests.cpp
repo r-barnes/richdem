@@ -2,6 +2,12 @@
 #include "catch/catch.hpp"
 #include "richdem/common/Array2D.hpp"
 
+#include "richdem/methods/d8_methods.hpp"
+
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
+
 SCENARIO( "Array2D works", "[Array2D]" ) {
 
   GIVEN( "A 7x11 Array2D<float>" ) {
@@ -65,4 +71,30 @@ SCENARIO( "Array2D works", "[Array2D]" ) {
             }
         }*/
   }
+}
+
+
+TEST_CASE("Checking flow accumulation", "[FlowAcc]") {
+  for(auto p: fs::directory_iterator("flow_accum")){
+    fs::path this_path = p.path();
+    if(this_path.extension()==".d8"){
+      SECTION(p.path().c_str()){
+        Array2D<d8_flowdir_t> fds(this_path, false);
+        Array2D<int32_t>   correct_ans(this_path.replace_extension("out"), false);
+        Array2D<int32_t>   my_ans;
+        d8_upslope_area(fds,my_ans);
+        REQUIRE( correct_ans == my_ans );
+      }
+    }
+  }  
+}
+
+SCENARIO( "Checking flow accumulation", "[FlowAcc]" ) {
+
+
+    // {
+    //     Array2D<flowdir_t> arr()
+    //     Array2D<int32_t>   garr
+    //   d8_upslope_area
+    // }
 }

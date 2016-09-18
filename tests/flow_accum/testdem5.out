@@ -1,3 +1,9 @@
+ncols         10
+nrows         10
+xllcorner     421568
+yllcorner     4872699
+cellsize      3
+NODATA_value  -1
   1   1   1   1   1   1   1   1   1  24
   1   1   1   1   1   1   1   1   1  23
   1   1   1   1   1   1   1   1   1  22
