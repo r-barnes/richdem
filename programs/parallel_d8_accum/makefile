@@ -32,12 +32,6 @@ debug: main.cpp
 	$(MPICXX) $(DEBUG_FLAGS) $(CXXFLAGS) -o parallel_d8_accum.exe main.cpp $(GDAL_LIBS)
 	#To run with debuggers: mpirun -n 2 xterm -hold -e gdb -ex run --args ./parallel_d8_accum.exe one @evict tests/dev/testdem10.d8 /z/out-%n.tif -w 5 -h 5
 
-assemble_ascii:
-	$(CXX) $(OPT_FLAGS) $(CXXFLAGS) -o assemble_ascii.exe assemble_ascii.cpp $(GDAL_LIBS)
-
-merge_rasters_by_layout:
-	$(CXX) $(OPT_FLAGS) $(CXXFLAGS) -o merge_rasters_by_layout.exe merge_rasters_by_layout.cpp $(GDAL_LIBS)
-
 test:
 	$(CXX) $(OPT_FLAGS) $(CXXFLAGS) -o test.exe test.cpp $(GDAL_LIBS)
 

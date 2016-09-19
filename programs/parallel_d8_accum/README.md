@@ -160,32 +160,54 @@ system:
 
     sudo apt-get install python3-gdal python-gdal gdal-bin
 
-The directory `tests` contains all of the information and layouts associated
-with the tests described in the paper. The most immediately useful are probably
-the `tests/beauford` test, which includes a small DEM suitable for testing the
-correctness of various tile sizing configurations, and the `tests/srtm_small`
-test (see the `README.md` file in that directory for further information), which
-tests the "many" mode on a 3x3 excerpt of the SRTM Region 3 data.
+Several tests are included.
 
-Other subdirectories of `tests` are named for the dataset they pertain to and
-contain directions for acquiring the datasets and example jobs for running them
-using SLURM.
+###Test 1
 
-The `beauford` and `srtm_small` tests can be run using the `test.py` script.
-This script can be running using one of the following: 
+Run
 
-    ./test.py tests/beauford/beauford.tif
-    ./test.py tests/srtm_small/srtm_small.layout
+    make test
+    ./test.exe
 
-Once data has been acquired and placed in these directories.
+to check various indexing mathematics used in the program. If no warnings
+appear, everything is good.
 
-In the case of a layout file being used, the `test.py` script will merge all of
-the tiles together. This merged file, or, in the case of a single input file
-being used, that file, will be depression filled using the algorithm in a
-single-core mode. This generates an authoritative answer against which
-correctness is checked. The program then iterates over many tile sizes to ensure
-that they all compare correctly against this authoritative answer.
+###Test 2
 
+This test checks the simple flow accumulation DEMs in RichDEM's
+`tests/flow_accum` suite. To run the test, do as follows:
+
+    cd $RICHDEM_BASE_DIR/apps
+    make #Compile all of the apps
+
+    cd $PARALLEL_D8_ACCUM
+    mkdir temp
+    ./test_small.sh
+
+where the directories are the obvious choices. If no warnings are printed, all
+the tests pass. Additionally, running
+
+    ./test_small.sh test 10
+
+would run a test with `$RICHDEM_BASE_DIR/tests/flow_accum/testdem10.d8` as
+input.
+
+###Test 3
+
+This test checks more complicated flow situations. You'll need to generate a
+larger test DEM to run the test on. You can do so using the code found in
+`tests/terrain_gen`. Assuming you've compiled the code there, run, e.g.:
+
+    ../../tests/terrain_gen/terrain_gen.exe temp/testdem.tif 3000
+
+You'll then need to generate flow directions from this DEM. You can do so using,
+e.g.:
+
+    ../../apps/rd_flood_for_flowdirs.exe temp/testdem.tif temp/flowdirs.tif
+
+You can now run the big tests on this single file using, e.g.:
+
+    ./test_big.py --one --cores 4 temp/flowdirs.tif
 
 
 Notes

@@ -14,6 +14,7 @@
 #include "richdem/common/timer.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
+#include "perimeters.hpp"
 
 const std::string algname  = "Parallel Flow Accumulation";
 const std::string citation = "Barnes, R. 2016. \"Parallel D8 Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters\". In-progress.";
@@ -218,45 +219,6 @@ int SuggestTileSize(int selected, int size, int min){
 
 
 
-
-
-
-//TODO: Explain
-int xyToSerial(const int x, const int y, const int width, const int height){
-  //Ensure cell is on the perimeter
-  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
-
-  if(y==0)                         //Top row
-    return x;
-
-  if(x==width-1)                   //Right hand side
-    return (width-1)+y;
-
-  if(y==height-1)                  //Bottom-row
-    return (width-1)+(height)+x;   
-
-  return 2*(width-1)+(height-1)+y; //Left-hand side
-}
-
-//TODO: Explain
-void serialToXY(const int serial, int &x, int &y, const int width, const int height){
-  if(serial<width){                        //Top row
-    x = serial;
-    y = 0;
-  } else if(serial<(width-1)+height){     //Right-hand side
-    x = width-1;
-    y = serial-(width-1);
-  } else if(serial<2*(width-1)+(height)){ //Bottom row
-    x = serial-(width-1)-(height-1)-1;
-    y = height-1;
-  } else {                                //Left-hand side
-    x = 0;
-    y = serial-2*(width-1)-(height-1);
-  }
-
-  //Ensure cell is on the perimeter
-  assert( (x==0 || x==width-1 || y==0 || y==height-1) && x>=0 && y>=0 && x<width && y<height);
-}
 
 
 
@@ -490,26 +452,6 @@ class ConsumerSpecifics {
       if(dependencies[ni]==0)
         sources.emplace(ni);
     }
-  }
-
-
-  template<class U>
-  void GridPerimToArray(const Array2D<U> &grid, std::vector<U> &vec){
-    assert(vec.size()==0); //Ensure receiving array is empty
-
-    std::vector<U> vec2copy;
-
-    vec2copy = grid.getRowData(0);                         //Top
-    vec.insert(vec.end(),vec2copy.begin(),vec2copy.end());
-
-    vec2copy = grid.getColData(grid.width()-1);        //Right
-    vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end());
-    
-    vec2copy = grid.getRowData(grid.height()-1);       //Bottom
-    vec.insert(vec.end(),vec2copy.begin(),vec2copy.end()-1);
-    
-    vec2copy = grid.getColData(0);                         //Left
-    vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end()-1);
   }
 
  public:
@@ -798,13 +740,14 @@ class ProducerSpecifics {
       this_job.accum_in.resize(this_job.links.size(),0);      
     }
 
-    for(size_t y=0;y<jobs1.size();y++)
-    for(size_t x=0;x<jobs1[0].size();x++){
-      std::cerr<<"AccumOrig: "<<x<<" "<<y<<" ";
-      for(const auto x: jobs1[y][x].accum)
-        std::cerr<<x<<" ";
-      std::cerr<<"\n";
-    }
+    //TODO: Used for manuscript
+    // for(size_t y=0;y<jobs1.size();y++)
+    // for(size_t x=0;x<jobs1[0].size();x++){
+    //   std::cerr<<"AccumOrig: "<<x<<" "<<y<<" ";
+    //   for(const auto x: jobs1[y][x].accum)
+    //     std::cerr<<x<<" ";
+    //   std::cerr<<"\n";
+    // }
 
     std::cerr<<"p Calculating dependencies..."<<std::endl;
     for(int y=0;y<gridheight;y++)
@@ -860,17 +803,17 @@ class ProducerSpecifics {
       }
     }
 
-    //TODO
-    for(size_t y=0;y<jobs1.size();y++)
-    for(size_t x=0;x<jobs1[0].size();x++){
-      std::cerr<<"Accum: "<<x<<" "<<y<<" ";
-      for(const auto x: jobs1[y][x].accum)
-        std::cerr<<x<<" ";
-      std::cerr<<"\nLinks: "<<x<<" "<<y<<" ";
-      for(const auto x: jobs1[y][x].links)
-        std::cerr<<x<<" ";
-      std::cerr<<"\n";
-    }
+    //TODO: Used for manuscript
+    // for(size_t y=0;y<jobs1.size();y++)
+    // for(size_t x=0;x<jobs1[0].size();x++){
+    //   std::cerr<<"Accum: "<<x<<" "<<y<<" ";
+    //   for(const auto x: jobs1[y][x].accum)
+    //     std::cerr<<x<<" ";
+    //   std::cerr<<"\nLinks: "<<x<<" "<<y<<" ";
+    //   for(const auto x: jobs1[y][x].links)
+    //     std::cerr<<x<<" ";
+    //   std::cerr<<"\n";
+    // }
 
     std::cerr<<"m Peaks found in aggregated problem = "<<q.size()<<std::endl;
 
@@ -913,10 +856,12 @@ class ProducerSpecifics {
     auto &this_job = job2s_to_dist.at(ty).at(tx);
     // for(size_t s=0;s<this_job.accum.size();s++)
     //   this_job.accum[s] -= this_job.accum_orig[s];
-    std::cerr<<"AccumEnd: "<<tx<<" "<<ty<<" "; //TODO
-    for(const auto x: this_job.accum_in)
-      std::cerr<<x<<" ";
-    std::cerr<<"\n";
+
+    //TODO: Used for manuscript
+    // std::cerr<<"AccumEnd: "<<tx<<" "<<ty<<" "; //TODO
+    // for(const auto x: this_job.accum_in)
+    //   std::cerr<<x<<" ";
+    // std::cerr<<"\n";
 
     return this_job.accum_in;
   }
@@ -1364,6 +1309,7 @@ void Preparer(
     //Create a grid of jobs
     for(int32_t y=0,gridy=0;y<total_height; y+=bheight, gridy++){
       tiles.emplace_back(std::vector<TileInfo>());
+      lfout.addRow();
       for(int32_t x=0,gridx=0;x<total_width;x+=bwidth,  gridx++){
         //if(total_height-y<100){
         //  std::cerr<<"E At least one tile is <100 cells in height. Please change rectangle size to avoid this!"<<std::endl;
@@ -1398,6 +1344,8 @@ void Preparer(
           throw std::runtime_error("Outputname must include '%n' for <one> mode.");
         }
         this_output_name.replace(this_output_name.find("%n"),2,coord_string);
+
+        lfout.addEntry(this_output_name);
 
         tiles.back().emplace_back(
           input_file,

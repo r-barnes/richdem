@@ -84,7 +84,7 @@ def FillAndTest(
 
   nodata, dtype = FileInfo(outfiles[0])
 
-  output, err = doRaw("""./merge_rasters_by_layout.exe {layoutfile} 30 {outputfile} noflip""".format(
+  output, err = doRaw("""../../apps/rd_merge_rasters_by_layout.exe {layoutfile} 30 {outputfile} noflip""".format(
               layoutfile = 'temp/manycore-layout.layout',
               outputfile = 'temp/manycore_merged.tif'
       ))
