@@ -21,8 +21,7 @@ recasts all of this code as a set of header-only libraries.
 Unless otherwise noted, I consider the code available here as correct. However,
 documentation and testing efforts are on-going; functions may move between
 files. Users are encouraged to double-check results and feedback is very much
-welcome. As correctness testing is completed, functions will be marked
-accordingly. (TODO)
+welcome.
 
 Improvements targeted at achieving the design philosophy below are underway.
 
@@ -141,15 +140,28 @@ readme explaining the purpose of the program.
 
 
 Documentation
--------------
+=============
 
 Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
+The documentation is auto-generated from the many `README.md` files throughout
+the codebase and the extensive comments in the source code.
 
 
-Testing Methodology
-===================
 
-TODO
+Correctness
+===========
+
+Correctness is established via a number of methodologies building from code
+inspection in the simplest cases to output comparison between simple and complex
+implementations.
+
+Correctness is noted in source code comments under `@correctness` sections.
+These are, in turn, printed to the Doxygen documentation output.
+
+A master list of how correctness was established for each algorithm is available
+at [tests/README.md](tests/README.md).
+
+
 
 Parsable Output
 ===================
