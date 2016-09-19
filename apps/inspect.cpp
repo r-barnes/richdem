@@ -2,10 +2,11 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/router.hpp"
 
 template<class T>
-void PerformAlgorithm(std::string input, int minx, int maxx, int miny, int maxy, bool flipV, bool flipH){
-  Array2D<T> inp(input, 0, 0, 0, 0, false);
+int PerformAlgorithm(int minx, int maxx, int miny, int maxy, bool flipV, bool flipH, Array2D<T> inp){
+  inp.loadData();
 
   const int fwidth = 10;
 
@@ -32,15 +33,11 @@ void PerformAlgorithm(std::string input, int minx, int maxx, int miny, int maxy,
     maxy       = std::min(cy+radius,inp.height()-1);
   }
 
-  if(minx>maxx){
-    std::cerr<<"MinX must be smaller than MaxX!"<<std::endl;
-    return;
-  }
+  if(minx>maxx)
+    throw std::runtime_error("MinX must be smaller than MaxX!");
 
-  if(miny>maxy){
-    std::cerr<<"MinY must be smaller than MaxY!"<<std::endl;
-    return;
-  }
+  if(miny>maxy)
+    throw std::runtime_error("MinY must be smaller than MaxY!");
 
   std::cout<<std::setw(fwidth)<<" ";
   for(int x=minx;x<=maxx;x++)
@@ -63,36 +60,8 @@ void PerformAlgorithm(std::string input, int minx, int maxx, int miny, int maxy,
     }
     std::cout<<std::endl;
   }
-}
 
-template< typename... Arguments >
-int Router(std::string inputfile, Arguments ... args){
-  switch(peekGDALType(inputfile)){
-    case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(args...);
-    case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(args...);
-    case GDT_Int16:
-      return PerformAlgorithm<int16_t >(args...);
-    case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(args...);
-    case GDT_Int32:
-      return PerformAlgorithm<int32_t >(args...);
-    case GDT_Float32:
-      return PerformAlgorithm<float   >(args...);
-    case GDT_Float64:
-      return PerformAlgorithm<double  >(args...);
-    case GDT_CInt16:
-    case GDT_CInt32:
-    case GDT_CFloat32:
-    case GDT_CFloat64:
-      std::cerr<<"Complex types are unsupported. Sorry!"<<std::endl;
-      return -1;
-    case GDT_Unknown:
-    default:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
-      return -1;
-  }
+  return 0;
 }
 
 int main(int argc, char **argv){
@@ -156,5 +125,5 @@ int main(int argc, char **argv){
   //Get the total dimensions of the input file
   getGDALDimensions(inputfile, total_height, total_width, file_type, NULL);
 
-  return Router(inputfile,inputfile,minx,maxx,miny,maxy,flipV,flipH);
+  return PerformAlgorithm(inputfile,minx,maxx,miny,maxy,flipV,flipH);
 }

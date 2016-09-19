@@ -2,10 +2,10 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/router.hpp"
 
 template<class T>
 int PerformAlgorithm(
-  std::string inputfile,
   std::string outputfile,
   std::string geo1,
   std::string geo2,
@@ -13,9 +13,10 @@ int PerformAlgorithm(
   std::string geo4,
   std::string geo5,
   std::string geo6,
-  std::string analysis
+  std::string analysis,
+  Array2D<T> raster
 ){
-  Array2D<T> raster(inputfile,false);
+  raster.loadData();
 
   if(geo1!="x") raster.geotransform[0] = std::stod(geo1);
   if(geo2!="x") raster.geotransform[1] = std::stod(geo2);
@@ -27,36 +28,6 @@ int PerformAlgorithm(
   raster.saveGDAL(outputfile,analysis);
 
   return 0;
-}
-
-template< typename... Arguments >
-int Router(std::string inputfile, Arguments ... args){
-  switch(peekGDALType(inputfile)){
-    case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(args...);
-    case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(args...);
-    case GDT_Int16:
-      return PerformAlgorithm<int16_t >(args...);
-    case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(args...);
-    case GDT_Int32:
-      return PerformAlgorithm<int32_t >(args...);
-    case GDT_Float32:
-      return PerformAlgorithm<float   >(args...);
-    case GDT_Float64:
-      return PerformAlgorithm<double  >(args...);
-    case GDT_CInt16:
-    case GDT_CInt32:
-    case GDT_CFloat32:
-    case GDT_CFloat64:
-      std::cerr<<"Complex types are unsupported. Sorry!"<<std::endl;
-      return -1;
-    case GDT_Unknown:
-    default:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
-      return -1;
-  }
 }
 
 int main(int argc, char **argv){
@@ -76,7 +47,17 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  Router(argv[1],argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argv[7],argv[8],analysis);
+  PerformAlgorithm(
+    std::string(argv[1]),
+    std::string(argv[2]),
+    std::string(argv[3]),
+    std::string(argv[4]),
+    std::string(argv[5]),
+    std::string(argv[6]),
+    std::string(argv[7]),
+    std::string(argv[8]),
+    analysis
+  );
 
   return 0;
 }

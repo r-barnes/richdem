@@ -6,9 +6,10 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/flats/flat_resolution.hpp"
 #include "richdem/methods/d8_methods.hpp"
+#include "richdem/common/router.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string filename, std::string outputname, std::string analysis){
+int PerformAlgorithm(std::string outputname, std::string analysis, Array2D<T> elevations){
   bool flipH = false; //TODO
   bool flipV = false;
   std::string flip = "noflip";
@@ -24,7 +25,7 @@ int PerformAlgorithm(std::string filename, std::string outputname, std::string a
     return -1;
   }
 
-  Array2D<T> elevations(filename,false);
+  elevations.loadData();
 
   //Flip tiles if the geotransform demands it
   if( (elevations.geotransform[1]<0) ^ flipH)
@@ -56,36 +57,6 @@ int PerformAlgorithm(std::string filename, std::string outputname, std::string a
   return 0;
 }
 
-template< typename... Arguments >
-int Router(std::string inputfile, Arguments ... args){
-  switch(peekGDALType(inputfile)){
-    case GDT_Byte:
-      return PerformAlgorithm<uint8_t >(args...);
-    case GDT_UInt16:
-      return PerformAlgorithm<uint16_t>(args...);
-    case GDT_Int16:
-      return PerformAlgorithm<int16_t >(args...);
-    case GDT_UInt32:
-      return PerformAlgorithm<uint32_t>(args...);
-    case GDT_Int32:
-      return PerformAlgorithm<int32_t >(args...);
-    case GDT_Float32:
-      return PerformAlgorithm<float   >(args...);
-    case GDT_Float64:
-      return PerformAlgorithm<double  >(args...);
-    case GDT_CInt16:
-    case GDT_CInt32:
-    case GDT_CFloat32:
-    case GDT_CFloat64:
-      std::cerr<<"Complex types are unsupported. Sorry!"<<std::endl;
-      return -1;
-    case GDT_Unknown:
-    default:
-      std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
-      return -1;
-  }
-}
-
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
   
@@ -94,7 +65,7 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  Router(argv[1],argv[1],argv[2],analysis);
+  PerformAlgorithm(argv[1],argv[2],analysis);
 
   return 0;
 }
