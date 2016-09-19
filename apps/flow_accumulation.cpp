@@ -27,18 +27,20 @@ int PerformAlgorithm(std::string output, std::string flip, std::string analysis,
   flowdirs.loadData();
 
   std::cerr<<"Geotransform: ";
-  for(auto const x: flowdirs.geotransform)
-    std::cerr<<std::setw(5)<<std::setprecision(2)<<x<<" ";
-  std::cerr<<std::endl;
+  if(!flowdirs.geotransform.empty()){
+    for(auto const x: flowdirs.geotransform)
+      std::cerr<<std::setw(5)<<std::setprecision(2)<<x<<" ";
+    std::cerr<<std::endl;
+  }
 
   flowdirs.printStamp(5,"Stamp before reorientation");
 
   //Flip tiles if the geotransform demands it
-  if( (flowdirs.geotransform[1]<0) ^ flipH){
+  if( !flowdirs.geotransform.empty() && ((flowdirs.geotransform[1]<0) ^ flipH)){
     std::cerr<<"Flipping horizontally."<<std::endl;
     flowdirs.flipHorz();
   }
-  if( (flowdirs.geotransform[5]>0) ^ flipV){
+  if( !flowdirs.geotransform.empty() && ((flowdirs.geotransform[5]>0) ^ flipV)){
     std::cerr<<"Flipping vertically."<<std::endl;
     flowdirs.flipVert();
   }
@@ -50,9 +52,9 @@ int PerformAlgorithm(std::string output, std::string flip, std::string analysis,
 
   area.printStamp(5,"Output stamp before reorientation");
 
-  if( (area.geotransform[1]<0) ^ flipH)
+  if( !flowdirs.geotransform.empty() && ((area.geotransform[1]<0) ^ flipH))
     area.flipHorz();
-  if( (area.geotransform[5]>0) ^ flipV)
+  if( !flowdirs.geotransform.empty() && ((area.geotransform[5]>0) ^ flipV))
     area.flipVert();
 
   area.printStamp(5,"Output stamp after reorientation");
