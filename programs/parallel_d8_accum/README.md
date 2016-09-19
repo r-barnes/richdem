@@ -152,6 +152,17 @@ This will store memory and timing information in files beginning with the stem
 
 
 
+Correctness
+-----------
+
+The correctness of this algorithm for small cases is established by comparing it
+against the hand-made flow accumulation testing suite in `tests/flow_accum`.
+
+The correctness for larger/real-world cases is established by comparing the
+algorithm's output against a simpler flow accumulation. The tests below
+accomplish this.
+
+
 Testing
 -------
 
