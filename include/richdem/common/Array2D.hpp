@@ -1160,7 +1160,7 @@ class Array2D {
     @parma[in]     msg   Optional message to print above the block
   */
   void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
-    if(msg)
+    if(msg.size()!=0)
       std::cerr<<msg<<std::endl;
 
     xy_t xmin = std::max(0,x0-radius);
