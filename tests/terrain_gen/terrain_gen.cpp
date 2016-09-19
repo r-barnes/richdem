@@ -6,12 +6,12 @@
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
 
-  if(argc!=2){
-    std::cerr<<"Syntax: "<<argv[0]<<" <Size>"<<std::endl;
+  if(argc!=3){
+    std::cerr<<"Syntax: "<<argv[0]<<" <Output Name> <Size>"<<std::endl;
     return -1;
   }
 
-  const int tsize = std::stoi(argv[1]);
+  const int tsize = std::stoi(argv[2]);
 
   PerlinNoise pn;
 
@@ -20,7 +20,7 @@ int main(int argc, char **argv){
   for(int x=0;x<tsize;x++)
     terrain(x,y) = pn.noise(10*x/(double)tsize,10*y/(double)tsize,0.8);
 
-  terrain.saveGDAL("/z/out.tif");
+  terrain.saveGDAL(argv[1],analysis);
 
   return 0;
 }
