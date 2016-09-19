@@ -232,8 +232,8 @@ class Array2D {
 
     geotransform.resize(6);
     if(fin->GetGeoTransform(geotransform.data())!=CE_None){
-      std::cerr<<"Warning, could not get a geotransform from '"<<filename<<"'!"<<std::endl;
-      geotransform.clear();
+      std::cerr<<"Warning, could not get a geotransform from '"<<filename<<"'! Setting to standard geotransform."<<std::endl;
+      geotransform = {{1000., 1., 0., 1000., 0., -1.}};
     }
 
     if(fin->GetMetadataItem("PROCESSING_HISTORY"))
