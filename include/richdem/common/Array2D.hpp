@@ -1163,10 +1163,10 @@ class Array2D {
     if(msg)
       std::cerr<<msg<<std::endl;
 
-    xy_t xmin = std::max(0,x0-size);
-    xy_t ymin = std::max(0,y0-size);
-    xy_t xmax = std::min(width(),x0+size);
-    xy_t ymax = std::min(height(),y0+size);
+    xy_t xmin = std::max(0,x0-radius);
+    xy_t ymin = std::max(0,y0-radius);
+    xy_t xmax = std::min(width(),x0+radius);
+    xy_t ymax = std::min(height(),y0+radius);
 
     for(xy_t y=ymin;y<ymax;y++){
       for(xy_t x=xmin;x<xmax;x++){
