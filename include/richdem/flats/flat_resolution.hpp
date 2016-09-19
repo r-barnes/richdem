@@ -98,7 +98,7 @@ void d8_flow_flats(
 ){
   ProgressBar progress;
 
-  std::cerr<<"%%Calculating D8 flow directions using flat mask..."<<std::endl;
+  std::cerr<<"A Calculating D8 flow directions using flat mask..."<<std::endl;
   progress.start( flat_mask.width()*flat_mask.height() );
   #pragma omp parallel for
   for(int x=1;x<flat_mask.width()-1;x++){
@@ -109,7 +109,7 @@ void d8_flow_flats(
       else if (flowdirs(x,y)==NO_FLOW)
         flowdirs(x,y)=d8_masked_FlowDir(flat_mask,labels,x,y);
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 //Procedure: BuildAwayGradient
@@ -161,7 +161,7 @@ static void BuildAwayGradient(
   int loops = 1;
   GridCell iteration_marker(-1,-1);
 
-  std::cerr<<"Performing Barnes flat resolution's away gradient..."<<std::flush;
+  std::cerr<<"p Performing Barnes flat resolution's away gradient..."<<std::endl;
 
   //Incrementation
   edges.push_back(iteration_marker);
@@ -192,7 +192,7 @@ static void BuildAwayGradient(
   }
 
   timer.stop();
-  std::cerr<<"succeeded in "<<timer.accumulated()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<timer.accumulated()<<" s"<<std::endl;
 }
 
 
@@ -252,7 +252,7 @@ static void BuildTowardsCombinedGradient(
   GridCell iteration_marker(-1,-1);
 
 
-  std::cerr<<"Barnes flat resolution: toward and combined gradients..."<<std::flush;
+  std::cerr<<"p Barnes flat resolution: toward and combined gradients..."<<std::endl;
 
   //Make previous flat_mask negative so that we can keep track of where we are
   #pragma omp parallel for collapse(2)
@@ -293,7 +293,7 @@ static void BuildTowardsCombinedGradient(
   }
 
   timer.stop();
-  std::cerr<<"succeeded in "<<timer.accumulated()<<"s!"<<std::endl;
+  std::cerr<<"t Succeeded in = "<<timer.accumulated()<<" s"<<std::endl;
 }
 
 
@@ -385,7 +385,7 @@ static void find_flat_edges(
 ){
   int cells_without_flow=0;
   ProgressBar progress;
-  std::cerr<<"%%Searching for flats..."<<std::endl;
+  std::cerr<<"p Searching for flats..."<<std::endl;
   progress.start( flowdirs.width()*flowdirs.height() );
   for(int x=0;x<flowdirs.width();x++){
     progress.update( x*flowdirs.height() );
@@ -411,8 +411,8 @@ static void find_flat_edges(
       }
     }
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
-  std::cerr<<cells_without_flow<<" cells had no flow direction."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  std::cerr<<"m Cells with no flow direction = "<<cells_without_flow<<std::endl;
 }
 
 
@@ -454,50 +454,46 @@ void resolve_flats_barnes(
 
   std::deque<GridCell> low_edges,high_edges;  //TODO: Need estimate of size
 
-  std::cerr<<"\n###Barnes Flat Resolution"<<std::endl;
+  std::cerr<<"\nA Flat Resolution (Barnes 2014)"<<std::endl;
   std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009"<<std::endl;
 
-  std::cerr<<"Setting up labels matrix..."<<std::flush;
+  std::cerr<<"p Setting up labels matrix..."<<std::endl;
   labels.templateCopy(elevations);
   labels.resize(flowdirs);
   labels.setAll(0);
-  std::cerr<<"succeeded."<<std::endl;
 
-  std::cerr<<"Setting up flat resolution mask..."<<std::flush;
+  std::cerr<<"p Setting up flat resolution mask..."<<std::endl;
   flat_mask.templateCopy(elevations);
   flat_mask.resize(elevations);
   flat_mask.setAll(0);
   flat_mask.setNoData(-1);
-  std::cerr<<"succeeded!"<<std::endl;
 
   find_flat_edges(low_edges, high_edges, flowdirs, elevations);
 
   if(low_edges.size()==0){
     if(high_edges.size()>0)
-      std::cerr<<"There were flats, but none of them had outlets!"<<std::endl;
+      std::cerr<<"E There were flats, but none of them had outlets!"<<std::endl;
     else
-      std::cerr<<"There were no flats!"<<std::endl;
+      std::cerr<<"E There were no flats!"<<std::endl;
     return;
   }
 
-  std::cerr<<"Labeling flats..."<<std::flush;
+  std::cerr<<"p Labeling flats..."<<std::endl;
   int group_number=1;
   for(auto i=low_edges.begin();i!=low_edges.end();++i)
     if(labels(i->x,i->y)==0)
       label_this(i->x, i->y, group_number++, labels, elevations);
-  std::cerr<<"succeeded!"<<std::endl;
 
-  std::cerr<<"Found "<<group_number<<" unique flats."<<std::endl;
+  std::cerr<<"m Unique flats = "<<group_number<<std::endl;
 
-  std::cerr<<"Removing flats without outlets from the queue..."<<std::flush;
+  std::cerr<<"p Removing flats without outlets from the queue..."<<std::endl;
   std::deque<GridCell> temp;
   for(auto i=high_edges.begin();i!=high_edges.end();++i)
     if(labels(i->x,i->y)!=0)
       temp.push_back(*i);
-  std::cerr<<"succeeded."<<std::endl;
 
   if(temp.size()<high_edges.size())  //TODO: Prompt for intervention?
-    std::cerr<<"\033[91mNot all flats have outlets; the DEM contains sinks/pits/depressions!\033[39m"<<std::endl;
+    std::cerr<<"W Not all flats have outlets; the DEM contains sinks/pits/depressions!"<<std::endl;
   high_edges=temp;
   temp.clear();
 
@@ -505,9 +501,8 @@ void resolve_flats_barnes(
            <<(group_number*((long)sizeof(int))/1024/1024)
            <<"MB of RAM."<<std::endl;
         
-  std::cerr<<"Creating flat height vector..."<<std::flush;
+  std::cerr<<"p Creating flat height vector..."<<std::endl;
   std::vector<int> flat_height(group_number);
-  std::cerr<<"succeeded!"<<std::endl;
 
   BuildAwayGradient(
     flowdirs, flat_mask, high_edges, flat_height, labels
@@ -516,7 +511,7 @@ void resolve_flats_barnes(
     flowdirs, flat_mask, low_edges, flat_height, labels
   );
 
-  std::cerr<<"Calculation time for Barnes Flat Resolution algorithm: "<<timer.stop()<<"s."<<std::endl;
+  std::cerr<<"t Wall-time = "<<timer.stop()<<" s"<<std::endl;
 }
 
 
@@ -553,7 +548,7 @@ void d8_flats_alter_dem(
 ){
   ProgressBar progress;
 
-  std::cerr<<"%%Calculating D8 flow directions using flat mask..."<<std::endl;
+  std::cerr<<"A Calculating D8 flow directions using flat mask..."<<std::endl;
   progress.start( flat_mask.width()*flat_mask.height() );
   #pragma omp parallel for
   for(int x=1;x<flat_mask.width()-1;x++){
@@ -577,11 +572,11 @@ void d8_flats_alter_dem(
         if(elevations(x,y)<elevations(nx,ny))
           continue;
         if(!higher[n])
-          std::cerr<<"Attempting to raise ("<<x<<","<<y<<") resulted in an invalid alteration of the DEM!"<<std::endl;
+          std::cerr<<"W Attempting to raise ("<<x<<","<<y<<") resulted in an invalid alteration of the DEM!"<<std::endl;
       }
     }
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 
