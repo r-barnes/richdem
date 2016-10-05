@@ -427,10 +427,11 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
     processed_cells++;
 
     for(int no=1;no<=8;no++){
-      int n=d8_order[no];
-      int nx=c.x+dx[n];
-      int ny=c.y+dy[n];
-      if(!elevations.inGrid(nx,ny)) continue;
+      int n  = d8_order[no];
+      int nx = c.x+dx[n];
+      int ny = c.y+dy[n];
+      if(!elevations.inGrid(nx,ny))
+        continue;
       if(closed(nx,ny))
         continue;
 
@@ -527,10 +528,10 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
     if(pit.size()>0){
-      c=pit.front();
+      c = pit.front();
       pit.pop();
     } else {
-      c=open.top();
+      c = open.top();
       open.pop();
     }
     processed_cells++;
