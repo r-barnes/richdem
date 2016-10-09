@@ -3,6 +3,7 @@
 #include "richdem/common/Array2D.hpp"
 
 #include "richdem/methods/d8_methods.hpp"
+#include "richdem/common/grid_cell.hpp"
 
 #include <experimental/filesystem>
 
@@ -88,3 +89,53 @@ TEST_CASE("Checking flow accumulation", "[FlowAcc]") {
     }
   }  
 }
+
+
+
+
+
+TEST_CASE("Checking GridCellZk_pq", "[GridCell]") {
+  GridCellZk_pq<int> pq;
+
+  SECTION("Testing Elevation Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,1);
+    pq.emplace(2,0,2);
+    pq.emplace(3,0,3);
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+
+  SECTION("Testing Insertion Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,0);
+    pq.emplace(2,0,0);
+    pq.emplace(3,0,0);
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+
+  SECTION("Testing Mixed Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,1);
+    pq.emplace(2,0,1);
+    pq.emplace(3,0,2);
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+}
+
+
+
+
+
+
