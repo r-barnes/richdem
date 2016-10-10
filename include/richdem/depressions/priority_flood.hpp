@@ -15,6 +15,89 @@
 #include <cstdlib> //Used for exit
 
 
+/**
+  @brief  Determine if a DEM has depressions
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    Priority-Flood starts on the edges of the DEM and then works its way
+    inwards using a priority queue to determine the lowest cell which has
+    a path to the edge. The neighbours of this cell are added to the priority
+    queue. If the neighbours are lower than the cell which is adding them, then
+    they are part of a depression and the question is answered.
+
+  @param[in]  &elevations   A grid of cell elevations
+
+  @pre
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM. Note that the _NoData_ value is assumed to
+       be a negative number less than any actual data value.
+
+  @return True if the DEM contains depressions; otherwise, false.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
+*/
+template <class elev_t>
+bool HasDepressions(const Array2D<elev_t> &elevations){
+  GridCellZ_pq<elev_t> open;
+  ProgressBar progress;
+
+  std::cerr<<"\nA HasDepressions (Based on Priority-Flood)"<<std::endl;
+  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
+  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
+
+  std::cerr<<"The priority queue will require approximately "
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
+           <<"MB of RAM."
+           <<std::endl;
+
+  std::cerr<<"p Adding perimeter cells to the priority queue..."<<std::endl;
+  for(int x=0;x<elevations.width();x++){
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    closed(x,0)=true;
+    closed(x,elevations.height()-1)=true;
+  }
+  for(int y=1;y<elevations.height()-1;y++){
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    closed(0,y)=true;
+    closed(elevations.width()-1,y)=true;
+  }
+
+  std::cerr<<"p Searching for depressions..."<<std::endl;
+  progress.start( elevations.size() );
+  while(open.size()>0){
+    GridCellZ<elev_t> c=open.top();
+    open.pop();
+    ++progress;
+
+    for(int n=1;n<=8;n++){
+      int nx = c.x+dx[n];
+      int ny = c.y+dy[n];
+      if(!elevations.inGrid(nx,ny)) continue;
+      if(closed(nx,ny))
+        continue;
+
+      closed(nx,ny) = true;
+      if(elevations(nx,ny)<elevations(c.x,c.y)){
+        std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
+        std::cerr<<"m Depression found."<<std::endl;
+        return true;
+      }
+      open.emplace(nx,ny,elevations(nx,ny));
+    }
+  }
+  std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
+  std::cerr<<"m No depressions found."<<std::endl;
+  return false;
+}
+
+
+
+
+
 
 /**
   @brief  Fills all pits and removes all digital dams from a DEM
