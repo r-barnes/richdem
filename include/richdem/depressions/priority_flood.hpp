@@ -562,14 +562,14 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
 
   @post
     1. **pit_mask** contains a 1 for each cell which is in a pit and a 0 for
-       each cell which is not.
+       each cell which is not. The value 3 indicates NoData
 
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
 //TODO: Can I use a smaller data type?
 template <class elev_t>
-void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
+void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
   uint64_t processed_cells = 0;
@@ -627,23 +627,25 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<int32_t> &pit_mask){
 
       closed(nx,ny)=true;
       if(elevations(nx,ny)<=c.z){
-        if(elevations(nx,ny)<c.z)
+        if(elevations(nx,ny)<c.z){
+          pitc++;
           pit_mask(nx,ny)=1;
-        pit.push(GridCellZ<elev_t>(nx,ny,c.z));
+        }
+        pit.emplace(nx,ny,c.z);
       } else{
         pit_mask(nx,ny)=0;
         open.emplace(nx,ny,elevations(nx,ny));
       }
     }
 
-    if(elevations(c.x,c.y)==elevations.noData())
-      pit_mask(c.x,c.y)=pit_mask.noData();
+    if(elevations.isNoData(c.x,c.y))
+      pit_mask(c.x,c.y) = pit_mask.noData();
 
     progress.update(processed_cells);
   }
   std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
   std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+  std::cerr<<"m Cells in depressions = "  <<pitc           <<std::endl;
 }
 
 
