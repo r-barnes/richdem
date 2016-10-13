@@ -121,6 +121,10 @@ class ProgressBar{
     double time_it_took(){
       return timer.accumulated();
     }
+
+    uint32_t cellsProcessed() const {
+      return work_done;
+    }
 };
 
 #endif
