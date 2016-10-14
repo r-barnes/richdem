@@ -318,8 +318,8 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   ProgressBar progress;
   uint64_t processed_cells = 0;
   uint64_t pitc            = 0;
-  auto PitTop              = elevations.noData();
-  int false_pit_cells      = 0;
+  auto     PitTop          = elevations.noData();
+  int      false_pit_cells = 0;
 
   std::cerr<<"\nA Priority-Flood+Epsilon"<<std::endl;
   std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
@@ -373,12 +373,12 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
       if(elevations(nx,ny)==elevations.noData())
         pit.push(GridCellZ<elev_t>(nx,ny,elevations.noData()));
 
-      else if(elevations(nx,ny)<=nextafterf(c.z,std::numeric_limits<float>::infinity())){
-        if(PitTop!=elevations.noData() && PitTop<elevations(nx,ny) && nextafterf(c.z,std::numeric_limits<float>::infinity())>=elevations(nx,ny))
+      else if(elevations(nx,ny)<=std::nextafter(c.z,std::numeric_limits<elev_t>::infinity())){
+        if(PitTop!=elevations.noData() && PitTop<elevations(nx,ny) && std::nextafter(c.z,std::numeric_limits<elev_t>::infinity())>=elevations(nx,ny))
           ++false_pit_cells;
         ++pitc;
-        elevations(nx,ny)=nextafterf(c.z,std::numeric_limits<float>::infinity());
-        pit.push(GridCellZ<elev_t>(nx,ny,elevations(nx,ny)));
+        elevations(nx,ny)=std::nextafter(c.z,std::numeric_limits<elev_t>::infinity());
+        pit.emplace(nx,ny,elevations(nx,ny));
       } else
         open.emplace(nx,ny,elevations(nx,ny));
     }
