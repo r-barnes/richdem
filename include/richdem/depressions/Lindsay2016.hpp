@@ -124,18 +124,18 @@ void Lindsay2016(
         //Trace path back to a cell low enough for the path to drain into it, or
         //to an edge of the DEM
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
-          dem(cc) = target_height;
-          cc = backlinks(cc);                                             //Follow path back
-          std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+          dem(cc)       = target_height;
+          cc            = backlinks(cc);                                                  //Follow path back
+          target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
         }
       } else {
         //Trace path back to a cell low enough for the path to drain into it, or
         //to an edge of the DEM
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
-          pathdepth = std::max(pathdepth, dem(cc)-target_height);         //Figure out deepest breach necessary on path
-          cc        = backlinks(cc);                                      //Follow path back
-          std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
-          pathlen++;                                                      //Make path longer
+          pathdepth     = std::max(pathdepth, dem(cc)-target_height);                     //Figure out deepest breach necessary on path
+          cc            = backlinks(cc);                                                  //Follow path back
+          target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+          pathlen++;                                                                      //Make path longer
         }
 
         //Reset current cell address and height to the pit (start of path)
@@ -145,9 +145,9 @@ void Lindsay2016(
         //The path fits within the limits. "Drill, baby, drill."
         if(pathlen<=maxpathlen && pathdepth<=maxdepth){
           while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
-            dem(cc) = target_height;
-            cc = backlinks(cc);                                             //Follow path back
-            std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+            dem(cc)       = target_height;
+            cc            = backlinks(cc);                                                  //Follow path back
+            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
           }
         } else if(mode==CONSTRAINED_BREACHING){ //TODO: Refine this with regards to the paper
           T current_height = dem(cc);
@@ -156,8 +156,8 @@ void Lindsay2016(
               dem(cc) = current_height;
             else
               dem(cc) -= pathdepth;
-            std::nextafter(current_height,std::numeric_limits<T>::lowest());
-            cc = backlinks(cc);
+            current_height = std::nextafter(current_height,std::numeric_limits<T>::lowest());
+            cc             = backlinks(cc);
           }
         }
       }
