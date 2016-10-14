@@ -199,8 +199,8 @@ class Array2D {
   std::vector<T> data;              ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
-  T   no_data;                      ///< NoData value of the raster
-  i_t num_data_cells = NO_I;        ///< Number of cells which are not NoData
+  T   no_data;                       ///< NoData value of the raster
+  mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
   xy_t view_width;               ///< Height of raster in cells
   xy_t view_height;              ///< Width of raster in cells
@@ -834,7 +834,7 @@ class Array2D {
   /**
     @brief Counts the number of cells which are not NoData.
   */
-  void countDataCells(){
+  void countDataCells() const {
     num_data_cells = 0;
     for(const auto x: data)
       if(x!=no_data)
@@ -846,21 +846,9 @@ class Array2D {
 
     @return Returns the number of cells which are not NoData.
   */
-  i_t numDataCells(){
+  i_t numDataCells() const {
     if(num_data_cells==NO_I)
       countDataCells();
-    return num_data_cells;
-  }
-
-  /**
-    @brief Returns the number of cells which are not NoData. Does not count them.
-
-    countDataCells() should be call prior to running this method, or the
-    non-const version of the method should be used.
-
-    @return Returns the number of cells which are not NoData.
-  */
-  i_t numDataCells() const {
     return num_data_cells;
   }
 
