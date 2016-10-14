@@ -198,7 +198,7 @@ void KernelFlowdir(
 
 template<class E, class A>
 void FA_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"A Fairfield (Rho8) Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Fairfield (Rho8) Flow Accumulation (TODO)"<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
   KernelFlowdir(KernelFairfieldLeymarie<E,A>,elevations,accum,fd);
 }
@@ -211,13 +211,13 @@ void FA_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
 
 template<class E, class A>
 void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"A Quinn 1991 Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Quinn 1991 Flow Accumulation (TODO)"<<std::endl;
   KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,(double)1.0);
 }
 
 template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"A Holmgren Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Holmgren Flow Accumulation (TODO)"<<std::endl;
   KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,x);
 }
 
