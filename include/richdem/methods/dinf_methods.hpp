@@ -59,7 +59,7 @@ static void where_do_i_flow(float flowdir, int &nhigh, int &nlow){
 
   flowdir /= (M_PI/4.);
 
-  if(fabs(flowdir-(int)flowdir)<1e-6){
+  if(std::abs(flowdir-(int)flowdir)<1e-6){
     nlow  = -1;
     nhigh = (int)std::round(flowdir);
   } else {
