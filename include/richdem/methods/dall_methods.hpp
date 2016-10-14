@@ -31,17 +31,115 @@ void foo(){
 typedef Array2D<uint8_t> dep_t;
 
 template<class E, class A>
-class KernelFlowdir {
- private:
-  virtual void doCell(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, const int x, const int y) = 0;
+void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, const double xparam){
+  const E e = elevations(x,y);
 
- protected:
-  std::queue<GridCell> q;
-  dep_t dep;
+  constexpr double L1   = 0.5;
+  constexpr double L2   = 0.354; //TODO: More decimal places
+  constexpr double L[9] = {0,L1,L2,L1,L2,L1,L2,L1,L2};
 
- public:
-  void run(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::array<double,9> portions = {{0,0,0,0,0,0,0,0,0}};
+
+  double C = 0;
+  for(int n=1;n<=8;n++){
+    const int nx = x+dx[n];
+    const int ny = y+dy[n];
+
+    if(!elevations.inGrid(nx,ny))
+      continue;
+    if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+      continue;
+
+    const E ne = elevations(nx,ny);
+
+    if(ne<e){
+      const double rise = e-ne;
+      const double run  = dr[n];
+      const double grad = rise/run;
+      portions[n]       = std::pow(grad * L[n],xparam);
+      C                += portions[n];
+    }
+  }
+
+  C = accum(x,y)/C;
+
+  for(int n=1;n<=8;n++){
+    if(portions[n]>0){
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
+      if(mode==FDMode::CALC_DEPENDENCIES){
+        dep(nx,ny)++;
+      } else {
+        accum(nx,ny) += portions[n]*C;
+        dep(nx,ny)--;
+        if(dep(nx,ny)==0)
+          q.emplace(nx,ny);
+      }
+    }
+  }
+}
+
+template<class E, class A>
+void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, Array2D<d8_flowdir_t> &fd) {
+  if(mode==FDMode::CALC_DEPENDENCIES){
+    const E e = elevations(x,y);
+
+    int    greatest_n     = 0;
+    double greatest_slope = 0;
+    for(int n=1;n<=8;n++){
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
+
+      if(!elevations.inGrid(nx,ny))
+        continue;
+      if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+        continue;
+
+      const E ne = elevations(nx,ny);
+
+      if(ne>=e)
+        continue;
+
+      double rho_slope = (e-ne);
+      if(n_diag[n])
+        rho_slope *= 1/(2-uniform_rand_real(0,1));
+
+      if(rho_slope>greatest_slope){
+        greatest_n     = n;
+        greatest_slope = rho_slope;
+      }
+    }
+
+    fd(x,y) = greatest_n;
+
+    const int nx = x+dx[greatest_n];
+    const int ny = y+dy[greatest_n];
+    dep(nx,ny)++;
+  } else {
+    if(fd(x,y)==0)
+      return;
+
+    const int nx = x+dx[fd(x,y)];
+    const int ny = y+dy[fd(x,y)];
+
+    accum(nx,ny) += accum(x,y);
+    dep(nx,ny)--;
+    if(dep(nx,ny)==0)
+      q.emplace(nx,ny);
+  }
+}
+
+
+template<class F, class E, class A, typename... Args>
+void KernelFlowdir(
+  F f,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  Args&&... args
+){
     ProgressBar progress;
+    std::queue<GridCell> q;
+    dep_t dep;
 
     Timer overall;
     overall.start();
@@ -61,7 +159,7 @@ class KernelFlowdir {
     for(int x=0;x<elevations.width();x++){
       ++progress;
       if(!elevations.isNoData(x,y))
-        doCell(FDMode::CALC_DEPENDENCIES,elevations,accum,x,y);
+        f(FDMode::CALC_DEPENDENCIES,elevations,accum,dep,q,x,y,std::forward<Args>(args)...);
     }
     progress.stop();
 
@@ -79,9 +177,17 @@ class KernelFlowdir {
       q.pop();
 
       accum(c.x,c.y) += 1;
-      doCell(FDMode::CALC_ACCUM,elevations,accum,c.x,c.y);
+      f(FDMode::CALC_ACCUM,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
     }
     progress.stop();
+
+    for(int y=0;y<elevations.height();y++)
+    for(int x=0;x<elevations.width();x++){
+      if(accum(x,y)==0){
+        std::cerr<<"x,y: "<<x<<","<<y<<std::endl;
+        std::cerr<<"deps: "<<(int)dep(x,y)<<std::endl;
+      }
+    }
 
     std::cerr<<"m Data cells      = "<<elevations.numDataCells()<<std::endl;
     std::cerr<<"m Cells processed = "<<progress.cellsProcessed()<<std::endl;
@@ -89,144 +195,12 @@ class KernelFlowdir {
     std::cerr<<"m Min accum       = "<<accum.min()              <<std::endl;
     std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
   }
-};
-
-template<class E, class A>
-class KernelHolmgren : public KernelFlowdir<E,A> {
- public:
-  double x;
-
-  KernelHolmgren(double x){
-    this->x = x;
-  }
-
-  void doCell(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, const int x, const int y){
-    const E e = elevations(x,y);
-
-    constexpr double L1   = 0.5;
-    constexpr double L2   = 0.354; //TODO: More decimal places
-    constexpr double L[9] = {0,L1,L2,L1,L2,L1,L2,L1,L2};
-
-    std::array<double,9> portions = {0,0,0,0,0,0,0,0,0};
-
-    double C = 0;
-    for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
-
-      if(!elevations.inGrid(nx,ny))
-        continue;
-      if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
-        continue;
-
-      const E ne = elevations(nx,ny);
-
-      if(ne<e){
-        const double rise = e-ne;
-        const double run  = dr[n];
-        const double grad = rise/run;
-        portions[n]       = std::pow(grad * L[n],x);
-        C                += grad * L[n];
-      }
-    }
-
-    C = accum(x,y)/std::pow(C,x);
-
-    for(int n=1;n<=8;n++){
-      if(portions[n]>0){
-        const int nx = x+dx[n];
-        const int ny = y+dy[n];
-        if(mode==FDMode::CALC_DEPENDENCIES){
-          this->dep(nx,ny)++;
-        } else {
-          accum(nx,ny) += portions[n]*C;
-          this->dep(nx,ny)--;
-          if(this->dep(nx,ny)==0)
-            this->q.emplace(nx,ny);
-        }
-      }
-    }
-  }
-};
-
-template<class E, class A>
-class KernelFairfieldLeymarie : public KernelFlowdir<E,A> {
- public:
-  Array2D<d8_flowdir_t> fd;
-
-  KernelFairfieldLeymarie(const Array2D<E> &elevations) {
-    fd.resize(elevations);
-  }
-
-  void doCell(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, const int x, const int y) {
-    const E e = elevations(x,y);
-
-    int    greatest_n     = 0;
-    double greatest_slope = 0;
-    if(mode==FDMode::CALC_DEPENDENCIES){
-      for(int n=1;n<=8;n++){
-        const int nx = x+dx[n];
-        const int ny = y+dy[n];
-
-        if(!elevations.inGrid(nx,ny))
-          continue;
-        if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
-          continue;
-
-        const E ne = elevations(nx,ny);
-
-        if(ne>=e)
-          continue;
-
-        double rho_slope = (e-ne);
-        if(n_diag[n])
-          rho_slope *= 1/(2-uniform_rand_real(0,1));
-
-        if(rho_slope>greatest_slope){
-          greatest_n     = n;
-          greatest_slope = rho_slope;
-        }
-      }
-
-      fd(x,y) = greatest_n;
-
-      const int nx = x+dx[greatest_n];
-      const int ny = y+dy[greatest_n];
-      this->dep(nx,ny)++;
-    } else {
-      const int nx = x+dx[fd(x,y)];
-      const int ny = y+dy[fd(x,y)];
-
-      accum(nx,ny) += accum(x,y);
-      this->dep(nx,ny)--;
-      if(this->dep(nx,ny)==0)
-        this->q.emplace(nx,ny);
-    }
-  }
-};
-
-
-
-template<class E, class A>
-void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"A Quinn 1991 Flow Accumulation (TODO)"<<std::endl;
-  KernelHolmgren<E,A> kh(1.0);
-  kh.run(elevations, accum);
-}
-
-template<class E, class A>
-void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"A Holmgren Flow Accumulation (TODO)"<<std::endl;
-  KernelHolmgren<E,A> kh(x);
-  kh.run(elevations, accum);
-}
-
 
 template<class E, class A>
 void FA_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"A Fairfield (Rho8) Flow Accumulation (TODO)"<<std::endl;
-  KernelFairfieldLeymarie<E,A> kfl(elevations);
-  kfl.run(elevations, accum);
+  Array2D<d8_flowdir_t> fd(elevations);
+  KernelFlowdir(KernelFairfieldLeymarie<E,A>,elevations,accum,fd);
 }
 
 template<class E, class A>
@@ -235,7 +209,17 @@ void FA_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
   FA_FairfieldLeymarie(elevations,accum);
 }
 
+template<class E, class A>
+void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"A Quinn 1991 Flow Accumulation (TODO)"<<std::endl;
+  KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,(double)1.0);
+}
 
+template<class E, class A>
+void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
+  std::cerr<<"A Holmgren Flow Accumulation (TODO)"<<std::endl;
+  KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,x);
+}
 
 
 
