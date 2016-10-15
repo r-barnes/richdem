@@ -223,7 +223,7 @@ static void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevati
   if(mode==FDMode::CALC_DEPENDENCIES){
     const E e = elevations(x,y);
 
-    int    greatest_n     = 0;
+    int    greatest_n     = 0; //TODO: Use a constant
     double greatest_slope = 0;
     for(int n=1;n<=8;n++){
       const int nx = x+dx[n];
@@ -251,19 +251,23 @@ static void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevati
 
     fd(x,y) = greatest_n;
 
+    if(greatest_n==0)
+      return;
+
     const int nx = x+dx[greatest_n];
     const int ny = y+dy[greatest_n];
     dep(nx,ny)++;
   } else {
-    if(fd(x,y)==0)
+    const auto this_fd = fd(x,y);
+
+    if(this_fd==0)
       return;
 
-    const int nx = x+dx[fd(x,y)];
-    const int ny = y+dy[fd(x,y)];
+    const int nx = x+dx[this_fd];
+    const int ny = y+dy[this_fd];
 
     accum(nx,ny) += accum(x,y);
-    dep(nx,ny)--;
-    if(dep(nx,ny)==0)
+    if(--dep(nx,ny)==0)
       q.emplace(nx,ny);
   }
 }
