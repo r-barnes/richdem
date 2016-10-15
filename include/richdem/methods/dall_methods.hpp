@@ -219,7 +219,7 @@ static void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Arra
 }
 
 template<class E, class A>
-void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, Array2D<d8_flowdir_t> &fd) {
+static void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, Array2D<d8_flowdir_t> &fd) {
   if(mode==FDMode::CALC_DEPENDENCIES){
     const E e = elevations(x,y);
 
@@ -270,7 +270,7 @@ void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevations, Ar
 
 
 template<class F, class E, class A, typename... Args>
-void KernelFlowdir(
+static void KernelFlowdir(
   F f,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
