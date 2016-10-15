@@ -31,7 +31,146 @@ void foo(){
 typedef Array2D<uint8_t> dep_t;
 
 template<class E, class A>
-void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, const double xparam){
+static void KernelTarboton(
+  const FDMode mode,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y,
+  Array2D< std::pair<float,int8_t> > &fd
+){
+  //TODO: Assumes that the width and height of grid cells are equal and scaled
+  //to 1.
+  constexpr double d1   = 1;
+  constexpr double d2   = 1;
+  constexpr float  dang = std::atan2(d2,d1);
+
+  auto nwrap = [](int n){ return (n==9)?1:n; };
+
+  if(mode==FDMode::CALC_DEPENDENCIES){
+    //Table 1 of Tarboton (1997)
+    //          Column #  =   0    1    2    3    4    5   6    7
+    // const int    dy_e1[8] = { 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
+    // const int    dx_e1[8] = { 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
+    // const int    dy_e2[8] = {-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
+    // const int    dx_e2[8] = { 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
+    // const double ac[8]    = { 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
+    // const double af[8]    = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
+
+    //I remapped the foregoing table for ease of use with RichDEM. The facets
+    //are renumbered as follows:
+    //    3->1    2->2    1->3    0->4    7->5    6->6    5->7    4->8
+    //This gives the following table
+    //  Remapped Facet #  =  -   1    2     3    4    5   6    7    8  
+    //  Tarboton Facet #  =  -   3    2     1    0    7   6    5    4  
+    const int    dy_e1[9] = {0,  0 , -1 ,  -1 ,  0 ,  0 , 1 ,  1 ,  0  };
+    const int    dx_e1[9] = {0, -1 ,  0 ,   0 ,  1 ,  1 , 0 ,  0 , -1  };
+    const int    dy_e2[9] = {0, -1 , -1 ,  -1 , -1 ,  1 , 1 ,  1 ,  1  };
+    const int    dx_e2[9] = {0, -1 , -1 ,   1 ,  1 ,  1 , 1 , -1 , -1  };
+    //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
+    const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
+
+    int8_t nmax = -1;
+    double smax = 0;
+    float  rmax = 0;
+
+    for(int n=1;n<=8;n++){
+      if(!elevations.inGrid (x+dx_e1[n],y+dy_e1[n]))
+        continue;
+      if(elevations.isNoData(x+dx_e1[n],y+dy_e1[n]))
+        continue;
+      if(!elevations.inGrid (x+dx_e2[n],y+dy_e2[n]))
+        continue;
+      if(elevations.isNoData(x+dx_e2[n],y+dy_e2[n]))
+        continue;
+
+      //Is is assumed that cells with a value of NoData have very negative
+      //elevations with the result that they draw flow off of the grid.
+
+      //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
+      const double e0 = elevations(x,y);
+      const double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
+      const double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
+
+      const double s1 = (e0-e1)/d1;
+      const double s2 = (e1-e2)/d2;
+
+      double r = std::atan2(s2,s1);
+      double s;
+
+      if(r<1e-7){
+        r = 0;
+        s = s1;
+      } else if(r>dang-1e-7){
+        r = dang;
+        s = (e0-e2)/sqrt(d1*d1+d2*d2);
+      } else {
+        s = sqrt(s1*s1+s2*s2);
+      }
+
+      if(s>smax){
+        smax = s;
+        nmax = n;
+        rmax = r;
+      }
+    }
+
+    if(nmax!=-1){
+      if(af[nmax]==1 && rmax==0)
+        rmax = dang;
+      else if(af[nmax]==1 && rmax==dang)
+        rmax = 0;
+      else if(af[nmax]==1)
+        rmax = M_PI/4-rmax;
+
+      if(rmax==0){
+        dep(x+dx[nmax],y+dy[nmax])++;
+      } else if(rmax==dang){
+        dep(x+dx[nwrap(nmax+1)],y+dy[nwrap(nmax+1)])++;
+      } else {
+        dep(x+dx[nmax],y+dy[nmax])++;
+        dep(x+dx[nwrap(nmax+1)],y+dy[nwrap(nmax+1)])++;
+      }
+    }
+
+    fd(x,y).first  = rmax;
+    fd(x,y).second = nmax;
+
+    //Code used by Tarboton to calculate the angle Rg. This should give the same
+    //result despite the rearranged table
+    // double rg = NO_FLOW;
+    // if(nmax!=-1)
+    //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
+  } else {
+    const float r = fd(x,y).first;
+    const int   n = fd(x,y).second;
+
+    if(n==-1)
+      return;
+
+    auto DoCell = [&](int n, float fraction){
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
+      accum(nx,ny) += fraction*accum(x,y);
+      if(--dep(nx,ny)==0)
+        q.emplace(nx,ny);
+    };
+
+    if(r==0){
+      DoCell(n, 1);
+    } else if(r==dang){
+      DoCell(nwrap(n+1), 1);
+    } else {
+      DoCell(n,            r/(M_PI/4.));
+      DoCell(nwrap(n+1), 1-r/(M_PI/4.));
+    }
+  }
+}
+
+template<class E, class A>
+static void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, const double xparam){
   const E e = elevations(x,y);
 
   constexpr double L1   = 0.5;
@@ -219,6 +358,13 @@ template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren Flow Accumulation (TODO)"<<std::endl;
   KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,x);
+}
+
+template<class E, class A>
+void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"\nA Tarboton (D-Infinity) Flow Accumulation (TODO)"<<std::endl;
+  Array2D< std::pair<float,int8_t> > fd(elevations);
+  KernelFlowdir(KernelTarboton<E,A>,elevations,accum,fd);
 }
 
 
