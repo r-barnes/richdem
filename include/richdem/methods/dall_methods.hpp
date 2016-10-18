@@ -341,7 +341,9 @@ static void KernelFlowdir(
 
 template<class E, class A>
 void FA_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Fairfield (Rho8) Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Fairfield (1991) \"Rho8\" Flow Accumulation"<<std::endl;
+  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.
+"<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
   KernelFlowdir(KernelFairfieldLeymarie<E,A>,elevations,accum,fd);
 }
@@ -354,19 +356,25 @@ void FA_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
 
 template<class E, class A>
 void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Quinn 1991 Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Quinn (1991) Flow Accumulation"<<std::endl;
+  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79.
+"<<std::endl; 
   KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,(double)1.0);
 }
 
 template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"\nA Holmgren Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Holmgren (1994) Flow Accumulation"<<std::endl;
+  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.
+"<<std::endl;
   KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,x);
 }
 
 template<class E, class A>
 void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Tarboton (D-Infinity) Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Flow Accumulation"<<std::endl;
+  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.
+"<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
   KernelFlowdir(KernelTarboton<E,A>,elevations,accum,fd);
 }
