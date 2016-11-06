@@ -584,7 +584,7 @@ void d8_slope_riserun(
   float zscale
 ){
   std::cerr<<"\nA Slope calculation (rise/run)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_riserun);
 }
@@ -606,7 +606,7 @@ void d8_slope_percentage(
   float zscale
 ){
   std::cerr<<"\nA Slope calculation (percenage)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_percent);
 }
