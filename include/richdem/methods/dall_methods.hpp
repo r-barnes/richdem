@@ -28,11 +28,227 @@ void foo(){
   std::cerr<<fd<<std::endl;
 }
 
-typedef Array2D<uint8_t> dep_t;
+typedef Array2D<int8_t> dep_t;
 
-template<class E, class A>
+static inline void IncrementDependency(const int x, const int y, const int n, dep_t &dep){
+  assert(1<=n);
+  assert(n<=8);
+  assert(0<=x);
+  assert(x<dep.width());
+  assert(0<=y);
+  assert(y<dep.height());
+
+  const int nx = x+dx[n];
+  const int ny = y+dy[n];
+  dep(nx,ny)++;
+}
+
+template<class A>
+static inline void StrahlerNumber(
+  const int x,
+  const int y,
+  const int n,
+  dep_t                &dep,
+  Array2D<A>           &strahler,
+  std::queue<GridCell> &q,
+  A                     flow
+){
+  constexpr A msb  = 1 << (std::numeric_limits<A>::digits-1); //First time this Strahler # was seen
+  constexpr A smsb = 1 << (std::numeric_limits<A>::digits-2); //This Strahler number arose from combining two other neighbours and should be overriden if appropriate
+
+  const auto s = strahler(x,y) & (~msb) & (~smsb);
+
+  const int   nx = x+dx[n];
+  const int   ny = y+dy[n];
+        auto& ns = strahler(nx,ny);
+
+  const bool first_time = ns & msb;
+  const bool emergent   = ns & smsb;
+
+  //Clear info bits
+  ns &= ~msb;
+  ns &= ~smsb;
+
+  if(ns==0){
+    ns = s | msb;
+  } else if(ns==s && first_time){
+    ns = (s+1) | smsb;
+  } else if(ns==s && emergent){
+    ns = s | msb;
+  }
+
+  if(--dep(nx,ny)<=0)
+    q.emplace(nx,ny);
+}
+
+template<class A>
+static inline void PassAccumulation(
+  const int             x,
+  const int             y,
+  const int             n,
+  dep_t                &dep,
+  Array2D<A>           &accum,
+  std::queue<GridCell> &q,
+  A                     flow
+){
+  assert(1<=n);
+  assert(n<=8);
+  assert(0<=x);
+  assert(x<dep.width());
+  assert(0<=y);
+  assert(y<dep.height());
+
+  const int nx = x+dx[n];
+  const int ny = y+dy[n];
+  accum(nx,ny) += flow;
+  if(--dep(nx,ny)<=0)
+    q.emplace(nx,ny);
+}
+
+
+
+template<class DepF, class AccumF, class E, class A>
+static void KernelSeibertMcGlynn(
+  const FDMode mode,
+  DepF   depf,
+  AccumF accumf,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y,
+  const double xparam
+){
+  //TODO: Assumes that the width and height of grid cells are equal and scaled
+  //to 1.
+  constexpr double d1   = 1;
+  constexpr double d2   = 1;
+  constexpr float  dang = std::atan2(d2,d1);
+
+  auto nwrap = [](int n){ return (n==9)?1:n; };
+
+  constexpr double L1   = 0.5;
+  constexpr double L2   = 0.354; //TODO: More decimal places
+  constexpr double L[9] = {0,L1,L2,L1,L2,L1,L2,L1,L2};
+
+  std::array<double,9> svals    = {{0,0,0,0,0,0,0,0,0}};
+  std::array<double,9> rvals    = {{0,0,0,0,0,0,0,0,0}};
+
+  //Table 1 of Tarboton (1997)
+  //          Column #  =   0    1    2    3    4    5   6    7
+  // const int    dy_e1[8] = { 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
+  // const int    dx_e1[8] = { 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
+  // const int    dy_e2[8] = {-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
+  // const int    dx_e2[8] = { 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
+  // const double ac[8]    = { 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
+  // const double af[8]    = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
+
+  //I remapped the foregoing table for ease of use with RichDEM. The facets
+  //are renumbered as follows:
+  //    3->1    2->2    1->3    0->4    7->5    6->6    5->7    4->8
+  //This gives the following table
+  //  Remapped Facet #  =  -   1    2     3    4    5   6    7    8  
+  //  Tarboton Facet #  =  -   3    2     1    0    7   6    5    4  
+  const int    dy_e1[9] = {0,  0 , -1 ,  -1 ,  0 ,  0 , 1 ,  1 ,  0  };
+  const int    dx_e1[9] = {0, -1 ,  0 ,   0 ,  1 ,  1 , 0 ,  0 , -1  };
+  const int    dy_e2[9] = {0, -1 , -1 ,  -1 , -1 ,  1 , 1 ,  1 ,  1  };
+  const int    dx_e2[9] = {0, -1 , -1 ,   1 ,  1 ,  1 , 1 , -1 , -1  };
+  //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
+  const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
+
+  for(int n=1;n<=8;n++){
+    if(!elevations.inGrid (x+dx_e1[n],y+dy_e1[n]))
+      continue;
+    if(elevations.isNoData(x+dx_e1[n],y+dy_e1[n]))
+      continue;
+    if(!elevations.inGrid (x+dx_e2[n],y+dy_e2[n]))
+      continue;
+    if(elevations.isNoData(x+dx_e2[n],y+dy_e2[n]))
+      continue;
+
+    //Is is assumed that cells with a value of NoData have very negative
+    //elevations with the result that they draw flow off of the grid.
+
+    //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
+    const double e0 = elevations(x,y);
+    const double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
+    const double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
+
+    const double s1 = (e0-e1)/d1;
+    const double s2 = (e1-e2)/d2;
+
+    rvals[n] = std::atan2(s2,s1);
+
+    if(rvals[n]<1e-7){
+      rvals[n] = 0;
+      svals[n] = s1;
+    } else if(rvals[n]>dang-1e-7){
+      rvals[n] = dang;
+      svals[n] = (e0-e2)/sqrt(d1*d1+d2*d2);
+    } else {
+      svals[n] = sqrt(s1*s1+s2*s2);
+    }
+
+    if(af[n]==1 && rvals[n]==0)
+      rvals[n] = dang;
+    else if(af[n]==1 && rvals[n]==dang)
+      rvals[n] = 0;
+    else if(af[n]==1)
+      rvals[n] = M_PI/4-rvals[n];
+
+    assert(0<=rvals[n] && rvals[n]<=dang);
+  }
+
+  if(mode==FDMode::CALC_DEPENDENCIES){
+    for(int n=1;n<=8;n++){
+      if(svals[n]<=0)
+        continue;
+
+      if(rvals[n]==0)
+        depf(x,y,n,dep);
+      else if(rvals[n]==dang)
+        depf(x,y,nwrap(n+1),dep);
+      else {
+        depf(x,y,n,dep);
+        depf(x,y,nwrap(n+1),dep);
+      }
+    }
+  } else {
+    double C = 0;
+
+    for(int n=1;n<=8;n++){
+      svals[n] = std::pow(svals[n]*L[n], xparam);
+      C       += svals[n];
+    }
+
+    assert(C>0);
+    C = accum(x,y)/C;
+
+    for(int n=1;n<=8;n++){
+      if(svals[n]<=0)
+        continue;
+
+      if(rvals[n]==0){
+        accumf(x,y,n,          dep,accum,q, accum(x,y));
+      } else if(rvals[n]==dang){
+        accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
+      } else {
+        assert(0<=rvals[n] && rvals[n]<=dang);
+        accumf(x,y,n,          dep,accum,q, C*svals[n]*(  rvals[n]/(M_PI/4.)));
+        accumf(x,y,nwrap(n+1), dep,accum,q, C*svals[n]*(1-rvals[n]/(M_PI/4.)));
+      }
+    }
+  }
+}
+
+
+
+template<class DepF, class AccumF, class E, class A>
 static void KernelTarboton(
   const FDMode mode,
+  DepF   depf,
+  AccumF accumf,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
   dep_t &dep,
@@ -47,7 +263,7 @@ static void KernelTarboton(
   constexpr double d2   = 1;
   constexpr float  dang = std::atan2(d2,d1);
 
-  auto nwrap = [](int n){ return (n==9)?1:n; };
+  auto nwrap = [](int8_t n){ return (n==9)?1:n; };
 
   if(mode==FDMode::CALC_DEPENDENCIES){
     //Table 1 of Tarboton (1997)
@@ -126,12 +342,12 @@ static void KernelTarboton(
         rmax = M_PI/4-rmax;
 
       if(rmax==0){
-        dep(x+dx[nmax],y+dy[nmax])++;
+        depf(x,y,nmax,dep);
       } else if(rmax==dang){
-        dep(x+dx[nwrap(nmax+1)],y+dy[nwrap(nmax+1)])++;
+        depf(x,y,nwrap(nmax+1),dep);
       } else {
-        dep(x+dx[nmax],y+dy[nmax])++;
-        dep(x+dx[nwrap(nmax+1)],y+dy[nwrap(nmax+1)])++;
+        depf(x,y,nmax,dep);
+        depf(x,y,nwrap(nmax+1),dep);
       }
     }
 
@@ -144,33 +360,36 @@ static void KernelTarboton(
     // if(nmax!=-1)
     //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
   } else {
-    const float r = fd(x,y).first;
-    const int   n = fd(x,y).second;
+    const float  r = fd(x,y).first;
+    const int8_t n = fd(x,y).second;
 
     if(n==-1)
       return;
 
-    auto DoCell = [&](int n, float fraction){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
-      accum(nx,ny) += fraction*accum(x,y);
-      if(--dep(nx,ny)==0)
-        q.emplace(nx,ny);
-    };
-
     if(r==0){
-      DoCell(n, 1);
+      accumf(x,y,n,          dep,accum,q, accum(x,y));
     } else if(r==dang){
-      DoCell(nwrap(n+1), 1);
+      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
     } else {
-      DoCell(n,            r/(M_PI/4.));
-      DoCell(nwrap(n+1), 1-r/(M_PI/4.));
+      accumf(x,y,n,          dep,accum,q, accum(x,y)*(  r/(M_PI/4.)));
+      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y)*(1-r/(M_PI/4.)));
     }
   }
 }
 
-template<class E, class A>
-static void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, const double xparam){
+template<class DepF, class AccumF, class E, class A>
+static void KernelHolmgren(
+  const FDMode mode,
+  DepF   depf,
+  AccumF accumf,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y,
+  const double xparam
+){
   const E e = elevations(x,y);
 
   constexpr double L1   = 0.5;
@@ -204,22 +423,28 @@ static void KernelHolmgren(const FDMode mode, const Array2D<E> &elevations, Arra
 
   for(int n=1;n<=8;n++){
     if(portions[n]>0){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
       if(mode==FDMode::CALC_DEPENDENCIES){
-        dep(nx,ny)++;
+        depf(x,y,n,dep);
       } else {
-        accum(nx,ny) += portions[n]*C;
-        dep(nx,ny)--;
-        if(dep(nx,ny)==0)
-          q.emplace(nx,ny);
+        accumf(x,y,n, dep,accum,q, portions[n]*C);
       }
     }
   }
 }
 
-template<class E, class A>
-static void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevations, Array2D<A> &accum, dep_t &dep, std::queue<GridCell> &q, const int x, const int y, Array2D<d8_flowdir_t> &fd) {
+template<class DepF, class AccumF, class E, class A>
+static void KernelFairfieldLeymarie(
+  const FDMode mode,
+  DepF   depf,
+  AccumF accumf,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y,
+  Array2D<d8_flowdir_t> &fd
+){
   if(mode==FDMode::CALC_DEPENDENCIES){
     const E e = elevations(x,y);
 
@@ -254,98 +479,196 @@ static void KernelFairfieldLeymarie(const FDMode mode, const Array2D<E> &elevati
     if(greatest_n==0)
       return;
 
-    const int nx = x+dx[greatest_n];
-    const int ny = y+dy[greatest_n];
-    dep(nx,ny)++;
+    depf(x,y,greatest_n,dep);
   } else {
     const auto this_fd = fd(x,y);
 
     if(this_fd==0)
       return;
 
-    const int nx = x+dx[this_fd];
-    const int ny = y+dy[this_fd];
-
-    accum(nx,ny) += accum(x,y);
-    if(--dep(nx,ny)==0)
-      q.emplace(nx,ny);
+    accumf(x,y,this_fd, dep,accum,q, accum(x,y));
   }
 }
 
 
+
+
+
 template<class F, class E, class A, typename... Args>
-static void KernelFlowdir(
+static void DistanceDispersionEstimate(
   F f,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
   Args&&... args
 ){
-    ProgressBar progress;
-    std::queue<GridCell> q;
-    dep_t dep;
+  ProgressBar progress;
+  std::queue<GridCell> q;
+  dep_t dep,depbk;
 
-    Timer overall;
-    overall.start();
+  Timer overall;
+  overall.start();
 
-    accum.setAll(0);
-    accum.setNoData(ACCUM_NO_DATA);
-    for(typename Array2D<E>::i_t i=0;i<elevations.size();i++)
-      if(elevations.isNoData(i))
-        accum(i) = ACCUM_NO_DATA;
+  accum.setAll(0);
+  accum.setNoData(ACCUM_NO_DATA);
+  for(typename Array2D<E>::i_t i=0;i<elevations.size();i++)
+    if(elevations.isNoData(i))
+      accum(i) = ACCUM_NO_DATA;
 
-    dep.resize(elevations);
+  dep.resize(elevations);
+  dep.setAll(0);
+
+  std::cerr<<"p Calculating dependencies..."<<std::endl;
+  progress.start(elevations.size());
+  //#pragma omp parallel for collapse(2)
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
+    ++progress;
+    if(!elevations.isNoData(x,y))
+      f(FDMode::CALC_DEPENDENCIES,elevations,accum,dep,q,x,y,std::forward<Args>(args)...);
+  }
+  progress.stop();
+
+  std::vector<int>  dispersion(elevations.size(),0);
+  std::vector<int>  count     (elevations.size(),0);
+
+  progress.start(2000);
+  for(int i=0;i<2000;i++){
+    ++progress;
+
+    q.empty();
+
+    std::vector<bool> visited   (elevations.size(),false);
+    
+    int rx,ry;
+    do {
+      rx = uniform_rand_int(0,elevations.width ()-1);
+      ry = uniform_rand_int(0,elevations.height()-1);
+    } while(elevations.isNoData(rx,ry));
+    q.emplace(rx,ry);
+
     dep.setAll(0);
 
-    std::cerr<<"p Calculating dependencies..."<<std::endl;
-    progress.start(elevations.size());
-    for(int y=0;y<elevations.height();y++)
-    for(int x=0;x<elevations.width();x++){
-      ++progress;
-      if(!elevations.isNoData(x,y))
-        f(FDMode::CALC_DEPENDENCIES,elevations,accum,dep,q,x,y,std::forward<Args>(args)...);
-    }
-    progress.stop();
+    int cells_in_level = 1;
+    int level          = 0;
 
-    for(int y=0;y<dep.height();y++)
-    for(int x=0;x<dep.width();x++)
-      if(dep(x,y)==0 && !elevations.isNoData(x,y))
-        q.emplace(x,y);
-
-    std::cerr<<"p Calculating accumulation..."<<std::endl;
-    progress.start(accum.numDataCells());
     while(!q.empty()){
       ++progress;
 
       const auto c = q.front();
       q.pop();
 
+      if(visited[elevations.xyToI(c.x,c.y)])
+        continue;
+      visited[elevations.xyToI(c.x,c.y)] = true;
+      dispersion[level]++;
+
+
       accum(c.x,c.y) += 1;
       f(FDMode::CALC_ACCUM,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
-    }
-    progress.stop();
 
-    for(int y=0;y<elevations.height();y++)
-    for(int x=0;x<elevations.width();x++){
-      if(accum(x,y)==0){
-        std::cerr<<"x,y: "<<x<<","<<y<<std::endl;
-        std::cerr<<"deps: "<<(int)dep(x,y)<<std::endl;
+      cells_in_level--;
+      if(cells_in_level==0){
+        level++;
+        cells_in_level = q.size();
       }
     }
 
-    std::cerr<<"m Data cells      = "<<elevations.numDataCells()<<std::endl;
-    std::cerr<<"m Cells processed = "<<progress.cellsProcessed()<<std::endl;
-    std::cerr<<"m Max accum       = "<<accum.max()              <<std::endl;
-    std::cerr<<"m Min accum       = "<<accum.min()              <<std::endl;
-    std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
+    for(int l=0;l<level;l++)
+      count[l]++;
   }
+  progress.stop();
+
+  std::cout<<"Lvl,Dispersion,Count\n";
+  for(int i=0;i<500;i++)
+    std::cout<<i<<","<<dispersion[i]<<","<<count[i]<<"\n";
+}
+
+
+
+
+
+
+
+
+
+template<class KernelF, class DepF, class AccumF, class E, class A, typename... Args>
+static void KernelFlowdir(
+  KernelF           kernelf,
+  DepF              depf,
+  AccumF            accumf,
+  const Array2D<E> &elevations,
+  Array2D<A>       &accum,
+  Args&&... args
+){
+  //DistanceDispersionEstimate(f,elevations,accum,std::forward<Args>(args)...);
+  //return;
+
+  ProgressBar progress;
+  std::queue<GridCell> q;
+  dep_t dep;
+
+  Timer overall;
+  overall.start();
+
+  accum.setAll(0);
+  accum.setNoData(ACCUM_NO_DATA);
+  for(typename Array2D<E>::i_t i=0;i<elevations.size();i++)
+    if(elevations.isNoData(i))
+      accum(i) = ACCUM_NO_DATA;
+
+  dep.resize(elevations);
+  dep.setAll(0);
+
+  std::cerr<<"p Calculating dependencies..."<<std::endl;
+  progress.start(elevations.size());
+  //#pragma omp parallel for collapse(2)
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
+    ++progress;
+    if(!elevations.isNoData(x,y))
+      kernelf(FDMode::CALC_DEPENDENCIES,depf,accumf,elevations,accum,dep,q,x,y,std::forward<Args>(args)...);
+  }
+  progress.stop();
+
+  for(int y=0;y<dep.height();y++)
+  for(int x=0;x<dep.width();x++)
+    if(dep(x,y)==0 && !elevations.isNoData(x,y))
+      q.emplace(x,y);
+
+  std::cerr<<"p Calculating accumulation..."<<std::endl;
+  progress.start(accum.numDataCells());
+  while(!q.empty()){
+    ++progress;
+
+    const auto c = q.front();
+    q.pop();
+
+    accum(c.x,c.y) += 1;
+    kernelf(FDMode::CALC_ACCUM,depf,accumf,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
+  }
+  progress.stop();
+
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
+    if(accum(x,y)==0){
+      std::cerr<<"x,y: "<<x<<","<<y<<std::endl;
+      std::cerr<<"deps: "<<(int)dep(x,y)<<std::endl;
+    }
+  }
+
+  std::cerr<<"m Data cells      = "<<elevations.numDataCells()<<std::endl;
+  std::cerr<<"m Cells processed = "<<progress.cellsProcessed()<<std::endl;
+  std::cerr<<"m Max accum       = "<<accum.max()              <<std::endl;
+  std::cerr<<"m Min accum       = "<<accum.min()              <<std::endl;
+  std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
+}
 
 template<class E, class A>
 void FA_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Fairfield (1991) \"Rho8\" Flow Accumulation"<<std::endl;
-  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.
-"<<std::endl;
+  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
-  KernelFlowdir(KernelFairfieldLeymarie<E,A>,elevations,accum,fd);
+  KernelFlowdir(KernelFairfieldLeymarie<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,fd);
 }
 
 template<class E, class A>
@@ -357,30 +680,93 @@ void FA_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
 template<class E, class A>
 void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Quinn (1991) Flow Accumulation"<<std::endl;
-  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79.
-"<<std::endl; 
-  KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,(double)1.0);
+  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
+  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,(double)1.0);
 }
 
 template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren (1994) Flow Accumulation"<<std::endl;
-  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.
-"<<std::endl;
-  KernelFlowdir(KernelHolmgren<E,A>,elevations,accum,x);
+  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
+  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
 void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Flow Accumulation"<<std::endl;
-  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.
-"<<std::endl;
+  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
-  KernelFlowdir(KernelTarboton<E,A>,elevations,accum,fd);
+  KernelFlowdir(KernelTarboton<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,fd);
+}
+
+template<class E, class A>
+void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
+  std::cerr<<"\nA Seibert and McGlynn Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
+  KernelFlowdir(KernelSeibertMcGlynn<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,xparam);
 }
 
 
 
+
+
+
+template<class A>
+static inline void CleanseStrahler(Array2D<A> &accum){
+  constexpr A msb  = 1 << (std::numeric_limits<A>::digits-1); //First time this Strahler # was seen
+  constexpr A smsb = 1 << (std::numeric_limits<A>::digits-2); //This Strahler number arose from combining two other neighbours and should be overriden if appropriate
+  for(typename Array2D<A>::i_t i=0;i<accum.size();i++)
+    accum(i) = accum(i) & (~msb) & (~smsb);
+}
+
+
+template<class E, class A>
+void Strahler_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"\nA Fairfield (1991) \"Rho8\" Strahler"<<std::endl;
+  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
+  Array2D<d8_flowdir_t> fd(elevations);
+  KernelFlowdir(KernelFairfieldLeymarie<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,fd);
+  CleanseStrahler(accum);
+}
+
+template<class E, class A>
+void Strahler_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
+  //Algorithm headers are taken care of in Strahler_FairfieldLeymarie()
+  Strahler_FairfieldLeymarie(elevations,accum);
+}
+
+template<class E, class A>
+void Strahler_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"\nA Quinn (1991) Strahler"<<std::endl;
+  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
+  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,(double)1.0);
+  CleanseStrahler(accum);
+}
+
+template<class E, class A>
+void Strahler_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
+  std::cerr<<"\nA Holmgren (1994) Strahler"<<std::endl;
+  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
+  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,x);
+  CleanseStrahler(accum);
+}
+
+template<class E, class A>
+void Strahler_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Strahler"<<std::endl;
+  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
+  Array2D< std::pair<float,int8_t> > fd(elevations);
+  KernelFlowdir(KernelTarboton<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,fd);
+  CleanseStrahler(accum);
+}
+
+template<class E, class A>
+void Strahler_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
+  std::cerr<<"\nA Seibert and McGlynn Strahler (TODO)"<<std::endl;
+  std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
+  KernelFlowdir(KernelSeibertMcGlynn<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,xparam);
+  CleanseStrahler(accum);
+}
 
 
 
