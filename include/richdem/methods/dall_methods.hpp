@@ -178,6 +178,11 @@ static void KernelSeibertMcGlynn(
       svals[n] = sqrt(s1*s1+s2*s2);
     }
 
+    if(svals[n]<0){
+      svals[n] = 0;
+      continue;
+    }
+
     if(af[n]==1 && rvals[n]==0)
       rvals[n] = dang;
     else if(af[n]==1 && rvals[n]==dang)
@@ -189,11 +194,13 @@ static void KernelSeibertMcGlynn(
   }
 
   double C = 0;
-
   for(int n=1;n<=8;n++){
     svals[n] = std::pow(svals[n]*L[n], xparam);
     C       += svals[n];
   }
+
+  if(C==0)
+    return;
 
   assert(C>0);
   C = accum(x,y)/C;
@@ -204,9 +211,9 @@ static void KernelSeibertMcGlynn(
       continue;
 
     if(rvals[n]==0){
-      accumf(x,y,n,          dep,accum,q, accum(x,y));
+      accumf(x,y,n,          dep,accum,q, C*svals[n]);
     } else if(rvals[n]==dang){
-      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
+      accumf(x,y,nwrap(n+1), dep,accum,q, C*svals[n]);
     } else {
       assert(0<=rvals[n] && rvals[n]<=dang);
       assert(C>0);
