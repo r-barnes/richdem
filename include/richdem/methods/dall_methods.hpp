@@ -30,19 +30,6 @@ void foo(){
 
 typedef Array2D<int8_t> dep_t;
 
-static inline void IncrementDependency(const int x, const int y, const int n, dep_t &dep){
-  assert(1<=n);
-  assert(n<=8);
-  assert(0<=x);
-  assert(x<dep.width());
-  assert(0<=y);
-  assert(y<dep.height());
-
-  const int nx = x+dx[n];
-  const int ny = y+dy[n];
-  dep(nx,ny)++;
-}
-
 template<class A>
 static inline void StrahlerNumber(
   const int x,
@@ -77,8 +64,8 @@ static inline void StrahlerNumber(
     ns = s | msb;
   }
 
-  if(--dep(nx,ny)<=0)
-    q.emplace(nx,ny);
+  // if(--dep(nx,ny)<=0)
+  //   q.emplace(nx,ny);
 }
 
 template<class A>
@@ -101,16 +88,17 @@ static inline void PassAccumulation(
   const int nx = x+dx[n];
   const int ny = y+dy[n];
   accum(nx,ny) += flow;
-  if(--dep(nx,ny)<=0)
-    q.emplace(nx,ny);
+
+  assert(accum(nx,ny)<1e10);
+  // if(--dep(nx,ny)<=0)
+  //   q.emplace(nx,ny);
 }
 
 
 
-template<class DepF, class AccumF, class E, class A>
+template<class AccumF, class E, class A>
 static void KernelSeibertMcGlynn(
   const FDMode mode,
-  DepF   depf,
   AccumF accumf,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
@@ -126,7 +114,7 @@ static void KernelSeibertMcGlynn(
   constexpr double d2   = 1;
   constexpr float  dang = std::atan2(d2,d1);
 
-  auto nwrap = [](int n){ return (n==9)?1:n; };
+  const auto nwrap = [](const int n){ return (n==9)?1:n; };
 
   constexpr double L1   = 0.5;
   constexpr double L2   = 0.354; //TODO: More decimal places
@@ -200,54 +188,40 @@ static void KernelSeibertMcGlynn(
     assert(0<=rvals[n] && rvals[n]<=dang);
   }
 
-  if(mode==FDMode::CALC_DEPENDENCIES){
-    for(int n=1;n<=8;n++){
-      if(svals[n]<=0)
-        continue;
+  double C = 0;
 
-      if(rvals[n]==0)
-        depf(x,y,n,dep);
-      else if(rvals[n]==dang)
-        depf(x,y,nwrap(n+1),dep);
-      else {
-        depf(x,y,n,dep);
-        depf(x,y,nwrap(n+1),dep);
-      }
-    }
-  } else {
-    double C = 0;
+  for(int n=1;n<=8;n++){
+    svals[n] = std::pow(svals[n]*L[n], xparam);
+    C       += svals[n];
+  }
 
-    for(int n=1;n<=8;n++){
-      svals[n] = std::pow(svals[n]*L[n], xparam);
-      C       += svals[n];
-    }
+  assert(C>0);
+  C = accum(x,y)/C;
+  assert(C>0);
 
-    assert(C>0);
-    C = accum(x,y)/C;
+  for(int n=1;n<=8;n++){
+    if(svals[n]<=0)
+      continue;
 
-    for(int n=1;n<=8;n++){
-      if(svals[n]<=0)
-        continue;
-
-      if(rvals[n]==0){
-        accumf(x,y,n,          dep,accum,q, accum(x,y));
-      } else if(rvals[n]==dang){
-        accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
-      } else {
-        assert(0<=rvals[n] && rvals[n]<=dang);
-        accumf(x,y,n,          dep,accum,q, C*svals[n]*(  rvals[n]/(M_PI/4.)));
-        accumf(x,y,nwrap(n+1), dep,accum,q, C*svals[n]*(1-rvals[n]/(M_PI/4.)));
-      }
+    if(rvals[n]==0){
+      accumf(x,y,n,          dep,accum,q, accum(x,y));
+    } else if(rvals[n]==dang){
+      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
+    } else {
+      assert(0<=rvals[n] && rvals[n]<=dang);
+      assert(C>0);
+      assert(svals[n]>0);
+      accumf(x,y,n,          dep,accum,q, C*svals[n]*(  rvals[n]/(M_PI/4.)));
+      accumf(x,y,nwrap(n+1), dep,accum,q, C*svals[n]*(1-rvals[n]/(M_PI/4.)));
     }
   }
 }
 
 
 
-template<class DepF, class AccumF, class E, class A>
+template<class AccumF, class E, class A>
 static void KernelTarboton(
   const FDMode mode,
-  DepF   depf,
   AccumF accumf,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
@@ -265,122 +239,102 @@ static void KernelTarboton(
 
   auto nwrap = [](int8_t n){ return (n==9)?1:n; };
 
-  if(mode==FDMode::CALC_DEPENDENCIES){
-    //Table 1 of Tarboton (1997)
-    //          Column #  =   0    1    2    3    4    5   6    7
-    // const int    dy_e1[8] = { 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
-    // const int    dx_e1[8] = { 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
-    // const int    dy_e2[8] = {-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
-    // const int    dx_e2[8] = { 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
-    // const double ac[8]    = { 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
-    // const double af[8]    = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
+  //Table 1 of Tarboton (1997)
+  //          Column #  =   0    1    2    3    4    5   6    7
+  // const int    dy_e1[8] = { 0 , -1 , -1 ,  0 ,  0 ,  1 , 1 ,  0 };
+  // const int    dx_e1[8] = { 1 ,  0 ,  0 , -1 , -1 ,  0 , 0 ,  1 };
+  // const int    dy_e2[8] = {-1 , -1 , -1 , -1 ,  1 ,  1 , 1 ,  1 };
+  // const int    dx_e2[8] = { 1 ,  1 , -1 , -1 , -1 , -1 , 1 ,  1 };
+  // const double ac[8]    = { 0.,  1.,  1.,  2.,  2.,  3., 3.,  4.};
+  // const double af[8]    = { 1., -1.,  1., -1.,  1., -1., 1., -1.};
 
-    //I remapped the foregoing table for ease of use with RichDEM. The facets
-    //are renumbered as follows:
-    //    3->1    2->2    1->3    0->4    7->5    6->6    5->7    4->8
-    //This gives the following table
-    //  Remapped Facet #  =  -   1    2     3    4    5   6    7    8  
-    //  Tarboton Facet #  =  -   3    2     1    0    7   6    5    4  
-    const int    dy_e1[9] = {0,  0 , -1 ,  -1 ,  0 ,  0 , 1 ,  1 ,  0  };
-    const int    dx_e1[9] = {0, -1 ,  0 ,   0 ,  1 ,  1 , 0 ,  0 , -1  };
-    const int    dy_e2[9] = {0, -1 , -1 ,  -1 , -1 ,  1 , 1 ,  1 ,  1  };
-    const int    dx_e2[9] = {0, -1 , -1 ,   1 ,  1 ,  1 , 1 , -1 , -1  };
-    //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
-    const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
+  //I remapped the foregoing table for ease of use with RichDEM. The facets
+  //are renumbered as follows:
+  //    3->1    2->2    1->3    0->4    7->5    6->6    5->7    4->8
+  //This gives the following table
+  //  Remapped Facet #  =  -   1    2     3    4    5   6    7    8  
+  //  Tarboton Facet #  =  -   3    2     1    0    7   6    5    4  
+  const int    dy_e1[9] = {0,  0 , -1 ,  -1 ,  0 ,  0 , 1 ,  1 ,  0  };
+  const int    dx_e1[9] = {0, -1 ,  0 ,   0 ,  1 ,  1 , 0 ,  0 , -1  };
+  const int    dy_e2[9] = {0, -1 , -1 ,  -1 , -1 ,  1 , 1 ,  1 ,  1  };
+  const int    dx_e2[9] = {0, -1 , -1 ,   1 ,  1 ,  1 , 1 , -1 , -1  };
+  //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
+  const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
 
-    int8_t nmax = -1;
-    double smax = 0;
-    float  rmax = 0;
+  int8_t nmax = -1;
+  double smax = 0;
+  float  rmax = 0;
 
-    for(int n=1;n<=8;n++){
-      if(!elevations.inGrid (x+dx_e1[n],y+dy_e1[n]))
-        continue;
-      if(elevations.isNoData(x+dx_e1[n],y+dy_e1[n]))
-        continue;
-      if(!elevations.inGrid (x+dx_e2[n],y+dy_e2[n]))
-        continue;
-      if(elevations.isNoData(x+dx_e2[n],y+dy_e2[n]))
-        continue;
+  for(int n=1;n<=8;n++){
+    if(!elevations.inGrid (x+dx_e1[n],y+dy_e1[n]))
+      continue;
+    if(elevations.isNoData(x+dx_e1[n],y+dy_e1[n]))
+      continue;
+    if(!elevations.inGrid (x+dx_e2[n],y+dy_e2[n]))
+      continue;
+    if(elevations.isNoData(x+dx_e2[n],y+dy_e2[n]))
+      continue;
 
-      //Is is assumed that cells with a value of NoData have very negative
-      //elevations with the result that they draw flow off of the grid.
+    //Is is assumed that cells with a value of NoData have very negative
+    //elevations with the result that they draw flow off of the grid.
 
-      //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
-      const double e0 = elevations(x,y);
-      const double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
-      const double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
+    //Choose elevations based on Table 1 of Tarboton (1997), Barnes TODO
+    const double e0 = elevations(x,y);
+    const double e1 = elevations(x+dx_e1[n],y+dy_e1[n]);
+    const double e2 = elevations(x+dx_e2[n],y+dy_e2[n]);
 
-      const double s1 = (e0-e1)/d1;
-      const double s2 = (e1-e2)/d2;
+    const double s1 = (e0-e1)/d1;
+    const double s2 = (e1-e2)/d2;
 
-      double r = std::atan2(s2,s1);
-      double s;
+    double r = std::atan2(s2,s1);
+    double s;
 
-      if(r<1e-7){
-        r = 0;
-        s = s1;
-      } else if(r>dang-1e-7){
-        r = dang;
-        s = (e0-e2)/sqrt(d1*d1+d2*d2);
-      } else {
-        s = sqrt(s1*s1+s2*s2);
-      }
-
-      if(s>smax){
-        smax = s;
-        nmax = n;
-        rmax = r;
-      }
-    }
-
-    if(nmax!=-1){
-      if(af[nmax]==1 && rmax==0)
-        rmax = dang;
-      else if(af[nmax]==1 && rmax==dang)
-        rmax = 0;
-      else if(af[nmax]==1)
-        rmax = M_PI/4-rmax;
-
-      if(rmax==0){
-        depf(x,y,nmax,dep);
-      } else if(rmax==dang){
-        depf(x,y,nwrap(nmax+1),dep);
-      } else {
-        depf(x,y,nmax,dep);
-        depf(x,y,nwrap(nmax+1),dep);
-      }
-    }
-
-    fd(x,y).first  = rmax;
-    fd(x,y).second = nmax;
-
-    //Code used by Tarboton to calculate the angle Rg. This should give the same
-    //result despite the rearranged table
-    // double rg = NO_FLOW;
-    // if(nmax!=-1)
-    //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
-  } else {
-    const float  r = fd(x,y).first;
-    const int8_t n = fd(x,y).second;
-
-    if(n==-1)
-      return;
-
-    if(r==0){
-      accumf(x,y,n,          dep,accum,q, accum(x,y));
-    } else if(r==dang){
-      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y));
+    if(r<1e-7){
+      r = 0;
+      s = s1;
+    } else if(r>dang-1e-7){
+      r = dang;
+      s = (e0-e2)/sqrt(d1*d1+d2*d2);
     } else {
-      accumf(x,y,n,          dep,accum,q, accum(x,y)*(  r/(M_PI/4.)));
-      accumf(x,y,nwrap(n+1), dep,accum,q, accum(x,y)*(1-r/(M_PI/4.)));
+      s = sqrt(s1*s1+s2*s2);
     }
+
+    if(s>smax){
+      smax = s;
+      nmax = n;
+      rmax = r;
+    }
+  }
+
+  if(nmax==-1)
+    return;
+
+  if(af[nmax]==1 && rmax==0)
+    rmax = dang;
+  else if(af[nmax]==1 && rmax==dang)
+    rmax = 0;
+  else if(af[nmax]==1)
+    rmax = M_PI/4-rmax;
+
+  //Code used by Tarboton to calculate the angle Rg. This should give the same
+  //result despite the rearranged table
+  // double rg = NO_FLOW;
+  // if(nmax!=-1)
+  //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
+
+  if(rmax==0){
+    accumf(x,y,nmax,          dep,accum,q, accum(x,y));
+  } else if(rmax==dang){
+    accumf(x,y,nwrap(nmax+1), dep,accum,q, accum(x,y));
+  } else {
+    accumf(x,y,nmax,          dep,accum,q, accum(x,y)*(  rmax/(M_PI/4.)));
+    accumf(x,y,nwrap(nmax+1), dep,accum,q, accum(x,y)*(1-rmax/(M_PI/4.)));
   }
 }
 
-template<class DepF, class AccumF, class E, class A>
+template<class AccumF, class E, class A>
 static void KernelHolmgren(
   const FDMode mode,
-  DepF   depf,
   AccumF accumf,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
@@ -422,20 +376,14 @@ static void KernelHolmgren(
   C = accum(x,y)/C;
 
   for(int n=1;n<=8;n++){
-    if(portions[n]>0){
-      if(mode==FDMode::CALC_DEPENDENCIES){
-        depf(x,y,n,dep);
-      } else {
-        accumf(x,y,n, dep,accum,q, portions[n]*C);
-      }
-    }
+    if(portions[n]>0)
+      accumf(x,y,n, dep,accum,q, portions[n]*C);
   }
 }
 
-template<class DepF, class AccumF, class E, class A>
+template<class AccumF, class E, class A>
 static void KernelFairfieldLeymarie(
   const FDMode mode,
-  DepF   depf,
   AccumF accumf,
   const Array2D<E> &elevations,
   Array2D<A> &accum,
@@ -445,49 +393,38 @@ static void KernelFairfieldLeymarie(
   const int y,
   Array2D<d8_flowdir_t> &fd
 ){
-  if(mode==FDMode::CALC_DEPENDENCIES){
-    const E e = elevations(x,y);
+  const E e = elevations(x,y);
 
-    int    greatest_n     = 0; //TODO: Use a constant
-    double greatest_slope = 0;
-    for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+  int    greatest_n     = 0; //TODO: Use a constant
+  double greatest_slope = 0;
+  for(int n=1;n<=8;n++){
+    const int nx = x+dx[n];
+    const int ny = y+dy[n];
 
-      if(!elevations.inGrid(nx,ny))
-        continue;
-      if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
-        continue;
+    if(!elevations.inGrid(nx,ny))
+      continue;
+    if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+      continue;
 
-      const E ne = elevations(nx,ny);
+    const E ne = elevations(nx,ny);
 
-      if(ne>=e)
-        continue;
+    if(ne>=e)
+      continue;
 
-      double rho_slope = (e-ne);
-      if(n_diag[n])
-        rho_slope *= 1/(2-uniform_rand_real(0,1));
+    double rho_slope = (e-ne);
+    if(n_diag[n])
+      rho_slope *= 1/(2-uniform_rand_real(0,1));
 
-      if(rho_slope>greatest_slope){
-        greatest_n     = n;
-        greatest_slope = rho_slope;
-      }
+    if(rho_slope>greatest_slope){
+      greatest_n     = n;
+      greatest_slope = rho_slope;
     }
-
-    fd(x,y) = greatest_n;
-
-    if(greatest_n==0)
-      return;
-
-    depf(x,y,greatest_n,dep);
-  } else {
-    const auto this_fd = fd(x,y);
-
-    if(this_fd==0)
-      return;
-
-    accumf(x,y,this_fd, dep,accum,q, accum(x,y));
   }
+
+  if(greatest_n==0)
+    return;
+
+  accumf(x,y,greatest_n, dep,accum,q, accum(x,y));
 }
 
 
@@ -591,10 +528,9 @@ static void DistanceDispersionEstimate(
 
 
 
-template<class KernelF, class DepF, class AccumF, class E, class A, typename... Args>
+template<class KernelF, class AccumF, class E, class A, typename... Args>
 static void KernelFlowdir(
   KernelF           kernelf,
-  DepF              depf,
   AccumF            accumf,
   const Array2D<E> &elevations,
   Array2D<A>       &accum,
@@ -624,9 +560,16 @@ static void KernelFlowdir(
   //#pragma omp parallel for collapse(2)
   for(int y=0;y<elevations.height();y++)
   for(int x=0;x<elevations.width();x++){
-    ++progress;
-    if(!elevations.isNoData(x,y))
-      kernelf(FDMode::CALC_DEPENDENCIES,depf,accumf,elevations,accum,dep,q,x,y,std::forward<Args>(args)...);
+    for(int n=1;n<=8;n++){
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
+      if(!elevations.inGrid(nx,ny))
+        continue;
+      if(elevations.isNoData(nx,ny))
+        continue;
+      if(elevations(nx,ny)<elevations(x,y))
+        dep(nx,ny)++;
+    }
   }
   progress.stop();
 
@@ -643,17 +586,34 @@ static void KernelFlowdir(
     const auto c = q.front();
     q.pop();
 
+    assert(!elevations.isNoData(c.x,c.y));
+
     accum(c.x,c.y) += 1;
-    kernelf(FDMode::CALC_ACCUM,depf,accumf,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
+    kernelf(FDMode::CALC_ACCUM,accumf,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
+
+    assert(accum(c.x,c.y)<1e10);
+
+    for(int n=1;n<=8;n++){
+      const int nx = c.x+dx[n];
+      const int ny = c.y+dy[n];
+      if(!elevations.inGrid(nx,ny))
+        continue;
+      if(elevations.isNoData(nx,ny))
+        continue;
+      if(elevations(nx,ny)<elevations(c.x,c.y) && --dep(nx,ny)<=0)
+        q.emplace(nx,ny);
+    }
   }
   progress.stop();
 
   for(int y=0;y<elevations.height();y++)
   for(int x=0;x<elevations.width();x++){
-    if(accum(x,y)==0){
+    if(accum(x,y)==0 && !elevations.isNoData(x,y)){
       std::cerr<<"x,y: "<<x<<","<<y<<std::endl;
       std::cerr<<"deps: "<<(int)dep(x,y)<<std::endl;
     }
+    if(accum(x,y)>1e10)
+      std::cerr<<"x,y,: "<<x<<","<<y<<" "<<accum(x,y)<<std::endl;
   }
 
   std::cerr<<"m Data cells      = "<<elevations.numDataCells()<<std::endl;
@@ -668,7 +628,7 @@ void FA_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Fairfield (1991) \"Rho8\" Flow Accumulation"<<std::endl;
   std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
-  KernelFlowdir(KernelFairfieldLeymarie<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,fd);
+  KernelFlowdir(KernelFairfieldLeymarie<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,fd);
 }
 
 template<class E, class A>
@@ -681,14 +641,14 @@ template<class E, class A>
 void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Quinn (1991) Flow Accumulation"<<std::endl;
   std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
-  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,(double)1.0);
+  KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,(double)1.0);
 }
 
 template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren (1994) Flow Accumulation"<<std::endl;
   std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
-  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,x);
+  KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
@@ -696,14 +656,14 @@ void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Flow Accumulation"<<std::endl;
   std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
-  KernelFlowdir(KernelTarboton<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,fd);
+  KernelFlowdir(KernelTarboton<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,fd);
 }
 
 template<class E, class A>
 void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
   std::cerr<<"\nA Seibert and McGlynn Flow Accumulation (TODO)"<<std::endl;
   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
-  KernelFlowdir(KernelSeibertMcGlynn<decltype(IncrementDependency),decltype(PassAccumulation<A>),E,A>,IncrementDependency,PassAccumulation<A>,elevations,accum,xparam);
+  KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,xparam);
 }
 
 
@@ -725,7 +685,7 @@ void Strahler_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum)
   std::cerr<<"\nA Fairfield (1991) \"Rho8\" Strahler"<<std::endl;
   std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
-  KernelFlowdir(KernelFairfieldLeymarie<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,fd);
+  KernelFlowdir(KernelFairfieldLeymarie<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,fd);
   CleanseStrahler(accum);
 }
 
@@ -739,7 +699,7 @@ template<class E, class A>
 void Strahler_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Quinn (1991) Strahler"<<std::endl;
   std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
-  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,(double)1.0);
+  KernelFlowdir(KernelHolmgren<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,(double)1.0);
   CleanseStrahler(accum);
 }
 
@@ -747,7 +707,7 @@ template<class E, class A>
 void Strahler_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren (1994) Strahler"<<std::endl;
   std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
-  KernelFlowdir(KernelHolmgren<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,x);
+  KernelFlowdir(KernelHolmgren<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,x);
   CleanseStrahler(accum);
 }
 
@@ -756,7 +716,7 @@ void Strahler_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Strahler"<<std::endl;
   std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
-  KernelFlowdir(KernelTarboton<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,fd);
+  KernelFlowdir(KernelTarboton<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,fd);
   CleanseStrahler(accum);
 }
 
@@ -764,7 +724,7 @@ template<class E, class A>
 void Strahler_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
   std::cerr<<"\nA Seibert and McGlynn Strahler (TODO)"<<std::endl;
   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
-  KernelFlowdir(KernelSeibertMcGlynn<decltype(IncrementDependency),decltype(StrahlerNumber<A>),E,A>,IncrementDependency,StrahlerNumber<A>,elevations,accum,xparam);
+  KernelFlowdir(KernelSeibertMcGlynn<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,xparam);
   CleanseStrahler(accum);
 }
 
