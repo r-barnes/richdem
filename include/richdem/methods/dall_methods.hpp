@@ -244,7 +244,7 @@ static void KernelTarboton(
   constexpr double d2   = 1;
   constexpr float  dang = std::atan2(d2,d1);
 
-  auto nwrap = [](int8_t n){ return (n==9)?1:n; };
+  const auto nwrap = [](int8_t n){ return (n==9)?1:n; };
 
   //Table 1 of Tarboton (1997)
   //          Column #  =   0    1    2    3    4    5   6    7
