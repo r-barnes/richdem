@@ -389,6 +389,51 @@ static void KernelHolmgren(
 }
 
 template<class AccumF, class E, class A>
+static void KernelFreeman(
+  const FDMode mode,
+  AccumF accumf,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y,
+  const double xparam
+){
+  const E e = elevations(x,y);
+
+  std::array<double,9> portions = {{0,0,0,0,0,0,0,0,0}};
+
+  double C = 0;
+  for(int n=1;n<=8;n++){
+    const int nx = x+dx[n];
+    const int ny = y+dy[n];
+
+    if(!elevations.inGrid(nx,ny))
+      continue;
+    if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+      continue;
+
+    const E ne = elevations(nx,ny);
+
+    if(ne<e){
+      const double rise = e-ne;
+      const double run  = dr[n];
+      const double grad = rise/run;
+      portions[n]       = std::pow(grad,xparam);
+      C                += portions[n];
+    }
+  }
+
+  C = accum(x,y)/C;
+
+  for(int n=1;n<=8;n++){
+    if(portions[n]>0)
+      accumf(x,y,n, dep,accum,q, portions[n]*C);
+  }
+}
+
+template<class AccumF, class E, class A>
 static void KernelFairfieldLeymarie(
   const FDMode mode,
   AccumF accumf,
@@ -656,6 +701,13 @@ void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren (1994) Flow Accumulation"<<std::endl;
   std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
   KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
+}
+
+template<class E, class A>
+void FA_Freeman(const Array2D<E> &elevations, Array2D<A> &accum, double x){
+  std::cerr<<"\nA Freeman (1991) Flow Accumulation"<<std::endl;
+  std::cerr<<"C Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
+  KernelFlowdir(KernelFreeman<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
