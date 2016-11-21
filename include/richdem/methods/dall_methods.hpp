@@ -483,6 +483,10 @@ static void KernelFairfieldLeymarie(
 
 
 
+enum OrlandiniMode {
+  LAD,
+  LTD
+};
 
 
 template<class AccumF, class E, class A>
@@ -496,6 +500,7 @@ static void KernelOrlandini(
   const int x,
   const int y,
   Array2D<double> &delta,
+  const OrlandiniMode omode,
   const double lambda
 ){
   //TODO: Assumes that the width and height of grid cells are equal and scaled
@@ -503,8 +508,6 @@ static void KernelOrlandini(
   constexpr double d1   = 1;
   constexpr double d2   = 1;
   constexpr float  dang = std::atan2(d2,d1);
-
-  const auto nwrap = [](const int n){ return (n==9)?1:n; };
 
   //Table 1 of Tarboton (1997)
   //          Column #  =   0    1    2    3    4    5   6    7
@@ -602,8 +605,16 @@ static void KernelOrlandini(
   if(nmax==-1)
     return;
 
-  const double d1me = lambda*delta(x,y) + sigma[nmax]*d1*std::sin(rmax);
-  const double d2me = lambda*delta(x,y) - sigma[nmax]*std::sqrt(d1*d1+d2*d2)*std::sin(dang-rmax);
+  double d1me;
+  double d2me;
+
+  if(omode==OrlandiniMode::LTD){
+    d1me = lambda*delta(x,y) + sigma[nmax]*d1*std::sin(rmax);
+    d2me = lambda*delta(x,y) - sigma[nmax]*std::sqrt(d1*d1+d2*d2)*std::sin(dang-rmax);
+  } else if(omode==OrlandiniMode::LAD){
+    d1me = lambda*delta(x,y) + sigma[nmax]*rmax;
+    d2me = lambda*delta(x,y) - sigma[nmax]*(dang-rmax);
+  }
 
   int p;
 
@@ -900,12 +911,12 @@ void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x
 }
 
 template<class E, class A>
-void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, double lambda){
+void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
   std::cerr<<"\nA Orlandini et al. (2013) Flow Accumulation (TODO)"<<std::endl;
   std::cerr<<"C Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39, n/a-n/a. doi:10.1029/2002WR001639. TODO: Fix this citation."<<std::endl;
   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
   Array2D<double> delta(elevations,0);
-  KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,lambda);
+  KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
 }
 
 
