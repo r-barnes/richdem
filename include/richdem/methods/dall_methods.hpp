@@ -482,6 +482,50 @@ static void KernelFairfieldLeymarie(
 }
 
 
+template<class AccumF, class E, class A>
+static void KernelOCallaghan( //TODO: Add Marks et al (1984)
+  const FDMode mode,
+  AccumF accumf,
+  const Array2D<E> &elevations,
+  Array2D<A> &accum,
+  dep_t &dep,
+  std::queue<GridCell> &q,
+  const int x,
+  const int y
+){
+  const E e = elevations(x,y);
+
+  int lowest_n      = 0;
+  E   lowest_n_elev = std::numeric_limits<E>::max();
+  for(int n=1;n<=8;n++){
+    const int nx = x+dx[n];
+    const int ny = y+dy[n];
+
+    if(!elevations.inGrid(nx,ny))
+      continue;
+    if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+      continue;
+
+    const E ne = elevations(nx,ny);
+
+    if(ne>=e)
+      continue;
+
+    if(ne<lowest_n_elev){
+      lowest_n_elev = ne;
+      lowest_n      = n;
+    }
+  }
+
+  if(lowest_n==0)
+    return;
+
+  assert(elevations(x,y)>=elevations(x+dx[lowest_n],y+dy[lowest_n])); //Ensure flow goes downhill
+
+  accumf(x,y,lowest_n, dep,accum,q, accum(x,y));
+}
+
+
 
 enum OrlandiniMode {
   LAD,
@@ -876,28 +920,28 @@ void FA_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
 
 template<class E, class A>
 void FA_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Quinn (1991) Flow Accumulation"<<std::endl;
+  std::cerr<<"\nA Quinn (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
   KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,(double)1.0);
 }
 
 template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"\nA Holmgren (1994) Flow Accumulation"<<std::endl;
+  std::cerr<<"\nA Holmgren (1994) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
   KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
 void FA_Freeman(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"\nA Freeman (1991) Flow Accumulation"<<std::endl;
+  std::cerr<<"\nA Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
   KernelFlowdir(KernelFreeman<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
 void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Flow Accumulation"<<std::endl;
+  std::cerr<<"\nA Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)"<<std::endl;
   std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
   KernelFlowdir(KernelTarboton<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,fd);
@@ -905,20 +949,25 @@ void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
 
 template<class E, class A>
 void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
-  std::cerr<<"\nA Seibert and McGlynn Flow Accumulation (TODO)"<<std::endl;
+  std::cerr<<"\nA Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)"<<std::endl;
   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
   KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,xparam);
 }
 
 template<class E, class A>
 void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
-  std::cerr<<"\nA Orlandini et al. (2013) Flow Accumulation (TODO)"<<std::endl;
-  std::cerr<<"C Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39, n/a-n/a. doi:10.1029/2002WR001639. TODO: Fix this citation."<<std::endl;
-  std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
+  std::cerr<<"\nA Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
+  std::cerr<<"C Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639."<<std::endl;
   Array2D<double> delta(elevations,0);
   KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
 }
 
+template<class E, class A>
+void FA_OCallaghan(const Array2D<E> &elevations, Array2D<A> &accum){
+  std::cerr<<"\nA Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
+  std::cerr<<"C O’Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
+  KernelFlowdir(KernelOCallaghan<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum);
+}
 
 
 
