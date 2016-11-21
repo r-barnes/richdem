@@ -929,6 +929,7 @@ template<class E, class A>
 void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Holmgren (1994) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
+  std::cerr<<"c x = "<<x<<std::endl;
   KernelFlowdir(KernelHolmgren<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
@@ -936,6 +937,7 @@ template<class E, class A>
 void FA_Freeman(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
+  std::cerr<<"c x = "<<x<<std::endl;
   KernelFlowdir(KernelFreeman<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
@@ -948,16 +950,18 @@ void FA_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
 }
 
 template<class E, class A>
-void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
+void FA_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x){
   std::cerr<<"\nA Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)"<<std::endl;
   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
-  KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,xparam);
+  std::cerr<<"c x = "<<x<<std::endl;
+  KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 }
 
 template<class E, class A>
 void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
   std::cerr<<"\nA Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
   std::cerr<<"C Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639."<<std::endl;
+  std::cerr<<"c lambda = "<<lambda<<std::endl;
   Array2D<double> delta(elevations,0);
   KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
 }
