@@ -964,7 +964,7 @@ void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode
 
 template<class E, class A>
 void FA_OCallaghan(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
+  std::cerr<<"\nA O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
   std::cerr<<"C O’Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
   KernelFlowdir(KernelOCallaghan<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum);
 }
