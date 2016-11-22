@@ -242,8 +242,7 @@ RichDEM has been developed and tested using computational resources provided by
 the [Minnesota Supercomputing Institute][1] (MSI) and the U.S. National Science
 Foundation's [XSEDE][2].
 
-Funding for the development of RichDEM has been provided by the [Legislative-
-Citizen Commission on Minnesota Resources][5] (LCCMR), the U.S. National Science
+Funding for the development of RichDEM has been provided by the [Legislative-Citizen Commission on Minnesota Resources][5] (LCCMR), the U.S. National Science
 Foundation [Graduate Research Fellowship][3], and the U.S. Department of Energy
 [Computational Science Graduate Fellowship][4].
 
