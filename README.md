@@ -235,6 +235,19 @@ The algorithms used in RichDEM have been published in the following articles. Ev
 
 * Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
 
+Credits
+=======
+
+RichDEM has been developed and tested using computational resources provided by
+the [Minnesota Supercomputing Institute][1] (MSI) and the U.S. National Science
+Foundation's [XSEDE][2].
+
+Funding for the development of RichDEM has been provided by the [Legislative-
+Citizen Commission on Minnesota Resources][5] (LCCMR), the U.S. National Science
+Foundation [Graduate Research Fellowship][3], and the U.S. Department of Energy
+[Computational Science Graduate Fellowship][4].
+
+
 Feedback
 ========
 
@@ -243,3 +256,12 @@ _If you see something, say something._
 Users are encouraged to report any issues experienced with the code via Github's
 issue tracker. Feedback is also accepted via email (rbarnes@umn.edu), though
 this should be used only in cases wherein the issue tracker is not available.
+
+
+
+
+[1]: https://www.msi.umn.edu/
+[2]: https://www.xsede.org/
+[3]: https://www.nsfgrfp.org/
+[4]: https://www.krellinst.org/csgf/
+[5]: http://www.lccmr.leg.mn/
