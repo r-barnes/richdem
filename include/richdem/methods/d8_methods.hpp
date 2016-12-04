@@ -439,9 +439,6 @@ class TerrainAttributator {
     //Z7 Z8 Z9   g h i
     //Curvatures in the manner of Zevenbergen and Thorne 1987
 
-    if(elevations.getCellLengthX()!=elevations.getCellLengthY())
-      std::cerr<<"W Cell X and Y dimensions are not equal!"<<std::endl;
-
     L  = elevations.getCellLengthX();
     D  = ( (d+f)/2 - e) / L / L;   //D = [(Z4 + Z6) /2 - Z5] / L^2
     E  = ( (b+h)/2 - e) / L / L;   //E = [(Z2 + Z8) /2 - Z5] / L^2
@@ -556,14 +553,22 @@ class TerrainAttributator {
     @post \pname{attribs} takes the properties and dimensions of \pname{elevations}
   */
   void process(const Array2D<T> &elevations, Array2D<float> &attribs, FcnPtr fcn){
+    if(elevations.getCellLengthX()!=elevations.getCellLengthY())
+      std::cerr<<"W Cell X and Y dimensions are not equal!"<<std::endl;
+    
     attribs.resize(elevations);
+    ProgressBar progress;
 
-    for(int y=0;y<elevations.height();y++)
-    for(int x=0;x<elevations.width();x++)
-      if(elevations.isNoData(x,y))
-        attribs(x,y) = attribs.noData();
-      else
-        attribs(x,y) = (this->*fcn)(elevations,x,y);
+    progress.start(elevations.size());
+    for(int y=0;y<elevations.height();y++){
+      progress.update(y*elevations.width());
+      for(int x=0;x<elevations.width();x++)
+        if(elevations.isNoData(x,y))
+          attribs(x,y) = attribs.noData();
+        else
+          attribs(x,y) = (this->*fcn)(elevations,x,y);
+    }
+    std::cerr<<"t Wall-time = "<<progress.stop()<<std::endl;
   }
 };
 
