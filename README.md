@@ -7,9 +7,12 @@ RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
 RichDEM uses parallel processing and state of the art algorithms to quickly
 process even very large DEMs.
 
-RichDEM can use both the D8 and D-infinite (Tarboton) flow metrics. It can
-resolve terrain depressions (or pits) either by filling or by channel carving.
-It can calculate contributing/up-slope areas, slopes, curvatures, and aspects.
+RichDEM offers a variety of flow metrics, such as D8 and D∞. It can flood or
+breach depressions. It can calculate flow accumulation, slops, curvatures, &c.
+
+Please cite RichDEM (see below).
+
+
 
 Current State of the Repo
 =========================
@@ -25,6 +28,7 @@ welcome. As correctness testing is completed, functions will be marked
 accordingly. (TODO)
 
 Improvements targeted at achieving the design philosophy below are underway.
+
 
 
 Design Philosophy
@@ -94,7 +98,7 @@ An example BibTeX entry is:
       title        = {RichDEM: Terrain Analysis Software},
       author       = {Richard Barnes},
       year         = {2016},
-      url          = {​http://github.com/r-barnes/richdem}, 
+      url          = {http://github.com/r-barnes/richdem}, 
     }
 
 This information will be updated as versioned releases become available.
@@ -146,10 +150,13 @@ Documentation
 Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
 
 
+
 Testing Methodology
 ===================
 
 TODO
+
+
 
 Parsable Output
 ===================
@@ -192,6 +199,8 @@ All output data shall have the form:
 
 The amount of whitespce may very for aesthetic purposes.
 
+
+
 Specific Algorithms
 ===================
 Many of the algorithms used in RichDEM are documented in journal or conference
@@ -210,6 +219,8 @@ These are available as follows:
  * Depression-filling algorithm. [Link](https://github.com/r-barnes/Barnes2013-Depressions)
  * Large dataset depression-filling algorithm. [Link](https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood)
  * Large dataset flow accumulation algorithm. [Link](https://github.com/r-barnes/Barnes2016-ParallelFlowAccum)
+
+
 
 Publications
 ============
@@ -235,6 +246,8 @@ The algorithms used in RichDEM have been published in the following articles. Ev
 
 * Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
 
+
+
 Credits
 =======
 
@@ -245,6 +258,7 @@ Foundation's [XSEDE][2].
 Funding for the development of RichDEM has been provided by the [Legislative-Citizen Commission on Minnesota Resources][5] (LCCMR), the U.S. National Science
 Foundation [Graduate Research Fellowship][3], and the U.S. Department of Energy
 [Computational Science Graduate Fellowship][4].
+
 
 
 Feedback
