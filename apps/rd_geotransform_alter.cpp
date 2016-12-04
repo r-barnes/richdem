@@ -35,13 +35,17 @@ int main(int argc, char **argv){
 
   if(argc==2){
     Array2D<int8_t> temp(argv[1],false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
+    std::cout<<"Geotransform: ";
     for(auto v: temp.geotransform)
       std::cout<<std::setw(10)<<v<<" ";
+    std::cout<<"Width:  "<<temp.width() <<std::endl;
+    std::cout<<"Height: "<<temp.height()<<std::endl;
     std::cout<<std::endl;
     return 0;
   }
 
   if(argc!=9){
+    std::cerr<<"Display or set the geotransform of a raster."<<std::endl;
     std::cerr<<argv[0]<<" <Display geotransform of this file>"<<std::endl;
     std::cerr<<argv[0]<<" <Input file> <Output File> <Geo1> <Geo2> <Geo3> <Geo4> <Geo5> <Geo6>"<<std::endl;
     return -1;
