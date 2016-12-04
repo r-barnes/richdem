@@ -50,5 +50,5 @@ rd_layout_display.py
 rd_layout_find_square.py
 rd_loop_check
 rd_merge_rasters_by_layout
-rd_raster_to_tikz
+rd_raster_to_tikz.py
 rd_taudem_d8_to_richdem_d8
