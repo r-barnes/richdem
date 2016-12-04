@@ -1192,6 +1192,17 @@ class Array2D {
   double getCellArea() const {
     return geotransform[1]*geotransform[5];
   }
+
+  /**
+    @brief Multiplies the entire array by a scalar
+
+    @param[in]     x     Value to multiply array by
+  */
+  void scale(const double x) {
+    for(auto &v: data)
+      if(v!=no_data)
+        v *= x;
+  }
 };
 
 #endif

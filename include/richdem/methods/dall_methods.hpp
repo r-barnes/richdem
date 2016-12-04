@@ -934,11 +934,11 @@ void FA_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
 }
 
 template<class E, class A>
-void FA_Freeman(const Array2D<E> &elevations, Array2D<A> &accum, double x){
+void FA_Freeman(const Array2D<E> &elevations, Array2D<A> &accum, double p){
   std::cerr<<"\nA Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   std::cerr<<"C Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
-  std::cerr<<"c x = "<<x<<std::endl;
-  KernelFlowdir(KernelFreeman<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
+  std::cerr<<"c p = "<<p<<std::endl;
+  KernelFlowdir(KernelFreeman<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,p);
 }
 
 template<class E, class A>
@@ -969,8 +969,13 @@ void FA_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode
 template<class E, class A>
 void FA_OCallaghan(const Array2D<E> &elevations, Array2D<A> &accum){
   std::cerr<<"\nA O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
-  std::cerr<<"C O’Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
+  std::cerr<<"C O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
   KernelFlowdir(KernelOCallaghan<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum);
+}
+
+template<class E, class A>
+void FA_D8(const Array2D<E> &elevations, Array2D<A> &accum){
+  FA_OCallaghan(elevations,accum);
 }
 
 

@@ -3,63 +3,39 @@
 #include <cstdlib>
 #include "richdem/common/version.hpp"
 #include "richdem/common/router.hpp"
-#include "richdem/depressions/priority_flood.hpp"
+#include "richdem/methods/dall_methods.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/flats/flat_resolution.hpp"
-#include "richdem/methods/d8_methods.hpp"
 
 template<class T>
-int PerformAlgorithm(std::string output, std::string flip, std::string analysis, Array2D<T> flowdirs){
-  bool flipH = false; //TODO
-  bool flipV = false;
+int PerformAlgorithm(std::string output, int algorithm, float param, std::string analysis, Array2D<T> dem){
+  dem.loadData();
 
-  if(flip=="fliph")
-    flipH=true;
-  else if(flip=="flipv")
-    flipV=true;
-  else if(flip=="fliphv")
-    flipH=flipV=true;
-  else if(flip!="noflip"){
-    std::cerr<<"Unrecognised flip directive."<<std::endl;
-    return -1;
+  Array2D<double> accum(dem);
+
+  switch(algorithm){
+    case 1: //D8     - O'Callaghan/Marks (1984)
+      FA_D8(dem,accum);                                 break;
+    case 2: //Rho8   - Fairfield & Leymarie (1991)
+      FA_Rho8(dem,accum);                               break;
+    case 3: //MD8    - Quinn (1991)
+      FA_Quinn(dem,accum);                              break;
+    case 4: //MD8    - Holmgren (1994)
+      FA_Holmgren(dem,accum,param);                     break;
+    case 5: //MD8    - Freeman (1991) 
+      FA_Freeman(dem,accum,param);                      break;
+    case 6: //D∞     - Tarboton (1997)
+      FA_Tarboton(dem,accum);                           break;
+    case 7: //MD∞    - Seibert & McGlynn (2007)
+      FA_SeibertMcGlynn(dem,accum,param);               break;
+    case 8: //D8-LTD - Orlandini et al. (2003)
+      FA_Orlandini(dem,accum,OrlandiniMode::LTD,param); break;
+    case 9: //D8-LAD - Orlandini et al. (2003)
+      FA_Orlandini(dem,accum,OrlandiniMode::LAD,param); break;
   }
 
-  flowdirs.loadData();
+  accum.scale(accum.getCellArea());
 
-  std::cerr<<"Geotransform: ";
-  if(!flowdirs.geotransform.empty()){
-    for(auto const x: flowdirs.geotransform)
-      std::cerr<<std::setw(5)<<std::setprecision(2)<<x<<" ";
-    std::cerr<<std::endl;
-  }
-
-  flowdirs.printStamp(5,"Stamp before reorientation");
-
-  //Flip tiles if the geotransform demands it
-  if( !flowdirs.geotransform.empty() && ((flowdirs.geotransform[1]<0) ^ flipH)){
-    std::cerr<<"Flipping horizontally."<<std::endl;
-    flowdirs.flipHorz();
-  }
-  if( !flowdirs.geotransform.empty() && ((flowdirs.geotransform[5]>0) ^ flipV)){
-    std::cerr<<"Flipping vertically."<<std::endl;
-    flowdirs.flipVert();
-  }
-
-  flowdirs.printStamp(5,"Stamp after reorientation");
-
-  Array2D<int> area;
-  d8_flow_accum(flowdirs, area);
-
-  area.printStamp(5,"Output stamp before reorientation");
-
-  if( !flowdirs.geotransform.empty() && ((area.geotransform[1]<0) ^ flipH))
-    area.flipHorz();
-  if( !flowdirs.geotransform.empty() && ((area.geotransform[5]>0) ^ flipV))
-    area.flipVert();
-
-  area.printStamp(5,"Output stamp after reorientation");
-
-  area.saveGDAL(output,analysis);
+  accum.saveGDAL(output,analysis);
 
   return 0;
 }
@@ -67,10 +43,40 @@ int PerformAlgorithm(std::string output, std::string flip, std::string analysis,
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
   
-  if(argc!=4){
-    std::cerr<<argv[0]<<" <Flowdirs input file> <Output filename> <noflip/fliph/flipv/fliphv>"<<std::endl;
+  int   algorithm = 0;
+  float param     = 0;
+
+  if(argc<4 || argc>5){
+    std::cerr<<"Calculate flow accumulation in terms of upstream area"<<std::endl;
+    std::cerr<<argv[0]<<" <DEM file> <Output File> <Algorithm #> [Parameter]"<<std::endl;
+    std::cerr<<"Algorithms:"<<std::endl;
+    std::cerr<<" 1: D8     - O'Callaghan/Marks (1984)"<<std::endl;
+    std::cerr<<" 2: Rho8   - Fairfield & Leymarie (1991)"<<std::endl;
+    std::cerr<<" 3: MD8    - Quinn (1991)"<<std::endl;
+    std::cerr<<" 4: MD8    - Holmgren (1994). Requires the parameter x. Suggested value: 4.0-6.0"<<std::endl;
+    std::cerr<<" 5: MD8    - Freeman (1991). Requires the parameter p. Suggested value: 1.1"<<std::endl;
+    std::cerr<<" 6: D∞     - Tarboton (1997)"<<std::endl;
+    std::cerr<<" 7: MD∞    - Seibert & McGlynn (2007). Requires the parameter x. Suggested value: 1.0"<<std::endl;
+    std::cerr<<" 8: D8-LTD - Orlandini et al. (2003). Requires the parameter x. Suggested value: 1.0"<<std::endl;
+    std::cerr<<" 9: D8-LAD - Orlandini et al. (2003). Requires the parameter x. Suggested value: 1.0"<<std::endl;
     return -1;
   }
 
-  return PerformAlgorithm(std::string(argv[1]),std::string(argv[2]),std::string(argv[3]),analysis);
+  algorithm = std::stoi(argv[3]);
+
+  switch(algorithm){
+    case 4:
+    case 5:
+    case 7:
+    case 8:
+    case 9:
+      if(argc!=5){
+        std::cerr<<"Parameter value is required!"<<std::endl;
+        return -1;
+      } else {
+        param = std::stof(argv[4]);
+      }
+  }
+
+  return PerformAlgorithm(std::string(argv[1]),std::string(argv[2]),algorithm,param,analysis);
 }

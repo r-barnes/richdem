@@ -32,6 +32,8 @@ The apps are as follows:
 
 **rd_raster_inspect**: Print a subregion of a raster to the terminal
 
+**rd_flow_accumulation**: Calculate flow accumulation in terms of upstream area
+                          using one of a large number of algorithms.
 
 TODO
 ====
@@ -39,7 +41,6 @@ TODO
 rd_d8_flowdirs
 rd_expand_dimensions
 rd_flood_for_flowdirs
-rd_flow_accumulation
 rd_hist
 rd_layout_check.py
 rd_layout_display.py
