@@ -43,7 +43,7 @@ int main(int argc, char **argv){
   float z_scale   = 1;
 
   if(argc!=5){
-    std::cerr<<"Calculate terrain attributes"<<std::endl;
+    std::cerr<<"Calculate terrain attributes. Ensure that vertical and horizontal axes have the same units!"<<std::endl;
     std::cerr<<argv[0]<<" <DEM file> <Output File> <Algorithm #> <Z scaling factor>"<<std::endl;
     std::cerr<<"Algorithms:"<<std::endl;
     std::cerr<<" 1:  Slope (Rise/Run)   - Horn (1981)"<<std::endl;
