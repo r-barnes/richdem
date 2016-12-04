@@ -35,6 +35,9 @@ The apps are as follows:
 **rd_flow_accumulation**: Calculate flow accumulation in terms of upstream area
                           using one of a large number of algorithms.
 
+**rd_terrain_property**: Calculate terrain properties such as slope, aspect, and
+                         curvature.
+
 TODO
 ====
 
