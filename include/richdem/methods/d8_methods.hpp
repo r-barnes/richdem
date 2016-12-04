@@ -555,7 +555,7 @@ class TerrainAttributator {
   void process(const Array2D<T> &elevations, Array2D<float> &attribs, FcnPtr fcn){
     if(elevations.getCellLengthX()!=elevations.getCellLengthY())
       std::cerr<<"W Cell X and Y dimensions are not equal!"<<std::endl;
-    
+
     attribs.resize(elevations);
     ProgressBar progress;
 
