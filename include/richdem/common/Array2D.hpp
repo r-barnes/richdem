@@ -1198,7 +1198,7 @@ class Array2D {
     @return The length of the cell along the raster's horizontal axis
   */
   double getCellLengthX() const {
-    return geotransform[1];
+    return std::abs(geotransform[1]);
   }
 
   /**
@@ -1206,7 +1206,7 @@ class Array2D {
     @return The length of the cell along the raster's horizontal axis
   */
   double getCellLengthY() const {
-    return geotransform[5];
+    return std::abs(geotransform[5]);
   }
 
   /**
