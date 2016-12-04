@@ -16,10 +16,19 @@ int PerformAlgorithm(std::string outname, char *nodata, std::string analysis, Ar
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
   
-  if(argc!=4){
+  if(argc!=2 && argc!=4){
+    std::cerr<<"Get or set a raster's NoData value."<<std::endl;
+    std::cerr<<argv[0]<<" <Input>"<<std::endl;
     std::cerr<<argv[0]<<" <Input> <Output name> <NoData>"<<std::endl;
     return -1;
   }
 
-  return PerformAlgorithm(std::string(argv[1]),argv[2],argv[3],analysis);
+  if(argc==2){
+    Array2D<int8_t> temp(argv[1],false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
+    std::cerr<<temp.getNoData()<<std::endl;
+  } else {
+    PerformAlgorithm(std::string(argv[1]),argv[2],argv[3],analysis);
+  }
+
+  return 0;
 }

@@ -26,6 +26,7 @@ int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
   
   if(argc!=3){
+    std::cerr<<"Return a raster in which 1 indicates depressions, 0 indicates non-depressions, and 3 indicates NoData."<<std::endl;
     std::cerr<<argv[0]<<" <Input> <Output>"<<std::endl;
     return -1;
   }
