@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 
   if(argc==2){
     Array2D<int8_t> temp(argv[1],false,0,0,0,0,false,false); //Data type doesn't matter since we're not loading it
-    std::cerr<<temp.getNoData()<<std::endl;
+    std::cerr<<temp.noData()<<std::endl;
   } else {
     PerformAlgorithm(std::string(argv[1]),argv[2],argv[3],analysis);
   }
