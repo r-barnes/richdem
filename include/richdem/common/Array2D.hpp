@@ -1194,6 +1194,22 @@ class Array2D {
   }
 
   /**
+    @brief Get the length of a cell along the raster's horizontal axis
+    @return The length of the cell along the raster's horizontal axis
+  */
+  double getCellLengthX() const {
+    return geotransform[1];
+  }
+
+  /**
+    @brief Get the length of a cell along the raster's horizontal axis
+    @return The length of the cell along the raster's horizontal axis
+  */
+  double getCellLengthY() const {
+    return geotransform[5];
+  }
+
+  /**
     @brief Multiplies the entire array by a scalar
 
     @param[in]     x     Value to multiply array by
