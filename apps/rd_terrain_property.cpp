@@ -46,13 +46,13 @@ int main(int argc, char **argv){
     std::cerr<<"Calculate terrain attributes. Ensure that vertical and horizontal axes have the same units!"<<std::endl;
     std::cerr<<argv[0]<<" <DEM file> <Output File> <Algorithm #> <Z scaling factor>"<<std::endl;
     std::cerr<<"Algorithms:"<<std::endl;
-    std::cerr<<" 1:  Slope (Rise/Run)   - Horn (1981)"<<std::endl;
-    std::cerr<<" 2:  Slope (Percentage) - Horn (1981)"<<std::endl;
-    std::cerr<<" 3:  Slope (Degrees)    - Horn (1981)"<<std::endl;
-    std::cerr<<" 4:  Slope (Radians)    - Horn (1981)"<<std::endl;
-    std::cerr<<" 5:  Apsect             - Horn (1981)"<<std::endl;
-    std::cerr<<" 6:  Curvature          - Zevenbergen and Thorne (1987)"<<std::endl;
-    std::cerr<<" 7:  Planform Curvature - Zevenbergen and Thorne (1987)"<<std::endl;
+    std::cerr<<" 1: Slope (Rise/Run)   - Horn (1981)"<<std::endl;
+    std::cerr<<" 2: Slope (Percentage) - Horn (1981)"<<std::endl;
+    std::cerr<<" 3: Slope (Degrees)    - Horn (1981)"<<std::endl;
+    std::cerr<<" 4: Slope (Radians)    - Horn (1981)"<<std::endl;
+    std::cerr<<" 5: Apsect             - Horn (1981)"<<std::endl;
+    std::cerr<<" 6: Curvature          - Zevenbergen and Thorne (1987)"<<std::endl;
+    std::cerr<<" 7: Planform Curvature - Zevenbergen and Thorne (1987)"<<std::endl;
     std::cerr<<" 8: Profile Curvature  - Zevenbergen and Thorne (1987)"<<std::endl;
     return -1;
   }
