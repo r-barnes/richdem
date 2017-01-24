@@ -1190,7 +1190,7 @@ class Array2D {
     @return The area of the cell in square projection units
   */
   double getCellArea() const {
-    return geotransform[1]*geotransform[5];
+    return std::abs(geotransform[1]*geotransform[5]);
   }
 
   /**
