@@ -40,9 +40,10 @@
 ///of the progress bar is shown in ProgressBar.hpp.
 class ProgressBar{
   private:
-    uint64_t total_work;    ///< Total work to be accomplished
-    uint64_t next_update;   ///< Next point to update the visible progress bar
-    uint64_t call_diff;     ///< Interval between updates in work units
+    uint32_t total_work;    ///< Total work to be accomplished
+    uint32_t next_update;   ///< Next point to update the visible progress bar
+    uint32_t call_diff;     ///< Interval between updates in work units
+    uint32_t work_done;
     uint16_t old_percent;   ///< Old percentage value (aka: should we update the progress bar) TODO: Maybe that we do not need this
     Timer    timer;         ///< Used for generating ETA
 
@@ -54,13 +55,14 @@ class ProgressBar{
   public:
     ///@brief Start/reset the progress bar.
     ///@param total_work  The amount of work to be completed, usually specified in cells.
-    void start(uint64_t total_work){
+    void start(uint32_t total_work){
       timer = Timer();
       timer.start();
       this->total_work = total_work;
       next_update      = 0;
       call_diff        = total_work/200;
       old_percent      = 0;
+      work_done        = 0;
       clearConsoleLine();
     }
 
@@ -68,10 +70,12 @@ class ProgressBar{
     ///
     ///Define the global `NOPROGRESS` flag to prevent this from having an
     ///effect. Doing so may speed up the program's execution.
-    void update(uint64_t work_done){
+    void update(uint32_t work_done0){
       #ifdef NOPROGRESS
         return;
       #endif
+
+      work_done = work_done0;
 
       if(omp_get_thread_num()!=0)
         return;
@@ -97,6 +101,13 @@ class ProgressBar{
                <<omp_get_num_threads()<< " threads)"<<std::flush;
     }
 
+    ///Increment by one the work done and update the progress bar
+    ProgressBar& operator++(){
+      work_done++;
+      update(work_done);
+      return *this;
+    }
+
     ///Stop the progress bar. Throws an exception if it wasn't started.
     ///@return The number of seconds the progress bar was running.
     double stop(){
@@ -109,6 +120,10 @@ class ProgressBar{
     ///@return Return the time the progress bar ran for.
     double time_it_took(){
       return timer.accumulated();
+    }
+
+    uint32_t cellsProcessed() const {
+      return work_done;
     }
 };
 

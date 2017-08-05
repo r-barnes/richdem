@@ -23,9 +23,10 @@ typedef uint8_t d8_flowdir_t;
 
 //D8 Neighbour Directions
 
-//Facet            0   1   2   3   4  5  6  7   8
-const int dx[9] = {0, -1, -1,  0,  1, 1, 1, 0, -1}; ///< x offsets of D8 neighbours, from a central cell
-const int dy[9] = {0,  0, -1, -1, -1, 0, 1, 1,  1}; ///< y offsets of D8 neighbours, from a central cell
+//Facet                 0   1   2   3   4  5  6  7   8
+const int  dx[9]     = {0, -1, -1,  0,  1, 1, 1, 0, -1}; ///< x offsets of D8 neighbours, from a central cell
+const int  dy[9]     = {0,  0, -1, -1, -1, 0, 1, 1,  1}; ///< y offsets of D8 neighbours, from a central cell
+const bool n_diag[9] = {0,  0,  1,  0,  1, 0, 1, 0,  1}; ///< True along diagonal directions, false along north, south, east, west
 
 ///@brief Directions from neighbours to the central cell.
 ///Neighbours are labeled 0-8. This is the inverse direction leading from a

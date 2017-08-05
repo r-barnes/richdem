@@ -420,7 +420,6 @@ class TerrainAttributator {
     if(h==elevations.noData())      h = e;
     if(i==elevations.noData())      i = e;
 
-    //TODO: Convert elevations to meters? (1ft=0.3048m)
     a *= zscale;
     b *= zscale;
     c *= zscale;
@@ -439,12 +438,13 @@ class TerrainAttributator {
     //Z4 Z5 Z6   d e f
     //Z7 Z8 Z9   g h i
     //Curvatures in the manner of Zevenbergen and Thorne 1987
-    double L  = elevations.getCellArea(); //TODO: Should be in the same units as z
-    double D  = ( (d+f)/2 - e) / L / L;   //D = [(Z4 + Z6) /2 - Z5] / L^2
-    double E  = ( (b+h)/2 - e) / L / L;   //E = [(Z2 + Z8) /2 - Z5] / L^2
-    double F  = (-a+c+g-i)/4/L/L;         //F=(-Z1+Z3+Z7-Z9)/(4L^2)
-    double G  = (-d+f)/2/L;               //G=(-Z4+Z6)/(2L)
-    double H  = (b-h)/2/L;                //H=(Z2-Z8)/(2L)
+
+    L  = elevations.getCellLengthX();
+    D  = ( (d+f)/2 - e) / L / L;   //D = [(Z4 + Z6) /2 - Z5] / L^2
+    E  = ( (b+h)/2 - e) / L / L;   //E = [(Z2 + Z8) /2 - Z5] / L^2
+    F  = (-a+c+g-i)/4/L/L;         //F=(-Z1+Z3+Z7-Z9)/(4L^2)
+    G  = (-d+f)/2/L;               //G=(-Z4+Z6)/(2L)
+    H  = (b-h)/2/L;                //H=(Z2-Z8)/(2L)
   }
 
  public:
@@ -460,15 +460,16 @@ class TerrainAttributator {
   double aspect(const Array2D<T> &elevations, int x, int y){
     setup(elevations,x,y);
 
-    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8; //TODO? Divide by delta x, according to Horn
-    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8; //TODO? Divide by delta y, according to Horn
-    aspect      = 180.0/M_PI*atan2(dzdy,-dzdx);
-    if(aspect<0)
-      return 90-aspect;
-    else if(aspect>90.0)
-      return 360.0-aspect+90.0;
+    //See p. 18 of Horn (1981)
+    double dzdx       = ( (c+2*f+i) - (a+2*d+g) ) / 8 / elevations.getCellLengthX();
+    double dzdy       = ( (g+2*h+i) - (a+2*b+c) ) / 8 / elevations.getCellLengthY();
+    double the_aspect = 180.0/M_PI*atan2(dzdy,-dzdx);
+    if(the_aspect<0)
+      return 90-the_aspect;
+    else if(the_aspect>90.0)
+      return 360.0-the_aspect+90.0;
     else
-      return 90.0-aspect;
+      return 90.0-the_aspect;
   }
 
   ///@brief  Calculates the rise/run slope along the maximum gradient on a fitted surface over a 3x3 be neighbourhood in the manner of Horn 1981
@@ -476,11 +477,10 @@ class TerrainAttributator {
   double slope_riserun(const Array2D<T> &elevations, int x, int y){
     setup(elevations,x,y);
 
-    //But cellsize is accounted for in slope
-    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8; //TODO? Divide by delta x, according to Horn
-    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8; //TODO? Divide by delta y, according to Horn
+    //See p. 18 of Horn (1981)
+    double dzdx = ( (c+2*f+i) - (a+2*d+g) ) / 8 / elevations.getCellLengthX();
+    double dzdy = ( (g+2*h+i) - (a+2*b+c) ) / 8 / elevations.getCellLengthY();
 
-    //TODO: Incorporate zscale. The above should do it.
     //The above fits are surface to a 3x3 neighbour hood. This returns the slope
     //along the direction of maximum gradient.
     return sqrt(dzdx*dzdx+dzdy*dzdy);
@@ -553,15 +553,22 @@ class TerrainAttributator {
     @post \pname{attribs} takes the properties and dimensions of \pname{elevations}
   */
   void process(const Array2D<T> &elevations, Array2D<float> &attribs, FcnPtr fcn){
-    attribs.resize(elevations);
-    attribs.setNoData(-9999);  //TODO: Should push this out to the calling helper functions
+    if(elevations.getCellLengthX()!=elevations.getCellLengthY())
+      std::cerr<<"W Cell X and Y dimensions are not equal!"<<std::endl;
 
-    for(int y=0;y<elevations.height();y++)
-    for(int x=0;x<elevations.width();x++)
-      if(elevations.isNoData(x,y))
-        attribs(x,y) = attribs.noData();
-      else
-        attribs(x,y) = (this->*fcn)(elevations,x,y);
+    attribs.resize(elevations);
+    ProgressBar progress;
+
+    progress.start(elevations.size());
+    for(int y=0;y<elevations.height();y++){
+      progress.update(y*elevations.width());
+      for(int x=0;x<elevations.width();x++)
+        if(elevations.isNoData(x,y))
+          attribs(x,y) = attribs.noData();
+        else
+          attribs(x,y) = (this->*fcn)(elevations,x,y);
+    }
+    std::cerr<<"t Wall-time = "<<progress.stop()<<std::endl;
   }
 };
 
@@ -581,10 +588,10 @@ template<class T>
 void d8_slope_riserun(
   const Array2D<T> &elevations,
   Array2D<float>   &slopes,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Slope calculation (rise/run)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_riserun);
 }
@@ -603,10 +610,10 @@ template<class T>
 void d8_slope_percentage(
   const Array2D<T> &elevations,
   Array2D<float>   &slopes,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Slope calculation (percenage)"<<std::endl;
-  std::cerr<<"C Horn 1981 (TODO)"<<std::endl;
+  std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_percent);
 }
@@ -625,7 +632,7 @@ template<class T>
 void d8_slope_degrees(
   const Array2D<T> &elevations,
   Array2D<float>   &slopes,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Slope calculation (degrees)"<<std::endl;
   std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
@@ -647,7 +654,7 @@ template<class T>
 void d8_slope_radians(
   const Array2D<T> &elevations,
   Array2D<float>   &slopes,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Slope calculation (radians)"<<std::endl;
   std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
@@ -669,7 +676,7 @@ template<class T>
 void d8_aspect(
   const Array2D<T> &elevations,
   Array2D<float>   &aspects,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Aspect attribute calculation"<<std::endl;
   std::cerr<<"C Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
@@ -691,7 +698,7 @@ template<class T>
 void d8_curvature(
   const Array2D<T> &elevations, 
   Array2D<float>   &curvatures, 
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Curvature attribute calculation"<<std::endl;
   std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
@@ -714,7 +721,7 @@ template<class T>
 void d8_planform_curvature(
   const Array2D<T> &elevations,
   Array2D<float>   &planform_curvatures,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Planform curvature attribute calculation"<<std::endl;
   std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
@@ -736,7 +743,7 @@ template<class T>
 void d8_profile_curvature(
   const Array2D<T> &elevations,
   Array2D<float>   &profile_curvatures,
-  float zscale
+  float zscale = 1.0f
 ){
   std::cerr<<"\nA Profile curvature attribute calculation"<<std::endl;
   std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;

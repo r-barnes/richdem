@@ -48,6 +48,7 @@ int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
   
   if(argc!=3){
+    std::cerr<<"Print a raster to the terminal."<<std::endl;
     std::cerr<<argv[0]<<" <Input file> <noflip/fliph/flipv/fliphv>"<<std::endl;
     return -1;
   }

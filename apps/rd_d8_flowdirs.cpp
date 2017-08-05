@@ -18,13 +18,6 @@ int PerformAlgorithm(std::string output_prefix, std::string analysis, Array2D<T>
 
   barnes_flat_resolution_d8(elevations,flowdirs,false);
 
-  for(int32_t y=0;y<flowdirs.height();y++){
-    for(int32_t x=0;x<flowdirs.width();x++)
-      std::cerr<<(int)flowdirs(x,y)<<" ";
-    std::cerr<<std::endl;
-  }
-
-
   flowdirs.saveGDAL(output_prefix+"-flowdirs.tif", analysis);
 
   return 0;

@@ -455,7 +455,7 @@ void resolve_flats_barnes(
   std::deque<GridCell> low_edges,high_edges;  //TODO: Need estimate of size
 
   std::cerr<<"\nA Flat Resolution (Barnes 2014)"<<std::endl;
-  std::cerr<<"Citation: Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009"<<std::endl;
+  std::cerr<<"C Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009"<<std::endl;
 
   std::cerr<<"p Setting up labels matrix..."<<std::endl;
   labels.templateCopy(elevations);

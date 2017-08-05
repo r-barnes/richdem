@@ -24,18 +24,16 @@ int PerformAlgorithm(Array2D<T> a, Array2D<U> b){
     if(a(i)!=b(i))
       differs++;
 
-  std::cout<<"Values which differ = "<<differs<<std::endl;
+  std::cout<<"Number of values which differ = "<<differs<<std::endl;
 
-  if(differs==0)
-    return 0;
-  else
-    return 1;
+  return 0;
 }
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
 
   if(argc!=3){
+    std::cerr<<"Determine whether, and in what ways, two rasters differ. Geotransform, NoData, Projection, Width, Height, and all data values are checked."<<std::endl;
     std::cerr<<argv[0]<<" <Input File A> <Input File B>"<<std::endl;
     return -1;
   }

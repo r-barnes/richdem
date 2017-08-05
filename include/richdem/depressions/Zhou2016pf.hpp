@@ -10,6 +10,7 @@
 #define _richdem_zhou2016pf_hpp_
 
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/timer.hpp"
 #include <queue>
 #include <vector>
 #include <map>
