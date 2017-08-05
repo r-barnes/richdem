@@ -137,6 +137,35 @@ TEST_CASE("Checking GridCellZk_pq", "[GridCell]") {
 }
 
 
+TEST_CASE("Checking depression filling", "[DepFill]") {
+  Array2D<int> elevation_orig("depressions/testdem1.dem", false);
+
+  {
+    auto elevation = elevation_orig;
+    Zhou2016(elevation);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    CHECK(elevation==manually_flooded);
+  }
+
+  {
+    auto elevation = elevation_orig;
+    improved_priority_flood_max_dep(elevation,1);
+    elevation.printAll();
+    Array2D<int> manually_flooded("depressions/testdem1.1.out", false);
+    CHECK(elevation==manually_flooded);
+  }
+
+  {
+    auto elevation = elevation_orig;
+    improved_priority_flood_max_dep(elevation,2);
+    elevation.printAll();
+    Array2D<int> manually_flooded("depressions/testdem1.2.out", false);
+    CHECK(elevation==manually_flooded);
+  }
+
+}
+
+
 
 
 
