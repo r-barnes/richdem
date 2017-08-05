@@ -775,4 +775,121 @@ void priority_flood_watersheds(
 
 
 
+/**
+  @brief  Fill depressions, but only if they're small
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    Priority-Flood starts on the edges of the DEM and then works its way
+    inwards using a priority queue to determine the lowest cell which has
+    a path to the edge. The neighbours of this cell are added to the priority
+    queue if they are higher. If they are lower, they are raised to the
+    elevation of the cell adding them, thereby filling in pits. The neighbors
+    are then added to a "pit" queue which is used to flood pits. Cells which
+    are higher than a pit being filled are added to the priority queue. In this
+    way, pits are filled without incurring the expense of the priority queue.
+
+    When a depression is encountered this command measures its size before 
+    filling it. Only small depressions are filled.
+
+  @param[in,out]  &elevations   A grid of cell elevations
+  @param[in]      max_dep_size  Depression must have <=max_dep_size cells to be
+                                filled
+
+  @pre
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM. Note that the _NoData_ value is assumed to
+       be a negative number less than any actual data value.
+
+  @post
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM.
+    2. **elevations** all landscape depressions <=max_dep_size are filled.
+
+  @correctness
+    The correctness of this command is determined by inspection. (TODO)
+*/
+template <class elev_t>
+void improved_priority_flood_max_dep(
+  Array2D<elev_t> &elevations,
+  uint64_t max_dep_size
+){
+  GridCellZ_pq<elev_t> open;
+  std::queue<GridCellZ<elev_t> > pit;
+  uint64_t processed_cells = 0;
+  uint64_t pitc            = 0;
+  ProgressBar progress;
+
+  std::cerr<<"\nPriority-Flood (Improved)"<<std::endl;
+  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
+  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
+
+  std::cerr<<"The priority queue will require approximately "
+           <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
+           <<"MB of RAM."
+           <<std::endl;
+
+  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+
+  for(int x=0;x<elevations.width();x++){
+    open.emplace(x,0,elevations(x,0) );
+    open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
+    closed(x,0)=true;
+    closed(x,elevations.height()-1)=true;
+  }
+  for(int y=1;y<elevations.height()-1;y++){
+    open.emplace(0,y,elevations(0,y)  );
+    open.emplace(elevations.width()-1,y,elevations(elevations.width()-1,y) );
+    closed(0,y)=true;
+    closed(elevations.width()-1,y)=true;
+  }
+
+  elev_t dep_elev = 0;             //Elevation of the rim/spill point of the depression we're in
+  std::vector<GridCell> dep_cells; //Cells comprising the depression we're in
+
+  std::cerr<<"p Performing the improved Priority-Flood..."<<std::endl;
+  progress.start( elevations.size() );
+  while(open.size()>0 || pit.size()>0){
+    GridCellZ<elev_t> c;
+    if(pit.size()>0){                       //There are cells inside a depression which should be processed
+      c=pit.front();                        //Get next cell of the depression
+      pit.pop();                      
+      dep_cells.push_back(c);               //Add cell to list of cells in depression
+    } else {                                //We're not in a depression
+      c=open.top();                         //Get next highest cell
+      open.pop();
+      if(dep_cells.size()<=max_dep_size){   //Have we just crawled out of a small depression?
+        for(const auto &pc: dep_cells)      //Loop through cells in depression
+          elevations(pc.x,pc.y) = dep_elev; //Raise each cell to the level of depression's rim/spill point
+        dep_cells.clear();                  //We're done with this depression now
+      } else if(dep_cells.size()>0) {       //Have we just crawled out of a depression?
+        dep_cells.clear();                  //Not interested in small depressions
+      }
+    }
+    processed_cells++;
+
+    for(int n=1;n<=8;n++){
+      int nx=c.x+dx[n];
+      int ny=c.y+dy[n];
+      if(!elevations.inGrid(nx,ny)) continue;
+      if(closed(nx,ny))
+        continue;
+
+      closed(nx,ny)=true;
+      if(elevations(nx,ny)<c.z){                //Cell <= current elev can be processed quickly with a queue
+          ++pitc;                               //Count it
+        pit.push(GridCellZ<elev_t>(nx,ny,c.z)); //Add this cell to depression-prcessing queue
+        dep_elev = c.z;                         //Note rim/spill-point elevation
+      } else{
+        open.emplace(nx,ny,elevations(nx,ny));  //Not a depression, carry on
+      }
+    }
+    progress.update(processed_cells);
+  }
+  std::cerr<<"t Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s"<<std::endl;
+  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
+  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+}
+
+
 #endif

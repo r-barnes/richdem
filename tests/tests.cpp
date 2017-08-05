@@ -4,6 +4,8 @@
 
 #include "richdem/methods/d8_methods.hpp"
 #include "richdem/common/grid_cell.hpp"
+#include "richdem/depressions/Zhou2016pf.hpp"
+#include "richdem/depressions/priority_flood.hpp"
 
 #include <experimental/filesystem>
 
