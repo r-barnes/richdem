@@ -24,7 +24,7 @@ int PerformAlgorithm(std::string outputname, uint32_t max_dep_size, std::string 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
   
-  if(argc!=3){
+  if(argc!=4){
     std::cerr<<"Eliminate all depressions via flooding."<<std::endl;
     std::cerr<<argv[0]<<" <Input> <Output name> <Maximum Depression Size>"<<std::endl;
     std::cerr<<"\t<Maximum Depression Size> - Depressions larger than this are not flooded."<<std::endl;

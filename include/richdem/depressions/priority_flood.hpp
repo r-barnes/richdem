@@ -820,7 +820,7 @@ void improved_priority_flood_max_dep(
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nPriority-Flood (Improved)"<<std::endl;
+  std::cerr<<"\nPriority-Flood (Improved) with Maximum Size"<<std::endl;
   std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
   std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -848,7 +848,7 @@ void improved_priority_flood_max_dep(
   elev_t dep_elev = 0;             //Elevation of the rim/spill point of the depression we're in
   std::vector<GridCell> dep_cells; //Cells comprising the depression we're in
 
-  std::cerr<<"p Performing the improved Priority-Flood..."<<std::endl;
+  std::cerr<<"p Performing the Priority-Flood..."<<std::endl;
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
