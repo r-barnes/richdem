@@ -8,7 +8,7 @@ RichDEM uses parallel processing and state of the art algorithms to quickly
 process even very large DEMs.
 
 RichDEM offers a variety of flow metrics, such as D8 and D∞. It can flood or
-breach depressions. It can calculate flow accumulation, slops, curvatures, &c.
+breach depressions. It can calculate flow accumulation, slopes, curvatures, &c.
 
 Please cite RichDEM (see below).
 
