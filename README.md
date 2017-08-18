@@ -67,7 +67,7 @@ The design of RichDEM is guided by these principles:
 * **Programs and algorithms will provide useful feedback.** Progress bars will 
   appear if desired and the output will be optimized for machine parsing.
 
-* **Analyses will be reproducible." Every time you run a RichDEM command that
+* **Analyses will be reproducible.** Every time you run a RichDEM command that
   command is logged and timestamped in the output data, along with the version
   of the program you created the output with. Additionally, a history of all
   previous manipulations to the data is kept. Use `rd_view_processing_history`
@@ -85,7 +85,8 @@ Citing It
 
 As of 883ea734e957, David A. Wheeler's SLOCCount estimates the value of RichDEM
 at $240,481 and 1.78 person-years of development effort. This value is yours to
-use, but citations are encouraged.
+use, but citations are encouraged as they provide justification of continued
+development.
 
 General usage of the library can be cited as:
 
@@ -102,11 +103,17 @@ An example BibTeX entry is:
 
 This information will be updated as versioned releases become available.
 
-Users are also encouraged to cite the particular algorithms used. Citations to
-these will be printed whenever an app, program, or library function is run.
 Although I have written all of the code in this library, some of the algorithms
 were discovered or invented by others, and they deserve credit for their good
-work.
+work. Citations to particular algorithms will be printed whenever an app,
+program, or library function is run. Such citations are prefixed by the
+character `C` and look like:
+
+    C Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024
+
+A typical academic citation might read as follows:
+
+ > We performed hydrological corrections on our DEM using the Zhou (2016) algorithm implemented in RichDEM (Barnes 2016).
 
 
 
@@ -155,6 +162,8 @@ Testing Methodology
 ===================
 TODO
 
+
+
 Correctness
 ===========
 
@@ -167,8 +176,6 @@ These are, in turn, printed to the Doxygen documentation output.
 
 A master list of how correctness was established for each algorithm is available
 at [tests/README.md](tests/README.md).
-
-
 
 
 
@@ -192,13 +199,13 @@ making it easy to parse with a machine.
  * **E**: Indicates an error condition
  
  * **i**: I/O: Amount of data loaded from disk
-          carrying on.
 
  * **m**: Miscallaneous counts
 
  * **n**: I/O: Amount of data transferred through a network
 
  * **p**: Progress information: inform the user to keep calm because we're
+          carrying on
  
  * **r**: Amount of RAM used
 
@@ -211,7 +218,7 @@ All output data shall have the form:
 
     <INDICATOR CHARACTER> <MESSAGE/MEASUREMENT NAME> [= <VALUE> [UNIT]]
 
-The amount of whitespce may very for aesthetic purposes.
+The amount of whitespace may very for aesthetic purposes.
 
 
 
@@ -240,7 +247,7 @@ Publications
 ============
 The algorithms used in RichDEM have been published in the following articles. Every algorithm/program will provide its relevant citation information when run.
 
-* Barnes, R., 2016. Non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. In Review.
+* Barnes, R., 2016. Parallel Non-divergent Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters. Environmental Modelling & Software: 92, p. 202–212. doi: 10.1016/j.envsoft.2017.02.022
 
 * Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences. doi:[10.1016/j.cageo.2016.07.001](http://dx.doi.org/10.1016/j.cageo.2016.07.001)
 
