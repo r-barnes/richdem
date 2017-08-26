@@ -38,6 +38,9 @@ The apps are as follows:
 **rd_terrain_property**: Calculate terrain properties such as slope, aspect, and
                          curvature.
 
+**rd_surface_area**: Calculate surface area of a digital elevation model 
+                     accounting for topography.
+
 TODO
 ====
 
