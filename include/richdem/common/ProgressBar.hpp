@@ -75,10 +75,10 @@ class ProgressBar{
         return;
       #endif
 
-      work_done = work_done0;
-
       if(omp_get_thread_num()!=0)
         return;
+
+      work_done = work_done0;
 
       if(work_done<next_update)
         return;
