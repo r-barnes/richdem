@@ -452,7 +452,7 @@ class Array2D {
       try {
         data.resize(view_width*view_height);
       } catch (const std::length_error &err){
-        throw std::runtime_error("loadData: Unable to allocate " + ((view_width*view_height*sizeof(T))/1024/1024) + "MB of memory!");
+        throw std::runtime_error(std::string("loadData: Unable to allocate ") + std::to_string((view_width*view_height*sizeof(T))/1024/1024) + "MB of memory!");
       }
 
 
