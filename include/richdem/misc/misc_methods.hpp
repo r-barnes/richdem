@@ -12,6 +12,8 @@
 
 #include <cmath>
 #include <queue>
+#include <stdexcept>
+#include <cassert>
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -33,21 +35,29 @@
 */
 template <class T>
 double dem_surface_area(
-  const Array2D<T> &elevations
+  const Array2D<T> &elevations,
+  const double zscale
 ){
   ProgressBar progress;
 
   std::cerr<<"\nA DEM Surface Elevation"<<std::endl;
   std::cerr<<"C Jenness, J.S., 2004. Calculating landscape surface area from digital elevation models. Wildlife Society Bulletin 32, 829--839. doi:10.2193/0091-7648(2004)032[0829:CLSAFD]2.0.CO;2"<<std::endl;
 
-  const auto euc_dist = [](const T a, const T b){ return std::sqrt(std::pow((double)a,2.0)+std::pow((double)b,2.0)); };
+  const auto euc_dist = [](const double a, const double b){ return std::sqrt(std::pow((double)a,2.0)+std::pow((double)b,2.0)); };
+
+  //If calculate cell area is lower than actual area, but greater than "AA minus
+  //fudge_factor", we clamp the calculated area to the actual area without
+  //raising an error. If the calculated area is lower than the fudge_factor, we
+  //raise an alarm.
+  const double fudge_factor = 1e-4; 
 
   double area = 0;
 
-  const double xdist     = elevations.getCellLengthX();
-  const double ydist     = elevations.getCellLengthY();
-  const double diag_dist = euc_dist(xdist,ydist);
+  const double xdist            = elevations.getCellLengthX();
+  const double ydist            = elevations.getCellLengthY();
+  const double planar_diag_dist = euc_dist(xdist,ydist);
 
+  //TODO: This algorithm would benefit from GPU integration
   progress.start(elevations.size());
   #pragma omp parallel for reduction(+:area)
   for(int y=0;y<elevations.height();y++){
@@ -56,12 +66,17 @@ double dem_surface_area(
       if(elevations.isNoData(x,y))
         continue;
 
+      //We sum into `cell_area` rather than `area` so that our values are larger
+      //when we add to `area`. This helps prevent small numbers from being
+      //"swallowed" by large numbers, and other floating-point stuff.
+      double cell_area = 0;
+
       //Loop through neighbours
       for(int n=1;n<=8;n++){
         //This is the next neighbour, which forms part of the triangle
         int nn = n+1;
         if(nn==9) //Wrap around
-          nn=1;
+          nn = 1;
 
         //In each triangle one neighbour is in the diagonal direction and one is
         //in a straight direction.
@@ -74,25 +89,25 @@ double dem_surface_area(
         if(!n_diag[dn])
           std::swap(dn,ndn);
 
-        const double my_elev = elevations(x,y);
+        const double my_elev = zscale*elevations(x,y);
 
         //Deal with the possibility that the neighbouring cells do not exist. In
         //this case, we pretend that they do exist and are at the same height as
         //the focal cell.
         double dn_elev;
         if(elevations.inGrid(x+dx[dn],y+dy[dn]) && !elevations.isNoData(x+dx[dn],y+dy[dn]))
-          dn_elev = elevations(x+dx[dn],y+dy[dn]);
+          dn_elev = zscale*elevations(x+dx[dn],y+dy[dn]);
         else
           dn_elev = my_elev;
 
         //Do the same for the other neighbour
         double ndn_elev;
         if(elevations.inGrid(x+dx[ndn],y+dy[ndn]) && !elevations.isNoData(x+dx[ndn],y+dy[ndn]))
-          ndn_elev = elevations(x+dx[ndn],y+dy[ndn]);
+          ndn_elev = zscale*elevations(x+dx[ndn],y+dy[ndn]);
         else
           ndn_elev = my_elev;
    
-        const double planar_dist_dn   = diag_dist;                   //Distance focal cell to diagonal neighbour
+        const double planar_dist_dn   = planar_diag_dist;            //Distance focal cell to diagonal neighbour
         const double planar_dist_ndn  = (dy[ndn] == 0)?xdist:ydist;  //Distance focal cell to non-diagonal neighbour
         const double planar_dist_bn   = (dy[ndn] == 0)?ydist:xdist;  //Distance between the neighbour cells
         
@@ -110,11 +125,25 @@ double dem_surface_area(
         const double s = (surf_dist_dn+surf_dist_ndn+surf_dist_bn)/2;
 
         //Accumulate area of triangle to
-        area += std::sqrt(s*(s-surf_dist_dn)*(s-surf_dist_ndn)*(s-surf_dist_bn));
-      }      
+        const double tri_area = std::sqrt(s*(s-surf_dist_dn)*(s-surf_dist_ndn)*(s-surf_dist_bn));
+
+        cell_area += tri_area;
+      }
+
+      if(cell_area<elevations.getCellArea()){
+        if(cell_area+fudge_factor>=elevations.getCellArea())
+          cell_area = elevations.getCellArea();
+        else
+          throw std::runtime_error("A cell had a topographic surface area less than its planar surface area!");        
+      }
+
+      area += cell_area;
     }
   }
   std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+
+  if(area<elevations.numDataCells()*elevations.getCellArea())
+    throw std::runtime_error("Topographic surface area was smaller than planar surface area - something must be wrong!");
 
   return area;
 }
