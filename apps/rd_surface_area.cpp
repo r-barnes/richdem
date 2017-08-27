@@ -15,6 +15,8 @@ int PerformAlgorithm(const double zscale, std::string analysis, Array2D<T> eleva
   const double sa_with_topo    = dem_surface_area(elevation, zscale);
   const double sa_diff         = sa_with_topo-sa_without_topo;
   const double sa_increase     = 100*(sa_with_topo-sa_without_topo)/sa_without_topo;
+  const double perim_len       = Perimeter(elevation, PerimType::SQUARE_EDGE);
+
 
   std::cout<<"Surface area with topography    = "
            <<std::fixed<<std::setprecision(10)<<sa_with_topo
@@ -31,6 +33,11 @@ int PerformAlgorithm(const double zscale, std::string analysis, Array2D<T> eleva
   std::cout<<"Surface area increase           = "
            <<std::fixed<<std::setprecision(10)<<sa_increase<<" %"
            <<std::endl;
+
+  std::cout<<"Perimeter                       = "
+           <<std::fixed<<std::setprecision(10)<<perim_len
+           <<std::endl;
+
 
   std::cout<<"Units                           = "
            <<"Input units squared"

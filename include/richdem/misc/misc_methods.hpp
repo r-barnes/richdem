@@ -148,4 +148,87 @@ double dem_surface_area(
   return area;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+  @brief  Calculates the perimeter of a digital elevation model
+  @author Richard Barnes (rbarnes@umn.edu)
+
+    Calculates the perimeter of a DEM in one of several ways:
+      * CELL_COUNT   - # of cells bordering edges or NoData cells
+      * SQUARE_EDGE  - Summation of all edges touch borders or NoData cells
+
+  @param[in]  &arr 
+
+  @return The surface area of the digital elevation model
+*/
+enum class PerimType {
+  CELL_COUNT,    ///< Counts # of cells bordering DEM edges or NoData cells
+  SQUARE_EDGE,   ///< Adds all cell edges bordering DEM edges or NoData cells
+};
+
+template <class T>
+double Perimeter(
+  const Array2D<T> &arr,
+  const PerimType perim_type
+){
+  ProgressBar progress;
+
+  std::cerr<<"\nA DEM Perimeter"<<std::endl;
+  std::cerr<<"C TODO"<<std::endl;
+
+  unsigned int vertical_edges   = 0;
+  unsigned int horizontal_edges = 0;
+  unsigned int cell_edges       = 0;
+
+  //TODO: This algorithm would benefit from GPU integration
+  progress.start(arr.size());
+  #pragma omp parallel for reduction(+:cell_edges) reduction(+:vertical_edges) reduction(+:horizontal_edges)
+  for(int y=0;y<arr.height();y++){
+    progress.update( y*arr.width() );
+    for(int x=0;x<arr.width();x++){
+      if(arr.isNoData(x,y))
+        continue;
+
+      if(perim_type==PerimType::CELL_COUNT){
+        for(int n=1;n<=8;n++){
+          if(!arr.inGrid(x+dx[n],y+dy[n])){
+            cell_edges++;
+            break;
+          }
+        }
+      } else if(perim_type==PerimType::SQUARE_EDGE){
+        for(int n=1;n<=8;n++){
+          if(!arr.inGrid(x+dx[n],y+dy[n]) || arr.isNoData(x+dx[n],y+dy[n])){
+            if(dx[n]==0) //Pointing at a cell above or below, so horizontal edge
+              horizontal_edges++;
+            else if(dy[n]==0) //Point at cell left or right, so vertical edge
+              vertical_edges++;
+          }
+        }
+      } else {
+        throw std::runtime_error("Unrecognised PerimType!");
+      }
+    }
+  }
+  std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+
+  if(perim_type==PerimType::CELL_COUNT)
+    return cell_edges;
+  else if(perim_type==PerimType::SQUARE_EDGE)
+    return horizontal_edges*arr.getCellLengthX()+vertical_edges*arr.getCellLengthY();
+  else
+    throw std::runtime_error("Unrecognised PerimType!");
+}
+
 #endif
