@@ -142,8 +142,9 @@ double dem_surface_area(
   }
   std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 
-  if(area<elevations.numDataCells()*elevations.getCellArea())
-    throw std::runtime_error("Topographic surface area was smaller than planar surface area - something must be wrong!");
+  const double dem_planar_area = elevations.numDataCells()*elevations.getCellArea();
+  if(area<dem_planar_area)
+    throw std::runtime_error("Topographic surface area ("+std::to_string(area)+") was smaller than planar surface area ("+std::to_string(dem_planar_area) +") - something must be wrong!");
 
   return area;
 }
