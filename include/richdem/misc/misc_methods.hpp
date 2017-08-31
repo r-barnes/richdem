@@ -51,6 +51,20 @@ double dem_surface_area(
   //raise an alarm.
   const double fudge_factor = 1e-4; 
 
+  //Using double as an accumulator here is important! Testing this algorithm
+  //using the Boost Numeric Interval library should data such as follows:
+  //Single-precision sum            = 2.14851e+09
+  //Double-precision sum            = 1.61629e+10
+  //Single-precision interval Width = 1.09655e+14
+  //Single-precision interval Lower = 1.07436e+09
+  //Single-precision interval Upper = 1.09656e+14
+  //Double-precision interval Width = 181.906
+  //Double-precision interval Lower = 1.61629e+10
+  //Double-precision interval Upper = 1.61629e+10
+
+  //The upshot is that there is significant uncertainty associated with the
+  //floating-point accumulator while the double accumulator has negligible
+  //uncertainty.
   double area = 0;
 
   const double xdist            = elevations.getCellLengthX();
