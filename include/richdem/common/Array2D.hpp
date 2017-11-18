@@ -918,6 +918,15 @@ class Array2D {
   }
 
   /**
+    @brief Returns a const reference to the the raw data of the array
+
+    @return A const reference to the the raw data of the array
+  */
+  const std::vector<T>& getDataVec() const { //TODO
+    return data;
+  }
+
+  /**
     @brief Returns a copy of the top row of the raster
 
     @return A vector containing a copy of the top row of the raster
