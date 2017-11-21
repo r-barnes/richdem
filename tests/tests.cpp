@@ -41,40 +41,26 @@ SCENARIO( "Array2D works" ) {
     REQUIRE( arr.xyToI(2,1)==9  );
     REQUIRE( arr.xyToI(6,2)==20 );
 
-/*
+    int val = 0;
+    for(int y=0;y<arr.height();y++)
+    for(int x=0;x<arr.width();x++)
+        arr(x,y) = val++;
 
-        WHEN( "the size is increased" ) {
-            v.resize( 10 );
+    REQUIRE(arr(2,1)==9);
+    REQUIRE(arr(6,2)==20);
+    REQUIRE(arr(0,0)==0);
+  }
 
-            THEN( "the size and capacity change" ) {
-                REQUIRE( v.size() == 10 );
-                REQUIRE( v.capacity() >= 10 );
-            }
-        }
-        WHEN( "the size is reduced" ) {
-            v.resize( 0 );
+  GIVEN("Resize test"){
+    Array2D<float> arr;
+    arr.resize(3,5,4);
+    REQUIRE( arr.width()  == 3  );
+    REQUIRE( arr.height() == 5  );
+    REQUIRE( arr.size()   == 15 );  
 
-            THEN( "the size changes but not capacity" ) {
-                REQUIRE( v.size() == 0 );
-                REQUIRE( v.capacity() >= 5 );
-            }
-        }
-        WHEN( "more capacity is reserved" ) {
-            v.reserve( 10 );
-
-            THEN( "the capacity changes but not the size" ) {
-                REQUIRE( v.size() == 5 );
-                REQUIRE( v.capacity() >= 10 );
-            }
-        }
-        WHEN( "less capacity is reserved" ) {
-            v.reserve( 0 );
-
-            THEN( "neither size nor capacity are changed" ) {
-                REQUIRE( v.size() == 5 );
-                REQUIRE( v.capacity() >= 5 );
-            }
-        }*/
+    REQUIRE( arr(2,1)==4 );
+    REQUIRE( arr(2,2)==4 );
+    REQUIRE( arr(0,0)==4 );
   }
 }
 
