@@ -270,6 +270,23 @@ class Array2D {
   }
 
   /**
+    @brief Wraps a flat array in an Array2D object.
+
+    Wraps a flat array in an Array2D object. The Array2D does not take ownership
+    of the data.
+
+    @param[in] width   Width of the raster
+    @param[in] height  Height of the raster
+  */
+  Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
+    data        = data0;
+    owned       = false;
+    view_width  = width;
+    view_height = height;
+  }
+
+
+  /**
     @brief Create a raster with the same properties and dimensions as another
            raster. No data is copied between the two.
 
