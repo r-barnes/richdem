@@ -569,7 +569,7 @@ class Array2D {
   void flipVert(){
     for(xy_t y=0;y<view_height/2;y++)
     for(xy_t x=0;x<view_width;x++)
-      std::swap(data[xyToI(x,y)], data[xyToI(x,view_height-1-y)])
+      std::swap(data[xyToI(x,y)], data[xyToI(x,view_height-1-y)]);
   }
 
   /**
@@ -578,7 +578,7 @@ class Array2D {
   void flipHorz(){
     for(xy_t y=0;y<view_height;y++){
       T* start = &data[xyToI(0,y)];
-      T* end   = &data[xyToI(view_width,y)]
+      T* end   = &data[xyToI(view_width,y)];
       while(start<end){
         std::swap(*start,*end);
         start++;
