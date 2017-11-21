@@ -362,19 +362,19 @@ class Array2D {
   T* getData() { return data; }
 
   ///@brief Number of cells in the DEM
-  i_t size() const { return view_width*view_height; }
+  i_t size()      const { return view_width*view_height; }
 
   ///Width of the raster
-  xy_t width() const { return view_width; }
+  xy_t width()    const { return view_width;  }
 
   ///Height of the raster
-  xy_t height() const { return view_height; }
+  xy_t height()   const { return view_height; }
 
   ///X-Offset of this subregion of whatever raster we loaded from
-  xy_t viewXoff() const { return view_xoff; }
+  xy_t viewXoff() const { return view_xoff;   }
 
   ///Y-Offset of this subregion of whatever raster we loaded from
-  xy_t viewYoff() const { return view_yoff; }
+  xy_t viewYoff() const { return view_yoff;   }
 
   ///Returns TRUE if no data is present in RAM
   bool empty() const { return data==nullptr; }
