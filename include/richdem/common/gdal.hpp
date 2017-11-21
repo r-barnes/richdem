@@ -4,6 +4,7 @@
 #ifdef USEGDAL
 
 #include "gdal_priv.h"
+#include <iostream>
 
 /**
   @brief  Determine data type of a GDAL file's first layer
