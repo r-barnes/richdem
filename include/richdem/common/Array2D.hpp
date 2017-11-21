@@ -7,7 +7,7 @@
 #ifndef _richdem_array_2d_hpp_
 #define _richdem_array_2d_hpp_
 
-#include "gdal_priv.h"
+#include "gdal.hpp"
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -27,129 +27,6 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #endif
-
-/**
-  @brief  Determine data type of a GDAL file's first layer
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  @param[in]  filename   Filename of file whose type should be determined
-*/
-GDALDataType peekGDALType(const std::string &filename) {
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL)
-    throw std::runtime_error("Unable to open file '"+filename+"'!");
-
-  GDALRasterBand *band   = fin->GetRasterBand(1);
-  GDALDataType data_type = band->GetRasterDataType();
-
-  GDALClose(fin);
-
-  return data_type;
-}
-
-
-/**
-  @brief  Retrieve height, width, NoData, and geotransform from a GDAL file
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  @param[in]  filename   GDAL file to peek at
-  @param[out] height     Height of the raster in cells
-  @param[out] width      Width of the raster in cells
-  @param[out] no_data    Value of the raster's no_data property
-  @param[out] geo_trans  Returns the SIX elements of the raster's geotransform
-*/
-template<class T>
-void getGDALHeader(
-  const   std::string &filename,
-  int32_t &height,
-  int32_t &width,
-  T       &no_data,
-  double  geotransform[6]
-){
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
-
-  GDALRasterBand *band   = fin->GetRasterBand(1);
-
-  height  = band->GetYSize();
-  no_data = band->GetNoDataValue();
-  width   = band->GetXSize();
-
-  fin->GetGeoTransform(geotransform);
-
-  GDALClose(fin);
-}
-
-
-/**
-  @brief  Retrieve height, width, data type, and geotransform from a GDAL file
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  @param[in]  filename   GDAL file to peek at
-  @param[out] height     Height of the raster in cells
-  @param[out] width      Width of the raster in cells
-  @param[out] dtype      Data type of the file in question
-  @param[out] geo_trans  Returns the SIX elements of the raster's geotransform
-*/
-void getGDALDimensions(
-  const   std::string &filename,
-  int32_t &height,
-  int32_t &width,
-  GDALDataType &dtype,
-  double geotransform[6]
-){
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL){
-    std::cerr<<"Could not open file '"<<filename<<"' to get dimensions."<<std::endl;
-    throw std::runtime_error("Could not open file to get dimensions");
-  }
-
-  GDALRasterBand *band = fin->GetRasterBand(1);
-  
-  dtype = band->GetRasterDataType();
-
-  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None){
-    std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
-    throw std::runtime_error("Could not get geotransform!");
-  }
-
-  height  = band->GetYSize();
-  width   = band->GetXSize();
-
-  GDALClose(fin);
-}
-
-/**
-  @brief  Convert Array2D or any other template to its GDAL data type
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  @return The GDAL datatype of T
-*/
-template<class T>
-GDALDataType NativeTypeToGDAL() {
-  if(typeid(T)==typeid(uint8_t))
-    return GDT_Byte;
-  else if(typeid(T)==typeid(uint16_t))
-    return GDT_UInt16;
-  else if(typeid(T)==typeid(int16_t))
-    return GDT_Int16;
-  else if(typeid(T)==typeid(uint32_t))
-    return GDT_UInt32;
-  else if(typeid(T)==typeid(int32_t))
-    return GDT_Int32;
-  else if(typeid(T)==typeid(float))
-    return GDT_Float32;
-  else if(typeid(T)==typeid(double))
-    return GDT_Float64;
-  else {
-    std::cerr<<"Could not map native type '"<<typeid(T).name()<<"' to GDAL type! (Use `c++filt -t` to decode.)"<<std::endl;
-    throw std::runtime_error("Could not map native data type to GDAL type!");
-  }
-  return GDT_Unknown;
-}
 
 
 
@@ -216,6 +93,7 @@ class Array2D {
   ///Otherwise, it assumes it is loading from a GDAL file.
   bool from_cache;
 
+  #ifdef USEGDAL
   ///TODO
   void loadGDAL(const std::string &filename, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
@@ -275,11 +153,16 @@ class Array2D {
     if(load_data)
       loadData();
   }
+  #endif
 
+
+  #ifdef USEGDAL
   ///Returns the GDAL data type of the Array2D template type
   GDALDataType myGDALType() const {
     return NativeTypeToGDAL<T>();
   }
+  #endif
+
 
   /**
     @brief Saves raster to a simply-structure file on disk, possibly using
@@ -366,6 +249,9 @@ class Array2D {
     view_height  = 0;
     view_xoff    = 0;
     view_yoff    = 0;
+    #ifdef USEGDAL
+      GDALAllRegister();
+    #endif
   }
 
   /**
@@ -403,10 +289,15 @@ class Array2D {
 
   ///TODO
   Array2D(const std::string &filename, bool native, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
-    if(native)
+    if(native){
       loadNative(filename, load_data);
-    else
-      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
+    } else {
+      #ifdef USEGDAL
+        loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
+      #else
+        throw std::runtime_error("RichDEM was not compiled with GDAL!");
+      #endif
+    }
   }
 
   void setCacheFilename(const std::string &filename){
@@ -441,22 +332,26 @@ class Array2D {
     if(from_cache){
       loadNative(filename, true);
     } else {
-      GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-      if(fin==NULL){
-        std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
-        throw std::runtime_error("Failed to loadData() into tile.");
-      }
+      #ifdef USEGDAL
+        GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+        if(fin==NULL){
+          std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
+          throw std::runtime_error("Failed to loadData() into tile.");
+        }
 
-      GDALRasterBand *band = fin->GetRasterBand(1);
+        GDALRasterBand *band = fin->GetRasterBand(1);
 
-      data.resize(view_width*view_height);
-      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
-      if(temp!=CE_None){
-        std::cerr<<"An error occured while trying to read '"<<filename<<"' into RAM."<<std::endl;
-        throw std::runtime_error("Error reading file with GDAL!");
-      }
+        resize(view_width,view_height);
+        auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data, view_width, view_height, myGDALType(), 0, 0 );
+        if(temp!=CE_None){
+          std::cerr<<"An error occured while trying to read '"<<filename<<"' into RAM."<<std::endl;
+          throw std::runtime_error("Error reading file with GDAL!");
+        }
 
-      GDALClose(fin);
+        GDALClose(fin);
+      #else
+        throw std::runtime_error("RichDEM was not compiled with GDAL!");
+      #endif
     }
   }
 
@@ -1016,6 +911,8 @@ class Array2D {
     processing_history = other.processing_history;
   }
 
+
+  #ifdef USEGDAL
   void saveGDAL(const std::string &filename, const std::string &metadata="", xy_t xoffset=0, xy_t yoffset=0, bool compress=false){
     char **papszOptions = NULL;
     if(compress){
@@ -1098,6 +995,9 @@ class Array2D {
 
     GDALClose(fout);
   }
+  #endif
+
+
 
   /**
     @brief Output a square of cells useful for determining raster orientation.
@@ -1123,7 +1023,9 @@ class Array2D {
         std::cerr<<msg<<std::endl;
       std::cerr<<"Stamp for basename='"<<basename
                <<"', filename='"<<filename
-               <<"', dtype="<<GDALGetDataTypeName(myGDALType())
+               #ifdef USEGDAL
+                 <<"', dtype="<<GDALGetDataTypeName(myGDALType())
+               #endif
                <<" at "<<sx<<","<<sy<<"\n";
 
       const xy_t sxmax = std::min(width(), sx+size);
