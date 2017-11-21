@@ -580,6 +580,8 @@ void d8_flats_alter_dem(
 }
 
 
+
+//TODO: Documentation
 template<class T, class U>
 void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, bool alter){
   d8_flow_directions(elevations,flowdirs);
