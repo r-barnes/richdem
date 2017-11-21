@@ -48,7 +48,8 @@ void getGDALHeader(
 ){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  assert(fin!=NULL);
+  if(fin==NULL)
+    throw std::runtime_error("Could not get GDAL header: file '" + filename + "'' did not open!");
 
   GDALRasterBand *band   = fin->GetRasterBand(1);
 
