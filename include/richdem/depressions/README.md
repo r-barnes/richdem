@@ -46,7 +46,7 @@ but is otherwise the same. The result is saved to **out-pf-original**.
  * **Algorithm 2: Improved Priority-Flood** This algorithm alters the input DEM
 to produce an output with no depressions or digital dams. Every cell which
 would have been in a depression is increased to the level of that depression's
-outlet, leaving a flat region in its place. It runs slower than Algorithm 2,
+outlet, leaving a flat region in its place. It runs faster than Algorithm 1,
 but is otherwise the same. The result is saved to **out-pf-improved**.
 
  * **Algorithm 3: Priority-Flood+Epsilon** This algorithm alters the input DEM
