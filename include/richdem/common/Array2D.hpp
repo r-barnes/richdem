@@ -526,7 +526,7 @@ class Array2D {
     @brief Determine if two rasters are equivalent based on dimensions,
            NoData value, and their data
   */
-  bool operator==(const Array2D<T> &o){
+  bool operator==(const Array2D<T> &o) const {
     if(width()!=o.width() || height()!=o.height())
       return false;
     if(noData()!=o.noData())
