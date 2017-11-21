@@ -79,14 +79,14 @@ class Array2D {
   T   no_data;                       ///< NoData value of the raster
   mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
-  xy_t view_width;               ///< Height of raster in cells
-  xy_t view_height;              ///< Width of raster in cells
+  xy_t view_width  = 0;              ///< Height of raster in cells
+  xy_t view_height = 0;              ///< Width of raster in cells
 
   ///@{ A rectangular subregion of a larger raster can be extracted. These
   ///   variables store the offsets of this subregion in case the subregion
   ///   needs to be saved into a raster with other subregions
-  xy_t view_xoff;
-  xy_t view_yoff;
+  xy_t view_xoff = 0;
+  xy_t view_yoff = 0;
   ///@}
   
   ///If TRUE, loadData() loads data from the cache assuming  the Native format.
@@ -237,18 +237,13 @@ class Array2D {
     in.read(reinterpret_cast<char*>(&projection[0]), projection.size()*sizeof(char));
 
     if(load_data){
-      data.resize(view_height*view_width);
-      in.read(reinterpret_cast<char*>(data.data()), view_width*view_height*sizeof(T));
+      resize(view_width,view_height);
+      in.read(reinterpret_cast<char*>(data), size()*sizeof(T));
     }
   }
 
  public:
   Array2D(){
-    GDALAllRegister();
-    view_width   = 0;
-    view_height  = 0;
-    view_xoff    = 0;
-    view_yoff    = 0;
     #ifdef USEGDAL
       GDALAllRegister();
     #endif
