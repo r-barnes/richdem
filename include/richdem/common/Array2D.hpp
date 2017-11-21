@@ -675,7 +675,7 @@ class Array2D {
     @param[in]   val      Value to change the cells to
   */
   void setAll(const T val){
-    for(unsigned int i=0;i<size();i++)
+    for(i_t i=0;i<size();i++)
       data[i] = val;
   }
 
@@ -687,13 +687,13 @@ class Array2D {
     @param[in]   val      Value to set all the cells to. Defaults to the 
                           raster's template type default value
   */
-  void resize(xy_t width, xy_t height, const T& val = T()){
+  void resize(const xy_t width, const xy_t height, const T& val = T()){
     delete[] data;
 
-    data = new T[width*height];
-    setAll(val);
-    view_height = height;
+    data        = new T[width*height];
     view_width  = width;
+    view_height = height;
+    setAll(val);
   }
 
   /*
