@@ -128,27 +128,41 @@ TEST_CASE("Checking GridCellZk_pq") {
 TEST_CASE("Checking depression filling") {
   Array2D<int> elevation_orig("depressions/testdem1.dem", false);
 
-  {
+  SUBCASE("original_priority_flood"){
+    auto elevation = elevation_orig;
+    original_priority_flood(elevation);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    REQUIRE(elevation==manually_flooded);
+  }
+
+  SUBCASE("improved_priority_flood"){
+    auto elevation = elevation_orig;
+    improved_priority_flood(elevation);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    REQUIRE(elevation==manually_flooded);
+  }
+
+  SUBCASE("Zhou2016"){
     auto elevation = elevation_orig;
     Zhou2016(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
-    CHECK(elevation==manually_flooded);
+    REQUIRE(elevation==manually_flooded);
   }
 
-  {
+  SUBCASE("improved_priority_flood_max_dep"){
     auto elevation = elevation_orig;
     improved_priority_flood_max_dep(elevation,1);
     elevation.printAll();
     Array2D<int> manually_flooded("depressions/testdem1.1.out", false);
-    CHECK(elevation==manually_flooded);
+    REQUIRE(elevation==manually_flooded);
   }
 
-  {
+  SUBCASE("improved_priority_flood_max_dep"){
     auto elevation = elevation_orig;
     improved_priority_flood_max_dep(elevation,2);
     elevation.printAll();
     Array2D<int> manually_flooded("depressions/testdem1.2.out", false);
-    CHECK(elevation==manually_flooded);
+    REQUIRE(elevation==manually_flooded);
   }
 
 }
