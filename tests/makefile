@@ -1,6 +1,6 @@
 export CXX=g++
 export GDAL_LIBS=`gdal-config --libs`
-export GDAL_CFLAGS=`gdal-config --cflags`
+export GDAL_CFLAGS=`gdal-config --cflags` -DUSEGDAL
 RICHDEM_GIT_HASH=`git rev-parse HEAD`
 RICHDEM_COMPILE_TIME=`date -u +'%Y-%m-%d %H:%M:%S UTC'`
 export LIBS=$(GDAL_LIBS) -lstdc++fs
