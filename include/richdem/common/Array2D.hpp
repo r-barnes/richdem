@@ -68,7 +68,7 @@ class Array2D {
   typedef int32_t  xy_t;            ///< xy-addressing data type
   typedef uint32_t i_t;             ///< i-addressing data type
 
-  static const i_t NO_I = std::numeric_limits<i_t>::max();
+  static const i_t NO_I = std::numeric_limits<i_t>::max(); //TODO: What is this?
 
  private:
   template<typename> friend class Array2D;
