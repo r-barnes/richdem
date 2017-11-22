@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cstdlib> //Used for exit
 
+namespace richdem {
 
 /**
   @brief  Determine if a DEM has depressions
@@ -891,5 +892,6 @@ void improved_priority_flood_max_dep(
   std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
 }
 
+}
 
 #endif

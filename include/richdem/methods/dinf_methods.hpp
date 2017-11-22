@@ -17,6 +17,8 @@
 #include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/grid_cell.hpp"
 
+namespace richdem {
+
 //TODO: Can these be merged with the regular D8 directions?
 //X- and Y-offests of D-inf neighbours (TODO: More explanation, and why there are 9)
 static const int dinf_dx[9] = {1,  1,  0, -1, -1, -1, 0, 1, 1};
@@ -245,6 +247,8 @@ void dinf_upslope_area(
       sources.emplace(nhx,nhy);
   }
   std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+}
+
 }
 
 #endif

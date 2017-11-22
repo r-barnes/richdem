@@ -4,6 +4,8 @@
 #include "gdal_priv.h"
 #include "richdem/common/Array2D.hpp"
 
+namespace richdem {
+
 template<typename... Args>
 int PerformAlgorithm(std::string inputfile, Args... args){
   switch(peekGDALType(inputfile)){
@@ -46,6 +48,8 @@ int PerformAlgorithm(std::string inputfile, Args... args){
       std::cerr<<"Unrecognised data type: "<<GDALGetDataTypeName(peekGDALType(inputfile))<<std::endl;
       return -1;
   }
+}
+
 }
 
 #endif

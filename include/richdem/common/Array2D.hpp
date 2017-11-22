@@ -28,7 +28,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #endif
 
-
+namespace richdem {
 
 
 /**
@@ -1169,5 +1169,7 @@ class Array2D {
         data[i] *= x;
   }
 };
+
+}
 
 #endif

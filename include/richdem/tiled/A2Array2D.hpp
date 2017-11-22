@@ -11,6 +11,8 @@
 #include "richdem/tiled/lru.hpp"
 #include "gdal_priv.h"
 
+namespace richdem {
+
 GDALDataType peekLayoutType(const std::string &layout_filename) {
   LayoutfileReader lf(layout_filename);
 
@@ -623,5 +625,7 @@ class A2Array2D {
     _LoadTile(tx,ty);
   }
 };
+
+}
 
 #endif

@@ -16,6 +16,8 @@
 #include <map>
 #include <iostream>
 
+namespace richdem {
+
 typedef char label_t;
 
 template<class elev_t>
@@ -186,6 +188,8 @@ void Zhou2016(
 
   timer.stop();
   std::cerr<<"t Zhou2016 wall-time = "<<timer.accumulated()<<" s"<<std::endl;
+}
+
 }
 
 #endif

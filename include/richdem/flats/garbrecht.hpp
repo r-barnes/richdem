@@ -1,9 +1,14 @@
+#ifndef _richdem_garbrecht_hpp_
+#define _richdem_garbrecht_hpp_
+
 #include <deque>
 #include <cstdint>
 #include <iostream>
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
 #include "richdem/flowdirs/d8_flowdirs.hpp"
+
+namespace richdem {
 
 typedef std::deque<grid_cell> flat_type;
 
@@ -140,3 +145,7 @@ void GarbrechtAlg(Array2D<T> &elevations, Array2D<uint8_t> &flowdirs){
 
   std::cout<<flat_resolution_timer.accumulated()<<" seconds were used to resolve flats."<<std::endl;
 }
+
+}
+
+#endif

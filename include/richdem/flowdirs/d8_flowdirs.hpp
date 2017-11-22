@@ -10,6 +10,8 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+namespace richdem {
+
 /**
   @brief  Calculates the D8 flow direction of a cell
   @author Richard Barnes (rbarnes@umn.edu)
@@ -117,6 +119,8 @@ void d8_flow_directions(
         flowdirs(x,y) = d8_FlowDir(elevations,x,y);
   }
   std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+}
+
 }
 
 #endif

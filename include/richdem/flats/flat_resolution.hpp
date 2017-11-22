@@ -18,6 +18,8 @@
 #include <cmath>
 #include <limits>
 
+namespace richdem {
+
 //234
 //105
 //876
@@ -598,6 +600,8 @@ void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, boo
   }
 
   flowdirs.templateCopy(elevations);
+}
+
 }
 
 #endif

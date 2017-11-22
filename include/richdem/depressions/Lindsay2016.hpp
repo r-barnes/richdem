@@ -7,6 +7,8 @@
 #include "richdem/common/timer.hpp"
 #include <limits>
 
+namespace richdem {
+
 enum LindsayMode {
   COMPLETE_BREACHING,
   SELECTIVE_BREACHING,
@@ -219,6 +221,8 @@ void Lindsay2016(Array2D<int16_t> &dem, LindsayMode mode, bool fill_depressions,
 template<>
 void Lindsay2016(Array2D<uint16_t> &dem, LindsayMode mode, bool fill_depressions, uint32_t maxpathlen, uint16_t maxdepth){
   throw std::runtime_error("E Lindsay2016 not available for uint16_t.");
+}
+
 }
 
 #endif

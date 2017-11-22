@@ -29,6 +29,8 @@
 #include <cassert>
 #include <stdexcept>
 
+namespace richdem {
+
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
   #define RICHDEM_SLASH_CHAR "/"
@@ -274,5 +276,7 @@ class LayoutfileWriter {
     gridx++;
   }
 };
+
+}
 
 #endif

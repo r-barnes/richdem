@@ -10,6 +10,8 @@
 #include <list>
 #include <unordered_map>
 
+namespace richdem {
+
 ///@brief A Least-Recently Used (LRU) cache
 template<class T>
 class LRU {
@@ -98,5 +100,7 @@ class LRU {
       pop_back();
   }
 };
+
+}
 
 #endif

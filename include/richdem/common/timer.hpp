@@ -10,6 +10,8 @@
 #include <sys/time.h>
 #include <stdexcept>
 
+namespace richdem {
+
 ///@brief Used to time how intervals in code.
 ///
 ///Such as how long it takes a given function to run, or how long I/O has taken.
@@ -80,5 +82,7 @@ class Timer{
       running          = false;
     }
 };
+
+}
 
 #endif

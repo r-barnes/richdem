@@ -14,6 +14,8 @@
 
 #include <iomanip> //TODO: Cut
 
+namespace richdem {
+
 enum FDMode {
   CALC_DEPENDENCIES,
   CALC_ACCUM
@@ -1154,4 +1156,7 @@ void d8_flow_directions(
   std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 */
+
+}
+
 #endif

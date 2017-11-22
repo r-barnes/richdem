@@ -3,6 +3,11 @@
 #ifndef _richdem_random_hpp_
 #define _richdem_random_hpp_
 
+#include <random>
+#include <string>
+
+namespace richdem {
+
 ///Maximum number of threads this class should deal with
 #define PRNG_THREAD_MAX 32
 
@@ -13,9 +18,6 @@
   #define omp_get_num_threads() 1
   #define omp_get_max_threads() 1
 #endif
-
-#include <random>
-#include <string>
 
 typedef std::string RandomEngineState;
 
@@ -48,5 +50,7 @@ T uniform_bits(){
 
 RandomEngineState SaveRandomState();
 void SetRandomState(const RandomEngineState &res);
+
+}
 
 #endif

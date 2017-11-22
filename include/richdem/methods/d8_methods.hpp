@@ -14,6 +14,8 @@
 #include "richdem/common/ProgressBar.hpp"
 #include <queue>
 
+namespace richdem {
+
 /**
   @brief  Returns the sign (+1, -1, 0) of a number. Branchless.
   @author Richard Barnes (rbarnes@umn.edu)
@@ -749,6 +751,8 @@ void d8_profile_curvature(
   std::cerr<<"C Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, profile_curvatures, &TerrainAttributator<T>::profile_curvature);
+}
+
 }
 
 #endif

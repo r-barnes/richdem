@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 
+namespace richdem {
+
 #ifndef RICHDEM_GIT_HASH
   #pragma message "Compiling without a git hash!"
   ///Git hash of program's source (used if RICHDEM_GIT_HASH is undefined)
@@ -56,6 +58,8 @@ std::string PrintRichdemHeader(int argc, char **argv){
   std::cout<<"a Analysis command   = " <<analysis            <<std::endl;
 
   return analysis;
+}
+
 }
 
 #endif

@@ -14,6 +14,8 @@ described in Barnes (TODO).
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+namespace richdem {
+
 ///Value used to indicate that a flow direction cell has no data
 #define dinf_NO_DATA -1
 
@@ -146,6 +148,8 @@ void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs
         flowdirs(x,y) = dinf_FlowDir(elevations,x,y);
   }
   std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+}
+
 }
 
 #endif

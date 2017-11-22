@@ -6,6 +6,8 @@
 #include "gdal_priv.h"
 #include <iostream>
 
+namespace richdem {
+
 /**
   @brief  Determine data type of a GDAL file's first layer
   @author Richard Barnes (rbarnes@umn.edu)
@@ -134,6 +136,7 @@ GDALDataType NativeTypeToGDAL() {
   return GDT_Unknown;
 }
 
+}
 
 #endif
 

@@ -18,6 +18,8 @@
 #ifndef _richdem_constants_hpp_
 #define _richdem_constants_hpp_
 
+namespace richdem {
+
 //Constant used to hold D8 flow directions
 typedef uint8_t d8_flowdir_t;
 
@@ -61,5 +63,7 @@ const uint8_t GRID_LEFT   = 1; ///< Indicates a tile is on the LHS of a DEM
 const uint8_t GRID_TOP    = 2; ///< Indicates a tile is on the top of a DEM
 const uint8_t GRID_RIGHT  = 4; ///< Indicates a tile is on the RHS of a DEM
 const uint8_t GRID_BOTTOM = 8; ///< Indicates a tile is on the bottom of a DEM
+
+}
 
 #endif

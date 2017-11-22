@@ -9,6 +9,8 @@
 #include "richdem/flats/flat_resolution.hpp"
 #include "richdem/flowdirs/dinf_flowdirs.hpp"
 
+namespace richdem {
+
 static const float d8_to_dinf[9]={-1, 4*M_PI/4, 3*M_PI/4, 2*M_PI/4, 1*M_PI/4, 0, 7*M_PI/4, 6*M_PI/4, 5*M_PI/4};
 
 static float dinf_masked_FlowDir(
@@ -101,6 +103,8 @@ void resolve_flats_barnes_dinf(
   resolve_flats_barnes(elevations,flowdirs,flat_mask,labels);
 
   dinf_flow_flats(flat_mask,labels,flowdirs);
+}
+
 }
 
 #endif
