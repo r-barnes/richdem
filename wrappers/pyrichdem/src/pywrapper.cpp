@@ -4,6 +4,12 @@
 
 namespace py = pybind11;
 
+
+
+//Dark magic that wraps an Array2D structure of type T around a Python array
+//type (such as NumPy) in such a way that the original data can be modified in-
+//place. The following also takes Array2D outputs and converts them into NumPy
+//arrays.
 namespace pybind11 { namespace detail {
   template <typename T> struct type_caster<Array2D<T>>
   {
