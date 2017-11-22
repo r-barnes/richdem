@@ -920,7 +920,7 @@ class Array2D {
     @return A vector containing a copy of the selected row
   */
   std::vector<T> getRowData(xy_t y) const {
-    return std::vector<T>(data+xyToI(0,y),view_width);
+    return std::vector<T>(data+xyToI(0,y),data+xyToI(0,y)+view_width);
   }
 
   /**
