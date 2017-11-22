@@ -699,23 +699,23 @@ class Array2D {
   /**
     @brief Resize the raster. Note: this clears all the raster's data.
 
-    @param[in]   width    New width of the raster
-    @param[in]   height   New height of the raster
-    @param[in]   val      Value to set all the cells to. Defaults to the 
-                          raster's template type default value
+    @param[in]   width0    New width of the raster
+    @param[in]   height0   New height of the raster
+    @param[in]   val0      Value to set all the cells to. Defaults to the 
+                           raster's template type default value
   */
-  void resize(const xy_t width, const xy_t height, const T& val = T()){
-    if(width==view_width && height==view_height)
+  void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
+    if(width0==view_width && height0==view_height)
       return;
     if(!owned)
       throw std::runtime_error("RichDEM can only resize memory it owns!");
 
     delete[] data;
 
-    data        = new T[width*height];
-    view_width  = width;
-    view_height = height;
-    setAll(val);
+    data        = new T[width0*height0];
+    view_width  = width0;
+    view_height = height0;
+    setAll(val0);
   }
 
   /*
@@ -745,7 +745,7 @@ class Array2D {
     @param[in] val        Value to set the new cells to
   */
   void expand(xy_t new_width, xy_t new_height, const T val){
-    if(width==view_width && height==view_height)
+    if(new_width==view_width && new_height==view_height)
       return;    
     if(!owned)
       throw std::runtime_error("RichDEM can only expand memory it owns!");
