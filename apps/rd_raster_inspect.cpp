@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(int minx, int maxx, int miny, int maxy, bool flipV, bool flipH, Array2D<T> inp){
@@ -63,6 +63,10 @@ int PerformAlgorithm(int minx, int maxx, int miny, int maxy, bool flipV, bool fl
 
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);

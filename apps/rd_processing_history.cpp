@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);

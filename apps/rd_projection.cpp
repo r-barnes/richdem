@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(std::string outputfile, std::string templatefile, std::string analysis, Array2D<T> raster){
@@ -19,6 +19,10 @@ int PerformAlgorithm(std::string outputfile, std::string templatefile, std::stri
 
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);

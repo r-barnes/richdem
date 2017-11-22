@@ -2,7 +2,7 @@
 #include <iomanip>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<typename T, typename U>
 int PerformAlgorithm(Array2D<T> a, Array2D<U> b){
@@ -28,6 +28,8 @@ int PerformAlgorithm(Array2D<T> a, Array2D<U> b){
 
   return 0;
 }
+
+#include "router.hpp"
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);

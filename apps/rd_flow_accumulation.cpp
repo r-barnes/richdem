@@ -2,9 +2,9 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/common/router.hpp"
 #include "richdem/methods/dall_methods.hpp"
 #include "richdem/common/Array2D.hpp"
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(std::string output, int algorithm, float param, std::string analysis, Array2D<T> dem){
@@ -39,6 +39,10 @@ int PerformAlgorithm(std::string output, int algorithm, float param, std::string
 
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);
