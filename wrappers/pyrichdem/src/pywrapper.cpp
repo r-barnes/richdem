@@ -4,6 +4,55 @@
 
 namespace py = pybind11;
 
+namespace pybind11 { namespace detail {
+  template <typename T> struct type_caster<Array2D<T>>
+  {
+    public:
+
+      PYBIND11_TYPE_CASTER(Array2D<T>, _("Array2D<T>"));
+
+      // Conversion part 1 (Python -> C++)
+      bool load(py::handle src, bool convert) 
+      {
+        if (!convert && !py::array_t<T>::check_(src))
+          return false;
+
+        auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+        if (!buf)
+          return false;
+
+        auto dims = buf.ndim();
+        if (dims != 2 )
+          return false;
+
+        value = Array2D<T>((T*) buf.data(),buf.shape()[1],buf.shape()[0]);
+
+        return true;
+      }
+
+      //Conversion part 2 (C++ -> Python)
+      static py::handle cast(const Array2D<T>& src, py::return_value_policy policy, py::handle parent) 
+      {
+
+        std::vector<size_t> shape  (2);
+        std::vector<size_t> strides(2);
+
+        shape[0] = src.height();
+        shape[1] = src.width();
+
+        strides[0] = src.width();
+        strides[1] = strides[0]*sizeof(T);
+
+        py::array a(std::move(shape), std::move(strides), src.data() );
+
+        return a.release();
+
+      }
+  };
+}}
+
+
+
 //Tutorials
 //http://www.benjack.io/2017/06/12/python-cpp-tests.html
 //https://pybind11.readthedocs.io/en/stable/classes.html
@@ -17,56 +66,11 @@ namespace py = pybind11;
 //forcecast forces a conversion. We don't use it here in order to ensure that memory is not unnecessarily copied
 
 
+PYBIND11_MODULE(_richdem, m) {
+  m.doc() = "Internal library used by pyRichDEM for calculations";
 
-/* Bind MatrixXd (or some other Eigen type) to Python */
-// typedef Eigen::MatrixXd Matrix;
-
-// typedef Matrix::Scalar Scalar;
-// constexpr bool rowMajor = Matrix::Flags & Eigen::RowMajorBit;
-
-// py::class_<Matrix>(m, "Matrix", py::buffer_protocol())
-//     .def("__init__", [](Matrix &m, py::buffer b) {
-//         typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
-
-//         /* Request a buffer descriptor from Python */
-//         py::buffer_info info = b.request();
-
-//         /* Some sanity checks ... */
-//         if (info.format != py::format_descriptor<Scalar>::format())
-//             throw std::runtime_error("Incompatible format: expected a double array!");
-
-//         if (info.ndim != 2)
-//             throw std::runtime_error("Incompatible buffer dimension!");
-
-//         auto strides = Strides(
-//             info.strides[rowMajor ? 0 : 1] / (py::ssize_t)sizeof(Scalar),
-//             info.strides[rowMajor ? 1 : 0] / (py::ssize_t)sizeof(Scalar));
-
-//         auto map = Eigen::Map<Matrix, 0, Strides>(
-//             static_cast<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
-
-//         new (&m) Matrix(map);
-//     });
-
-
-template<class T>
-void rdFillDepressions(py::array_t<T, py::array::c_style> elev){
-  auto elevbuf = elev.request();
-  Array2D<T> a_elev((T*) elevbuf.ptr, elevbuf.shape[1], elevbuf.shape[0]);
-  Zhou2016(a_elev);
-}
-
-
-
-
-PYBIND11_PLUGIN(_richdem) {
-  py::module m("_richdem", "Internal library used by pyRichDEM for calculations");
-
-  m.def(
-    "rdFillDepressions",
-    &rdFillDepressions<double>,
-    "Fill all depressions."
-  );
+  m.def("rdFillDepressions",&Zhou2016<float>,"Fill all depressions.");
+  m.def("rdFillDepressions",&Zhou2016<double>,"Fill all depressions.");
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
@@ -78,6 +82,4 @@ PYBIND11_PLUGIN(_richdem) {
   //   py::arg("join_id")="",
   //   py::arg("score_list")=""
   // );
-
-  return m.ptr();
 }
