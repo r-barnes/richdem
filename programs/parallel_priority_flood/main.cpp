@@ -21,6 +21,8 @@
 #include "Zhou2016pf.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
+using namespace richdem;
+
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
 //for data set sizes and labels. For instance, in C++, a signed integer must be

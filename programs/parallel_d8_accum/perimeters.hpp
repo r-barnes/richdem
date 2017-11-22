@@ -39,7 +39,7 @@ void serialToXY(const int serial, int &x, int &y, const int width, const int hei
 }
 
 template<class U>
-void GridPerimToArray(const Array2D<U> &grid, std::vector<U> &vec){
+void GridPerimToArray(const richdem::Array2D<U> &grid, std::vector<U> &vec){
   assert(vec.size()==0); //Ensure receiving array is empty
 
   std::vector<U> vec2copy;

@@ -11,6 +11,8 @@
 #include <csignal>
 #include <stdexcept>
 
+using namespace richdem;
+
 typedef uint8_t flowdirs_t;
 
 template<class T>
