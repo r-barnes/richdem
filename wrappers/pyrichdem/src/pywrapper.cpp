@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-
+#include <richdem/richdem.hpp>
 #include "pybind11_array2d.hpp"
 
 namespace py = pybind11;
+namespace rd = richdem;
 
 //Tutorials
 //http://www.benjack.io/2017/06/12/python-cpp-tests.html
@@ -20,8 +20,8 @@ namespace py = pybind11;
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
 
-  m.def("rdFillDepressions",&Zhou2016<float>,"Fill all depressions.");
-  m.def("rdFillDepressions",&Zhou2016<double>,"Fill all depressions.");
+  m.def("rdFillDepressions",&rd::Zhou2016<float>,"Fill all depressions.");
+  m.def("rdFillDepressions",&rd::Zhou2016<double>,"Fill all depressions.");
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
