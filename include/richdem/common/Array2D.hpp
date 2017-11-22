@@ -941,9 +941,6 @@ class Array2D {
   void clear(){
     if(!owned)
       throw std::runtime_error("RichDEM can only clear memory it owns!");
-
-    if(!owned)
-      return;
     delete[] data;
     data = nullptr;
   }
