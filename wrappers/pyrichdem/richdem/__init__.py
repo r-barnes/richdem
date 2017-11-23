@@ -1,4 +1,5 @@
 import _richdem
+from _richdem import Array2Dfloat
 
 def fillDepressions(
   dem,
