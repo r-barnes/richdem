@@ -705,7 +705,7 @@ class Array2D {
                            raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
-    if(width0==view_width && height0==view_height)
+    if(width0==view_width && height0==view_height && data!=nullptr)
       return;
     if(!owned)
       throw std::runtime_error("RichDEM can only resize memory it owns!");
@@ -939,10 +939,10 @@ class Array2D {
 
   ///Clears all raster data from RAM
   void clear(){
-    if(!owned)
-      throw std::runtime_error("RichDEM can only clear memory it owns!");
-    delete[] data;
-    data = nullptr;
+    if(owned)
+      delete[] data;
+    owned = true;
+    data  = nullptr;
   }
 
   /**
@@ -968,10 +968,8 @@ class Array2D {
     }
 
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    if(poDriver==NULL){
-      std::cerr<<"Could not open GDAL driver!"<<std::endl;
+    if(poDriver==NULL)
       throw std::runtime_error("Could not open GDAL driver!");
-    }
     GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), papszOptions);
     if(fout==NULL){
       std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
