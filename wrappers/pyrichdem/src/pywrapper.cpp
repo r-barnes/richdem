@@ -40,7 +40,6 @@ PYBIND11_MODULE(_richdem, m) {
 
   py::class_<Array2D<float>>(m, "Array2Dfloat", py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
-      //.def(py::init<const std::string&>())
       .def(py::init<Array2D<float>::xy_t,Array2D<float>::xy_t,float>())
       .def("size",      &Array2D<float>::size)
       .def("width",     &Array2D<float>::width)
@@ -52,11 +51,11 @@ PYBIND11_MODULE(_richdem, m) {
       .def("setNoData", &Array2D<float>::setNoData)
       .def_readwrite("projection", &Array2D<float>::projection)
       .def_readwrite("processing_history", &Array2D<float>::processing_history)
-      .def("copy", [](const Array2D<float> a){
-        return a;
+      .def("copy", [](const Array2D<float> &a){
+        return Array2D<float>(a);
       })
       .def("fromArray", [](Array2D<float> &a, py::handle src){
-        // if(!py::array_t<float>::check_(src))
+        // if(!py::array_t<float>::check_(src)) //TODO: What's this about?
           // return false;
 
         auto buf = py::array_t<float, py::array::c_style | py::array::forcecast>::ensure(src);
@@ -85,7 +84,7 @@ PYBIND11_MODULE(_richdem, m) {
       })
       .def("__repr__",
         [](const Array2D<float> &a) {
-            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", address="+std::to_string(a.addy())+">";
         }
       );
 }
