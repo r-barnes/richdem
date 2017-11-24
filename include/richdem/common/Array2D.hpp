@@ -19,6 +19,7 @@
 #include <limits>
 #include <ctime>         //Used for timestamping output files
 #include <unordered_set> //For printStamp
+#include <stdexcept>
 #include "richdem/common/version.hpp"
 #include "richdem/common/constants.hpp"
 
@@ -106,10 +107,8 @@ class Array2D {
     this->filename = filename;
 
     GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-    if(fin==NULL){
-      std::cerr<<"Could not open file '"<<filename<<"'!"<<std::endl;
-      throw std::runtime_error("Could not open a GDAL file!");
-    }
+    if(fin==NULL)
+      throw std::runtime_error("Could not open file '"+filename+"' with GDAL!");
 
     geotransform.resize(6);
     if(fin->GetGeoTransform(geotransform.data())!=CE_None){
@@ -347,26 +346,22 @@ class Array2D {
   */
   void loadData() {
     if(data!=nullptr)
-      return; //TODO: Warning?
+      throw std::runtime_error("Data already loaded!");
 
     if(from_cache){
       loadNative(filename, true);
     } else {
       #ifdef USEGDAL
         GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-        if(fin==NULL){
-          std::cerr<<"Failed to loadData() into tile from '"<<filename<<"'"<<std::endl;
-          throw std::runtime_error("Failed to loadData() into tile.");
-        }
+        if(fin==NULL)
+          throw std::runtime_error("Failed to loadData() into tile from '"+filename+"'");
 
         GDALRasterBand *band = fin->GetRasterBand(1);
 
         resize(view_width,view_height);
         auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data, view_width, view_height, myGDALType(), 0, 0 );
-        if(temp!=CE_None){
-          std::cerr<<"An error occured while trying to read '"<<filename<<"' into RAM."<<std::endl;
-          throw std::runtime_error("Error reading file with GDAL!");
-        }
+        if(temp!=CE_None)
+          throw std::runtime_error("An error occured while trying to read '"+filename+"' into RAM with GDAL.");
 
         GDALClose(fin);
       #else
