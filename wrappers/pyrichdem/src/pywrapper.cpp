@@ -84,8 +84,18 @@ PYBIND11_MODULE(_richdem, m) {
       })
       .def("__repr__",
         [](const Array2D<float> &a) {
-            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", address="+std::to_string(a.addy())+">";
+            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
         }
-      );
+      )
+      .def("__call__",
+        [](Array2D<float> &a, const int x, const int y) -> float& {
+          return a(x,y);
+        }
+      )
+      .def("__call__",
+        [](Array2D<float> &a, const int i) -> float& {
+          return a(i);
+        }
+      );      
 }
  
