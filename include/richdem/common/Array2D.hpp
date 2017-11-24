@@ -106,6 +106,8 @@ class Array2D {
 
     this->filename = filename;
 
+    std::cerr<<"Trying to open file '"<<filename<<"'..."<<std::endl;
+
     GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
     if(fin==NULL)
       throw std::runtime_error("Could not open file '"+filename+"' with GDAL!");
