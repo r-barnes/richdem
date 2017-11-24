@@ -77,7 +77,7 @@ class Array2D {
   T* data = nullptr;                ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
-  bool owned = false;               ///< If true, then the class deletes the 
+  bool owned = true;                ///< If true, then the class deletes the 
                                     ///  `data` array upon destruction.
 
   T   no_data;                       ///< NoData value of the raster
