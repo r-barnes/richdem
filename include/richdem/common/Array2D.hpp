@@ -246,6 +246,24 @@ class Array2D {
     }
   }
 
+  ///TODO
+  template<class U>
+  void copyOtherArray(const Array2D<U> &o){
+    resize(o.width(), o.height());
+    for(unsigned int i=0;i<o.size();i++)
+      data[i] = (T)o.data[i];
+    view_height        = o.view_height;
+    view_width         = o.view_width;
+    view_xoff          = o.view_xoff;
+    view_yoff          = o.view_yoff;
+    num_data_cells     = o.num_data_cells;
+    geotransform       = o.geotransform;
+    projection         = o.projection;
+    processing_history = o.processing_history;
+    no_data            = (T)o.no_data;
+  }
+
+
  public:
   Array2D(){
     #ifdef USEGDAL
@@ -286,6 +304,10 @@ class Array2D {
     view_height = height;
   }
 
+  template<class U>
+  Array2D(const Array2D<U> &other) : Array2D() {
+    copyOtherArray(other);
+  }
 
   /**
     @brief Create a raster with the same properties and dimensions as another
@@ -521,18 +543,7 @@ class Array2D {
   */
   template<class U>
   T& operator=(const Array2D<U> &o){
-    resize(o.size());
-    for(unsigned int i=0;i<o.size();i++)
-      data[i] = o.data[i];
-    view_height        = o.view_height;
-    view_width         = o.view_width;
-    view_xoff          = o.view_xoff;
-    view_yoff          = o.view_yoff;
-    num_data_cells     = o.num_data_cells;
-    geotransform       = o.geotransform;
-    projection         = o.projection;
-    processing_history = o.processing_history;
-    no_data            = (T)o.no_data;
+    copyOtherArray(o);
     return *this;
   }
 
