@@ -11,7 +11,7 @@ ext_modules = [
     glob.glob('src/*.cpp'),
     include_dirs       = ['lib/'],
     language           = 'c++',
-    extra_compile_args = ['-std=c++11','-O3','-fvisibility=hidden'],
+    extra_compile_args = ['-std=c++11','-O3','-fvisibility=hidden', '-flto'],
     define_macros      = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
       ('RICHDEM_COMPILE_TIME',   RICHDEM_COMPILE_TIME)
