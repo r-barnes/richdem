@@ -23,8 +23,9 @@ using namespace richdem;
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
 
-  m.def("rdFillDepressions",&Zhou2016<float>,"Fill all depressions.");
+  m.def("rdFillDepressions",&Zhou2016<float>, "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdFillDepressions",&Zhou2016<double>,"Fill all depressions.");
+  m.def("rdPFepsilon",      &priority_flood_epsilon<float>,"Fill all depressions with epsilon.");
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
@@ -38,18 +39,22 @@ PYBIND11_MODULE(_richdem, m) {
   // );
 
   py::class_<Array2D<float>>(m, "Array2Dfloat", py::buffer_protocol(), py::dynamic_attr())
-      .def(py::init<const std::string&>())
+      .def(py::init<>())
+      //.def(py::init<const std::string&>())
       .def(py::init<Array2D<float>::xy_t,Array2D<float>::xy_t,float>())
-      .def("size",   &Array2D<float>::size)
-      .def("width",  &Array2D<float>::width)
-      .def("height", &Array2D<float>::height)
-      .def("empty",  &Array2D<float>::empty)
-      .def("noData", &Array2D<float>::noData)
-      .def("min",    &Array2D<float>::min)
-      .def("max",    &Array2D<float>::max)
-      .def("update", &Array2D<float>::update)
+      .def("size",      &Array2D<float>::size)
+      .def("width",     &Array2D<float>::width)
+      .def("height",    &Array2D<float>::height)
+      .def("empty",     &Array2D<float>::empty)
+      .def("noData",    &Array2D<float>::noData)
+      .def("min",       &Array2D<float>::min)
+      .def("max",       &Array2D<float>::max)
+      .def("setNoData", &Array2D<float>::setNoData)
       .def_readwrite("projection", &Array2D<float>::projection)
       .def_readwrite("processing_history", &Array2D<float>::processing_history)
+      .def("copy", [](const Array2D<float> a){
+        return a;
+      })
       .def("fromArray", [](Array2D<float> &a, py::handle src){
         // if(!py::array_t<float>::check_(src))
           // return false;
