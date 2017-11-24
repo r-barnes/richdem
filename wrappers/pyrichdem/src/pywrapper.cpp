@@ -23,9 +23,9 @@ using namespace richdem;
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
 
-  m.def("rdFillDepressions",&Zhou2016<float>, "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
-  m.def("rdFillDepressions",&Zhou2016<double>,"Fill all depressions.");
-  m.def("rdPFepsilon",      &priority_flood_epsilon<float>,"Fill all depressions with epsilon.");
+  m.def("rdFillDepressions", &Zhou2016<float>,               "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
+  m.def("rdFillDepressions", &Zhou2016<double>,              "Fill all depressions.");
+  m.def("rdPFepsilon",       &priority_flood_epsilon<float>, "Fill all depressions with epsilon.");
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
