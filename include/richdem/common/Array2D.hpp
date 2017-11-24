@@ -294,8 +294,9 @@ class Array2D {
     Wraps a flat array in an Array2D object. The Array2D does not take ownership
     of the data.
 
-    @param[in] width   Width of the raster
-    @param[in] height  Height of the raster
+    @param[in] data0   Pointer to data to wrap
+    @param[in] width   Width of the data
+    @param[in] height  Height of the data
   */
   Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
     data        = data0;
@@ -314,11 +315,10 @@ class Array2D {
            raster. No data is copied between the two.
 
     @param[in] other   Raster whose properties and dimensions should be copied
-    @param[in] val     Initial value of all the raster's cells. Defaults to the
-                       Array2D template type's default value
+    @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
+  Array2D(const Array2D<U> &other, const T& val) : Array2D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;
@@ -329,6 +329,8 @@ class Array2D {
     basename           = other.basename;
     resize(other.width(), other.height(), val);
   }
+
+  Array2D(const std::string &filename) : Array2D(filename, false, 0,0,0,0, false, true) {}
 
   ///TODO
   Array2D(const std::string &filename, bool native, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
