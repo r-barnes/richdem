@@ -224,8 +224,9 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
   //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
   const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
 
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
 
     int8_t nmax = -1;
     double smax = 0;
@@ -315,8 +316,9 @@ std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam
   constexpr double L2   = 0.354; //TODO: More decimal places
   constexpr double L[9] = {0,L1,L2,L1,L2,L1,L2,L1,L2};
 
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
     const E e = elevations(x,y);
 
     const int ci = elevations.xyToI(x,y);
@@ -376,8 +378,9 @@ std::vector<float> FP_Freeman(
 
   std::vector<float> props(9*elevations.size(),0);
 
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
     const E e    = elevations(x,y);
     const int ci = elevations.xyToI(x,y);
 
@@ -423,8 +426,9 @@ std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
 
   std::vector<float> props(9*elevations.size(),0);
 
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
     const int ci = elevations.xyToI(x,y);
     const E e    = elevations(x,y);
 
@@ -481,8 +485,9 @@ static std::vector<float> KernelOCallaghan(const Array2D<E> &elevations){
 
   std::vector<float> props(9*elevations.width(),0);
 
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
     const int ci = elevations.xyToI(x,y);
     const E   e  = elevations(x,y);
 
@@ -531,14 +536,18 @@ std::vector<float> FP_D8(const Array2D<E> &elevations){
 
 template<class F, class E, class A>
 static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum){
-  const auto props = func(elevations);
-  accum.resize(elevations,1);
+  Timer overall;
+  overall.start();
 
-  Array2D<int8_t> deps(elevations, 0);
+  accum.resize(elevations,1);
+  accum.setNoData(ACCUM_NO_DATA);
+
+  const auto props = func(elevations);
 
   //Create dependencies array
-  for(int y=0;y<elevations.height;y++)
-  for(int x=0;x<elevations.width();x++){
+  Array2D<int8_t> deps(elevations, 0);
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
     const int ci = elevations.xyToI(x,y);
     for(int n=1;n<=8;n++)
       if(props[9*ci+n]>0)
@@ -548,23 +557,40 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
   //Find sources
   std::queue<int> q;
   for(int i=0;i<deps.size();i++)
-    if(deps(i)==0)
+    if(deps(i)==0 && !elevations.isNoData(i))
       q.emplace(i);
 
-  //Calculate flow accumulation
+  std::cerr<<"p Calculating flow accumulation..."<<std::endl;
+  ProgressBar progress;
+  progress.start(elevations.size());
   while(!q.empty()){
+    ++progress;
+
     const auto ci = q.front();
     q.pop();
+
+    assert(!elevations.isNoData(ci));
 
     const auto c_accum = accum(ci);
 
     for(int n=1;n<=8;n++){
+      if(props[9*ci+n]<=0)
+        continue;
       const int ni = ci+elevations.nshift(n);
+      if(elevations.isNoData(ni))
+        continue;
       accum(ni) += props[9*ci+n]*c_accum;
       if(--deps(ni)==0)
         q.emplace(ni);
     }
   }
+  progress.stop();
+
+  for(auto i=elevations.i0();i<elevations.size();i++)
+    if(elevations.isNoData(i))
+      accum(i)==accum.noData();
+
+  std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
 }
 
 
@@ -768,7 +794,7 @@ template<class elev_t, class accum_t> void FA_D8                (const Array2D<e
 
 
 
-
+/*
 
 
 template<class F, class E, class A, typename... Args>
@@ -861,107 +887,7 @@ static void DistanceDispersionEstimate(
 }
 
 
-
-
-
-
-
-
-
-template<class KernelF, class AccumF, class E, class A, typename... Args>
-static void KernelFlowdir(
-  KernelF           kernelf,
-  AccumF            accumf,
-  const Array2D<E> &elevations,
-  Array2D<A>       &accum,
-  Args&&... args
-){
-  //DistanceDispersionEstimate(f,elevations,accum,std::forward<Args>(args)...);
-  //return;
-
-  ProgressBar progress;
-  std::queue<GridCell> q;
-  dep_t dep;
-
-  Timer overall;
-  overall.start();
-
-  accum.setAll(0);
-  accum.setNoData(ACCUM_NO_DATA);
-  for(typename Array2D<E>::i_t i=0;i<elevations.size();i++)
-    if(elevations.isNoData(i))
-      accum(i) = ACCUM_NO_DATA;
-
-  dep.resize(elevations);
-  dep.setAll(0);
-
-  std::cerr<<"p Calculating dependencies..."<<std::endl;
-  progress.start(elevations.size());
-  //#pragma omp parallel for collapse(2)
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
-    for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
-      if(!elevations.inGrid(nx,ny))
-        continue;
-      if(elevations.isNoData(nx,ny))
-        continue;
-      if(elevations(nx,ny)<elevations(x,y))
-        dep(nx,ny)++;
-    }
-  }
-  progress.stop();
-
-  for(int y=0;y<dep.height();y++)
-  for(int x=0;x<dep.width();x++)
-    if(dep(x,y)==0 && !elevations.isNoData(x,y))
-      q.emplace(x,y);
-
-  std::cerr<<"p Calculating accumulation..."<<std::endl;
-  progress.start(accum.numDataCells());
-  while(!q.empty()){
-    ++progress;
-
-    const auto c = q.front();
-    q.pop();
-
-    assert(!elevations.isNoData(c.x,c.y));
-
-    accum(c.x,c.y) += 1;
-    kernelf(FDMode::CALC_ACCUM,accumf,elevations,accum,dep,q,c.x,c.y,std::forward<Args>(args)...);
-
-    assert(accum(c.x,c.y)<1e10);
-
-    for(int n=1;n<=8;n++){
-      const int nx = c.x+dx[n];
-      const int ny = c.y+dy[n];
-      if(!elevations.inGrid(nx,ny))
-        continue;
-      if(elevations.isNoData(nx,ny))
-        continue;
-      if(elevations(nx,ny)<elevations(c.x,c.y) && --dep(nx,ny)<=0)
-        q.emplace(nx,ny);
-    }
-  }
-  progress.stop();
-
-  for(int y=0;y<elevations.height();y++)
-  for(int x=0;x<elevations.width();x++){
-    if(accum(x,y)==0 && !elevations.isNoData(x,y)){
-      std::cerr<<"x,y: "<<x<<","<<y<<std::endl;
-      std::cerr<<"deps: "<<(int)dep(x,y)<<std::endl;
-    }
-    if(accum(x,y)>1e10)
-      std::cerr<<"x,y,: "<<x<<","<<y<<" "<<accum(x,y)<<std::endl;
-  }
-
-  std::cerr<<"m Data cells      = "<<elevations.numDataCells()<<std::endl;
-  std::cerr<<"m Cells processed = "<<progress.cellsProcessed()<<std::endl;
-  std::cerr<<"m Max accum       = "<<accum.max()              <<std::endl;
-  std::cerr<<"m Min accum       = "<<accum.min()              <<std::endl;
-  std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
-}
+*/
 
 
 
