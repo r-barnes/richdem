@@ -477,6 +477,11 @@ class Array2D {
     return count;
   }
 
+  //TODO
+  i_t i0() const {
+    return (i_t)0;
+  }
+
   /**
     @brief Convert from index coordinates to x,y coordinates
 
