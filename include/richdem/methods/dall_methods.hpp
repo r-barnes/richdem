@@ -16,18 +16,6 @@
 
 namespace richdem {
 
-enum FDMode {
-  CALC_DEPENDENCIES,
-  CALC_ACCUM
-};
-
-template<FDMode fd>
-void foo(){
-  std::cerr<<fd<<std::endl;
-}
-
-typedef Array2D<int8_t> dep_t;
-
 // template<class A>
 // static inline void StrahlerNumber(
 //   const int x,
