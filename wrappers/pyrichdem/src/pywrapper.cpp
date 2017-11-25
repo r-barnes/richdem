@@ -27,6 +27,15 @@ PYBIND11_MODULE(_richdem, m) {
   m.def("rdFillDepressions", &Zhou2016<double>,              "Fill all depressions.");
   m.def("rdPFepsilon",       &priority_flood_epsilon<float>, "Fill all depressions with epsilon.");
 
+  m.def("FA_Tarboton",          &FA_Tarboton<float,double>,          "TODO");
+  m.def("FA_Holmgren",          &FA_Holmgren<float,double>,          "TODO");
+  m.def("FA_Quinn",             &FA_Quinn<float,double>,             "TODO");
+  m.def("FA_Freeman",           &FA_Freeman<float,double>,           "TODO");
+  m.def("FA_FairfieldLeymarie", &FA_FairfieldLeymarie<float,double>, "TODO");
+  m.def("FA_Rho8",              &FA_Rho8<float,double>,              "TODO");
+  m.def("FA_D8",                &FA_D8<float,double>,                "TODO");
+
+
   // m.def(
   //   "getBoundedScoresForGeoJSON",
   //   &getBoundedScoresForGeoJSON,
