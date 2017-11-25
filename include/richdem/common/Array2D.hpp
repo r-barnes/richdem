@@ -734,8 +734,11 @@ class Array2D {
                            raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
-    if(width0==view_width && height0==view_height && data!=nullptr)
+    if(width0==view_width && height0==view_height && data!=nullptr){
+      setAll(val0);
       return;
+    }
+
     if(!owned)
       throw std::runtime_error("RichDEM can only resize memory it owns!");
 
