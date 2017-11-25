@@ -74,6 +74,8 @@ class Array2D {
  private:
   template<typename> friend class Array2D;
 
+  std::array<int, 9> _nshift;       ///< Offset to neighbouring cells;
+
   T* data = nullptr;                ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
@@ -536,6 +538,18 @@ class Array2D {
   }
 
   /**
+    @brief Return the offset of the neighbour cell identified by n
+
+    @param[in]  n   Neighbour for which offset should be retrieved
+
+    @return Offset of the neighbour n
+  */
+  int nshift(const uint8_t n) const {
+    assert(0<=n && n<=8);
+    return nshift[n];
+  }
+
+  /**
     @brief Copies all the properties AND data of another raster into this one
 
     @param[in]  o   Raster to copy
@@ -721,6 +735,8 @@ class Array2D {
       throw std::runtime_error("RichDEM can only resize memory it owns!");
 
     delete[] data;
+
+    _nshift     = {{0,-1,-width0-1,-width0,-width0+1,1,width0+1,width0,width0-1}};
 
     data        = new T[width0*height0];
     view_width  = width0;
