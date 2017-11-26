@@ -252,7 +252,6 @@ class Array2D {
 
  public:
   Array2D(){
-    RDLOG_DEBUG<<"Array2D() initial constructor.";
     #ifdef USEGDAL
       GDALAllRegister();
     #endif
@@ -697,8 +696,6 @@ class Array2D {
                            raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
-    RDLOG_DEBUG<<"Array2D::resize(width,height,val)";
-
     data.resize(width0*height0);
 
     _nshift     = {{0,-1,-width0-1,-width0,-width0+1,1,width0+1,width0,width0-1}};
