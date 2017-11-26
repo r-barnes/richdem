@@ -81,15 +81,15 @@ class ManagedVector {
     return *this;
   }
 
-  T* data() {
+  inline T* data() {
     return _data.get();
   }
 
-  bool empty() const {
+  inline bool empty() const {
     return _size==0;
   }
 
-  size_t size() const {
+  inline size_t size() const {
     return _size;
   }
 
@@ -102,11 +102,11 @@ class ManagedVector {
     _size = new_size;
   }
 
-  T& operator[](size_t i){
+  inline T& operator[](size_t i){
     return _data[i];
   }
 
-  const T& operator[](size_t i) const {
+  inline const T& operator[](size_t i) const {
     return _data[i];
   }  
 };
