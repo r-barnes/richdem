@@ -89,6 +89,12 @@ TEST_CASE( "Array2D works" ) {
     auto arr4 = arr0;
     auto arr5 = arr0;
   }
+
+  SUBCASE("Clear"){
+    Array2D<float> arr0(3,5,2);
+    auto arr1 = arr0;
+    arr0.clear();
+  }
 }
 
 
@@ -96,13 +102,11 @@ TEST_CASE("Checking flow accumulation") {
   for(auto p: fs::directory_iterator("flow_accum")){
     fs::path this_path = p.path();
     if(this_path.extension()==".d8"){
-      SUBCASE(p.path().c_str()){
-        Array2D<d8_flowdir_t> fds(this_path, false);
-        Array2D<int32_t>   correct_ans(this_path.replace_extension("out"), false);
-        Array2D<int32_t>   my_ans;
-        d8_flow_accum(fds,my_ans);
-        REQUIRE( correct_ans == my_ans );
-      }
+      Array2D<d8_flowdir_t> fds(this_path, false);
+      Array2D<int32_t>   correct_ans(this_path.replace_extension("out"), false);
+      Array2D<int32_t>   my_ans;
+      d8_flow_accum(fds,my_ans);
+      REQUIRE( correct_ans == my_ans );
     }
   }  
 }
