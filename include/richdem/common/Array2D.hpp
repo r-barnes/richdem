@@ -250,21 +250,6 @@ class Array2D {
     }
   }
 
-  ///TODO
-  template<class U>
-  void copyOtherArrayProps(const Array2D<U> &o){
-    view_height        = o.view_height;
-    view_width         = o.view_width;
-    view_xoff          = o.view_xoff;
-    view_yoff          = o.view_yoff;
-    num_data_cells     = o.num_data_cells;
-    geotransform       = o.geotransform;
-    projection         = o.projection;
-    processing_history = o.processing_history;
-    no_data            = (T)o.no_data;
-  }
-
-
  public:
   Array2D(){
     RDLOG_DEBUG<<"Array2D() initial constructor.";
