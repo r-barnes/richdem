@@ -4,7 +4,7 @@ from _richdem import Array2Dfloat
 try:
   import numpy as np
   NUMPY_AVAILABLE = True
-else:
+except:
   NUMPY_AVAILABLE = False
 
 try:
