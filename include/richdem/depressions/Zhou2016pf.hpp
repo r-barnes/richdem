@@ -9,6 +9,7 @@
 #ifndef _richdem_zhou2016pf_hpp_
 #define _richdem_zhou2016pf_hpp_
 
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/timer.hpp"
 #include <queue>
@@ -129,8 +130,8 @@ void Zhou2016(
   std::queue<int> traceQueue;
   std::queue<int> depressionQue;
 
-  std::cerr<<"A Priority-Flood (Zhou2016 version)"<<std::endl;
-  std::cerr<<"C Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021"<<std::endl;
+  RDLOG_ALG_NAME<<"Priority-Flood (Zhou2016 version)"<<std::endl;
+  RDLOG_CITATION<<"Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021"<<std::endl;
 
   Timer timer;
   timer.start();
@@ -187,7 +188,7 @@ void Zhou2016(
   }
 
   timer.stop();
-  std::cerr<<"t Zhou2016 wall-time = "<<timer.accumulated()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Zhou2016 wall-time = "<<timer.accumulated()<<" s"<<std::endl;
 }
 
 }

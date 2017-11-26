@@ -7,6 +7,7 @@
 #ifndef _richdem_d8_flowdirs_hpp_
 #define _richdem_d8_flowdirs_hpp_
 
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
@@ -99,15 +100,15 @@ void d8_flow_directions(
 ){
   ProgressBar progress;
 
-  std::cerr<<"A D8 Flow Directions"<<std::endl;
-  std::cerr<<"C TODO"<<std::endl;
+  RDLOG_ALG_NAME<<"D8 Flow Directions"<<std::endl;
+  RDLOG_CITATION<<"TODO"<<std::endl;
 
-  std::cerr<<"p Setting up the flow directions matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the flow directions matrix..."<<std::endl;
   flowdirs.resize(elevations);
   flowdirs.setAll(NO_FLOW);
   flowdirs.setNoData(FLOWDIR_NO_DATA);
 
-  std::cerr<<"p Calculating D8 flow directions..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating D8 flow directions..."<<std::endl;
   progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
   for(int y=0;y<elevations.height();y++){
@@ -118,7 +119,7 @@ void d8_flow_directions(
       else
         flowdirs(x,y) = d8_FlowDir(elevations,x,y);
   }
-  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 }

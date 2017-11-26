@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <queue>
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -121,20 +122,20 @@ void dinf_upslope_area(
   std::queue<GridCell> sources;
   ProgressBar progress;
 
-  std::cerr<<"\nA D-infinity Upslope Area"<<std::endl;
-  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
+  RDLOG_ALG_NAME<<"D-infinity Upslope Area"<<std::endl;
+  RDLOG_CITATION<<"Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
 
-  std::cerr<<"p Setting up the dependency matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the dependency matrix..."<<std::endl;
   dependency.resize(flowdirs);
   dependency.setAll(0);
 
-  std::cerr<<"p Setting up the area matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the area matrix..."<<std::endl;
   area.resize(flowdirs);
   area.setAll(0);
   area.setNoData(dinf_NO_DATA);
 
   bool has_cells_without_flow_directions=false;
-  std::cerr<<"p Calculating dependency matrix & setting noData() cells..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating dependency matrix & setting noData() cells..."<<std::endl;
   progress.start( flowdirs.size() );
 
   ///////////////////////
@@ -174,16 +175,16 @@ void dinf_upslope_area(
         dependency(nhx,nhy)++;
     }
   }
-  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 
   if(has_cells_without_flow_directions)
-    std::cerr<<"W \033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
+    RDLOG_WARN<<"\033[91mNot all cells had defined flow directions! This implies that there will be digital dams!\033[39m"<<std::endl;
 
   ///////////////////////
   //Find those cells which have no dependencies. These are the places to start
   //the flow accumulation calculation.
 
-  std::cerr<<"p Locating source cells..."<<std::endl;
+  RDLOG_PROGRESS<<"Locating source cells..."<<std::endl;
   progress.start( flowdirs.size() );
   for(int y=0;y<flowdirs.height();y++){
     progress.update( y*flowdirs.width() );
@@ -195,7 +196,7 @@ void dinf_upslope_area(
       else if(dependency(x,y)==0)
         sources.emplace(x,y);
   }
-  std::cerr<<"t Source cells located in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Source cells located in = "<<progress.stop()<<" s"<<std::endl;
 
 
 
@@ -206,7 +207,7 @@ void dinf_upslope_area(
   //value into the cells below it, as indicated by the D-infinite flow routing
   //method.
 
-  std::cerr<<"p Calculating up-slope areas..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating up-slope areas..."<<std::endl;
   progress.start( flowdirs.numDataCells() );
   long int ccount=0;
   while(sources.size()>0){
@@ -246,7 +247,7 @@ void dinf_upslope_area(
     if( flowdirs.inGrid(nhx,nhy) && flowdirs(nhx,nhy)!=flowdirs.noData() && (--dependency(nhx,nhy))==0)
       sources.emplace(nhx,nhy);
   }
-  std::cerr<<"p Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_PROGRESS<<"Succeeded in = "<<progress.stop()<<" s"<<std::endl;
 }
 
 }

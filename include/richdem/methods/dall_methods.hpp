@@ -7,6 +7,7 @@
 #ifndef _richdem_dall_flowdirs_hpp_
 #define _richdem_dall_flowdirs_hpp_
 
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/grid_cell.hpp"
@@ -189,8 +190,8 @@ namespace richdem {
 
 template<class elev_t>
 std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
-  std::cerr<<"\nA Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)"<<std::endl;
-  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
+  RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)"<<std::endl;
+  RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
 
   std::vector<float> props(9*elevations.size(),0); //TODO: NO_FLOW
 
@@ -306,8 +307,8 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
 
 template<class E>
 std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam){
-  std::cerr<<"\nA Holmgren (1994) Flow Accumulation (aka MFD, MD8)"<<std::endl;
-  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
+  RDLOG_ALG_NAME<<"Holmgren (1994) Flow Accumulation (aka MFD, MD8)"<<std::endl;
+  RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
   std::cerr<<"c x = "<<xparam<<std::endl;
 
   std::vector<float> props(9*elevations.size(),0);
@@ -360,9 +361,9 @@ std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam
 
 template<class E>
 std::vector<float> FP_Quinn(const Array2D<E> &elevations){
-  std::cerr<<"\nA Quinn (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
-  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
-  return FP_Holmgren(elevations);
+  RDLOG_ALG_NAME<<"Quinn (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
+  RDLOG_CITATION<<"Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
+  return FP_Holmgren(elevations, 1.0);
 }
 
 
@@ -372,8 +373,8 @@ std::vector<float> FP_Freeman(
   const Array2D<E> &elevations,
   const double xparam
 ){
-  std::cerr<<"\nA Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
-  std::cerr<<"C Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
+  RDLOG_ALG_NAME<<"Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
+  RDLOG_CITATION<<"Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
   std::cerr<<"c p = "<<xparam<<std::endl;
 
   std::vector<float> props(9*elevations.size(),0);
@@ -421,8 +422,8 @@ std::vector<float> FP_Freeman(
 
 template<class E>
 std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
-  std::cerr<<"\nA Fairfield (1991) \"Rho8\" Flow Accumulation"<<std::endl;
-  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
+  RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation"<<std::endl;
+  RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
 
   std::vector<float> props(9*elevations.size(),0);
 
@@ -480,8 +481,8 @@ std::vector<float> FP_Rho8(const Array2D<E> &elevations){
 //TODO: Add Marks et al (1984)
 template<class E>
 static std::vector<float> KernelOCallaghan(const Array2D<E> &elevations){
-  std::cerr<<"\nA O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
-  std::cerr<<"C O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
+  RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
+  RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
 
   std::vector<float> props(9*elevations.width(),0);
 
@@ -534,15 +535,15 @@ std::vector<float> FP_D8(const Array2D<E> &elevations){
 
 
 
-template<class F, class E, class A>
-static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum){
+template<class F, class E, class A, typename... Args>
+static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, Args... args ){
   Timer overall;
   overall.start();
 
   accum.resize(elevations,1);
   accum.setNoData(ACCUM_NO_DATA);
 
-  const auto props = func(elevations);
+  const auto props = func(elevations, args...);
 
   //Create dependencies array
   Array2D<int8_t> deps(elevations, 0);
@@ -556,11 +557,11 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
 
   //Find sources
   std::queue<int> q;
-  for(int i=0;i<deps.size();i++)
+  for(auto i=deps.i0();i<deps.size();i++)
     if(deps(i)==0 && !elevations.isNoData(i))
       q.emplace(i);
 
-  std::cerr<<"p Calculating flow accumulation..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating flow accumulation..."<<std::endl;
   ProgressBar progress;
   progress.start(elevations.size());
   while(!q.empty()){
@@ -588,20 +589,20 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
 
   for(auto i=elevations.i0();i<elevations.size();i++)
     if(elevations.isNoData(i))
-      accum(i)==accum.noData();
+      accum(i)=accum.noData();
 
-  std::cerr<<"t Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
+  RDLOG_TIME_USE<<"Wall-time       = "<<overall.stop()<<" s"     <<std::endl;
 }
 
 
 
-template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_Holmgren          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
-template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum);
+template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Tarboton<elev_t>         , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Holmgren          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Holmgren<elev_t>         , elevations, accum, xparam); }
+template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Quinn<elev_t>            , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Freeman<elev_t>          , elevations, accum, xparam); }
+template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_FairfieldLeymarie<elev_t>, elevations, accum); }
+template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Rho8<elev_t>             , elevations, accum); }
+//template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
 
 
 
@@ -820,7 +821,7 @@ static void DistanceDispersionEstimate(
   dep.resize(elevations);
   dep.setAll(0);
 
-  std::cerr<<"p Calculating dependencies..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating dependencies..."<<std::endl;
   progress.start(elevations.size());
   //#pragma omp parallel for collapse(2)
   for(int y=0;y<elevations.height();y++)
@@ -893,16 +894,16 @@ static void DistanceDispersionEstimate(
 
 // template<class E, class A>
 // void FP_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-//   std::cerr<<"\nA Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)"<<std::endl;
-//   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
+//   RDLOG_ALG_NAME<<"Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)"<<std::endl;
+//   RDLOG_WARN<<"TODO: This flow accumulation method is not yet functional."<<std::endl;
 //   std::cerr<<"c x = "<<x<<std::endl;
 //   KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 // }
 
 // template<class E, class A>
 // void FP_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
-//   std::cerr<<"\nA Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
-//   std::cerr<<"C Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639."<<std::endl;
+//   RDLOG_ALG_NAME<<"Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
+//   RDLOG_CITATION<<"Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639."<<std::endl;
 //   std::cerr<<"c lambda = "<<lambda<<std::endl;
 //   Array2D<double> delta(elevations,0);
 //   KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
@@ -927,8 +928,8 @@ static inline void CleanseStrahler(Array2D<A> &accum){
 
 template<class E, class A>
 void Strahler_FairfieldLeymarie(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Fairfield (1991) \"Rho8\" Strahler"<<std::endl;
-  std::cerr<<"C Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
+  RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Strahler"<<std::endl;
+  RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717."<<std::endl;
   Array2D<d8_flowdir_t> fd(elevations);
   KernelFlowdir(KernelFairfieldLeymarie<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,fd);
   CleanseStrahler(accum);
@@ -942,24 +943,24 @@ void Strahler_Rho8(const Array2D<E> &elevations, Array2D<A> &accum){
 
 template<class E, class A>
 void Strahler_Quinn(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Quinn (1991) Strahler"<<std::endl;
-  std::cerr<<"C Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
+  RDLOG_ALG_NAME<<"Quinn (1991) Strahler"<<std::endl;
+  RDLOG_CITATION<<"Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."<<std::endl; 
   KernelFlowdir(KernelHolmgren<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,(double)1.0);
   CleanseStrahler(accum);
 }
 
 template<class E, class A>
 void Strahler_Holmgren(const Array2D<E> &elevations, Array2D<A> &accum, double x){
-  std::cerr<<"\nA Holmgren (1994) Strahler"<<std::endl;
-  std::cerr<<"C Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
+  RDLOG_ALG_NAME<<"Holmgren (1994) Strahler"<<std::endl;
+  RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
   KernelFlowdir(KernelHolmgren<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,x);
   CleanseStrahler(accum);
 }
 
 template<class E, class A>
 void Strahler_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
-  std::cerr<<"\nA Tarboton (1997) \"D-Infinity\" Strahler"<<std::endl;
-  std::cerr<<"C Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
+  RDLOG_ALG_NAME<<"Tarboton (1997) \"D-Infinity\" Strahler"<<std::endl;
+  RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319."<<std::endl;
   Array2D< std::pair<float,int8_t> > fd(elevations);
   KernelFlowdir(KernelTarboton<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,fd);
   CleanseStrahler(accum);
@@ -967,8 +968,8 @@ void Strahler_Tarboton(const Array2D<E> &elevations, Array2D<A> &accum){
 
 // template<class E, class A>
 // void Strahler_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double xparam){
-//   std::cerr<<"\nA Seibert and McGlynn Strahler (TODO)"<<std::endl;
-//   std::cerr<<"W TODO: This flow accumulation method is not yet functional."<<std::endl;
+//   RDLOG_ALG_NAME<<"Seibert and McGlynn Strahler (TODO)"<<std::endl;
+//   RDLOG_WARN<<"TODO: This flow accumulation method is not yet functional."<<std::endl;
 //   KernelFlowdir(KernelSeibertMcGlynn<decltype(StrahlerNumber<A>),E,A>,StrahlerNumber<A>,elevations,accum,xparam);
 //   CleanseStrahler(accum);
 // }
