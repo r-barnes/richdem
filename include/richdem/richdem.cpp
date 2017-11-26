@@ -8,6 +8,7 @@ namespace richdem {
 std::unordered_map<LogFlag, std::string> log_flag_chars_begin = {
   {ALG_NAME, "\nA"},
   {CITATION, "C"},
+  {CONFIG,   "c"},
   {DEBUG,    "\033[95md"},
   {ERROR,    "E"},
   {MEM_USE,  " "},
@@ -20,6 +21,7 @@ std::unordered_map<LogFlag, std::string> log_flag_chars_begin = {
 std::unordered_map<LogFlag, std::string> log_flag_chars_end = {
   {ALG_NAME, ""},
   {CITATION, "\n"},
+  {CONFIG,   ""},
   {DEBUG,    ""},
   {ERROR,    ""},
   {MEM_USE,  ""},

@@ -56,9 +56,9 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
   RDLOG_ALG_NAME<<"D8 Flow Accumulation"<<std::endl;
   RDLOG_CITATION<<"TODO"<<std::endl;
 
-  std::cerr<<"The sources queue will require at most approximately "
-           <<(flowdirs.size()*((long)sizeof(GridCell))/1024/1024)
-           <<"MB of RAM."<<std::endl;
+  RDLOG_MEM_USE<<"The sources queue will require at most approximately "
+               <<(flowdirs.size()*((long)sizeof(GridCell))/1024/1024)
+               <<"MB of RAM.";
 
   RDLOG_PROGRESS<<"Resizing dependency matrix..."<<std::endl;
   Array2D<int8_t> dependency(flowdirs,0);
@@ -173,7 +173,7 @@ void d8_upslope_cells(
   upslope_cells.resize(flowdirs);
   upslope_cells.setAll(FLOWDIR_NO_DATA);
   upslope_cells.setNoData(FLOWDIR_NO_DATA);
-  std::cerr<<"succeeded."<<std::endl;
+
   ProgressBar progress;
 
   std::queue<GridCell> expansion;
@@ -271,7 +271,6 @@ void d8_SPI(
   RDLOG_PROGRESS<<"Setting up the SPI matrix..."<<std::flush;
   result.resize(flow_accumulation);
   result.noData()=-1;  //Log(x) can't take this value of real inputs, so we're good
-  std::cerr<<"succeeded."<<std::endl;
 
   RDLOG_PROGRESS<<"Calculating SPI..."<<std::endl;
   timer.start();

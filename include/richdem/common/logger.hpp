@@ -10,6 +10,7 @@ namespace richdem {
 enum LogFlag {
   ALG_NAME,
   CITATION,
+  CONFIG,
   DEBUG,
   ERROR,
   MEM_USE,
@@ -60,6 +61,7 @@ class StreamLogger {
 #define RDLOG(flag)    StreamLogger(flag,              __FILE__, __func__, __LINE__)
 #define RDLOG_ALG_NAME StreamLogger(LogFlag::ALG_NAME, __FILE__, __func__, __LINE__)
 #define RDLOG_CITATION StreamLogger(LogFlag::CITATION, __FILE__, __func__, __LINE__)
+#define RDLOG_CONFIG   StreamLogger(LogFlag::CONFIG,   __FILE__, __func__, __LINE__)
 #define RDLOG_DEBUG    StreamLogger(LogFlag::DEBUG,    __FILE__, __func__, __LINE__)
 #define RDLOG_ERROR    StreamLogger(LogFlag::ERROR,    __FILE__, __func__, __LINE__)      
 #define RDLOG_MEM_USE  StreamLogger(LogFlag::MEM_USE,  __FILE__, __func__, __LINE__)       

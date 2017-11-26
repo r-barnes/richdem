@@ -7,6 +7,7 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
 #include "richdem/flowdirs/d8_flowdirs.hpp"
+#include "richdem/common/logger.hpp"
 
 namespace richdem {
 
@@ -31,10 +32,10 @@ void GradientTowardsLower(
 ){
 	int loops              = 0;
 	int number_incremented = -1;
-	std::cerr<<"Setting up the inc1 matrix..."<<std::flush;
+	RDLOG_PROGRESS<<"Setting up the inc1 matrix...";
   inc1.resize(elevations);
   inc1.init(0);
-  std::cerr<<"succeeded."<<std::endl;
+	RDLOG_PROGRESS<<"Calculating inc1 matrix...";
 	while(number_incremented!=0){
 		number_incremented=0;
 		for(int i=0;i<(int)flats.size();i++){
@@ -73,10 +74,10 @@ void GradientAwayFromHigher(
 ){
 	int loops                       = 0;
 	unsigned int number_incremented = 0;
-  std::cerr<<"Setting up the inc2 matrix..."<<std::flush;
+  RDLOG_PROGRESS<<"Setting up the inc2 matrix...";
   inc2.resize(elevations);
   inc2.init(0);
-  std::cerr<<"succeeded."<<std::endl;
+  RDLOG_PROGRESS<<"Calculting inc2 matrix...";
 	while(number_incremented<flats.size()){
 		for(int i=0;i<(int)flats.size();i++){
 			int x=flats[i].x;
@@ -118,11 +119,10 @@ void CombineGradients(
 	const Array2D<int32_t> &inc2, 
 	float epsilon //TODO
 ){
-  std::cerr<<"Combining the gradients..."<<std::flush;
+  RDLOG_PROGRESS<<"Combining the gradients...";
 	for(int x=0;x<elevations.width();++x)
 	for(int y=0;y<elevations.height();++y)
 		elevations(x,y)+=(inc1(x,y)+inc2(x,y))*epsilon;
-  std::cerr<<"succeeded."<<std::endl;
 }
 
 

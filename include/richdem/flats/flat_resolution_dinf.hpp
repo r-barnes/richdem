@@ -8,6 +8,7 @@
 
 #include "richdem/flats/flat_resolution.hpp"
 #include "richdem/flowdirs/dinf_flowdirs.hpp"
+#include "richdem/common/logger.hpp"
 
 namespace richdem {
 
@@ -76,9 +77,10 @@ void dinf_flow_flats(
 ){
   ProgressBar progress;
 
-  std::cerr<<"\n###Dinf Flow Flats"<<std::endl;
+  RDLOG_ALG_NAME<<"Dinf Flow Flats";
+  RDLOG_CITATION<<"TODO";
 
-  std::cerr<<"%%Calculating Dinf flow directions using flat mask..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating Dinf flow directions using flat mask...";
   progress.start( flat_resolution_mask.width()*flat_resolution_mask.height() );
   #pragma omp parallel for
   for(int x=1;x<flat_resolution_mask.width()-1;x++){
@@ -89,7 +91,7 @@ void dinf_flow_flats(
       else if(flowdirs(x,y)==NO_FLOW)
         flowdirs(x,y)=dinf_masked_FlowDir(flat_resolution_mask,groups,x,y);
   }
-  std::cerr<<"Succeeded in "<<progress.stop()<<"s."<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in "<<progress.stop()<<" s";
 }
 
 template<class T>

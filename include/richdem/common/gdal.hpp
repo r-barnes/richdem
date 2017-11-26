@@ -85,19 +85,15 @@ void getGDALDimensions(
 ){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL){
-    std::cerr<<"Could not open file '"<<filename<<"' to get dimensions."<<std::endl;
-    throw std::runtime_error("Could not open file to get dimensions");
-  }
+  if(fin==NULL)
+    throw std::runtime_error("Could not open file '"+filename+"' to get dimensions.");
 
   GDALRasterBand *band = fin->GetRasterBand(1);
   
   dtype = band->GetRasterDataType();
 
-  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None){
-    std::cerr<<"Error getting geotransform from '"<<filename<<"'!"<<std::endl;
-    throw std::runtime_error("Could not get geotransform!");
-  }
+  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None)
+    throw std::runtime_error("Error getting geotransform from '"+filename+"'.");
 
   height  = band->GetYSize();
   width   = band->GetXSize();
@@ -129,10 +125,8 @@ GDALDataType NativeTypeToGDAL() {
     return GDT_Float32;
   else if(typeid(T)==typeid(double))
     return GDT_Float64;
-  else {
-    std::cerr<<"Could not map native type '"<<typeid(T).name()<<"' to GDAL type! (Use `c++filt -t` to decode.)"<<std::endl;
-    throw std::runtime_error("Could not map native data type to GDAL type!");
-  }
+  else
+    throw std::runtime_error("Could not map native type '"+std::string(typeid(T).name())+"' to GDAL type! (Use `c++filt -t` to decode.)");
   return GDT_Unknown;
 }
 

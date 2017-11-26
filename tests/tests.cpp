@@ -84,10 +84,10 @@ TEST_CASE( "Array2D works" ) {
   SUBCASE("Copy test"){
     Array2D<float> arr0(3,5,4);
     auto arr1 = arr0;
-    // auto arr2 = arr0;
-    // auto arr3 = arr0;
-    // auto arr4 = arr0;
-    // auto arr5 = arr0;
+    auto arr2 = arr0;
+    auto arr3 = arr0;
+    auto arr4 = arr0;
+    auto arr5 = arr0;
   }
 }
 

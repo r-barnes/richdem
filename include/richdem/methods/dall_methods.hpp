@@ -309,7 +309,7 @@ template<class E>
 std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam){
   RDLOG_ALG_NAME<<"Holmgren (1994) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334."<<std::endl;
-  std::cerr<<"c x = "<<xparam<<std::endl;
+  RDLOG_CONFIG<<"x = "<<xparam;
 
   std::vector<float> props(9*elevations.size(),0);
 
@@ -375,7 +375,7 @@ std::vector<float> FP_Freeman(
 ){
   RDLOG_ALG_NAME<<"Freeman (1991) Flow Accumulation (aka MFD, MD8)"<<std::endl;
   RDLOG_CITATION<<"Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422."<<std::endl;
-  std::cerr<<"c p = "<<xparam<<std::endl;
+  RDLOG_CONFIG<<"p = "<<xparam;
 
   std::vector<float> props(9*elevations.size(),0);
 
@@ -771,16 +771,16 @@ template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<e
 //   const int ny = y+dy[p];
 
 //   if(elevations(x,y)<elevations(nx,ny)){
-//     std::cerr<<"Uh oh"<<std::endl;
-//     std::cerr<<"p="<<(int)p<<std::endl;
-//     std::cerr<<"nmax="<<(int)nmax<<std::endl;
+//     RDLOG_DEBUG<<"Uh oh"<<std::endl;
+//     RDLOG_DEBUG<<"p="<<(int)p<<std::endl;
+//     RDLOG_DEBUG<<"nmax="<<(int)nmax<<std::endl;
 //     for(int iy=std::max(0,y-1);iy<=std::min(elevations.height()-1,y+1);iy++){
 //       for(int ix=std::max(0,x-1);ix<=std::min(elevations.width()-1,x+1);ix++)
-//         std::cerr<<std::setprecision(15)<<elevations(ix,iy)<<" ";
-//       std::cerr<<std::endl;
+//         RDLOG_DEBUG<<std::setprecision(15)<<elevations(ix,iy)<<" ";
+//       RDLOG_DEBUG<<std::endl;
 //     }
 //   }
-//   std::cerr<<std::flush;
+//   RDLOG_DEBUG<<std::flush;
 //   assert(elevations(x,y)>=elevations(nx,ny)); //Ensure flow goes downhill
 
 //   delta(nx,ny) = delta(x,y);
@@ -896,7 +896,7 @@ static void DistanceDispersionEstimate(
 // void FP_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x){
 //   RDLOG_ALG_NAME<<"Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)"<<std::endl;
 //   RDLOG_WARN<<"TODO: This flow accumulation method is not yet functional."<<std::endl;
-//   std::cerr<<"c x = "<<x<<std::endl;
+//   RDLOG_CONFIG<<"x = "<<x;
 //   KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 // }
 
@@ -904,7 +904,7 @@ static void DistanceDispersionEstimate(
 // void FP_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
 //   RDLOG_ALG_NAME<<"Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)"<<std::endl;
 //   RDLOG_CITATION<<"Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639."<<std::endl;
-//   std::cerr<<"c lambda = "<<lambda<<std::endl;
+//   RDLOG_CONFIG<<"lambda = "<<lambda;
 //   Array2D<double> delta(elevations,0);
 //   KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
 // }

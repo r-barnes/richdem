@@ -475,9 +475,9 @@ void resolve_flats_barnes(
 
   if(low_edges.size()==0){
     if(high_edges.size()>0)
-      std::cerr<<"E There were flats, but none of them had outlets!"<<std::endl;
+      RDLOG_WARN<<"There were flats, but none of them had outlets!";
     else
-      std::cerr<<"E There were no flats!"<<std::endl;
+      RDLOG_WARN<<"There were no flats!";
     return;
   }
 
@@ -500,9 +500,9 @@ void resolve_flats_barnes(
   high_edges=temp;
   temp.clear();
 
-  std::cerr<<"The flat height vector will require approximately "
-           <<(group_number*((long)sizeof(int))/1024/1024)
-           <<"MB of RAM."<<std::endl;
+  RDLOG_MEM_USE<<"The flat height vector will require approximately "
+               <<(group_number*((long)sizeof(int))/1024/1024)
+               <<"MB of RAM.";
         
   RDLOG_PROGRESS<<"Creating flat height vector..."<<std::endl;
   std::vector<int> flat_height(group_number);

@@ -118,7 +118,7 @@ class Array2D {
 
     geotransform.resize(6);
     if(fin->GetGeoTransform(geotransform.data())!=CE_None){
-      std::cerr<<"Warning, could not get a geotransform from '"<<filename<<"'! Setting to standard geotransform."<<std::endl;
+      RDLOG_WARN<<"Could not get a geotransform from '"<<filename<<"'! Setting to an arbitrary standard geotransform.";
       geotransform = {{1000., 1., 0., 1000., 0., -1.}};
     }
 
@@ -157,7 +157,6 @@ class Array2D {
 
     GDALClose(fin);
 
-    //std::cerr<<"Allocating: "<<view_height<<" rows by "<<view_width<<" columns"<<std::endl;
     if(load_data)
       loadData();
   }
@@ -186,10 +185,8 @@ class Array2D {
     this->filename = filename;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
-    if(!fout.good()){
-      std::cerr<<"Failed to open file '"<<filename<<"'."<<std::endl;
-      throw std::logic_error("Failed to open a file!");
-    }
+    if(!fout.good())
+      throw std::logic_error("Failed to open cache file '"+filename+"'.");
 
     #ifdef WITH_COMPRESSION
       boost::iostreams::filtering_ostream out;
@@ -599,7 +596,7 @@ class Array2D {
     @brief Flips the raster about its diagonal axis, like a matrix tranpose.
   */
   void transpose(){
-    std::cerr<<"transpose() is an experimental feature."<<std::endl;
+    RDLOG_WARN<<"transpose() is an experimental feature.";
     std::vector<T> new_data(view_width*view_height);
     for(xy_t y=0;y<view_height;y++)
     for(xy_t x=0;x<view_width;x++)
@@ -815,7 +812,6 @@ class Array2D {
   T& operator()(xy_t x, xy_t y){
     assert(x>=0);
     assert(y>=0);
-    //std::cerr<<"Width: "<<width()<<" Height: "<<height()<<" x: "<<x<<" y: "<<y<<std::endl;
     assert(x<width());
     assert(y<height());
     return data[xyToI(x,y)];
@@ -958,10 +954,8 @@ class Array2D {
     if(poDriver==NULL)
       throw std::runtime_error("Could not open GDAL driver!");
     GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), papszOptions);
-    if(fout==NULL){
-      std::cerr<<"Could not open file '"<<filename<<"' for GDAL save!"<<std::endl;
-      throw std::runtime_error("Could not open file for GDAL save!");
-    }
+    if(fout==NULL)
+      throw std::runtime_error("Could not open file '"+filename+"' for GDAL save!");
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
@@ -998,10 +992,8 @@ class Array2D {
     if(!geotransform.empty()){
       auto out_geotransform = geotransform;
 
-      if(out_geotransform.size()!=6){
-        std::cerr<<"Geotransform of output is not the right size. Found "<<out_geotransform.size()<<" expected 6."<<std::endl;
-        throw std::runtime_error("saveGDAL(): Invalid output geotransform.");
-      }
+      if(out_geotransform.size()!=6)
+        throw std::runtime_error("Geotransform of output is not the right size. Found "+std::to_string(out_geotransform.size())+" expected 6.");
 
       //We shift the top-left pixel of hte image eastward to the appropriate
       //coordinate
@@ -1018,12 +1010,12 @@ class Array2D {
       fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
-      std::cerr<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3]<< std::endl;
+      RDLOG_DEBUG<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3];
     #endif
 
     auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data, view_width, view_height, myGDALType(), 0, 0);
     if(temp!=CE_None)
-      std::cerr<<"Error writing file! Continuing in the hopes that some work can be salvaged."<<std::endl;
+      throw std::runtime_error("Error writing file with saveGDAL()!");
 
     GDALClose(fout);
   }
@@ -1052,8 +1044,8 @@ class Array2D {
       const xy_t sy = height()/2;
 
       if(msg.size()>0)
-        std::cerr<<msg<<std::endl;
-      std::cerr<<"Stamp for basename='"<<basename
+        std::cout<<msg<<std::endl;
+      std::cout<<"Stamp for basename='"<<basename
                <<"', filename='"<<filename
                #ifdef USEGDAL
                  <<"', dtype="<<GDALGetDataTypeName(myGDALType())
@@ -1065,8 +1057,8 @@ class Array2D {
 
       for(xy_t y=sy;y<symax;y++){
         for(xy_t x=sx;x<sxmax;x++)
-          std::cerr<<std::setw(5)<<std::setprecision(3)<<(int)data[xyToI(x,y)]<<" ";
-        std::cerr<<"\n";
+          std::cout<<std::setw(5)<<std::setprecision(3)<<(int)data[xyToI(x,y)]<<" ";
+        std::cout<<"\n";
       }
     #endif
   }
@@ -1083,7 +1075,7 @@ class Array2D {
   */
   void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
     if(msg.size()!=0)
-      std::cerr<<msg<<std::endl;
+      std::cout<<msg<<std::endl;
 
     xy_t xmin = std::max(0,x0-radius);
     xy_t ymin = std::max(0,y0-radius);
@@ -1093,12 +1085,12 @@ class Array2D {
     for(xy_t y=ymin;y<ymax;y++){
       for(xy_t x=xmin;x<xmax;x++){
         if(color && x==x0 && y==y0)
-          std::cerr<<"\033[92m";
-        std::cerr<<std::setw(5)<<(int)data[xyToI(x,y)]<<" ";
+          std::cout<<"\033[92m";
+        std::cout<<std::setw(5)<<(int)data[xyToI(x,y)]<<" ";
         if(color && x==x0 && y==y0)
-          std::cerr<<"\033[39m";
+          std::cout<<"\033[39m";
       }
-      std::cerr<<std::endl;
+      std::cout<<std::endl;
     }
   }
 
@@ -1109,12 +1101,12 @@ class Array2D {
   */
   void printAll(const std::string msg="") const {
     if(!msg.empty())
-      std::cerr<<msg<<std::endl;
+      std::cout<<msg<<std::endl;
 
     for(xy_t y=0;y<height();y++){
       for(xy_t x=0;x<width();x++)
-        std::cerr<<std::setw(5)<<data[xyToI(x,y)]<<" ";
-      std::cerr<<std::endl;
+        std::cout<<std::setw(5)<<data[xyToI(x,y)]<<" ";
+      std::cout<<std::endl;
     }
   }
 
