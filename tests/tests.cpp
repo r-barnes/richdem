@@ -4,18 +4,36 @@
 #include "doctest.h"
 #include "richdem/common/Array2D.hpp"
 
-#include "richdem/methods/d8_methods.hpp"
-#include "richdem/common/grid_cell.hpp"
-#include "richdem/depressions/Zhou2016pf.hpp"
-#include "richdem/depressions/priority_flood.hpp"
+#include <richdem/methods/d8_methods.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/depressions/Zhou2016pf.hpp>
+#include <richdem/depressions/priority_flood.hpp>
+#include <richdem/methods/dall_methods.hpp>
+#include <richdem/common/ManagedVector.hpp>
+using namespace richdem;
 
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
 
-SCENARIO( "Array2D works" ) {
+using namespace richdem;
 
-  GIVEN( "A 7x11 Array2D<float>" ) {
+TEST_CASE("ManagedVector"){
+  auto TestFunc = [](){ManagedVector<int> vec(30,5); return vec;};
+
+  ManagedVector<int>   vec(30,4);
+  ManagedVector<float> vecfl(30,4.5);
+
+  auto vec2 = vec;
+  auto vec3(vec);
+  auto vec4 = TestFunc();
+
+  vec2 = vecfl;
+}
+
+TEST_CASE( "Array2D works" ) {
+
+  SUBCASE( "A 7x11 Array2D<float>" ) {
     Array2D<float> arr(7,11);
 
     REQUIRE( arr.width()  == 7  );
@@ -51,7 +69,7 @@ SCENARIO( "Array2D works" ) {
     REQUIRE(arr(0,0)==0);
   }
 
-  GIVEN("Resize test"){
+  SUBCASE("Resize test"){
     Array2D<float> arr;
     arr.resize(3,5,4);
     REQUIRE( arr.width()  == 3  );
@@ -61,6 +79,15 @@ SCENARIO( "Array2D works" ) {
     REQUIRE( arr(2,1)==4 );
     REQUIRE( arr(2,2)==4 );
     REQUIRE( arr(0,0)==4 );
+  }
+
+  SUBCASE("Copy test"){
+    Array2D<float> arr0(3,5,4);
+    auto arr1 = arr0;
+    // auto arr2 = arr0;
+    // auto arr3 = arr0;
+    // auto arr4 = arr0;
+    // auto arr5 = arr0;
   }
 }
 
@@ -126,26 +153,28 @@ TEST_CASE("Checking GridCellZk_pq") {
 
 
 TEST_CASE("Checking depression filling") {
-  Array2D<int> elevation_orig("depressions/testdem1.dem", false);
+  RDLOG_DEBUG<<"About to load depressions/testdem1.dem";
+  Array2D<int> elevation_orig("depressions/testdem1.dem");
+  RDLOG_DEBUG<<"Loaded depressions/testdem1.dem";
 
   SUBCASE("original_priority_flood"){
     auto elevation = elevation_orig;
     original_priority_flood(elevation);
-    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
   SUBCASE("improved_priority_flood"){
     auto elevation = elevation_orig;
     improved_priority_flood(elevation);
-    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
   SUBCASE("Zhou2016"){
     auto elevation = elevation_orig;
     Zhou2016(elevation);
-    Array2D<int> manually_flooded("depressions/testdem1.all.out", false);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
@@ -153,7 +182,7 @@ TEST_CASE("Checking depression filling") {
     auto elevation = elevation_orig;
     improved_priority_flood_max_dep(elevation,1);
     elevation.printAll();
-    Array2D<int> manually_flooded("depressions/testdem1.1.out", false);
+    Array2D<int> manually_flooded("depressions/testdem1.1.out");
     REQUIRE(elevation==manually_flooded);
   }
 
@@ -161,14 +190,21 @@ TEST_CASE("Checking depression filling") {
     auto elevation = elevation_orig;
     improved_priority_flood_max_dep(elevation,2);
     elevation.printAll();
-    Array2D<int> manually_flooded("depressions/testdem1.2.out", false);
+    Array2D<int> manually_flooded("depressions/testdem1.2.out");
     REQUIRE(elevation==manually_flooded);
   }
 
 }
 
+TEST_CASE("Checking depression filling") {
+  Array2D<float> beauford("beauford/beauford.tif");
 
+  SUBCASE("FA_Tarboton")          {Array2D<double> accum; FA_Tarboton          (beauford, accum); }
+  SUBCASE("FA_Holmgren")          {Array2D<double> accum; FA_Holmgren          (beauford, accum, 0.8); }
+  SUBCASE("FA_Quinn")             {Array2D<double> accum; FA_Quinn             (beauford, accum); }
+  SUBCASE("FA_Freeman")           {Array2D<double> accum; FA_Freeman           (beauford, accum, 0.8); }
+  SUBCASE("FA_FairfieldLeymarie") {Array2D<double> accum; FA_FairfieldLeymarie (beauford, accum); }
+  SUBCASE("FA_Rho8")              {Array2D<double> accum; FA_Rho8              (beauford, accum); }
+  // SUBCASE("FA_D8")                {Array2D<double> accum; FA_D8                (beauford, accum); }
 
-
-
-
+}
