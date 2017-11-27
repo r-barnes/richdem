@@ -922,7 +922,6 @@ class Array2D {
 
   ///Clears all raster data from RAM
   void clear(){
-    RDLOG_DEBUG<<"Array2D::clear()";
     data = ManagedVector<T>();
   }
 
