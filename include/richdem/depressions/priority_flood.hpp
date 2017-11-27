@@ -84,15 +84,15 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
 
       closed(nx,ny) = true;
       if(elevations(nx,ny)<elevations(c.x,c.y)){
-        RDLOG_TIME_USE<<"Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
-        RDLOG_MISC<<"Depression found."<<std::endl;
+        RDLOG_TIME_USE<<"Succeeded in    = "<<progress.stop() <<" s";
+        RDLOG_MISC<<"Depression found.";
         return true;
       }
       open.emplace(nx,ny,elevations(nx,ny));
     }
   }
-  RDLOG_TIME_USE<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
-  RDLOG_MISC<<"m No depressions found."<<std::endl;
+  RDLOG_TIME_USE<<"t Succeeded in    = "<<progress.stop() <<" s";
+  RDLOG_MISC<<"m No depressions found.";
   return false;
 }
 
@@ -386,10 +386,10 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     progress.update(processed_cells);
   }
   RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
-  RDLOG_MISC<<"m Cells processed = "<<processed_cells<<std::endl;
-  RDLOG_MISC<<"m Cells in pits = "  <<pitc           <<std::endl;
+  RDLOG_MISC<<"m Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"m Cells in pits = "  <<pitc           ;
   if(false_pit_cells)
-    RDLOG_WARN<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m"<<std::endl;
+    RDLOG_WARN<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m";
 }
 
 
@@ -464,7 +464,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  RDLOG_PROGRESS<<"Setting up the flowdirs matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the flowdirs matrix...";
   flowdirs.resize(elevations.width(),elevations.height());
   flowdirs.setNoData(NO_FLOW);
 
@@ -811,7 +811,7 @@ void improved_priority_flood_max_dep(
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  RDLOG_ALG_NAME<<"\nPriority-Flood (Improved) Limited to Maximum Depression Area"<<std::endl;
+  RDLOG_ALG_NAME<<"\nPriority-Flood (Improved) Limited to Maximum Depression Area";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);

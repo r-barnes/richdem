@@ -53,21 +53,21 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
   std::queue<GridCell> sources;
   ProgressBar progress;
 
-  RDLOG_ALG_NAME<<"D8 Flow Accumulation"<<std::endl;
-  RDLOG_CITATION<<"TODO"<<std::endl;
+  RDLOG_ALG_NAME<<"D8 Flow Accumulation";
+  RDLOG_CITATION<<"TODO";
 
   RDLOG_MEM_USE<<"The sources queue will require at most approximately "
                <<(flowdirs.size()*((long)sizeof(GridCell))/1024/1024)
                <<"MB of RAM.";
 
-  RDLOG_PROGRESS<<"Resizing dependency matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Resizing dependency matrix...";
   Array2D<int8_t> dependency(flowdirs,0);
 
-  RDLOG_PROGRESS<<"Setting up the area matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the area matrix...";
   area.resize(flowdirs,0);
   area.setNoData(-1);
 
-  RDLOG_PROGRESS<<"Calculating dependency matrix & setting noData() cells..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating dependency matrix & setting noData() cells...";
   progress.start( flowdirs.size() );
   #pragma omp parallel for
   for(int y=0;y<flowdirs.height();y++){
@@ -94,15 +94,15 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
       ++dependency(nx,ny);
     }
   }
-  RDLOG_TIME_USE<<"Dependency calculation time = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Dependency calculation time = "<<progress.stop()<<" s";
 
-  RDLOG_PROGRESS<<"Locating source cells..."<<std::endl;
+  RDLOG_PROGRESS<<"Locating source cells...";
   for(int y=0;y<flowdirs.height();y++)
   for(int x=0;x<flowdirs.width();x++)
     if(dependency(x,y)==0 && !flowdirs.isNoData(x,y))
       sources.emplace(x,y);
 
-  RDLOG_PROGRESS<<"Calculating flow accumulation areas..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating flow accumulation areas...";
   progress.start(flowdirs.numDataCells());
   long int ccount=0;
   while(sources.size()>0){
@@ -133,13 +133,13 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
     if(dependency(nx,ny)==0)
       sources.emplace(nx,ny);
   }
-  RDLOG_TIME_USE<<"Flow accumulation calculation time = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Flow accumulation calculation time = "<<progress.stop()<<" s";
 
   //TODO: Explain this better
   int loops=0;
   for(int i=-1;i>=-8;i--)
     loops+=dependency.countval(-1);
-  RDLOG_MISC<<"Input contained at least = "<<loops<<" loops"<<std::endl;
+  RDLOG_MISC<<"Input contained at least = "<<loops<<" loops";
 }
 
 
@@ -192,7 +192,7 @@ void d8_upslope_cells(
   if (deltaerr<0)
     deltaerr = -deltaerr;
 
-  RDLOG_MISC<<"Line slope is "<<deltaerr<<std::endl;
+  RDLOG_MISC<<"Line slope is "<<deltaerr;
   int y=y0;
   for(int x=x0;x<=x1;x++){
     expansion.push(GridCell(x,y));
@@ -226,8 +226,8 @@ void d8_upslope_cells(
         upslope_cells(c.x+dx[n],c.y+dy[n])=1;
       }
   }
-  RDLOG_TIME_USE<<"Succeeded in "<<progress.stop()<<std::endl;
-  RDLOG_MISC<<"Found "<<ccount<<" up-slope cells."<<std::endl; //TODO
+  RDLOG_TIME_USE<<"Succeeded in "<<progress.stop();
+  RDLOG_MISC<<"Found "<<ccount<<" up-slope cells."; //TODO
 }
 
 
@@ -272,7 +272,7 @@ void d8_SPI(
   result.resize(flow_accumulation);
   result.noData()=-1;  //Log(x) can't take this value of real inputs, so we're good
 
-  RDLOG_PROGRESS<<"Calculating SPI..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating SPI...";
   timer.start();
   #pragma omp parallel for collapse(2)
   for(int x=0;x<flow_accumulation.width();x++)
@@ -281,7 +281,7 @@ void d8_SPI(
         result(x,y)=result.noData();
       else
         result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.getCellArea()) * (riserun_slope(x,y)+0.001) );
-  RDLOG_TIME_USE<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
+  RDLOG_TIME_USE<<"succeeded in "<<timer.stop()<<"s.";
 }
 
 
@@ -325,7 +325,7 @@ void d8_CTI(
   RDLOG_PROGRESS<<"Setting up the CTI matrix..."<<std::flush;
   result.resize(flow_accumulation);
   result.setNoData(-1);  //Log(x) can't take this value of real inputs, so we're good
-  RDLOG_PROGRESS<<"succeeded."<<std::endl;
+  RDLOG_PROGRESS<<"succeeded.";
 
   RDLOG_PROGRESS<<"Calculating CTI..."<<std::flush;
   timer.start();
@@ -336,7 +336,7 @@ void d8_CTI(
         result(x,y)=result.noData();
       else
         result(x,y)=log( (flow_accumulation(x,y)/flow_accumulation.getCellArea()) / (riserun_slope(x,y)+0.001) );
-  RDLOG_TIME_USE<<"succeeded in "<<timer.stop()<<"s."<<std::endl;
+  RDLOG_TIME_USE<<"succeeded in "<<timer.stop()<<"s.";
 }
 
 
@@ -555,7 +555,7 @@ class TerrainAttributator {
   */
   void process(const Array2D<T> &elevations, Array2D<float> &attribs, FcnPtr fcn){
     if(elevations.getCellLengthX()!=elevations.getCellLengthY())
-      RDLOG_WARN<<"Cell X and Y dimensions are not equal!"<<std::endl;
+      RDLOG_WARN<<"Cell X and Y dimensions are not equal!";
 
     attribs.resize(elevations);
     ProgressBar progress;
@@ -569,7 +569,7 @@ class TerrainAttributator {
         else
           attribs(x,y) = (this->*fcn)(elevations,x,y);
     }
-    RDLOG_TIME_USE<<"Wall-time = "<<progress.stop()<<std::endl;
+    RDLOG_TIME_USE<<"Wall-time = "<<progress.stop();
   }
 };
 
@@ -591,8 +591,8 @@ void d8_slope_riserun(
   Array2D<float>   &slopes,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Slope calculation (rise/run)"<<std::endl;
-  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
+  RDLOG_ALG_NAME<<"Slope calculation (rise/run)";
+  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_riserun);
 }
@@ -613,8 +613,8 @@ void d8_slope_percentage(
   Array2D<float>   &slopes,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Slope calculation (percenage)"<<std::endl;
-  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
+  RDLOG_ALG_NAME<<"Slope calculation (percenage)";
+  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_percent);
 }
@@ -635,8 +635,8 @@ void d8_slope_degrees(
   Array2D<float>   &slopes,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Slope calculation (degrees)"<<std::endl;
-  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
+  RDLOG_ALG_NAME<<"Slope calculation (degrees)";
+  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_degree);
 }
@@ -657,8 +657,8 @@ void d8_slope_radians(
   Array2D<float>   &slopes,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Slope calculation (radians)"<<std::endl;
-  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
+  RDLOG_ALG_NAME<<"Slope calculation (radians)";
+  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, slopes, &TerrainAttributator<T>::slope_radian);
 }
@@ -679,8 +679,8 @@ void d8_aspect(
   Array2D<float>   &aspects,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Aspect attribute calculation"<<std::endl;
-  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918"<<std::endl;
+  RDLOG_ALG_NAME<<"Aspect attribute calculation";
+  RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, aspects, &TerrainAttributator<T>::aspect);
 }
@@ -701,8 +701,8 @@ void d8_curvature(
   Array2D<float>   &curvatures, 
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Curvature attribute calculation"<<std::endl;
-  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
+  RDLOG_ALG_NAME<<"Curvature attribute calculation";
+  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, curvatures, &TerrainAttributator<T>::curvature);
 }
@@ -724,8 +724,8 @@ void d8_planform_curvature(
   Array2D<float>   &planform_curvatures,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Planform curvature attribute calculation"<<std::endl;
-  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
+  RDLOG_ALG_NAME<<"Planform curvature attribute calculation";
+  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, planform_curvatures, &TerrainAttributator<T>::planform_curvature);
 }
@@ -746,8 +746,8 @@ void d8_profile_curvature(
   Array2D<float>   &profile_curvatures,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Profile curvature attribute calculation"<<std::endl;
-  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56."<<std::endl;
+  RDLOG_ALG_NAME<<"Profile curvature attribute calculation";
+  RDLOG_CITATION<<"Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.";
   TerrainAttributator<T> ta(zscale);
   ta.process(elevations, profile_curvatures, &TerrainAttributator<T>::profile_curvature);
 }

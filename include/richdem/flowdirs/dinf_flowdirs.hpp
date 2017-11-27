@@ -129,15 +129,15 @@ template <class T>
 void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs){
   ProgressBar progress;
 
-  RDLOG_ALG_NAME<<"Dinf Flow Directions"<<std::endl;
-  RDLOG_CITATION<<"Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
+  RDLOG_ALG_NAME<<"Dinf Flow Directions";
+  RDLOG_CITATION<<"Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319.";
 
-  RDLOG_PROGRESS<<"Setting up the Dinf flow directions matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the Dinf flow directions matrix...";
   flowdirs.resize(elevations);
   flowdirs.setNoData(dinf_NO_DATA);
   flowdirs.setAll(NO_FLOW);
 
-  RDLOG_PROGRESS<<"Calculating Dinf flow directions..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating Dinf flow directions...";
   progress.start( elevations.size() );
   #pragma omp parallel for
   for(int y=0;y<elevations.height();y++){
@@ -148,7 +148,7 @@ void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs
       else
         flowdirs(x,y) = dinf_FlowDir(elevations,x,y);
   }
-  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
 }
 
 }

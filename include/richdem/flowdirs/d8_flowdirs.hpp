@@ -100,15 +100,15 @@ void d8_flow_directions(
 ){
   ProgressBar progress;
 
-  RDLOG_ALG_NAME<<"D8 Flow Directions"<<std::endl;
-  RDLOG_CITATION<<"TODO"<<std::endl;
+  RDLOG_ALG_NAME<<"D8 Flow Directions";
+  RDLOG_CITATION<<"TODO";
 
-  RDLOG_PROGRESS<<"Setting up the flow directions matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the flow directions matrix...";
   flowdirs.resize(elevations);
   flowdirs.setAll(NO_FLOW);
   flowdirs.setNoData(FLOWDIR_NO_DATA);
 
-  RDLOG_PROGRESS<<"Calculating D8 flow directions..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating D8 flow directions...";
   progress.start( elevations.width()*elevations.height() );
   #pragma omp parallel for
   for(int y=0;y<elevations.height();y++){
@@ -119,7 +119,7 @@ void d8_flow_directions(
       else
         flowdirs(x,y) = d8_FlowDir(elevations,x,y);
   }
-  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
 }
 
 }

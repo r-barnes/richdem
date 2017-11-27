@@ -30,8 +30,8 @@ void Lindsay2016(
   uint32_t    maxpathlen,
   T           maxdepth
 ){
-  RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions"<<std::endl;
-  RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648"<<std::endl;
+  RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions";
+  RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
 
@@ -52,7 +52,7 @@ void Lindsay2016(
   visited.setAll(LindsayCellType::UNVISITED);
 
   //Seed the priority queue
-  RDLOG_PROGRESS<<"Identifying pits and edge cells..."<<std::endl;
+  RDLOG_PROGRESS<<"Identifying pits and edge cells...";
   progress.start(dem.size());
   for(int y=0;y<dem.height();y++)
   for(int x=0;x<dem.width();x++){
@@ -107,7 +107,7 @@ void Lindsay2016(
 
   //The Priority-Flood operation assures that we reach pit cells by passing into
   //depressions over the outlet of minimal elevation on their edge.
-  RDLOG_PROGRESS<<"Breaching..."<<std::endl;
+  RDLOG_PROGRESS<<"Breaching...";
   progress.start(dem.numDataCells());
   while(!pq.empty()){
     ++progress;
@@ -194,7 +194,7 @@ void Lindsay2016(
   progress.stop();
 
   if(mode!=COMPLETE_BREACHING && fill_depressions){
-    RDLOG_PROGRESS<<"Flooding..."<<std::endl;
+    RDLOG_PROGRESS<<"Flooding...";
     progress.start(dem.numDataCells());
     for(const auto f: flood_array){
       ++progress;
@@ -205,7 +205,7 @@ void Lindsay2016(
     progress.stop();
   }
 
-  RDLOG_TIME_USE<<"Wall-time = "<<overall.stop()<<std::endl;
+  RDLOG_TIME_USE<<"Wall-time = "<<overall.stop();
 }
 
 //TODO: Specialize all integer types
