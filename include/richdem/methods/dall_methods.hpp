@@ -506,7 +506,7 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
 
-  std::vector<float> props(9*elevations.width(),0);
+  std::vector<float> props(9*elevations.size(),0);
 
   ProgressBar progress;
   progress.start(elevations.size());
