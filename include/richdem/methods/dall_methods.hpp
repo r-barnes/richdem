@@ -557,13 +557,15 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
       }
   }
 
+  RDLOG_DEBUG<<"Source cells found = "<<deps.size(); //TODO: Switch log target
+
   //Find sources
   std::queue<int> q;
   for(auto i=deps.i0();i<deps.size();i++)
     if(deps(i)==0 && !elevations.isNoData(i))
       q.emplace(i);
 
-  RDLOG_PROGRESS<<"Calculating flow accumulation..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating flow accumulation...";
   ProgressBar progress;
   progress.start(elevations.size());
   while(!q.empty()){
