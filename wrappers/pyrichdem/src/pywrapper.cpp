@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <richdem/richdem.hpp>
 #include <pybind11/numpy.h>
+#include <richdem/methods/dall_methods.hpp>
 // #include "pybind11_array2d.hpp"
 #include <string>
 
@@ -23,18 +24,6 @@ using namespace richdem;
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
 
-  m.def("rdFillDepressions", &Zhou2016<float>,               "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
-  m.def("rdFillDepressions", &Zhou2016<double>,              "Fill all depressions.");
-  m.def("rdPFepsilon",       &priority_flood_epsilon<float>, "Fill all depressions with epsilon.");
-
-  m.def("FA_Tarboton",          &FA_Tarboton<float,double>,          "TODO");
-  m.def("FA_Holmgren",          &FA_Holmgren<float,double>,          "TODO");
-  m.def("FA_Quinn",             &FA_Quinn<float,double>,             "TODO");
-  m.def("FA_Freeman",           &FA_Freeman<float,double>,           "TODO");
-  m.def("FA_FairfieldLeymarie", &FA_FairfieldLeymarie<float,double>, "TODO");
-  m.def("FA_Rho8",              &FA_Rho8<float,double>,              "TODO");
-  m.def("FA_D8",                &FA_D8<float,double>,                "TODO");
-
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
@@ -47,64 +36,7 @@ PYBIND11_MODULE(_richdem, m) {
   //   py::arg("score_list")=""
   // );
 
-  py::class_<Array2D<float>>(m, "Array2Dfloat", py::buffer_protocol(), py::dynamic_attr())
-      .def(py::init<>())
-      .def(py::init<Array2D<float>::xy_t,Array2D<float>::xy_t,float>())
-      .def("size",      &Array2D<float>::size)
-      .def("width",     &Array2D<float>::width)
-      .def("height",    &Array2D<float>::height)
-      .def("empty",     &Array2D<float>::empty)
-      .def("noData",    &Array2D<float>::noData)
-      .def("min",       &Array2D<float>::min)
-      .def("max",       &Array2D<float>::max)
-      .def("setNoData", &Array2D<float>::setNoData)
-      .def_readwrite("projection", &Array2D<float>::projection)
-      .def_readwrite("processing_history", &Array2D<float>::processing_history)
-      .def("copy", [](const Array2D<float> &a){
-        return Array2D<float>(a);
-      })
-      .def("fromArray", [](Array2D<float> &a, py::handle src){
-        // if(!py::array_t<float>::check_(src)) //TODO: What's this about?
-          // return false;
+  #include "Array2D_wrapper.hpp"
 
-        auto buf = py::array_t<float, py::array::c_style | py::array::forcecast>::ensure(src);
-        if (!buf)
-          throw std::runtime_error("Unable to convert array to RichDEM object!");
-
-        auto dims = buf.ndim();
-        if (dims != 2 )
-          throw std::runtime_error("Array must have two dimensions!");
-
-        a.clear();
-        a.resize(buf.shape()[1], buf.shape()[0]);
-        float* dat = (float*)buf.data();
-        for(Array2D<float>::i_t i=0;i<a.size();i++)
-          a(i) = dat[i];
-      })
-      .def_buffer([](Array2D<float> &arr) -> py::buffer_info {
-        return py::buffer_info(
-          arr.getData(),
-          sizeof(float),
-          py::format_descriptor<float>::format(),
-          2,                                           //Dimensions
-          {arr.height(), arr.width()},                 //Shape
-          {sizeof(float) * arr.width(), sizeof(float)} //Stride (in bytes)
-        );
-      })
-      .def("__repr__",
-        [](const Array2D<float> &a) {
-            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
-        }
-      )
-      .def("__call__",
-        [](Array2D<float> &a, const int x, const int y) -> float& {
-          return a(x,y);
-        }
-      )
-      .def("__call__",
-        [](Array2D<float> &a, const int i) -> float& {
-          return a(i);
-        }
-      );      
 }
  

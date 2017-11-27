@@ -1,5 +1,12 @@
 import _richdem
-from _richdem import Array2Dfloat
+from _richdem import Array2D_float
+from _richdem import Array2D_double
+from _richdem import Array2D_uint8_t
+from _richdem import Array2D_uint16_t
+from _richdem import Array2D_uint32_t
+from _richdem import Array2D_int8_t
+from _richdem import Array2D_int16_t
+from _richdem import Array2D_int32_t
 
 try:
   import numpy as np
@@ -14,9 +21,21 @@ try:
 except:
   GDAL_AVAILABLE = False
 
+
 def LoadGDAL(filename):
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
+
+  gdal_to_richdem = {
+    gdal.GDT_Byte:    _richdem.Array2D_uint8_t,
+    gdal.GDT_Int16:   _richdem.Array2D_int16_t,
+    gdal.GDT_Int32:   _richdem.Array2D_int32_t,
+    gdal.GDT_UInt16:  _richdem.Array2D_uint16_t,
+    gdal.GDT_UInt32:  _richdem.Array2D_uint32_t,
+    gdal.GDT_Float32: _richdem.Array2D_float,
+    gdal.GDT_Float64: _richdem.Array2D_double
+  }
+
 
   #Read in data
   src_ds     = gdal.Open(filename)
@@ -25,7 +44,10 @@ def LoadGDAL(filename):
   # raster_srs = osr.SpatialReference()
   # raster_srs.ImportFromWkt(raster.GetProjectionRef())
 
-  ret = Array2Dfloat()
+  if not srcband.DataType in gdal_to_richdem:
+    raise Exception("This datatype is not supported. Please file a bug report on RichDEM.")
+
+  ret = gdal_to_richdem[srcband.DataType]()
   ret.fromArray(srcdata)
   ret.projection   = src_ds.GetProjectionRef()
   ret.geotransform = src_ds.GetGeoTransform()
@@ -51,7 +73,7 @@ def SaveGDAL(filename, dem):
   band.WriteArray(np.array(dem))
 
 
-def fillDepressions(
+def FillDepressions(
   dem,
   epsilon = False,
 ):
@@ -67,3 +89,25 @@ def fillDepressions(
     return _richdem.rdPFepsilon(dem)
   else:
     return _richdem.rdFillDepressions(dem)
+
+def FlowAccumulation(
+  dem,
+  method = 'D8'
+):
+  facc_methods = {
+    "Tarboton":          _richdem.FA_Tarboton,
+    "Dinf":              _richdem.FA_Tarboton,
+    "Holmgren":          _richdem.FA_Holmgren,
+    "Quinn":             _richdem.FA_Quinn,
+    "Freeman":           _richdem.FA_Freeman,
+    "FairfieldLeymarie": _richdem.FA_FairfieldLeymarie,
+    "Rho8":              _richdem.FA_Rho8,
+    "OCallaghan":        _richdem.FA_OCallaghan,
+    "D8":                _richdem.FA_D8
+  }
+
+  accum = _richdem.Array2D_double()
+
+  facc_methods[method](dem,accum)
+
+  return accum
