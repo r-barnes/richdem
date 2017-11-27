@@ -551,8 +551,10 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
   for(int x=1;x<elevations.width()-1;x++){
     const int ci = elevations.xyToI(x,y);
     for(int n=1;n<=8;n++)
-      if(props[9*ci+n]>0)
-        deps(ci)++;
+      if(props[9*ci+n]>0){
+        const int ni = ci + elevations.nshift(n);
+        deps(ni)++;
+      }
   }
 
   //Find sources
@@ -583,6 +585,7 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
       accum(ni) += props[9*ci+n]*c_accum;
       if(--deps(ni)==0)
         q.emplace(ni);
+      assert(deps(ni)>=0);
     }
   }
   progress.stop();
