@@ -480,7 +480,7 @@ std::vector<float> FP_Rho8(const Array2D<E> &elevations){
 
 //TODO: Add Marks et al (1984)
 template<class E>
-static std::vector<float> KernelOCallaghan(const Array2D<E> &elevations){
+static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)"<<std::endl;
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344."<<std::endl;
 
@@ -602,7 +602,8 @@ template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<e
 template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Freeman<elev_t>          , elevations, accum, xparam); }
 template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_FairfieldLeymarie<elev_t>, elevations, accum); }
 template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Rho8<elev_t>             , elevations, accum); }
-//template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_OCallaghan        (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
 
 
 
