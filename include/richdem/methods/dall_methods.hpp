@@ -225,9 +225,13 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
   //const double ac[9]    = {0,  2.,  1.,   1.,  0.,  4., 3.,  3.,  2. };
   const double af[9]    = {0, -1.,  1.,  -1.,  1., -1., 1., -1.,  1. };
 
+  ProgressBar progress;
+  progress.start(elevations.size());
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
 
     int8_t nmax = -1;
     double smax = 0;
@@ -299,6 +303,7 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
       props.at(9*elevations.xyToI(x,y)+nwrap(nmax+1)) = 1-rmax/(M_PI/4.);      
     }
   }
+  progress.stop();
 
   return props;
 }
@@ -317,9 +322,13 @@ std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam
   constexpr double L2   = 0.354; //TODO: More decimal places
   constexpr double L[9] = {0,L1,L2,L1,L2,L1,L2,L1,L2};
 
+  ProgressBar progress;
+  progress.start(elevations.size());
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
     const E e = elevations(x,y);
 
     const int ci = elevations.xyToI(x,y);
@@ -355,6 +364,7 @@ std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam
         props.at(9*ci+n) = 0;
     }
   }
+  progress.stop();
 
   return props;
 }
@@ -379,9 +389,14 @@ std::vector<float> FP_Freeman(
 
   std::vector<float> props(9*elevations.size(),0);
 
+  ProgressBar progress;
+  progress.start(elevations.size());
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
+
     const E e    = elevations(x,y);
     const int ci = elevations.xyToI(x,y);
 
@@ -416,6 +431,7 @@ std::vector<float> FP_Freeman(
         this_por = 0;
     }
   }
+  progress.stop();
 
   return props;
 }
@@ -427,9 +443,14 @@ std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
 
   std::vector<float> props(9*elevations.size(),0);
 
+  ProgressBar progress;
+  progress.start(elevations.size());
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
+
     const int ci = elevations.xyToI(x,y);
     const E e    = elevations(x,y);
 
@@ -466,6 +487,7 @@ std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
 
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
+  progress.stop();
 
   return props;
 }
@@ -486,9 +508,14 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
 
   std::vector<float> props(9*elevations.width(),0);
 
+  ProgressBar progress;
+  progress.start(elevations.size());
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
+
     const int ci = elevations.xyToI(x,y);
     const E   e  = elevations(x,y);
 
@@ -521,6 +548,7 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
 
     props.at(ci+lowest_n) = 1;
   }
+  progress.stop();
 
   return props;
 }
