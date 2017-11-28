@@ -106,8 +106,38 @@ def FlowAccumulation(
     "D8":                _richdem.FA_D8
   }
 
+  if not method in facc_methods:
+    raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys()))
+
   accum = _richdem.Array2D_double()
 
   facc_methods[method](dem,accum)
 
   return accum
+
+def TerrainAttributes(
+  dem,
+  method,
+  zscale = 1
+):
+  terrain_methods = {
+    #"spi":                _richdem.TA_SPI,
+    #"cti":                _richdem.TA_CTI,
+    "slope_riserun":      _richdem.TA_slope_riserun,
+    "slope_percentage":   _richdem.TA_slope_percentage,
+    "slope_degrees":      _richdem.TA_slope_degrees,
+    "slope_radians":      _richdem.TA_slope_radians,
+    "aspect":             _richdem.TA_aspect,
+    "curvature":          _richdem.TA_curvature,
+    "planform_curvature": _richdem.TA_planform_curvature,
+    "profile_curvature":  _richdem.TA_profile_curvature,
+  }
+
+  if not method in terrain_methods:
+    raise Exception("Invalid TerrainAttributes method. Valid methods are: " + ', '.join(terrain_methods.keys()))
+
+  result = _richdem.Array2D_float()
+
+  terrain_methods[method](dem,result,zscale)
+
+  return result

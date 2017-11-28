@@ -1,6 +1,16 @@
   m.def("rdFillDepressions", &improved_priority_flood<float>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<float>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<float, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<float, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<float>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<float>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<float>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<float>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<float>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<float>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<float>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<float>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<float,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<float,double>,          "TODO");
@@ -72,6 +82,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<double>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<double>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<double, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<double, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<double>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<double>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<double>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<double>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<double>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<double>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<double>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<double>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<double,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<double,double>,          "TODO");
@@ -143,6 +163,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<int8_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<int8_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<int8_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<int8_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<int8_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<int8_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<int8_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<int8_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<int8_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<int8_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<int8_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<int8_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<int8_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<int8_t,double>,          "TODO");
@@ -214,6 +244,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<int16_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<int16_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<int16_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<int16_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<int16_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<int16_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<int16_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<int16_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<int16_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<int16_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<int16_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<int16_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<int16_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<int16_t,double>,          "TODO");
@@ -285,6 +325,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<int32_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<int32_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<int32_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<int32_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<int32_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<int32_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<int32_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<int32_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<int32_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<int32_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<int32_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<int32_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<int32_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<int32_t,double>,          "TODO");
@@ -356,6 +406,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<uint8_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<uint8_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<uint8_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<uint8_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<uint8_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<uint8_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<uint8_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<uint8_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<uint8_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<uint8_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<uint8_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<uint8_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<uint8_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<uint8_t,double>,          "TODO");
@@ -427,6 +487,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<uint16_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<uint16_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<uint16_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<uint16_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<uint16_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<uint16_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<uint16_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<uint16_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<uint16_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<uint16_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<uint16_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<uint16_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<uint16_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<uint16_t,double>,          "TODO");
@@ -498,6 +568,16 @@
       );        m.def("rdFillDepressions", &improved_priority_flood<uint32_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<uint32_t>,    "Fill all depressions with epsilon.");
 
+  m.def("TA_SPI",                &TA_SPI<uint32_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<uint32_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<uint32_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<uint32_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<uint32_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<uint32_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<uint32_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<uint32_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<uint32_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<uint32_t>,         "TODO");                       
 
   m.def("FA_Tarboton",          &FA_Tarboton<uint32_t,double>,          "TODO");
   m.def("FA_Holmgren",          &FA_Holmgren<uint32_t,double>,          "TODO");
