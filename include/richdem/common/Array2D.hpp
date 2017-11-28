@@ -101,9 +101,6 @@ class Array2D {
   ManagedVector<T> data;            ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
-  bool owned = true;                ///< If true, then the class deletes the 
-                                    ///  `data` array upon destruction.
-
   T   no_data;                       ///< NoData value of the raster
   mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
@@ -297,8 +294,7 @@ class Array2D {
     @param[in] height  Height of the data
   */
   Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
-    data        = data0;
-    owned       = false;
+    data        = ManagedVector<T>(data0, width*height);
     view_width  = width;
     view_height = height;
   }
@@ -1164,6 +1160,11 @@ class Array2D {
     for(i_t i=0;i<size();i++)
       if(data[i]!=no_data)
         data[i] *= x;
+  }
+
+  //TODO
+  inline bool owned() const {
+    return data.owned();
   }
 };
 

@@ -11,7 +11,7 @@ class ManagedVector {
   template<typename> friend class ManagedVector;
 
   std::unique_ptr<T[]> _data;
-  bool   owned = true;
+  bool   _owned = true;
   size_t _size = 0;
 
  public:
@@ -27,7 +27,7 @@ class ManagedVector {
   ManagedVector(T* data0, size_t size0){
     _data.reset(data0);
     _size = size0;
-    owned = false;
+    _owned = false;
   }
 
   //Copy from other
@@ -52,13 +52,13 @@ class ManagedVector {
   ManagedVector(ManagedVector<U> &&other) noexcept {
     _size       = other._size;
     _data       = std::move(other._data);
-    owned       = other.owned;
-    other.owned = true;
+    _owned       = other._owned;
+    other._owned = true;
     other._size = 0;
   }
 
   ~ManagedVector(){
-    if(!owned)
+    if(!_owned)
       _data.release();
   }
 
@@ -75,8 +75,8 @@ class ManagedVector {
   ManagedVector<T>& operator=(ManagedVector<U>&& other) noexcept {
     _size       = other.size();
     _data       = std::move(other._data);
-    owned       = other.owned;
-    other.owned = true;
+    _owned       = other._owned;
+    other._owned = true;
     other._size = 0;
     return *this;
   }
@@ -93,9 +93,13 @@ class ManagedVector {
     return _size;
   }
 
+  inline bool owned() const {
+    return _owned;
+  }
+
   //TODO: Keep old memory?
   void resize(size_t new_size) {
-    if(_size!=new_size && !owned)
+    if(_size!=new_size && !_owned)
       throw std::runtime_error("Cannot resize unowned memory!");
 
     _data.reset(new T[new_size]);
