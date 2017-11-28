@@ -87,17 +87,22 @@ def SaveGDAL(filename, dem):
 
 def WrapNumPy(nparray):
   richdem_arrs = {
-    'int8':
-    'int16':
-    'int32':
-    'int64':
-    'uint8':
-    'uint16':
-    'uint32':
-    'uint64':
-    'float32':
-    'float64':
+    'int8':    _richdem.Array2D_int8_t,
+    'int16':   _richdem.Array2D_int16_t,
+    'int32':   _richdem.Array2D_int32_t,
+    'int64':   _richdem.Array2D_int64_t,
+    'uint8':   _richdem.Array2D_uint8_t,
+    'uint16':  _richdem.Array2D_uint16_t,
+    'uint32':  _richdem.Array2D_uint32_t,
+    'uint64':  _richdem.Array2D_uint64_t,
+    'float32': _richdem.Array2D_float,
+    'float64': _richdem.Array2D_double
   }
+
+  if not nparray.dtype in richdem_arrs:
+    raise Exception("No equivalent RichDEM datatype.")
+
+  return richdem_arrs[nparray.dtype](nparray.data,nparray.shape[1],np.shape[0])
 
 def FillDepressions(
   dem,
