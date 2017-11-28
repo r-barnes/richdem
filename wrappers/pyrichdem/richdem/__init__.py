@@ -1,12 +1,5 @@
+import pkg_resources
 import _richdem
-from _richdem import Array2D_float
-from _richdem import Array2D_double
-from _richdem import Array2D_uint8_t
-from _richdem import Array2D_uint16_t
-from _richdem import Array2D_uint32_t
-from _richdem import Array2D_int8_t
-from _richdem import Array2D_int16_t
-from _richdem import Array2D_int32_t
 
 try:
   import numpy as np
