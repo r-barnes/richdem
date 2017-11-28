@@ -124,30 +124,37 @@ def FillDepressions(
 
 def FlowAccumulation(
   dem,
-  method = 'D8'
+  method   = 'D8',
+  exponent = None
 ):
   facc_methods = {
     "Tarboton":          _richdem.FA_Tarboton,
     "Dinf":              _richdem.FA_Tarboton,
-    "Holmgren":          _richdem.FA_Holmgren,
     "Quinn":             _richdem.FA_Quinn,
-    "Freeman":           _richdem.FA_Freeman,
     "FairfieldLeymarie": _richdem.FA_FairfieldLeymarie,
     "Rho8":              _richdem.FA_Rho8,
     "OCallaghan":        _richdem.FA_OCallaghan,
     "D8":                _richdem.FA_D8
   }
 
-  if not method in facc_methods:
-    raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys()))
+  facc_methods_exponent = {
+    "Freeman":           _richdem.FA_Freeman,
+    "Holmgren":          _richdem.FA_Holmgren
+  }
 
   accum = _richdem.Array2D_double(dem, 0)
 
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
-  facc_methods[method](dem,accum)
+  if method in facc_methods:
+    facc_methods[method](dem,accum)
+    return accum
+  elif method in facc_methods_exponent:
+    facc_methods_exponent[method](dem,accum,exponent)
+    return accum
+  else:
+    raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys())) #TODO: Combine methods
 
-  return accum
 
 def TerrainAttributes(
   dem,
