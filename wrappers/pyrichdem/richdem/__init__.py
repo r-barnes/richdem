@@ -1,5 +1,6 @@
 import pkg_resources
 import _richdem
+import datetime
 
 try:
   import numpy as np
@@ -14,6 +15,23 @@ try:
 except:
   GDAL_AVAILABLE = False
 
+def _AddAnalysis(arr, analysis):
+  print("Add analysis: {0}".format(analysis))
+  metastr  = "\n{nowdate} | {progname} v{progver} (hash={hash}, compiled={compdate}) | {analysis}".format(
+    nowdate  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
+    progname = "RichDEM (Python)",
+    progver  = pkg_resources.require("richdem")[0].version,
+    hash     = "Unknown",
+    compdate = "Unknown",
+    analysis = analysis
+  )
+
+  if not "PROCESSING_HISTORY" in arr.metadata:
+    arr.metadata["PROCESSING_HISTORY"] = ""
+  arr.metadata["PROCESSING_HISTORY"] += metastr
+
+
+#2017-11-28 16:41:58 UTC | RichDEM v0.0.0 (hash=06ebc928f7542e84, compiled=2017-11-23 16:30:45 UTC) | rd_depressions_flood.exe /home/rick/data/gis/beauford.tif /z/out.tif 0
 
 def LoadGDAL(filename):
   if not GDAL_AVAILABLE:
@@ -45,8 +63,8 @@ def LoadGDAL(filename):
   ret.projection   = src_ds.GetProjectionRef()
   ret.geotransform = _richdem.VecDouble(src_ds.GetGeoTransform())
   ret.setNoData(srcband.GetNoDataValue())
-
-  print(src_ds.GetMetadata())
+  for k,v in src_ds.GetMetadata().items():
+    ret.metadata[k] = v
 
   return ret
 
@@ -64,6 +82,8 @@ def SaveGDAL(filename, dem):
   band = data_set.GetRasterBand(1)
   band.SetNoDataValue(dem.noData())
   band.WriteArray(np.array(dem))
+  for k,v in dem.metadata.items():
+    data_set.SetMetadataItem(k,v)
 
 
 def FillDepressions(
@@ -78,6 +98,7 @@ def FillDepressions(
      Returns:
      Modified dem in-place to remove depressions
   """
+  _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
   if epsilon:
     return _richdem.rdPFepsilon(dem)
   else:
@@ -103,6 +124,8 @@ def FlowAccumulation(
     raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys()))
 
   accum = _richdem.Array2D_double(dem, 0)
+
+  _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
   facc_methods[method](dem,accum)
 
@@ -130,6 +153,8 @@ def TerrainAttributes(
     raise Exception("Invalid TerrainAttributes method. Valid methods are: " + ', '.join(terrain_methods.keys()))
 
   result = _richdem.Array2D_float(dem, 0)
+
+  _AddAnalysis(result, "TerrainAttributes(dem, method={0}, zscale={1})".format(method,zscale))
 
   terrain_methods[method](dem,result,zscale)
 
