@@ -24,8 +24,8 @@
       .def("setNoData", &Array2D<@T@>::setNoData)
       .def_readwrite("projection", &Array2D<@T@>::projection)
       .def_readwrite("metadata",   &Array2D<@T@>::metadata)
-      .def("copy", [](const Array2D<@T@> &a){
-        return Array2D<@T@>(a);
+      .def("copy", [](const Array2D<@T@> a){
+        return a;
       })
       .def("fromArray", [](Array2D<@T@> &a, py::handle src){
         // if(!py::array_t<@T@>::check_(src)) //TODO: What's this about?
