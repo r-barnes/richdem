@@ -85,6 +85,19 @@ def SaveGDAL(filename, dem):
   for k,v in dem.metadata.items():
     data_set.SetMetadataItem(k,v)
 
+def WrapNumPy(nparray):
+  richdem_arrs = {
+    'int8':
+    'int16':
+    'int32':
+    'int64':
+    'uint8':
+    'uint16':
+    'uint32':
+    'uint64':
+    'float32':
+    'float64':
+  }
 
 def FillDepressions(
   dem,

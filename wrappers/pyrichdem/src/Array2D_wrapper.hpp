@@ -29,9 +29,11 @@
       .def(py::init<const Array2D<int8_t>&, float>())
       .def(py::init<const Array2D<int16_t>&, float>())
       .def(py::init<const Array2D<int32_t>&, float>())
+      .def(py::init<const Array2D<int64_t>&, float>())
       .def(py::init<const Array2D<uint8_t>&, float>())
       .def(py::init<const Array2D<uint16_t>&, float>())
       .def(py::init<const Array2D<uint32_t>&, float>())
+      .def(py::init<const Array2D<uint64_t>&, float>())
       .def("size",      &Array2D<float>::size)
       .def("width",     &Array2D<float>::width)
       .def("height",    &Array2D<float>::height)
@@ -119,9 +121,11 @@
       .def(py::init<const Array2D<int8_t>&, double>())
       .def(py::init<const Array2D<int16_t>&, double>())
       .def(py::init<const Array2D<int32_t>&, double>())
+      .def(py::init<const Array2D<int64_t>&, double>())
       .def(py::init<const Array2D<uint8_t>&, double>())
       .def(py::init<const Array2D<uint16_t>&, double>())
       .def(py::init<const Array2D<uint32_t>&, double>())
+      .def(py::init<const Array2D<uint64_t>&, double>())
       .def("size",      &Array2D<double>::size)
       .def("width",     &Array2D<double>::width)
       .def("height",    &Array2D<double>::height)
@@ -209,9 +213,11 @@
       .def(py::init<const Array2D<int8_t>&, int8_t>())
       .def(py::init<const Array2D<int16_t>&, int8_t>())
       .def(py::init<const Array2D<int32_t>&, int8_t>())
+      .def(py::init<const Array2D<int64_t>&, int8_t>())
       .def(py::init<const Array2D<uint8_t>&, int8_t>())
       .def(py::init<const Array2D<uint16_t>&, int8_t>())
       .def(py::init<const Array2D<uint32_t>&, int8_t>())
+      .def(py::init<const Array2D<uint64_t>&, int8_t>())
       .def("size",      &Array2D<int8_t>::size)
       .def("width",     &Array2D<int8_t>::width)
       .def("height",    &Array2D<int8_t>::height)
@@ -299,9 +305,11 @@
       .def(py::init<const Array2D<int8_t>&, int16_t>())
       .def(py::init<const Array2D<int16_t>&, int16_t>())
       .def(py::init<const Array2D<int32_t>&, int16_t>())
+      .def(py::init<const Array2D<int64_t>&, int16_t>())
       .def(py::init<const Array2D<uint8_t>&, int16_t>())
       .def(py::init<const Array2D<uint16_t>&, int16_t>())
       .def(py::init<const Array2D<uint32_t>&, int16_t>())
+      .def(py::init<const Array2D<uint64_t>&, int16_t>())
       .def("size",      &Array2D<int16_t>::size)
       .def("width",     &Array2D<int16_t>::width)
       .def("height",    &Array2D<int16_t>::height)
@@ -389,9 +397,11 @@
       .def(py::init<const Array2D<int8_t>&, int32_t>())
       .def(py::init<const Array2D<int16_t>&, int32_t>())
       .def(py::init<const Array2D<int32_t>&, int32_t>())
+      .def(py::init<const Array2D<int64_t>&, int32_t>())
       .def(py::init<const Array2D<uint8_t>&, int32_t>())
       .def(py::init<const Array2D<uint16_t>&, int32_t>())
       .def(py::init<const Array2D<uint32_t>&, int32_t>())
+      .def(py::init<const Array2D<uint64_t>&, int32_t>())
       .def("size",      &Array2D<int32_t>::size)
       .def("width",     &Array2D<int32_t>::width)
       .def("height",    &Array2D<int32_t>::height)
@@ -448,6 +458,98 @@
         [](Array2D<int32_t> &a, const int i) -> int32_t& {
           return a(i);
         }
+      );        m.def("rdFillDepressions", &improved_priority_flood<int64_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
+  m.def("rdPFepsilon",       &priority_flood_epsilon<int64_t>,    "Fill all depressions with epsilon.");
+
+  m.def("TA_SPI",                &TA_SPI<int64_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<int64_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<int64_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<int64_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<int64_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<int64_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<int64_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<int64_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<int64_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<int64_t>,         "TODO");                       
+
+  m.def("FA_Tarboton",          &FA_Tarboton<int64_t,double>,          "TODO");
+  m.def("FA_Holmgren",          &FA_Holmgren<int64_t,double>,          "TODO");
+  m.def("FA_Quinn",             &FA_Quinn<int64_t,double>,             "TODO");
+  m.def("FA_Freeman",           &FA_Freeman<int64_t,double>,           "TODO");
+  m.def("FA_FairfieldLeymarie", &FA_FairfieldLeymarie<int64_t,double>, "TODO");
+  m.def("FA_Rho8",              &FA_Rho8<int64_t,double>,              "TODO");
+  m.def("FA_D8",                &FA_D8<int64_t,double>,                "TODO");
+  m.def("FA_OCallaghan",        &FA_OCallaghan<int64_t,double>,        "TODO");
+
+  py::class_<Array2D<int64_t>>(m, "Array2D_int64_t", py::buffer_protocol(), py::dynamic_attr())
+      .def(py::init<>())
+      .def(py::init<Array2D<int64_t>::xy_t,Array2D<int64_t>::xy_t,int64_t>())
+      .def(py::init<const Array2D<float>&, int64_t>())
+      .def(py::init<const Array2D<double>&, int64_t>())
+      .def(py::init<const Array2D<int8_t>&, int64_t>())
+      .def(py::init<const Array2D<int16_t>&, int64_t>())
+      .def(py::init<const Array2D<int32_t>&, int64_t>())
+      .def(py::init<const Array2D<int64_t>&, int64_t>())
+      .def(py::init<const Array2D<uint8_t>&, int64_t>())
+      .def(py::init<const Array2D<uint16_t>&, int64_t>())
+      .def(py::init<const Array2D<uint32_t>&, int64_t>())
+      .def(py::init<const Array2D<uint64_t>&, int64_t>())
+      .def("size",      &Array2D<int64_t>::size)
+      .def("width",     &Array2D<int64_t>::width)
+      .def("height",    &Array2D<int64_t>::height)
+      .def("empty",     &Array2D<int64_t>::empty)
+      .def("noData",    &Array2D<int64_t>::noData)
+      .def("min",       &Array2D<int64_t>::min)
+      .def("max",       &Array2D<int64_t>::max)
+      .def("setNoData", &Array2D<int64_t>::setNoData)
+      .def_readwrite("geotransform", &Array2D<int64_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<int64_t>::projection)
+      .def_readwrite("metadata",     &Array2D<int64_t>::metadata)
+      .def("copy", [](const Array2D<int64_t> a){
+        return a;
+      })
+      .def("fromArray", [](Array2D<int64_t> &a, py::handle src){
+        // if(!py::array_t<int64_t>::check_(src)) //TODO: What's this about?
+          // return false;
+
+        auto buf = py::array_t<int64_t, py::array::c_style | py::array::forcecast>::ensure(src);
+        if (!buf)
+          throw std::runtime_error("Unable to convert array to RichDEM object!");
+
+        auto dims = buf.ndim();
+        if (dims != 2 )
+          throw std::runtime_error("Array must have two dimensions!");
+
+        a.clear();
+        a.resize(buf.shape()[1], buf.shape()[0]);
+        int64_t* dat = (int64_t*)buf.data();
+        for(Array2D<int64_t>::i_t i=0;i<a.size();i++)
+          a(i) = dat[i];
+      })
+      .def_buffer([](Array2D<int64_t> &arr) -> py::buffer_info {
+        return py::buffer_info(
+          arr.getData(),
+          sizeof(int64_t),
+          py::format_descriptor<int64_t>::format(),
+          2,                                           //Dimensions
+          {arr.height(), arr.width()},                 //Shape
+          {sizeof(int64_t) * arr.width(), sizeof(int64_t)} //Stride (in bytes)
+        );
+      })
+      .def("__repr__",
+        [](const Array2D<int64_t> &a) {
+            return "<RichDEM array: type=int64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+        }
+      )
+      .def("__call__",
+        [](Array2D<int64_t> &a, const int x, const int y) -> int64_t& {
+          return a(x,y);
+        }
+      )
+      .def("__call__",
+        [](Array2D<int64_t> &a, const int i) -> int64_t& {
+          return a(i);
+        }
       );        m.def("rdFillDepressions", &improved_priority_flood<uint8_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
   m.def("rdPFepsilon",       &priority_flood_epsilon<uint8_t>,    "Fill all depressions with epsilon.");
 
@@ -479,9 +581,11 @@
       .def(py::init<const Array2D<int8_t>&, uint8_t>())
       .def(py::init<const Array2D<int16_t>&, uint8_t>())
       .def(py::init<const Array2D<int32_t>&, uint8_t>())
+      .def(py::init<const Array2D<int64_t>&, uint8_t>())
       .def(py::init<const Array2D<uint8_t>&, uint8_t>())
       .def(py::init<const Array2D<uint16_t>&, uint8_t>())
       .def(py::init<const Array2D<uint32_t>&, uint8_t>())
+      .def(py::init<const Array2D<uint64_t>&, uint8_t>())
       .def("size",      &Array2D<uint8_t>::size)
       .def("width",     &Array2D<uint8_t>::width)
       .def("height",    &Array2D<uint8_t>::height)
@@ -569,9 +673,11 @@
       .def(py::init<const Array2D<int8_t>&, uint16_t>())
       .def(py::init<const Array2D<int16_t>&, uint16_t>())
       .def(py::init<const Array2D<int32_t>&, uint16_t>())
+      .def(py::init<const Array2D<int64_t>&, uint16_t>())
       .def(py::init<const Array2D<uint8_t>&, uint16_t>())
       .def(py::init<const Array2D<uint16_t>&, uint16_t>())
       .def(py::init<const Array2D<uint32_t>&, uint16_t>())
+      .def(py::init<const Array2D<uint64_t>&, uint16_t>())
       .def("size",      &Array2D<uint16_t>::size)
       .def("width",     &Array2D<uint16_t>::width)
       .def("height",    &Array2D<uint16_t>::height)
@@ -659,9 +765,11 @@
       .def(py::init<const Array2D<int8_t>&, uint32_t>())
       .def(py::init<const Array2D<int16_t>&, uint32_t>())
       .def(py::init<const Array2D<int32_t>&, uint32_t>())
+      .def(py::init<const Array2D<int64_t>&, uint32_t>())
       .def(py::init<const Array2D<uint8_t>&, uint32_t>())
       .def(py::init<const Array2D<uint16_t>&, uint32_t>())
       .def(py::init<const Array2D<uint32_t>&, uint32_t>())
+      .def(py::init<const Array2D<uint64_t>&, uint32_t>())
       .def("size",      &Array2D<uint32_t>::size)
       .def("width",     &Array2D<uint32_t>::width)
       .def("height",    &Array2D<uint32_t>::height)
@@ -716,6 +824,98 @@
       )
       .def("__call__",
         [](Array2D<uint32_t> &a, const int i) -> uint32_t& {
+          return a(i);
+        }
+      );        m.def("rdFillDepressions", &improved_priority_flood<uint64_t>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
+  m.def("rdPFepsilon",       &priority_flood_epsilon<uint64_t>,    "Fill all depressions with epsilon.");
+
+  m.def("TA_SPI",                &TA_SPI<uint64_t, float, double>,        "TODO");         
+  m.def("TA_CTI",                &TA_CTI<uint64_t, float, double>,        "TODO");         
+  m.def("TA_slope_riserun",      &TA_slope_riserun<uint64_t>,             "TODO");                   
+  m.def("TA_slope_percentage",   &TA_slope_percentage<uint64_t>,          "TODO");                      
+  m.def("TA_slope_degrees",      &TA_slope_degrees<uint64_t>,             "TODO");                   
+  m.def("TA_slope_radians",      &TA_slope_radians<uint64_t>,             "TODO");                   
+  m.def("TA_aspect",             &TA_aspect<uint64_t>,                    "TODO");            
+  m.def("TA_curvature",          &TA_curvature<uint64_t>,                 "TODO");               
+  m.def("TA_planform_curvature", &TA_planform_curvature<uint64_t>,        "TODO");                        
+  m.def("TA_profile_curvature",  &TA_profile_curvature<uint64_t>,         "TODO");                       
+
+  m.def("FA_Tarboton",          &FA_Tarboton<uint64_t,double>,          "TODO");
+  m.def("FA_Holmgren",          &FA_Holmgren<uint64_t,double>,          "TODO");
+  m.def("FA_Quinn",             &FA_Quinn<uint64_t,double>,             "TODO");
+  m.def("FA_Freeman",           &FA_Freeman<uint64_t,double>,           "TODO");
+  m.def("FA_FairfieldLeymarie", &FA_FairfieldLeymarie<uint64_t,double>, "TODO");
+  m.def("FA_Rho8",              &FA_Rho8<uint64_t,double>,              "TODO");
+  m.def("FA_D8",                &FA_D8<uint64_t,double>,                "TODO");
+  m.def("FA_OCallaghan",        &FA_OCallaghan<uint64_t,double>,        "TODO");
+
+  py::class_<Array2D<uint64_t>>(m, "Array2D_uint64_t", py::buffer_protocol(), py::dynamic_attr())
+      .def(py::init<>())
+      .def(py::init<Array2D<uint64_t>::xy_t,Array2D<uint64_t>::xy_t,uint64_t>())
+      .def(py::init<const Array2D<float>&, uint64_t>())
+      .def(py::init<const Array2D<double>&, uint64_t>())
+      .def(py::init<const Array2D<int8_t>&, uint64_t>())
+      .def(py::init<const Array2D<int16_t>&, uint64_t>())
+      .def(py::init<const Array2D<int32_t>&, uint64_t>())
+      .def(py::init<const Array2D<int64_t>&, uint64_t>())
+      .def(py::init<const Array2D<uint8_t>&, uint64_t>())
+      .def(py::init<const Array2D<uint16_t>&, uint64_t>())
+      .def(py::init<const Array2D<uint32_t>&, uint64_t>())
+      .def(py::init<const Array2D<uint64_t>&, uint64_t>())
+      .def("size",      &Array2D<uint64_t>::size)
+      .def("width",     &Array2D<uint64_t>::width)
+      .def("height",    &Array2D<uint64_t>::height)
+      .def("empty",     &Array2D<uint64_t>::empty)
+      .def("noData",    &Array2D<uint64_t>::noData)
+      .def("min",       &Array2D<uint64_t>::min)
+      .def("max",       &Array2D<uint64_t>::max)
+      .def("setNoData", &Array2D<uint64_t>::setNoData)
+      .def_readwrite("geotransform", &Array2D<uint64_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<uint64_t>::projection)
+      .def_readwrite("metadata",     &Array2D<uint64_t>::metadata)
+      .def("copy", [](const Array2D<uint64_t> a){
+        return a;
+      })
+      .def("fromArray", [](Array2D<uint64_t> &a, py::handle src){
+        // if(!py::array_t<uint64_t>::check_(src)) //TODO: What's this about?
+          // return false;
+
+        auto buf = py::array_t<uint64_t, py::array::c_style | py::array::forcecast>::ensure(src);
+        if (!buf)
+          throw std::runtime_error("Unable to convert array to RichDEM object!");
+
+        auto dims = buf.ndim();
+        if (dims != 2 )
+          throw std::runtime_error("Array must have two dimensions!");
+
+        a.clear();
+        a.resize(buf.shape()[1], buf.shape()[0]);
+        uint64_t* dat = (uint64_t*)buf.data();
+        for(Array2D<uint64_t>::i_t i=0;i<a.size();i++)
+          a(i) = dat[i];
+      })
+      .def_buffer([](Array2D<uint64_t> &arr) -> py::buffer_info {
+        return py::buffer_info(
+          arr.getData(),
+          sizeof(uint64_t),
+          py::format_descriptor<uint64_t>::format(),
+          2,                                           //Dimensions
+          {arr.height(), arr.width()},                 //Shape
+          {sizeof(uint64_t) * arr.width(), sizeof(uint64_t)} //Stride (in bytes)
+        );
+      })
+      .def("__repr__",
+        [](const Array2D<uint64_t> &a) {
+            return "<RichDEM array: type=uint64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+        }
+      )
+      .def("__call__",
+        [](Array2D<uint64_t> &a, const int x, const int y) -> uint64_t& {
+          return a(x,y);
+        }
+      )
+      .def("__call__",
+        [](Array2D<uint64_t> &a, const int i) -> uint64_t& {
           return a(i);
         }
       );      
