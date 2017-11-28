@@ -25,6 +25,7 @@
       .def(py::init<>())
       .def(py::init<Array2D<@T@>::xy_t,Array2D<@T@>::xy_t,@T@>())
       .def(py::init<const Array2D<@U@>&, @T@>())
+      .def(py::init<@T@*, const int, const int>())
       .def("size",      &Array2D<@T@>::size)
       .def("width",     &Array2D<@T@>::width)
       .def("height",    &Array2D<@T@>::height)
@@ -69,7 +70,7 @@
       })
       .def("__repr__",
         [](const Array2D<@T@> &a) {
-            return "<RichDEM array: type=@T@, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=@T@, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",

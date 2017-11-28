@@ -34,6 +34,7 @@
       .def(py::init<const Array2D<uint16_t>&, float>())
       .def(py::init<const Array2D<uint32_t>&, float>())
       .def(py::init<const Array2D<uint64_t>&, float>())
+      .def(py::init<float*, const int, const int>())
       .def("size",      &Array2D<float>::size)
       .def("width",     &Array2D<float>::width)
       .def("height",    &Array2D<float>::height)
@@ -78,7 +79,7 @@
       })
       .def("__repr__",
         [](const Array2D<float> &a) {
-            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=float, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -126,6 +127,7 @@
       .def(py::init<const Array2D<uint16_t>&, double>())
       .def(py::init<const Array2D<uint32_t>&, double>())
       .def(py::init<const Array2D<uint64_t>&, double>())
+      .def(py::init<double*, const int, const int>())
       .def("size",      &Array2D<double>::size)
       .def("width",     &Array2D<double>::width)
       .def("height",    &Array2D<double>::height)
@@ -170,7 +172,7 @@
       })
       .def("__repr__",
         [](const Array2D<double> &a) {
-            return "<RichDEM array: type=double, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=double, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -218,6 +220,7 @@
       .def(py::init<const Array2D<uint16_t>&, int8_t>())
       .def(py::init<const Array2D<uint32_t>&, int8_t>())
       .def(py::init<const Array2D<uint64_t>&, int8_t>())
+      .def(py::init<int8_t*, const int, const int>())
       .def("size",      &Array2D<int8_t>::size)
       .def("width",     &Array2D<int8_t>::width)
       .def("height",    &Array2D<int8_t>::height)
@@ -262,7 +265,7 @@
       })
       .def("__repr__",
         [](const Array2D<int8_t> &a) {
-            return "<RichDEM array: type=int8_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=int8_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -310,6 +313,7 @@
       .def(py::init<const Array2D<uint16_t>&, int16_t>())
       .def(py::init<const Array2D<uint32_t>&, int16_t>())
       .def(py::init<const Array2D<uint64_t>&, int16_t>())
+      .def(py::init<int16_t*, const int, const int>())
       .def("size",      &Array2D<int16_t>::size)
       .def("width",     &Array2D<int16_t>::width)
       .def("height",    &Array2D<int16_t>::height)
@@ -354,7 +358,7 @@
       })
       .def("__repr__",
         [](const Array2D<int16_t> &a) {
-            return "<RichDEM array: type=int16_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=int16_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -402,6 +406,7 @@
       .def(py::init<const Array2D<uint16_t>&, int32_t>())
       .def(py::init<const Array2D<uint32_t>&, int32_t>())
       .def(py::init<const Array2D<uint64_t>&, int32_t>())
+      .def(py::init<int32_t*, const int, const int>())
       .def("size",      &Array2D<int32_t>::size)
       .def("width",     &Array2D<int32_t>::width)
       .def("height",    &Array2D<int32_t>::height)
@@ -446,7 +451,7 @@
       })
       .def("__repr__",
         [](const Array2D<int32_t> &a) {
-            return "<RichDEM array: type=int32_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=int32_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -494,6 +499,7 @@
       .def(py::init<const Array2D<uint16_t>&, int64_t>())
       .def(py::init<const Array2D<uint32_t>&, int64_t>())
       .def(py::init<const Array2D<uint64_t>&, int64_t>())
+      .def(py::init<int64_t*, const int, const int>())
       .def("size",      &Array2D<int64_t>::size)
       .def("width",     &Array2D<int64_t>::width)
       .def("height",    &Array2D<int64_t>::height)
@@ -538,7 +544,7 @@
       })
       .def("__repr__",
         [](const Array2D<int64_t> &a) {
-            return "<RichDEM array: type=int64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=int64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -586,6 +592,7 @@
       .def(py::init<const Array2D<uint16_t>&, uint8_t>())
       .def(py::init<const Array2D<uint32_t>&, uint8_t>())
       .def(py::init<const Array2D<uint64_t>&, uint8_t>())
+      .def(py::init<uint8_t*, const int, const int>())
       .def("size",      &Array2D<uint8_t>::size)
       .def("width",     &Array2D<uint8_t>::width)
       .def("height",    &Array2D<uint8_t>::height)
@@ -630,7 +637,7 @@
       })
       .def("__repr__",
         [](const Array2D<uint8_t> &a) {
-            return "<RichDEM array: type=uint8_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=uint8_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -678,6 +685,7 @@
       .def(py::init<const Array2D<uint16_t>&, uint16_t>())
       .def(py::init<const Array2D<uint32_t>&, uint16_t>())
       .def(py::init<const Array2D<uint64_t>&, uint16_t>())
+      .def(py::init<uint16_t*, const int, const int>())
       .def("size",      &Array2D<uint16_t>::size)
       .def("width",     &Array2D<uint16_t>::width)
       .def("height",    &Array2D<uint16_t>::height)
@@ -722,7 +730,7 @@
       })
       .def("__repr__",
         [](const Array2D<uint16_t> &a) {
-            return "<RichDEM array: type=uint16_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=uint16_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -770,6 +778,7 @@
       .def(py::init<const Array2D<uint16_t>&, uint32_t>())
       .def(py::init<const Array2D<uint32_t>&, uint32_t>())
       .def(py::init<const Array2D<uint64_t>&, uint32_t>())
+      .def(py::init<uint32_t*, const int, const int>())
       .def("size",      &Array2D<uint32_t>::size)
       .def("width",     &Array2D<uint32_t>::width)
       .def("height",    &Array2D<uint32_t>::height)
@@ -814,7 +823,7 @@
       })
       .def("__repr__",
         [](const Array2D<uint32_t> &a) {
-            return "<RichDEM array: type=uint32_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=uint32_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
@@ -862,6 +871,7 @@
       .def(py::init<const Array2D<uint16_t>&, uint64_t>())
       .def(py::init<const Array2D<uint32_t>&, uint64_t>())
       .def(py::init<const Array2D<uint64_t>&, uint64_t>())
+      .def(py::init<uint64_t*, const int, const int>())
       .def("size",      &Array2D<uint64_t>::size)
       .def("width",     &Array2D<uint64_t>::width)
       .def("height",    &Array2D<uint64_t>::height)
@@ -906,7 +916,7 @@
       })
       .def("__repr__",
         [](const Array2D<uint64_t> &a) {
-            return "<RichDEM array: type=uint64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+">";
+            return "<RichDEM array: type=uint64_t, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
