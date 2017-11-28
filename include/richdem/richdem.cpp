@@ -1,13 +1,13 @@
 #include "richdem/common/logger.hpp"
 
-#include <unordered_map>
+#include <map>
 #include <string>
 
 namespace richdem {
 
 //TODO: Could use vector for this since the enum just compiles to an int. But
 //need to make sure things are in the right order.
-std::unordered_map<LogFlag, std::string> log_flag_chars_begin = {
+std::map<LogFlag, std::string> log_flag_chars_begin = {
   {ALG_NAME, "\nA"},
   {CITATION, "C"},
   {CONFIG,   "c"},
@@ -20,7 +20,7 @@ std::unordered_map<LogFlag, std::string> log_flag_chars_begin = {
   {WARN,     "\033[91mW"}
 };
 
-std::unordered_map<LogFlag, std::string> log_flag_chars_end = {
+std::map<LogFlag, std::string> log_flag_chars_end = {
   {ALG_NAME, ""},
   {CITATION, "\n"},
   {CONFIG,   ""},
