@@ -32,8 +32,9 @@
       .def("min",       &Array2D<float>::min)
       .def("max",       &Array2D<float>::max)
       .def("setNoData", &Array2D<float>::setNoData)
-      .def_readwrite("projection", &Array2D<float>::projection)
-      .def_readwrite("metadata",   &Array2D<float>::metadata)
+      .def_readwrite("geotransform", &Array2D<float>::geotransform)
+      .def_readwrite("projection",   &Array2D<float>::projection)
+      .def_readwrite("metadata",     &Array2D<float>::metadata)
       .def("copy", [](const Array2D<float> a){
         return a;
       })
@@ -113,8 +114,9 @@
       .def("min",       &Array2D<double>::min)
       .def("max",       &Array2D<double>::max)
       .def("setNoData", &Array2D<double>::setNoData)
-      .def_readwrite("projection", &Array2D<double>::projection)
-      .def_readwrite("metadata",   &Array2D<double>::metadata)
+      .def_readwrite("geotransform", &Array2D<double>::geotransform)
+      .def_readwrite("projection",   &Array2D<double>::projection)
+      .def_readwrite("metadata",     &Array2D<double>::metadata)
       .def("copy", [](const Array2D<double> a){
         return a;
       })
@@ -194,8 +196,9 @@
       .def("min",       &Array2D<int8_t>::min)
       .def("max",       &Array2D<int8_t>::max)
       .def("setNoData", &Array2D<int8_t>::setNoData)
-      .def_readwrite("projection", &Array2D<int8_t>::projection)
-      .def_readwrite("metadata",   &Array2D<int8_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<int8_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<int8_t>::projection)
+      .def_readwrite("metadata",     &Array2D<int8_t>::metadata)
       .def("copy", [](const Array2D<int8_t> a){
         return a;
       })
@@ -275,8 +278,9 @@
       .def("min",       &Array2D<int16_t>::min)
       .def("max",       &Array2D<int16_t>::max)
       .def("setNoData", &Array2D<int16_t>::setNoData)
-      .def_readwrite("projection", &Array2D<int16_t>::projection)
-      .def_readwrite("metadata",   &Array2D<int16_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<int16_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<int16_t>::projection)
+      .def_readwrite("metadata",     &Array2D<int16_t>::metadata)
       .def("copy", [](const Array2D<int16_t> a){
         return a;
       })
@@ -356,8 +360,9 @@
       .def("min",       &Array2D<int32_t>::min)
       .def("max",       &Array2D<int32_t>::max)
       .def("setNoData", &Array2D<int32_t>::setNoData)
-      .def_readwrite("projection", &Array2D<int32_t>::projection)
-      .def_readwrite("metadata",   &Array2D<int32_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<int32_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<int32_t>::projection)
+      .def_readwrite("metadata",     &Array2D<int32_t>::metadata)
       .def("copy", [](const Array2D<int32_t> a){
         return a;
       })
@@ -437,8 +442,9 @@
       .def("min",       &Array2D<uint8_t>::min)
       .def("max",       &Array2D<uint8_t>::max)
       .def("setNoData", &Array2D<uint8_t>::setNoData)
-      .def_readwrite("projection", &Array2D<uint8_t>::projection)
-      .def_readwrite("metadata",   &Array2D<uint8_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<uint8_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<uint8_t>::projection)
+      .def_readwrite("metadata",     &Array2D<uint8_t>::metadata)
       .def("copy", [](const Array2D<uint8_t> a){
         return a;
       })
@@ -518,8 +524,9 @@
       .def("min",       &Array2D<uint16_t>::min)
       .def("max",       &Array2D<uint16_t>::max)
       .def("setNoData", &Array2D<uint16_t>::setNoData)
-      .def_readwrite("projection", &Array2D<uint16_t>::projection)
-      .def_readwrite("metadata",   &Array2D<uint16_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<uint16_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<uint16_t>::projection)
+      .def_readwrite("metadata",     &Array2D<uint16_t>::metadata)
       .def("copy", [](const Array2D<uint16_t> a){
         return a;
       })
@@ -599,8 +606,9 @@
       .def("min",       &Array2D<uint32_t>::min)
       .def("max",       &Array2D<uint32_t>::max)
       .def("setNoData", &Array2D<uint32_t>::setNoData)
-      .def_readwrite("projection", &Array2D<uint32_t>::projection)
-      .def_readwrite("metadata",   &Array2D<uint32_t>::metadata)
+      .def_readwrite("geotransform", &Array2D<uint32_t>::geotransform)
+      .def_readwrite("projection",   &Array2D<uint32_t>::projection)
+      .def_readwrite("metadata",     &Array2D<uint32_t>::metadata)
       .def("copy", [](const Array2D<uint32_t> a){
         return a;
       })

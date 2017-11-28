@@ -32,8 +32,9 @@
       .def("min",       &Array2D<@T@>::min)
       .def("max",       &Array2D<@T@>::max)
       .def("setNoData", &Array2D<@T@>::setNoData)
-      .def_readwrite("projection", &Array2D<@T@>::projection)
-      .def_readwrite("metadata",   &Array2D<@T@>::metadata)
+      .def_readwrite("geotransform", &Array2D<@T@>::geotransform)
+      .def_readwrite("projection",   &Array2D<@T@>::projection)
+      .def_readwrite("metadata",     &Array2D<@T@>::metadata)
       .def("copy", [](const Array2D<@T@> a){
         return a;
       })
