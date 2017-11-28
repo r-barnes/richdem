@@ -33,7 +33,7 @@ def _AddAnalysis(arr, analysis):
 
 #2017-11-28 16:41:58 UTC | RichDEM v0.0.0 (hash=06ebc928f7542e84, compiled=2017-11-23 16:30:45 UTC) | rd_depressions_flood.exe /home/rick/data/gis/beauford.tif /z/out.tif 0
 
-def LoadGDAL(filename):
+def LoadGDAL(filename, no_data=None):
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
 
@@ -62,7 +62,16 @@ def LoadGDAL(filename):
   ret.fromArray(srcdata)
   ret.projection   = src_ds.GetProjectionRef()
   ret.geotransform = _richdem.VecDouble(src_ds.GetGeoTransform())
-  ret.setNoData(srcband.GetNoDataValue())
+
+  if no_data is None:
+    srcband_no_data = srcband.GetNoDataValue()
+    if srcband_no_data is None:
+      raise Exception("The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry.")
+    else:
+      ret.setNoData(srcband.GetNoDataValue())
+  else:
+    ret.setNoData(no_data)
+
   for k,v in src_ds.GetMetadata().items():
     ret.metadata[k] = v
 
