@@ -733,9 +733,8 @@ class Array2D {
   template<class U>
   void resize(const Array2D<U> &other, const T& val = T()){
     resize(other.width(), other.height(), val);
-    geotransform       = other.geotransform;
-    projection         = other.projection;
-    metadata           = other.metadata;
+    geotransform   = other.geotransform;
+    projection     = other.projection;
   }
 
   /**
