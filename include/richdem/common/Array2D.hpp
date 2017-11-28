@@ -1134,6 +1134,7 @@ class Array2D {
     @return The area of the cell in square projection units
   */
   double getCellArea() const {
+    assert(geotransform.size()>0);
     return std::abs(geotransform[1]*geotransform[5]);
   }
 
@@ -1142,6 +1143,7 @@ class Array2D {
     @return The length of the cell along the raster's horizontal axis
   */
   double getCellLengthX() const {
+    assert(geotransform.size()>0);
     return std::abs(geotransform[1]);
   }
 
@@ -1150,6 +1152,7 @@ class Array2D {
     @return The length of the cell along the raster's horizontal axis
   */
   double getCellLengthY() const {
+    assert(geotransform.size()>0);
     return std::abs(geotransform[5]);
   }
 
