@@ -150,6 +150,8 @@ def FlowAccumulation(
     facc_methods[method](dem,accum)
     return accum
   elif method in facc_methods_exponent:
+    if exponent is None:
+      raise Exception('FlowAccumulation method "'+method+'" requires an exponent!')
     facc_methods_exponent[method](dem,accum,exponent)
     return accum
   else:
