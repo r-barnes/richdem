@@ -1,9 +1,25 @@
-#!/bin/bash
-cat Array2D_wrapper.hpp.template | sed 's/@T@/float/g'    >  Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/double/g'   >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/int8_t/g'   >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/int16_t/g'  >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/int32_t/g'  >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/uint8_t/g'  >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/uint16_t/g' >> Array2D_wrapper.hpp
-cat Array2D_wrapper.hpp.template | sed 's/@T@/uint32_t/g' >> Array2D_wrapper.hpp
+#!/usr/bin/env python3
+
+dtypes = [
+  'float',
+  'double',
+  'int8_t',
+  'int16_t',
+  'int32_t',
+  'uint8_t',
+  'uint16_t',
+  'uint32_t'
+]
+
+fin  = open("Array2D_wrapper.hpp.template","r").readlines()
+fout = open("Array2D_wrapper.hpp")
+
+for Ttype in dtypes:
+  for line in fin:
+    lineout = line.replace("@T@", Ttype)
+    if "@U@" in lineout:
+      for Utype in dtypes:
+        ulineout = lineout.replace("@U@", Utype)
+        fout.write(ulineout)
+    else:
+      fout.write(lineout)
