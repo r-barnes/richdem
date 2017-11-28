@@ -483,7 +483,7 @@ std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
     if(greatest_n==0)
       continue;
 
-    props.at(ci+greatest_n) = 1;
+    props.at(9*ci+greatest_n) = 1;
 
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
@@ -522,15 +522,12 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
     int lowest_n      = 0;
     E   lowest_n_elev = std::numeric_limits<E>::max();
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int ni = ci + elevations.nshift(n);
 
-      if(!elevations.inGrid(nx,ny))
-        continue;
-      if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+      if(elevations.isNoData(ni)) //TODO: Don't I want water to drain this way?
         continue;
 
-      const E ne = elevations(nx,ny);
+      const E ne = elevations(ni);
 
       if(ne>=e)
         continue;
@@ -544,9 +541,9 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
     if(lowest_n==0)
       continue;
 
-    assert(elevations(x,y)>=elevations(x+dx[lowest_n],y+dy[lowest_n])); //Ensure flow goes downhill
+    assert(elevations(ci)>=elevations(ni)); //Ensure flow goes downhill
 
-    props.at(ci+lowest_n) = 1;
+    props.at(9*ci+lowest_n) = 1;
   }
   progress.stop();
 
