@@ -50,7 +50,7 @@ def LoadGDAL(filename):
   ret = gdal_to_richdem[srcband.DataType]()
   ret.fromArray(srcdata)
   ret.projection   = src_ds.GetProjectionRef()
-  ret.geotransform = src_ds.GetGeoTransform()
+  ret.geotransform = _richdem.VecDouble(src_ds.GetGeoTransform())
   ret.setNoData(srcband.GetNoDataValue())
 
   print(src_ds.GetMetadata())
@@ -109,7 +109,7 @@ def FlowAccumulation(
   if not method in facc_methods:
     raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys()))
 
-  accum = _richdem.Array2D_double()
+  accum = _richdem.Array2D_double(dem, 0)
 
   facc_methods[method](dem,accum)
 
@@ -136,7 +136,7 @@ def TerrainAttributes(
   if not method in terrain_methods:
     raise Exception("Invalid TerrainAttributes method. Valid methods are: " + ', '.join(terrain_methods.keys()))
 
-  result = _richdem.Array2D_float()
+  result = _richdem.Array2D_float(dem, 0)
 
   terrain_methods[method](dem,result,zscale)
 

@@ -12,7 +12,7 @@ dtypes = [
 ]
 
 fin  = open("Array2D_wrapper.hpp.template","r").readlines()
-fout = open("Array2D_wrapper.hpp")
+fout = open("Array2D_wrapper.hpp", "w")
 
 for Ttype in dtypes:
   for line in fin:
