@@ -20,6 +20,7 @@
 #include <ctime>         //Used for timestamping output files
 #include <unordered_set> //For printStamp
 #include <stdexcept>
+#include <map>
 #include "richdem/common/logger.hpp"
 #include "richdem/common/version.hpp"
 #include "richdem/common/constants.hpp"
@@ -33,6 +34,25 @@
 
 namespace richdem {
 
+std::map<std::string, std::string> ProcessMetadata(const char **metadata){
+  std::map<std::string, std::string> ret;
+  for(int metstri=0;metadata[metstri]==NULL;metstri++){
+    std::string metstr = metadata[metstri];
+    const auto equals  = metstr.find("=");
+    if(equals==std::string::npos){
+      RDLOG_WARN<<"Skipping improper metadata string: '"<<metstr<<"'";
+      continue;
+    }
+    std::string keystr = metstr.substr(0,equals);
+    std::string valstr = metstr.substr(equals+1);
+    if(ret.count(keystr)>0){
+      RDLOG_WARN<<"Duplicate key '"<<keystr<<"' found in metadata. Only latter value will be kept.";
+    }
+    ret[keystr] = valstr;
+  }
+
+  return ret;
+}
 
 /**
   @brief  Class to hold and manipulate GDAL and native rasters
@@ -60,11 +80,11 @@ namespace richdem {
 template<class T>
 class Array2D {
  public:
-  std::string filename;             ///< TODO
-  std::string basename;             ///< Filename without path or extension
-  std::vector<double> geotransform; ///< Geotransform of the raster
-  std::string projection;           ///< Projection of the raster
-  std::string processing_history;   ///< List of commands previously run on this dataset
+  std::string filename;                        ///< TODO
+  std::string basename;                        ///< Filename without path or extension
+  std::vector<double> geotransform;            ///< Geotransform of the raster
+  std::string projection;                      ///< Projection of the raster
+  std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
 
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
@@ -122,8 +142,7 @@ class Array2D {
       geotransform = {{1000., 1., 0., 1000., 0., -1.}};
     }
 
-    if(fin->GetMetadataItem("PROCESSING_HISTORY"))
-      processing_history = fin->GetMetadataItem("PROCESSING_HISTORY");
+    metadata = ProcessMetadata(fin->GetMetadata());
 
     const char* projection_string=fin->GetProjectionRef();
     projection = std::string(projection_string);
@@ -178,6 +197,7 @@ class Array2D {
     @post  Using loadData() after running this function will result in data
            being loaded from the cache, rather than the original file (if any).
   */
+  //TODO: Should save metadata
   void saveToCache(const std::string &filename){
     std::fstream fout;
 
@@ -299,7 +319,7 @@ class Array2D {
     view_xoff          = other.view_xoff;
     view_yoff          = other.view_yoff;
     geotransform       = other.geotransform;
-    processing_history = other.processing_history;
+    metadata           = other.metadata;
     projection         = other.projection;
     basename           = other.basename;
     resize(other.width(), other.height(), val);
@@ -715,7 +735,7 @@ class Array2D {
     resize(other.width(), other.height(), val);
     geotransform       = other.geotransform;
     projection         = other.projection;
-    processing_history = other.processing_history;
+    metadata           = other.metadata;
   }
 
   /**
@@ -932,10 +952,10 @@ class Array2D {
   */
   template<class U>
   void templateCopy(const Array2D<U> &other){
-    geotransform       = other.geotransform;
-    projection         = other.projection;
-    basename           = other.basename;
-    processing_history = other.processing_history;
+    geotransform = other.geotransform;
+    projection   = other.projection;
+    basename     = other.basename;
+    metadata     = other.metadata;
   }
 
 
@@ -969,14 +989,15 @@ class Array2D {
       fout->SetMetadataItem("TIFFTAG_DATETIME",   time_str);
       fout->SetMetadataItem("TIFFTAG_SOFTWARE",   program_identifier.c_str());
 
-      auto out_processing_history = processing_history + "\n" + std::string(time_str) + " | " + program_identifier + " | ";
+      metadata["PROCESSING_HISTORY"] += "\n" + std::string(time_str) + " | " + program_identifier + " | ";
       if(!metadata.empty())
-        out_processing_history += metadata;
+        metadata["PROCESSING_HISTORY"] += metadata;
       else
-        out_processing_history += "Unspecified Operation";
-
-      fout->SetMetadataItem("PROCESSING_HISTORY", out_processing_history.c_str());
+        metadata["PROCESSING_HISTORY"] += "Unspecified Operation";
     }
+
+    for(const auto &kv: metadata)
+      fout->SetMetadataItem(kv.first.c_str(), kv.second.c_str());
 
     //The geotransform maps each grid cell to a point in an affine-transformed
     //projection of the actual terrain. The geostransform is specified as follows:

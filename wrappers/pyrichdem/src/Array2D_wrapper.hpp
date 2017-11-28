@@ -23,7 +23,7 @@
       .def("max",       &Array2D<float>::max)
       .def("setNoData", &Array2D<float>::setNoData)
       .def_readwrite("projection", &Array2D<float>::projection)
-      .def_readwrite("processing_history", &Array2D<float>::processing_history)
+      .def_readwrite("metadata",           &Array2D<float>::metadata)
       .def("copy", [](const Array2D<float> &a){
         return Array2D<float>(a);
       })
@@ -94,7 +94,7 @@
       .def("max",       &Array2D<double>::max)
       .def("setNoData", &Array2D<double>::setNoData)
       .def_readwrite("projection", &Array2D<double>::projection)
-      .def_readwrite("processing_history", &Array2D<double>::processing_history)
+      .def_readwrite("metadata",           &Array2D<double>::metadata)
       .def("copy", [](const Array2D<double> &a){
         return Array2D<double>(a);
       })
@@ -165,7 +165,7 @@
       .def("max",       &Array2D<int8_t>::max)
       .def("setNoData", &Array2D<int8_t>::setNoData)
       .def_readwrite("projection", &Array2D<int8_t>::projection)
-      .def_readwrite("processing_history", &Array2D<int8_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<int8_t>::metadata)
       .def("copy", [](const Array2D<int8_t> &a){
         return Array2D<int8_t>(a);
       })
@@ -236,7 +236,7 @@
       .def("max",       &Array2D<int16_t>::max)
       .def("setNoData", &Array2D<int16_t>::setNoData)
       .def_readwrite("projection", &Array2D<int16_t>::projection)
-      .def_readwrite("processing_history", &Array2D<int16_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<int16_t>::metadata)
       .def("copy", [](const Array2D<int16_t> &a){
         return Array2D<int16_t>(a);
       })
@@ -307,7 +307,7 @@
       .def("max",       &Array2D<int32_t>::max)
       .def("setNoData", &Array2D<int32_t>::setNoData)
       .def_readwrite("projection", &Array2D<int32_t>::projection)
-      .def_readwrite("processing_history", &Array2D<int32_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<int32_t>::metadata)
       .def("copy", [](const Array2D<int32_t> &a){
         return Array2D<int32_t>(a);
       })
@@ -378,7 +378,7 @@
       .def("max",       &Array2D<uint8_t>::max)
       .def("setNoData", &Array2D<uint8_t>::setNoData)
       .def_readwrite("projection", &Array2D<uint8_t>::projection)
-      .def_readwrite("processing_history", &Array2D<uint8_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<uint8_t>::metadata)
       .def("copy", [](const Array2D<uint8_t> &a){
         return Array2D<uint8_t>(a);
       })
@@ -449,7 +449,7 @@
       .def("max",       &Array2D<uint16_t>::max)
       .def("setNoData", &Array2D<uint16_t>::setNoData)
       .def_readwrite("projection", &Array2D<uint16_t>::projection)
-      .def_readwrite("processing_history", &Array2D<uint16_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<uint16_t>::metadata)
       .def("copy", [](const Array2D<uint16_t> &a){
         return Array2D<uint16_t>(a);
       })
@@ -520,7 +520,7 @@
       .def("max",       &Array2D<uint32_t>::max)
       .def("setNoData", &Array2D<uint32_t>::setNoData)
       .def_readwrite("projection", &Array2D<uint32_t>::projection)
-      .def_readwrite("processing_history", &Array2D<uint32_t>::processing_history)
+      .def_readwrite("metadata",           &Array2D<uint32_t>::metadata)
       .def("copy", [](const Array2D<uint32_t> &a){
         return Array2D<uint32_t>(a);
       })

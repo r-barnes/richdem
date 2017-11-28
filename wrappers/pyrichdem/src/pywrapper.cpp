@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <richdem/richdem.hpp>
 #include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 #include <richdem/methods/dall_methods.hpp>
 // #include "pybind11_array2d.hpp"
 #include <string>
