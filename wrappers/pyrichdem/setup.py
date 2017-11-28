@@ -17,7 +17,7 @@ ext_modules = [
     glob.glob('src/*.cpp') + ['lib/richdem/common/random.cpp', 'lib/richdem/richdem.cpp'],
     include_dirs       = ['lib/'],
     language           = 'c++',
-    extra_compile_args = ['-std=c++11','-g','-fvisibility=hidden', '-flto','-Wno-unknown-pragmas'],
+    extra_compile_args = ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas'], #Figure out if we can do '-flto'
     define_macros      = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
       ('RICHDEM_COMPILE_TIME',   RICHDEM_COMPILE_TIME),
