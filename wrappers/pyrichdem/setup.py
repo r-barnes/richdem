@@ -1,8 +1,15 @@
 import setuptools
 import glob
 import datetime
+import subprocess
 
 RICHDEM_COMPILE_TIME = '"'+datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')+'"'
+
+try:
+  RICHDEM_GIT_HASH = subprocess.check_output(["git", "describe"]).strip()
+  RICHDEM_GIT_HASH = '"'+RICHDEM_GIT_HASH.decode("utf-8")+'"'
+except:
+  RICHDEM_GIT_HASH = ''
 
 ext_modules = [
   setuptools.Extension(
@@ -14,6 +21,7 @@ ext_modules = [
     define_macros      = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
       ('RICHDEM_COMPILE_TIME',   RICHDEM_COMPILE_TIME),
+      ('RICHDEM_GIT_HASH',       RICHDEM_GIT_HASH    ),
       ('RICHDEM_LOGGING',        None                )
     ]
   )
