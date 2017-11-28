@@ -33,7 +33,7 @@
       .def("noData",    &Array2D<@T@>::noData)
       .def("min",       &Array2D<@T@>::min)
       .def("max",       &Array2D<@T@>::max)
-      .def("setNoData", &Array2D<@T@>::setNoData)
+      .def("setNoData", [](Array2D<@T@> &a, const @U@ ndval){ a.setNoData((@T@)ndval); })
       .def_readwrite("geotransform", &Array2D<@T@>::geotransform)
       .def_readwrite("projection",   &Array2D<@T@>::projection)
       .def_readwrite("metadata",     &Array2D<@T@>::metadata)
