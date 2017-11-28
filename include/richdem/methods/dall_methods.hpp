@@ -626,14 +626,14 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
 
 
 
-template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Tarboton<elev_t>         , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Tarboton<elev_t>         , elevations, accum); }
 template<class elev_t, class accum_t> void FA_Holmgren          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Holmgren<elev_t>         , elevations, accum, xparam); }
-template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Quinn<elev_t>            , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Quinn<elev_t>            , elevations, accum); }
 template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Freeman<elev_t>          , elevations, accum, xparam); }
-template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_FairfieldLeymarie<elev_t>, elevations, accum); }
-template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_Rho8<elev_t>             , elevations, accum); }
-template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
-template<class elev_t, class accum_t> void FA_OCallaghan        (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum) {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_FairfieldLeymarie<elev_t>, elevations, accum); }
+template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Rho8<elev_t>             , elevations, accum); }
+template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_OCallaghan        (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
 
 
 
