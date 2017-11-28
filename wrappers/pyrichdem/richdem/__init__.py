@@ -78,12 +78,12 @@ def SaveGDAL(filename, dem):
   data_type = gdal.GDT_Float32 #TODO
   data_set  = driver.Create(filename, xsize=dem.width(), ysize=dem.height(), bands=1, eType=data_type)
   data_set.SetGeoTransform(dem.geotransform)
-  data_set.SetProjection(dem.projection)
+  data_set.SetProjection(str(dem.projection))
   band = data_set.GetRasterBand(1)
   band.SetNoDataValue(dem.noData())
   band.WriteArray(np.array(dem))
   for k,v in dem.metadata.items():
-    data_set.SetMetadataItem(k,v)
+    data_set.SetMetadataItem(str(k),str(v))
 
 def WrapNumPy(nparray):
   richdem_arrs = {
