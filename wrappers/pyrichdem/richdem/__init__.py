@@ -153,7 +153,7 @@ def FlowAccumulation(
     facc_methods_exponent[method](dem,accum,exponent)
     return accum
   else:
-    raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(facc_methods.keys())) #TODO: Combine methods
+    raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(list(facc_methods.keys()) + list(facc_methods_exponent.keys()) ))
 
 
 def TerrainAttributes(
