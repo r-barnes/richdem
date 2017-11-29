@@ -1026,7 +1026,7 @@ class Array2D {
       RDLOG_DEBUG<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3];
     #endif
 
-    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data, view_width, view_height, myGDALType(), 0, 0);
+    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0);
     if(temp!=CE_None)
       throw std::runtime_error("Error writing file with saveGDAL()!");
 
