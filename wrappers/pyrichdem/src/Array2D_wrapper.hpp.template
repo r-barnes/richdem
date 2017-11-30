@@ -1,5 +1,5 @@
-  m.def("rdFillDepressions", &improved_priority_flood<@T@>,   "@@depressions/Zhou2016pf.hpp:Zhou2016@@");
-  m.def("rdPFepsilon",       &priority_flood_epsilon<@T@>,    "Fill all depressions with epsilon.");
+  m.def("rdFillDepressions",     &Zhou2016<@T@>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
+  m.def("rdPFepsilon",           &priority_flood_epsilon<@T@>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("TA_SPI",                &TA_SPI<@T@, float, double>,        "TODO");         
   m.def("TA_CTI",                &TA_CTI<@T@, float, double>,        "TODO");         

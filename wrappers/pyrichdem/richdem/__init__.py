@@ -31,9 +31,23 @@ def _AddAnalysis(arr, analysis):
   arr.metadata["PROCESSING_HISTORY"] += metastr
 
 
-#2017-11-28 16:41:58 UTC | RichDEM v0.0.0 (hash=06ebc928f7542e84, compiled=2017-11-23 16:30:45 UTC) | rd_depressions_flood.exe /home/rick/data/gis/beauford.tif /z/out.tif 0
 
 def LoadGDAL(filename, no_data=None):
+  """Read a GDAL file.
+
+     Opens any file GDAL can read, selects the first raster band, and loads it
+     and its metadata into a RichDEM array of the appropriate data type.
+
+     If you need to do something more complicated, look at the source of this
+     function.
+
+     Parameters:
+     filename -- Name of the raster file to open
+     no_data  -- Optionally, set the no_data value to this.
+
+     Returns:
+     A RichDEM array
+  """  
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
 
@@ -75,9 +89,27 @@ def LoadGDAL(filename, no_data=None):
   for k,v in src_ds.GetMetadata().items():
     ret.metadata[k] = v
 
+  _AddAnalysis(ret, "LoadGDAL(filename={0}, no_data={1})".format(filename, no_data))
+
   return ret
 
+
+
 def SaveGDAL(filename, dem):
+  """Save a GDAL file.
+
+     Saves a RichDEM array to a data file in GeoTIFF format.
+
+     If you need to do something more complicated, look at the source of this
+     function.
+
+     Parameters:
+     filename -- Name of the raster file to be created
+     dem      -- RichDEM array to save.
+
+     Returns:
+     No Return
+  """    
   if not GDAL_AVAILABLE:
     raise Exception("richdem.SaveGDAL() requires GDAL.")
   if not NUMPY_AVAILABLE:
@@ -93,6 +125,8 @@ def SaveGDAL(filename, dem):
   band.WriteArray(np.array(dem))
   for k,v in dem.metadata.items():
     data_set.SetMetadataItem(str(k),str(v))
+
+
 
 def WrapNumPy(nparray):
   richdem_arrs = {
@@ -113,17 +147,21 @@ def WrapNumPy(nparray):
 
   return richdem_arrs[nparray.dtype](nparray.data,nparray.shape[1],np.shape[0])
 
+
+
 def FillDepressions(
   dem,
   epsilon = False,
 ):
-  """Fills all depressions in an elevation model.
+  """Fills all depressions in an elevation model using in-place modification.
 
      Parameters:
-     dem -- A NumPy elevation model
+     dem     -- An elevation model
+     epsilon -- If True, an epsilon gradient is imposed to all flat regions.
+                This ensures that there is always a local gradient.
 
      Returns:
-     Modified dem in-place to remove depressions
+     DEM without depressions.
   """
   _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
   if epsilon:
@@ -131,11 +169,35 @@ def FillDepressions(
   else:
     return _richdem.rdFillDepressions(dem)
 
+
+
 def FlowAccumulation(
   dem,
-  method   = 'D8',
+  method   = None,
   exponent = None
 ):
+  """Calculates flow accumulation. A variety of methods are available.
+
+     Parameters:
+     dem      -- An elevation model
+     method   -- Flow accumulation method to use. (See below.)
+     exponent -- Some methods require an exponent; refer to the relevant
+                 publications for details.
+
+     Method            Note                           Reference
+     Tarboton          Alias for Dinf.
+     Dinf              Alias for Tarboton.
+     Quinn             Holmgren with exponent=1.
+     Holmgren          Generalization of Quinn.
+     Freeman           TODO
+     FairfieldLeymarie Alias for Rho8.
+     Rho8              Alias for FairfieldLeymarie.
+     OCallaghan        Alias for D8.                  10.1016/S0734-189X(84)80011-0
+     D8                Alias for OCallaghan.          10.1016/S0734-189X(84)80011-0
+
+     Returns:
+     Flow accumulation according to the desired method.
+  """
   facc_methods = {
     "Tarboton":          _richdem.FA_Tarboton,
     "Dinf":              _richdem.FA_Tarboton,
@@ -167,12 +229,33 @@ def FlowAccumulation(
     raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(list(facc_methods.keys()) + list(facc_methods_exponent.keys()) ))
 
 
-def TerrainAttributes(
+
+def TerrainAttribute(
   dem,
-  method,
+  attrib,
   zscale = 1
 ):
-  terrain_methods = {
+  """Calculates terrain attributes. A variety of methods are available.
+
+     Parameters:
+     dem      -- An elevation model
+     attrib   -- Terrain attribute to calculate. (See below.)
+     zscale   -- How much to scale the z-axis by prior to calculation
+
+     Method:
+     slope_riserun
+     slope_percentage
+     slope_degrees
+     slope_radians
+     aspect
+     curvature
+     planform_curvature
+     profile_curvature
+
+     Returns:
+     A raster of the indicated terrain attributes.
+  """
+  terrain_attribs = {
     #"spi":                _richdem.TA_SPI,
     #"cti":                _richdem.TA_CTI,
     "slope_riserun":      _richdem.TA_slope_riserun,
@@ -185,13 +268,13 @@ def TerrainAttributes(
     "profile_curvature":  _richdem.TA_profile_curvature,
   }
 
-  if not method in terrain_methods:
-    raise Exception("Invalid TerrainAttributes method. Valid methods are: " + ', '.join(terrain_methods.keys()))
+  if not attrib in terrain_attribs:
+    raise Exception("Invalid TerrainAttributes attribute. Valid attributes are: " + ', '.join(terrain_attribs.keys()))
 
   result = _richdem.Array2D_float(dem, 0)
 
-  _AddAnalysis(result, "TerrainAttributes(dem, method={0}, zscale={1})".format(method,zscale))
+  _AddAnalysis(result, "TerrainAttributes(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
-  terrain_methods[method](dem,result,zscale)
+  terrain_attribs[attrib](dem,result,zscale)
 
   return result
