@@ -34,7 +34,7 @@
 
 namespace richdem {
 
-std::map<std::string, std::string> ProcessMetadata(const char **metadata){
+std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
   for(int metstri=0;metadata[metstri]==NULL;metstri++){
     std::string metstr = metadata[metstri];
@@ -984,11 +984,11 @@ class Array2D {
       fout->SetMetadataItem("TIFFTAG_DATETIME",   time_str);
       fout->SetMetadataItem("TIFFTAG_SOFTWARE",   program_identifier.c_str());
 
-      metadata["PROCESSING_HISTORY"] += "\n" + std::string(time_str) + " | " + program_identifier + " | ";
+      metadata[std::string("PROCESSING_HISTORY")] += "\n" + std::string(time_str) + " | " + program_identifier + " | ";
       if(!metadata.empty())
-        metadata["PROCESSING_HISTORY"] += metadata;
+        metadata[std::string("PROCESSING_HISTORY")] += metadata;
       else
-        metadata["PROCESSING_HISTORY"] += "Unspecified Operation";
+        metadata[std::string("PROCESSING_HISTORY")] += "Unspecified Operation";
     }
 
     for(const auto &kv: metadata)
