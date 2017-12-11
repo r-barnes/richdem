@@ -153,7 +153,7 @@ def FillDepressions(
   dem,
   epsilon = False,
 ):
-  """Fills all depressions in an elevation model using in-place modification.
+  """Fills all depressions in a DEM using in-place modification.
 
      Parameters:
      dem     -- An elevation model
