@@ -26,11 +26,14 @@ int PerformAlgorithm(std::string output, int algorithm, float param, std::string
     case 6: //D∞     - Tarboton (1997)
       FA_Tarboton(dem,accum);                           break;
     case 7: //MD∞    - Seibert & McGlynn (2007)
-      FA_SeibertMcGlynn(dem,accum,param);               break;
+      std::cerr<<"This FA is temporarily disabled."; break;
+      //FA_SeibertMcGlynn(dem,accum,param);               break;
     case 8: //D8-LTD - Orlandini et al. (2003)
-      FA_Orlandini(dem,accum,OrlandiniMode::LTD,param); break;
+      std::cerr<<"This FA is temporarily disabled."; break;
+      //FA_Orlandini(dem,accum,OrlandiniMode::LTD,param); break;
     case 9: //D8-LAD - Orlandini et al. (2003)
-      FA_Orlandini(dem,accum,OrlandiniMode::LAD,param); break;
+      std::cerr<<"This FA is temporarily disabled."; break;
+      //FA_Orlandini(dem,accum,OrlandiniMode::LAD,param); break;
   }
 
   accum.scale(accum.getCellArea());
