@@ -54,7 +54,6 @@ namespace pybind11 { namespace detail {
         py::array a(std::move(shape), std::move(strides), src.data() );
 
         return a.release();
-
       }
   };
 }}

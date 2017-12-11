@@ -329,7 +329,7 @@ def TerrainAttribute(
 
   result = _richdem.Array2D_float(dem, 0)
 
-  _AddAnalysis(result, "TerrainAttributes(dem, attrib={0}, zscale={1})".format(attrib,zscale))
+  _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
   terrain_attribs[attrib](dem,result,zscale)
 

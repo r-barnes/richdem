@@ -1,6 +1,11 @@
   m.def("rdFillDepressions",     &Zhou2016<@T@>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
   m.def("rdPFepsilon",           &priority_flood_epsilon<@T@>,       "Fill all depressions with epsilon."); //TODO
 
+  m.def("rdBreach",              &Lindsay2016<@T@>,                  "TODO");
+  m.def("rdBreach",              [](Array2D<@T@> &dem, const int mode, bool fill_depressions, 
+
+    &Lindsay2016<@T@>,                  "TODO");
+
   m.def("TA_SPI",                &TA_SPI<@T@, float, double>,        "TODO");         
   m.def("TA_CTI",                &TA_CTI<@T@, float, double>,        "TODO");         
   m.def("TA_slope_riserun",      &TA_slope_riserun<@T@>,             "TODO");                   
@@ -12,14 +17,36 @@
   m.def("TA_planform_curvature", &TA_planform_curvature<@T@>,        "TODO");                        
   m.def("TA_profile_curvature",  &TA_profile_curvature<@T@>,         "TODO");                       
 
-  m.def("FA_Tarboton",          &FA_Tarboton<@T@,double>,          "TODO");
-  m.def("FA_Holmgren",          &FA_Holmgren<@T@,double>,          "TODO");
-  m.def("FA_Quinn",             &FA_Quinn<@T@,double>,             "TODO");
-  m.def("FA_Freeman",           &FA_Freeman<@T@,double>,           "TODO");
-  m.def("FA_FairfieldLeymarie", &FA_FairfieldLeymarie<@T@,double>, "TODO");
-  m.def("FA_Rho8",              &FA_Rho8<@T@,double>,              "TODO");
-  m.def("FA_D8",                &FA_D8<@T@,double>,                "TODO");
-  m.def("FA_OCallaghan",        &FA_OCallaghan<@T@,double>,        "TODO");
+  m.def("FA_Tarboton",           &FA_Tarboton<@T@,double>,          "TODO");
+  m.def("FA_Holmgren",           &FA_Holmgren<@T@,double>,          "TODO");
+  m.def("FA_Quinn",              &FA_Quinn<@T@,double>,             "TODO");
+  m.def("FA_Freeman",            &FA_Freeman<@T@,double>,           "TODO");
+  m.def("FA_FairfieldLeymarie",  &FA_FairfieldLeymarie<@T@,double>, "TODO");
+  m.def("FA_Rho8",               &FA_Rho8<@T@,double>,              "TODO");
+  m.def("FA_D8",                 &FA_D8<@T@,double>,                "TODO");
+  m.def("FA_OCallaghan",         &FA_OCallaghan<@T@,double>,        "TODO");
+
+  //TODO
+  // m.def(
+  //   "WrapNumPy",
+  //   [](py::handle src){
+  //     if (!py::array_t<T>::check_(src))
+  //       throw std::runtime_error("WrapNumPy: Array check failed!");
+
+  //     auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+  //     if (!buf)
+  //       throw std::runtime_error("WrapNumPy: Could not generate a buffer!")
+
+  //     auto dims = buf.ndim();
+  //     if (dims != 2 )
+  //       throw std::runtime_error("WrapNumPy: NumPy array must have 2 dimensions.")
+
+  //     value = rd::Array2D<T>((T*) buf.data(),buf.shape()[1],buf.shape()[0]);
+
+  //     return true;
+  //   },
+  //   "TODO"
+  // );
 
   py::class_<Array2D<@T@>>(m, "Array2D_@T@", py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
