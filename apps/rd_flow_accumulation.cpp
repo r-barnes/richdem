@@ -10,7 +10,7 @@ template<class T>
 int PerformAlgorithm(std::string output, int algorithm, float param, std::string analysis, Array2D<T> dem){
   dem.loadData();
 
-  Array2D<double> accum(dem);
+  Array2D<double> accum(dem,1);
 
   switch(algorithm){
     case 1: //D8     - O'Callaghan/Marks (1984)
