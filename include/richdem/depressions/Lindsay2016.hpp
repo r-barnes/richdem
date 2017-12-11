@@ -135,7 +135,7 @@ void Lindsay2016(
         //Trace path back to a cell low enough for the path to drain into it, or
         //to an edge of the DEM
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
-          pathdepth     = std::max(pathdepth, dem(cc)-target_height);                     //Figure out deepest breach necessary on path
+          pathdepth     = std::max(pathdepth, (T)(dem(cc)-target_height));                //Figure out deepest breach necessary on path //TODO: CHeck this for issues with int8_t subtraction overflow
           cc            = backlinks(cc);                                                  //Follow path back
           target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
           pathlen++;                                                                      //Make path longer
