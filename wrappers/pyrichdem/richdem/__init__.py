@@ -171,6 +171,62 @@ def FillDepressions(
 
 
 
+def BreachDepressions(
+  dem,
+  mode           = "Complete",
+  fill           = False,
+  max_path_len   = None,
+  max_path_depth = None
+):
+  """Attempts to breach depressions in a DEM using in-place modification.
+
+     Parameters:
+     dem            -- An elevation model
+     mode           -- String. Breaching mode to use (see below).
+     fill           -- True/False. If depressions can't be breached, 
+                       should they be filled?
+     max_path_len   -- Maximum path length in cells that can be dug while
+                       breaching a depression.
+     max_path_depth -- Maximum depth in z-units that can be dug along the 
+                       breaching path.
+
+     Modes:
+     Complete:    Breach everything.
+                  Ignore max_path_len, max_path_depth.
+                  There will be no depressions.
+                  There will be no mercy.
+     Selective:   Only breach those depressions that can be breached using the
+                  above criteria.
+     Constrained: Dig as long a path as necessary, but don't dig it deeper than
+                  max_path_depth.
+
+     Returns:
+     DEM with depressions breached, filled, or left unaltered, per the above
+     options.
+  """
+  _AddAnalysis(dem, "BreachDepressions(dem, mode={0}, fill={1}, max_path_len={2}, max_path_depth={3})".format(mode, fill, max_path_len, max_path_depth))
+
+  modes = {
+    "Complete":    1,
+    "Selective":   2,
+    "Constrained": 3,
+  }
+
+  if not mode in modes:
+    raise Exception("Unrecognised mode. Valid choices are: " + ', '.join(modes.keys()))
+
+  if mode!="Complete" and max_path_len is None:
+    raise Exception("Must provide a 'max_path_len'")
+  elif mode!="Complete" and max_path_depth is None:
+    raise Exception("Must provide a 'max_path_depth'")
+  elif mode=="Complete":
+    max_path_len   = 0
+    max_path_depth = 0
+
+  return _richdem.rdBreach(dem, modes[mode], fill, max_path_len, max_path_depth)
+
+
+
 def FlowAccumulation(
   dem,
   method   = None,
