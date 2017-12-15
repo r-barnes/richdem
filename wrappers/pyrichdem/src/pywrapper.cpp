@@ -172,12 +172,12 @@ PYBIND11_MODULE(_richdem, m) {
 
   TemplatedWrapper<float>(m);
   TemplatedWrapper<double>(m);
-  TemplatedWrapper<int8_t>(m);
-  TemplatedWrapper<int16_t>(m);
+  //TemplatedWrapper<int8_t>(m);
+  //TemplatedWrapper<int16_t>(m);
   TemplatedWrapper<int32_t>(m);
   TemplatedWrapper<int64_t>(m);
-  TemplatedWrapper<uint8_t>(m);
-  TemplatedWrapper<uint16_t>(m);
+  //TemplatedWrapper<uint8_t>(m);
+  //TemplatedWrapper<uint16_t>(m);
   TemplatedWrapper<uint32_t>(m);
   TemplatedWrapper<uint64_t>(m);
 
