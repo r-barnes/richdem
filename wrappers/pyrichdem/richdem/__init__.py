@@ -142,10 +142,12 @@ def WrapNumPy(nparray):
     'float64': _richdem.Array2D_double
   }
 
-  if not nparray.dtype in richdem_arrs:
+  dtype = str(nparray.dtype)
+
+  if not dtype in richdem_arrs:
     raise Exception("No equivalent RichDEM datatype.")
 
-  return richdem_arrs[nparray.dtype](nparray.data,nparray.shape[1],np.shape[0])
+  return richdem_arrs[dtype](nparray.data,nparray.shape[1],np.shape[0])
 
 
 
