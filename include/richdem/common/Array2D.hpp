@@ -36,6 +36,9 @@ namespace richdem {
 
 std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
+  if(metadata==NULL)
+    return ret;
+  
   for(int metstri=0;metadata[metstri]==NULL;metstri++){
     std::string metstr = metadata[metstri];
     const auto equals  = metstr.find("=");
