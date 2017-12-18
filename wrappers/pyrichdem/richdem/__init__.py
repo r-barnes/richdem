@@ -33,8 +33,15 @@ def _AddAnalysis(arr, analysis):
 
 
 class rdarray(np.ndarray):
-  def __new__(cls, array, dtype=None, order=None, **kwargs):
-    obj = np.asarray(array, dtype=dtype, order=order).view(cls)                                 
+  def __new__(cls, array, meta_obj=None, dtype=None, order=None, **kwargs):
+    obj = np.asarray(array, dtype=dtype, order=order).view(cls) 
+    
+    if meta_obj is not None:
+      obj.metadata     = getattr(meta_obj, 'metadata',     None)
+      obj.no_data      = getattr(meta_obj, 'no_data',      None)
+      obj.projection   = getattr(meta_obj, 'projection',   None)
+      obj.geotransform = getattr(meta_obj, 'geotransform', None)
+
     return obj
 
   def __array_finalize__(self, obj):
@@ -291,7 +298,8 @@ def FlowAccumulation(
     "Holmgren":          _richdem.FA_Holmgren
   }
 
-  accum = rdarray(np.zeros(shape=dem.shape))
+  accum = rdarray(np.zeros(shape=dem.shape), meta_obj=dem)
+  print('accmeata',accum.metadata)
 
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
@@ -349,7 +357,7 @@ def TerrainAttribute(
   if not attrib in terrain_attribs:
     raise Exception("Invalid TerrainAttributes attribute. Valid attributes are: " + ', '.join(terrain_attribs.keys()))
 
-  result = rdarray(np.zeros(shape=dem.shape))
+  result = rdarray(np.zeros(shape=dem.shape), meta_obj=dem)
 
   _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
