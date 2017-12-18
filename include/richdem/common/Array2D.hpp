@@ -955,7 +955,7 @@ class Array2D {
 
 
   #ifdef USEGDAL
-  void saveGDAL(const std::string &filename, const std::string &metadata="", xy_t xoffset=0, xy_t yoffset=0, bool compress=false){
+  void saveGDAL(const std::string &filename, const std::string &metadata_str="", xy_t xoffset=0, xy_t yoffset=0, bool compress=false){
     char **papszOptions = NULL;
     if(compress){
       papszOptions = CSLSetNameValue( papszOptions, "COMPRESS", "DEFLATE" );
@@ -984,11 +984,12 @@ class Array2D {
       fout->SetMetadataItem("TIFFTAG_DATETIME",   time_str);
       fout->SetMetadataItem("TIFFTAG_SOFTWARE",   program_identifier.c_str());
 
-      metadata[std::string("PROCESSING_HISTORY")] += "\n" + std::string(time_str) + " | " + program_identifier + " | ";
+      //TODO: `metadata_str` may need removing
+      metadata["PROCESSING_HISTORY"] += "\n" + std::string(time_str) + " | " + program_identifier + " | ";
       if(!metadata.empty())
-        metadata[std::string("PROCESSING_HISTORY")] += metadata;
+        metadata["PROCESSING_HISTORY"] += metadata_str;
       else
-        metadata[std::string("PROCESSING_HISTORY")] += "Unspecified Operation";
+        metadata["PROCESSING_HISTORY"] += "Unspecified Operation";
     }
 
     for(const auto &kv: metadata)
