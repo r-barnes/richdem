@@ -39,6 +39,7 @@ class ManagedVector {
       _data[i] = other._data[i];    
   }
 
+  //TODO: Should this clear old data?
   //Copy Constructor
   ManagedVector(const ManagedVector<T> &other) {
     _size = other.size();
@@ -47,6 +48,7 @@ class ManagedVector {
       _data[i] = other._data[i];    
   }
 
+  //TODO: Should this clear old data?
   //Move Constructor
   template<class U>
   ManagedVector(ManagedVector<U> &&other) noexcept {
