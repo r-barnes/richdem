@@ -12,7 +12,7 @@ class ManagedVector {
 
   std::unique_ptr<T[]> _data;
   bool   _owned = true;
-  size_t _size = 0;
+  size_t _size  = 0;
 
  public:
   ManagedVector() = default;
