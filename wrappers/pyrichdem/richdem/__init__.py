@@ -32,6 +32,40 @@ def _AddAnalysis(arr, analysis):
 
 
 
+class rdarray(np.ndarray):
+  def __new__(cls, array, dtype=None, order=None, **kwargs):
+    obj = np.asarray(array, dtype=dtype, order=order).view(cls)                                 
+    return obj
+
+  def __array_finalize__(self, obj):
+    if obj is None: return
+    self.metadata     = getattr(obj, 'metadata',     None)
+    self.no_data      = getattr(obj, 'no_data',      None)
+    self.projection   = getattr(obj, 'projection',   None)
+    self.geotransform = getattr(obj, 'geotransform', None)
+
+  def wrap(self):
+    richdem_arrs = {
+      'int8':    _richdem.Array2D_int8_t,
+      'int16':   _richdem.Array2D_int16_t,
+      'int32':   _richdem.Array2D_int32_t,
+      'int64':   _richdem.Array2D_int64_t,
+      'uint8':   _richdem.Array2D_uint8_t,
+      'uint16':  _richdem.Array2D_uint16_t,
+      'uint32':  _richdem.Array2D_uint32_t,
+      'uint64':  _richdem.Array2D_uint64_t,
+      'float32': _richdem.Array2D_float,
+      'float64': _richdem.Array2D_double
+    }
+    dtype = str(self.dtype)
+    if not dtype in richdem_arrs:
+      raise Exception("No equivalent RichDEM datatype.")
+    rda = richdem_arrs[dtype](self)
+    rda.setNoData(self.no_data)
+    return rda 
+
+
+
 def LoadGDAL(filename, no_data=None):
   """Read a GDAL file.
 
@@ -51,47 +85,38 @@ def LoadGDAL(filename, no_data=None):
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
 
-  gdal_to_richdem = {
-    gdal.GDT_Byte:    _richdem.Array2D_uint8_t,
-    gdal.GDT_Int16:   _richdem.Array2D_int16_t,
-    gdal.GDT_Int32:   _richdem.Array2D_int32_t,
-    gdal.GDT_UInt16:  _richdem.Array2D_uint16_t,
-    gdal.GDT_UInt32:  _richdem.Array2D_uint32_t,
-    gdal.GDT_Float32: _richdem.Array2D_float,
-    gdal.GDT_Float64: _richdem.Array2D_double
-  }
-
+  allowed_types = {gdal.GDT_Byte,gdal.GDT_Int16,gdal.GDT_Int32,gdal.GDT_UInt16,gdal.GDT_UInt32,gdal.GDT_Float32,gdal.GDT_Float64}
 
   #Read in data
-  src_ds     = gdal.Open(filename)
-  srcband    = src_ds.GetRasterBand(1)
-  srcdata    = srcband.ReadAsArray()
+  src_ds  = gdal.Open(filename)
+  srcband = src_ds.GetRasterBand(1)
+  srcdata = rdarray(srcband.ReadAsArray())
+
   # raster_srs = osr.SpatialReference()
   # raster_srs.ImportFromWkt(raster.GetProjectionRef())
 
-  if not srcband.DataType in gdal_to_richdem:
+  if not srcband.DataType in allowed_types:
     raise Exception("This datatype is not supported. Please file a bug report on RichDEM.")
 
-  ret = gdal_to_richdem[srcband.DataType]()
-  ret.fromArray(srcdata)
-  ret.projection   = src_ds.GetProjectionRef()
-  ret.geotransform = _richdem.VecDouble(src_ds.GetGeoTransform())
+  srcdata.projection   = src_ds.GetProjectionRef()
+  srcdata.geotransform = src_ds.GetGeoTransform()
 
   if no_data is None:
     srcband_no_data = srcband.GetNoDataValue()
     if srcband_no_data is None:
       raise Exception("The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry.")
     else:
-      ret.setNoData(srcband.GetNoDataValue())
+      srcdata.no_data = srcband.GetNoDataValue()
   else:
-    ret.setNoData(no_data)
+    srcdata.no_data = no_data
 
+  srcdata.metadata = dict()
   for k,v in src_ds.GetMetadata().items():
-    ret.metadata[k] = v
+    srcdata.metadata[k] = v
 
-  _AddAnalysis(ret, "LoadGDAL(filename={0}, no_data={1})".format(filename, no_data))
+  _AddAnalysis(srcdata, "LoadGDAL(filename={0}, no_data={1})".format(filename, no_data))
 
-  return ret
+  return srcdata
 
 
 
@@ -117,9 +142,9 @@ def SaveGDAL(filename, dem):
 
   driver    = gdal.GetDriverByName('GTiff')
   data_type = gdal.GDT_Float32 #TODO
-  data_set  = driver.Create(filename, xsize=dem.width(), ysize=dem.height(), bands=1, eType=data_type)
+  data_set  = driver.Create(filename, xsize=dem.shape[1], ysize=dem.shape[0], bands=1, eType=data_type)
   data_set.SetGeoTransform(dem.geotransform)
-  data_set.SetProjection(str(dem.projection))
+  data_set.SetProjection(dem.projection)
   band = data_set.GetRasterBand(1)
   band.SetNoDataValue(dem.noData())
   band.WriteArray(np.array(dem))
@@ -128,29 +153,10 @@ def SaveGDAL(filename, dem):
 
 
 
-def WrapNumPy(nparray):
-  richdem_arrs = {
-    'int8':    _richdem.Array2D_int8_t,
-    'int16':   _richdem.Array2D_int16_t,
-    'int32':   _richdem.Array2D_int32_t,
-    'int64':   _richdem.Array2D_int64_t,
-    'uint8':   _richdem.Array2D_uint8_t,
-    'uint16':  _richdem.Array2D_uint16_t,
-    'uint32':  _richdem.Array2D_uint32_t,
-    'uint64':  _richdem.Array2D_uint64_t,
-    'float32': _richdem.Array2D_float,
-    'float64': _richdem.Array2D_double
-  }
-  dtype = str(nparray.dtype)
-  if not dtype in richdem_arrs:
-    raise Exception("No equivalent RichDEM datatype.")
-  return richdem_arrs[dtype](nparray)
-
-
-
 def FillDepressions(
   dem,
-  epsilon = False,
+  epsilon  = False,
+  in_place = False
 ):
   """Fills all depressions in a DEM using in-place modification.
 
@@ -162,11 +168,20 @@ def FillDepressions(
      Returns:
      DEM without depressions.
   """
+
+  if not in_place:
+    print("Copying dem")
+    dem = dem.copy()
+
   _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
   if epsilon:
-    return _richdem.rdPFepsilon(dem)
+    _richdem.rdPFepsilon(dem.wrap())
   else:
-    return _richdem.rdFillDepressions(dem)
+    _richdem.rdFillDepressions(dem.wrap())
+
+  if not in_place:
+    print("Returning dem")
+    return dem
 
 
 
@@ -175,7 +190,8 @@ def BreachDepressions(
   mode           = "Complete",
   fill           = False,
   max_path_len   = None,
-  max_path_depth = None
+  max_path_depth = None,
+  in_place       = False
 ):
   """Attempts to breach depressions in a DEM using in-place modification.
 
@@ -203,6 +219,10 @@ def BreachDepressions(
      DEM with depressions breached, filled, or left unaltered, per the above
      options.
   """
+
+  if not in_place:
+    dem = dem.copy()
+
   _AddAnalysis(dem, "BreachDepressions(dem, mode={0}, fill={1}, max_path_len={2}, max_path_depth={3})".format(mode, fill, max_path_len, max_path_depth))
 
   modes = {
@@ -222,7 +242,10 @@ def BreachDepressions(
     max_path_len   = 0
     max_path_depth = 0
 
-  return _richdem.rdBreach(dem, modes[mode], fill, max_path_len, max_path_depth)
+  _richdem.rdBreach(dem, modes[mode], fill, max_path_len, max_path_depth)
+
+  if not in_place:
+    return dem
 
 
 
@@ -268,7 +291,7 @@ def FlowAccumulation(
     "Holmgren":          _richdem.FA_Holmgren
   }
 
-  accum = _richdem.Array2D_double(dem, 0)
+  accum = rdarray(np.zeros(shape=dem.shape))
 
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
@@ -326,7 +349,7 @@ def TerrainAttribute(
   if not attrib in terrain_attribs:
     raise Exception("Invalid TerrainAttributes attribute. Valid attributes are: " + ', '.join(terrain_attribs.keys()))
 
-  result = _richdem.Array2D_float(dem, 0)
+  result = rdarray(np.zeros(shape=dem.shape))
 
   _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
