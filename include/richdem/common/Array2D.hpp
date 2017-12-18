@@ -300,6 +300,7 @@ class Array2D {
     data        = ManagedVector<T>(data0, width*height);
     view_width  = width;
     view_height = height;
+    _nshift     = {{0,-1,-width-1,-width,-width+1,1,width+1,width,width-1}};
   }
 
 
