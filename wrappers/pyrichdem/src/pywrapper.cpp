@@ -25,7 +25,50 @@ using namespace richdem;
 // #include "pybind11_array2d.hpp"
 
 template<class T>
-void TemplatedWrapper(py::module &m){
+class pyArray2D : public Array2D<T> {
+ private:
+  py::object myobj;
+
+ public:
+  pyArray2D() = default;
+
+  pyArray2D(typename Array2D<T>::xy_t width, typename Array2D<T>::xy_t height, T val) : Array2D<T>(width,height,val){}
+
+      // .def(py::init<const Array2D<float   >&, T>())
+      // .def(py::init<const Array2D<double  >&, T>())
+      // .def(py::init<const Array2D<int8_t  >&, T>())
+      // .def(py::init<const Array2D<int16_t >&, T>())
+      // .def(py::init<const Array2D<int32_t >&, T>())
+      // .def(py::init<const Array2D<int64_t >&, T>())
+      // .def(py::init<const Array2D<uint8_t >&, T>())
+      // .def(py::init<const Array2D<uint16_t>&, T>())
+      // .def(py::init<const Array2D<uint32_t>&, T>())
+      // .def(py::init<const Array2D<uint64_t>&, T>())
+
+  pyArray2D(py::object obj) : myobj(obj) {
+    // if(!py::array_t<T>::check_(src)) //TODO: What's this about?
+      // return false;
+
+    auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(obj);
+    if (!buf)
+      throw std::runtime_error("Unable to convert array to RichDEM object!");
+
+    //TODO: CHeck stride
+    auto dims = buf.ndim();
+    if (dims != 2 )
+      throw std::runtime_error("Array must have two dimensions!");
+
+    Array2D<T>::data        = ManagedVector<T>((T*)buf.data(), buf.shape()[1]*buf.shape()[0]);
+    Array2D<T>::view_width  = buf.shape()[1];
+    Array2D<T>::view_height = buf.shape()[0];    
+  }
+
+
+};
+
+
+template<class T>
+void TemplatedWrapper(py::module &m, std::string tname){
   m.def("rdFillDepressions",     &Zhou2016<T>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
   m.def("rdPFepsilon",           &priority_flood_epsilon<T>,       "Fill all depressions with epsilon."); //TODO
 
@@ -75,49 +118,69 @@ void TemplatedWrapper(py::module &m){
   //   "TODO"
   // );
 
-  py::class_<Array2D<T>>(m, ("Array2D_" + std::string(typeid(T).name())).c_str(), py::buffer_protocol(), py::dynamic_attr())
+  py::class_<pyArray2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
-      .def(py::init<typename Array2D<T>::xy_t, typename Array2D<T>::xy_t,T>())
+      .def(py::init<typename pyArray2D<T>::xy_t, typename pyArray2D<T>::xy_t,T>())
       
-      .def(py::init<const Array2D<float   >&, T>())
-      .def(py::init<const Array2D<double  >&, T>())
-      .def(py::init<const Array2D<int8_t  >&, T>())
-      .def(py::init<const Array2D<int16_t >&, T>())
-      .def(py::init<const Array2D<int32_t >&, T>())
-      .def(py::init<const Array2D<int64_t >&, T>())
-      .def(py::init<const Array2D<uint8_t >&, T>())
-      .def(py::init<const Array2D<uint16_t>&, T>())
-      .def(py::init<const Array2D<uint32_t>&, T>())
-      .def(py::init<const Array2D<uint64_t>&, T>())
+      // .def(py::init<const pyArray2D<float   >&, T>())
+      // .def(py::init<const pyArray2D<double  >&, T>())
+      // .def(py::init<const pyArray2D<int8_t  >&, T>())
+      // .def(py::init<const pyArray2D<int16_t >&, T>())
+      // .def(py::init<const pyArray2D<int32_t >&, T>())
+      // .def(py::init<const pyArray2D<int64_t >&, T>())
+      // .def(py::init<const pyArray2D<uint8_t >&, T>())
+      // .def(py::init<const pyArray2D<uint16_t>&, T>())
+      // .def(py::init<const pyArray2D<uint32_t>&, T>())
+      // .def(py::init<const pyArray2D<uint64_t>&, T>())
 
-      .def(py::init<T*, const int, const int>())
-      .def("size",      &Array2D<T>::size)
-      .def("width",     &Array2D<T>::width)
-      .def("height",    &Array2D<T>::height)
-      .def("empty",     &Array2D<T>::empty)
-      .def("noData",    &Array2D<T>::noData)
-      .def("min",       &Array2D<T>::min)
-      .def("max",       &Array2D<T>::max)
+      .def(py::init<py::object>())
+
+
+      // //TODO: Turn this into an appropriate wrapping function so we can remove WrapNumPy in Python?
+      // .def(py::init([](py::handle src){
+      //   // if(!py::array_t<T>::check_(src)) //TODO: What's this about?
+      //     // return false;
+
+      //   auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+      //   if (!buf)
+      //     throw std::runtime_error("Unable to convert array to RichDEM object!");
+
+      //   //TODO: CHeck stride
+      //   auto dims = buf.ndim();
+      //   if (dims != 2 )
+      //     throw std::runtime_error("Array must have two dimensions!");
+
+      //   return new pyArray2D<T>((T*)buf.data(), buf.shape()[1], buf.shape()[0]);
+      // }))
+
+      .def("size",      &pyArray2D<T>::size)
+      .def("width",     &pyArray2D<T>::width)
+      .def("height",    &pyArray2D<T>::height)
+      .def("empty",     &pyArray2D<T>::empty)
+      .def("noData",    &pyArray2D<T>::noData)
+      .def("min",       &pyArray2D<T>::min)
+      .def("max",       &pyArray2D<T>::max)
       
       //TODO: Simplify by casting to double in Python
-      .def("setNoData", [](Array2D<T> &a, const float    ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const double   ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const int8_t   ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const int16_t  ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const int32_t  ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const int64_t  ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const uint8_t  ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const uint16_t ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const uint32_t ndval){ a.setNoData((T)ndval); })
-      .def("setNoData", [](Array2D<T> &a, const uint64_t ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const float    ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const double   ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const int8_t   ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const int16_t  ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const int32_t  ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const int64_t  ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const uint8_t  ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const uint16_t ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const uint32_t ndval){ a.setNoData((T)ndval); })
+      .def("setNoData", [](pyArray2D<T> &a, const uint64_t ndval){ a.setNoData((T)ndval); })
             
-      .def_readwrite("geotransform", &Array2D<T>::geotransform)
-      .def_readwrite("projection",   &Array2D<T>::projection)
-      .def_readwrite("metadata",     &Array2D<T>::metadata)
-      .def("copy", [](const Array2D<T> a){
+      .def_readwrite("geotransform", &pyArray2D<T>::geotransform)
+      .def_readwrite("projection",   &pyArray2D<T>::projection)
+      .def_readwrite("metadata",     &pyArray2D<T>::metadata)
+      .def("copy", [](const pyArray2D<T> a){
         return a;
       })
-      .def("fromArray", [](Array2D<T> &a, py::handle src){
+
+      .def("copyFromArray", [](pyArray2D<T> &a, py::handle src){
         // if(!py::array_t<T>::check_(src)) //TODO: What's this about?
           // return false;
 
@@ -125,6 +188,7 @@ void TemplatedWrapper(py::module &m){
         if (!buf)
           throw std::runtime_error("Unable to convert array to RichDEM object!");
 
+        //TODO: CHeck stride
         auto dims = buf.ndim();
         if (dims != 2 )
           throw std::runtime_error("Array must have two dimensions!");
@@ -132,10 +196,10 @@ void TemplatedWrapper(py::module &m){
         a.clear();
         a.resize(buf.shape()[1], buf.shape()[0]);
         T* dat = (T*)buf.data();
-        for(typename Array2D<T>::i_t i=0;i<a.size();i++)
+        for(typename pyArray2D<T>::i_t i=0;i<a.size();i++)
           a(i) = dat[i];
       })
-      .def_buffer([](Array2D<T> &arr) -> py::buffer_info {
+      .def_buffer([](pyArray2D<T> &arr) -> py::buffer_info {
         return py::buffer_info(
           arr.getData(),
           sizeof(T),
@@ -146,17 +210,17 @@ void TemplatedWrapper(py::module &m){
         );
       })
       .def("__repr__",
-        [](const Array2D<T> &a) {
+        [](const pyArray2D<T> &a) {
             return "<RichDEM array: type=T, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
         }
       )
       .def("__call__",
-        [](Array2D<T> &a, const int x, const int y) -> T& {
+        [](pyArray2D<T> &a, const int x, const int y) -> T& {
           return a(x,y);
         }
       )
       .def("__call__",
-        [](Array2D<T> &a, const int i) -> T& {
+        [](pyArray2D<T> &a, const int i) -> T& {
           return a(i);
         }
       );      
@@ -170,16 +234,16 @@ PYBIND11_MODULE(_richdem, m) {
   py::bind_vector<std::vector<double>>(m, "VecDouble");
   py::bind_map<std::map<std::string, std::string>>(m, "MapStringString");
 
-  TemplatedWrapper<float>(m);
-  TemplatedWrapper<double>(m);
-  //TemplatedWrapper<int8_t>(m);
-  //TemplatedWrapper<int16_t>(m);
-  TemplatedWrapper<int32_t>(m);
-  TemplatedWrapper<int64_t>(m);
-  //TemplatedWrapper<uint8_t>(m);
-  //TemplatedWrapper<uint16_t>(m);
-  TemplatedWrapper<uint32_t>(m);
-  TemplatedWrapper<uint64_t>(m);
+  TemplatedWrapper<float   >(m, "float"   );
+  TemplatedWrapper<double  >(m, "double"  );
+  TemplatedWrapper<int8_t  >(m, "int8_t"  );
+  TemplatedWrapper<int16_t >(m, "int16_t" );
+  TemplatedWrapper<int32_t >(m, "int32_t" );
+  TemplatedWrapper<int64_t >(m, "int64_t" );
+  TemplatedWrapper<uint8_t >(m, "uint8_t" );
+  TemplatedWrapper<uint16_t>(m, "uint16_t");
+  TemplatedWrapper<uint32_t>(m, "uint32_t");
+  TemplatedWrapper<uint64_t>(m, "uint64_t");
 
   // m.def(
   //   "getBoundedScoresForGeoJSON",
@@ -191,8 +255,5 @@ PYBIND11_MODULE(_richdem, m) {
   //   py::arg("join_id")="",
   //   py::arg("score_list")=""
   // );
-
-  #include "Array2D_wrapper.hpp"
-
 }
  
