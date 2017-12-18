@@ -92,7 +92,7 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
     }
   }
   RDLOG_TIME_USE<<"t Succeeded in    = "<<progress.stop() <<" s";
-  RDLOG_MISC<<"m No depressions found.";
+  RDLOG_MISC<<"No depressions found.";
   return false;
 }
 
@@ -386,8 +386,8 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     progress.update(processed_cells);
   }
   RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
-  RDLOG_MISC<<"m Cells processed = "<<processed_cells;
-  RDLOG_MISC<<"m Cells in pits = "  <<pitc           ;
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells in pits = "  <<pitc           ;
   if(false_pit_cells)
     RDLOG_WARN<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m";
 }
@@ -523,7 +523,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
     progress.update(processed_cells);
   }
   RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
-  RDLOG_MISC<<"m Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
 }
 
 
@@ -878,8 +878,8 @@ void improved_priority_flood_max_dep(
     progress.update(processed_cells);
   }
   RDLOG_TIME_USE<<"Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s";
-  RDLOG_MISC<<"m Cells processed = "<<processed_cells;
-  RDLOG_MISC<<"m Cells in pits = "  <<pitc;
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells in pits = "  <<pitc;
 }
 
 }
