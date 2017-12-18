@@ -541,7 +541,7 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
     if(lowest_n==0)
       continue;
 
-    assert(elevations(ci)>=elevations(9*ci+lowest_n)); //Ensure flow goes downhill
+    assert(elevations(ci)>=elevations(ci+elevations.nshift(lowest_n))); //Ensure flow goes downhill
 
     props.at(9*ci+lowest_n) = 1;
   }
