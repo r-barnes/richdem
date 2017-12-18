@@ -181,16 +181,5 @@ PYBIND11_MODULE(_richdem, m) {
   TemplatedWrapper<uint16_t>(m, "uint16_t");
   TemplatedWrapper<uint32_t>(m, "uint32_t");
   TemplatedWrapper<uint64_t>(m, "uint64_t");
-
-  // m.def(
-  //   "getBoundedScoresForGeoJSON",
-  //   &getBoundedScoresForGeoJSON,
-  //   "Takes a GeoJSON string as input, calculates all scores, return a JSON dictionary of the scores keyed to values identified 'id' which are expected to be properties of the GeoJSON objects. If id='', then the object's 0-indexed order is used.",
-  //   py::arg("gj_subunit"),
-  //   py::arg("gj_superunit"),
-  //   py::arg("join_on")="",
-  //   py::arg("join_id")="",
-  //   py::arg("score_list")=""
-  // );
 }
  
