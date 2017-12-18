@@ -242,7 +242,7 @@ def BreachDepressions(
     max_path_len   = 0
     max_path_depth = 0
 
-  _richdem.rdBreach(dem, modes[mode], fill, max_path_len, max_path_depth)
+  _richdem.rdBreach(dem.wrap(), modes[mode], fill, max_path_len, max_path_depth)
 
   if not in_place:
     return dem
@@ -296,12 +296,12 @@ def FlowAccumulation(
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
   if method in facc_methods:
-    facc_methods[method](dem,accum)
+    facc_methods[method](dem.wrap(),accum.wrap())
     return accum
   elif method in facc_methods_exponent:
     if exponent is None:
       raise Exception('FlowAccumulation method "'+method+'" requires an exponent!')
-    facc_methods_exponent[method](dem,accum,exponent)
+    facc_methods_exponent[method](dem.wrap(),accum.wrap(),exponent)
     return accum
   else:
     raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(list(facc_methods.keys()) + list(facc_methods_exponent.keys()) ))
@@ -353,6 +353,6 @@ def TerrainAttribute(
 
   _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
-  terrain_attribs[attrib](dem,result,zscale)
+  terrain_attribs[attrib](dem.wrap(),result.wrap(),zscale)
 
   return result
