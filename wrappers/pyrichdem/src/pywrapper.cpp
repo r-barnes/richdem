@@ -148,7 +148,7 @@ void TemplatedWrapper(py::module &m, std::string tname){
       // })
       .def("__repr__",
         [](const Array2D<T> &a) {
-            return "<RichDEM array: type=T, width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">";
+            return std::string("<RichDEM array: type="+std::string(typeid(a).name())+", width="+std::to_string(a.width())+", height="+std::to_string(a.height())+", owned="+std::to_string(a.owned())+">").c_str();
         }
       )
       .def("__call__",
