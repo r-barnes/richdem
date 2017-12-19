@@ -3,6 +3,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl_bind.h>
 #include <richdem/methods/dall_methods.hpp>
+#include <pybind11/stl.h>
 // #include "pybind11_array2d.hpp"
 #include <string>
 
@@ -168,7 +169,7 @@ void TemplatedWrapper(py::module &m, std::string tname){
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
 
-  py::bind_vector<std::vector<double>>(m, "VecDouble");
+  //py::bind_vector<std::vector<double>>(m, "VecDouble");
   py::bind_map<std::map<std::string, std::string>>(m, "MapStringString");
 
   TemplatedWrapper<float   >(m, "float"   );

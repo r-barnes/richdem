@@ -87,6 +87,11 @@ class rdarray(np.ndarray):
       raise Exception("No equivalent RichDEM datatype.")
     rda = richdem_arrs[dtype](self)
     rda.setNoData(self.no_data)
+    if self.geotransform:
+      rda.geotransform = np.array(self.geotransform, dtype='float64')
+    else:
+      print("Warning! No geotransform defined. Choosing a standard one!")
+      rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
     return rda 
 
   def copyFromWrapped(self, wrapped):
