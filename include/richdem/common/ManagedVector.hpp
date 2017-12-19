@@ -101,7 +101,9 @@ class ManagedVector {
 
   //TODO: Keep old memory?
   void resize(size_t new_size) {
-    if(_size!=new_size && !_owned)
+    if(_size==new_size)
+      return;
+    if(!_owned)
       throw std::runtime_error("Cannot resize unowned memory!");
 
     _data.reset(new T[new_size]);
