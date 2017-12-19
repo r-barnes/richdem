@@ -18,7 +18,7 @@ namespace fs = std::experimental::filesystem;
 
 using namespace richdem;
 
-TEST_CASE("ManagedVector"){
+TEST_CASE("ManagedVector Construction"){
   auto TestFunc = [](){ManagedVector<int> vec(30,5); return vec;};
 
   ManagedVector<int>   vec(30,4);
@@ -29,6 +29,16 @@ TEST_CASE("ManagedVector"){
   auto vec4 = TestFunc();
 
   vec2 = vecfl;
+}
+
+TEST_CASE("ManagedVector Resizing"){
+  std::vector<int> datavec(30,4);
+
+  ManagedVector<int> mvec(datavec.data(), 30);
+
+  REQUIRE_THROWS(mvec.resize(40));
+  REQUIRE_THROWS(mvec.resize(10));
+  REQUIRE_NOTHROW(mvec.resize(30));
 }
 
 TEST_CASE( "Array2D works" ) {
