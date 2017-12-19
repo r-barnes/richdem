@@ -17,10 +17,10 @@ except:
   GDAL_AVAILABLE = False
 
 def _RichDEMVersion():
-  return "RichDEM (Python {pyver}) (hash={hash}, compiled={compdate})".format(
+  return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
     pyver    = pkg_resources.require("richdem")[0].version,
-    hash     = "Unknown",
-    compdate = "Unknown"
+    hash     = _richdem.rdHash(),
+    compdate = _richdem.rdCompileTime()
   )
 
 def _AddAnalysis(arr, analysis):
