@@ -1,7 +1,3 @@
-.. only: not latex
-
-    .. image:: pybind11-logo.png
-
 RichDEM --- High-Performance Terrain Analysis
 ==========================================================
 
