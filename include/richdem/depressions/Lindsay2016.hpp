@@ -30,7 +30,7 @@ void Lindsay2016(
   uint32_t    maxpathlen,
   T           maxdepth
 ){
-  RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions";
+  RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions (EXPERIMENTAL!)";
   RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
