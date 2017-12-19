@@ -71,6 +71,10 @@ class rdarray(np.ndarray):
     rda.setNoData(self.no_data)
     return rda 
 
+  def copyFromWrapped(self, wrapped):
+    self.no_data   = wrapped.noData()
+    #print("IS IT IN",("PROCESSING_HISTORY" in wrapped.metadata))
+    #self.metadata += "\n"+wrapped.metadata["PROCESSING_HISTORY"].replace("\n","\t\n")
 
 
 def LoadGDAL(filename, no_data=None):
@@ -181,10 +185,15 @@ def FillDepressions(
     dem = dem.copy()
 
   _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
+
+  demw = dem.wrap()
+
   if epsilon:
-    _richdem.rdPFepsilon(dem.wrap())
+    _richdem.rdPFepsilon(demw)
   else:
-    _richdem.rdFillDepressions(dem.wrap())
+    _richdem.rdFillDepressions(demw)
+
+  dem.copyFromWrapped(demw)
 
   if not in_place:
     print("Returning dem")
@@ -249,7 +258,11 @@ def BreachDepressions(
     max_path_len   = 0
     max_path_depth = 0
 
-  _richdem.rdBreach(dem.wrap(), modes[mode], fill, max_path_len, max_path_depth)
+  demw = dem.wrap()
+
+  _richdem.rdBreach(demw, modes[mode], fill, max_path_len, max_path_depth)
+
+  dem.copyFromWrapped(demw)
 
   if not in_place:
     return dem
@@ -298,22 +311,23 @@ def FlowAccumulation(
     "Holmgren":          _richdem.FA_Holmgren
   }
 
-  accum = rdarray(np.zeros(shape=dem.shape), meta_obj=dem)
-  print('accmeata',accum.metadata)
+  accum  = rdarray(np.zeros(shape=dem.shape, dtype='float64'), meta_obj=dem)
+  accumw = accum.wrap()
 
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
 
   if method in facc_methods:
-    facc_methods[method](dem.wrap(),accum.wrap())
-    return accum
+    facc_methods[method](dem.wrap(),accumw)
   elif method in facc_methods_exponent:
     if exponent is None:
       raise Exception('FlowAccumulation method "'+method+'" requires an exponent!')
-    facc_methods_exponent[method](dem.wrap(),accum.wrap(),exponent)
-    return accum
+    facc_methods_exponent[method](dem.wrap(),accumw,exponent)
   else:
     raise Exception("Invalid FlowAccumulation method. Valid methods are: " + ', '.join(list(facc_methods.keys()) + list(facc_methods_exponent.keys()) ))
 
+  accum.copyFromWrapped(accumw)
+
+  return accum
 
 
 def TerrainAttribute(
@@ -357,10 +371,13 @@ def TerrainAttribute(
   if not attrib in terrain_attribs:
     raise Exception("Invalid TerrainAttributes attribute. Valid attributes are: " + ', '.join(terrain_attribs.keys()))
 
-  result = rdarray(np.zeros(shape=dem.shape), meta_obj=dem)
+  result  = rdarray(np.zeros(shape=dem.shape, dtype='float32'), meta_obj=dem)
+  resultw = result.wrap()
 
   _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))
 
-  terrain_attribs[attrib](dem.wrap(),result.wrap(),zscale)
+  terrain_attribs[attrib](dem.wrap(),resultw,zscale)
+
+  result.copyFromWrapped(resultw)
 
   return result
