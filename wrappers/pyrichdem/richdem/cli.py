@@ -19,6 +19,8 @@ def DepressionFilling():
   rd.FillDepressions(dem, epsilon=args.gradient, in_place=True)
   rd.SaveGDAL(args.outname, dem)
 
+
+
 def BreachDepressions():
   parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Depression Breaching
 
@@ -39,6 +41,7 @@ Constrained: Dig as long a path as necessary, but don't dig it deeper than
   parser.add_argument('-f', '--fill',           action='store_true',     help="If depressions can't be breached, should they be filled?")
   parser.add_argument('-l', '--max_path_len',   type=int,                help="Maximum length of breaching path in cells")
   parser.add_argument('-d', '--max_path_depth', type=float,              help="Maximum depth of breaching path in z-units")
+  parser.add_argument('-v', '--version',  action='version', version=rd._RichDEMVersion())
   args = parser.parse_args()
 
   dem = rd.LoadGDAL(args.dem)

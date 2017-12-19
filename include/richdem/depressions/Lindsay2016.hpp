@@ -25,7 +25,7 @@ enum LindsayCellType {
 template<class T>
 void Lindsay2016(
   Array2D<T>  &dem,
-  LindsayMode mode,
+  int         mode,
   bool        fill_depressions,
   uint32_t    maxpathlen,
   T           maxdepth
@@ -210,17 +210,17 @@ void Lindsay2016(
 
 //TODO: Specialize all integer types
 template<>
-void Lindsay2016(Array2D<uint8_t> &dem, LindsayMode mode, bool fill_depressions, uint32_t maxpathlen, uint8_t maxdepth){
+void Lindsay2016(Array2D<uint8_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, uint8_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for uint8_t.");
 }
 
 template<>
-void Lindsay2016(Array2D<int16_t> &dem, LindsayMode mode, bool fill_depressions, uint32_t maxpathlen, int16_t maxdepth){
+void Lindsay2016(Array2D<int16_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, int16_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for int16_t.");
 }
 
 template<>
-void Lindsay2016(Array2D<uint16_t> &dem, LindsayMode mode, bool fill_depressions, uint32_t maxpathlen, uint16_t maxdepth){
+void Lindsay2016(Array2D<uint16_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, uint16_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for uint16_t.");
 }
 
