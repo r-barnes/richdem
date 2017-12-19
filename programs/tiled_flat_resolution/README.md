@@ -1,3 +1,10 @@
+EXPERIMENTAL CODE
+===================================
+
+This directory contains experimental code that is not maintained in a working
+state yet.
+
+
 Barnes2016-DistributedPriorityFlood
 ===================================
 
