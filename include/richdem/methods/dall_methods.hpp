@@ -565,12 +565,15 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
   Timer overall;
   overall.start();
 
+  RDLOG_ALG_NAME<<"Generic Flow Accumulation Algorithm";
+
   accum.resize(elevations,1);
   accum.setNoData(ACCUM_NO_DATA);
 
   const auto props = func(elevations, args...);
 
   //Create dependencies array
+  RDLOG_PROGRESS<<"Creating dependencies array..."<<std::endl;
   Array2D<int8_t> deps(elevations, 0);
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
