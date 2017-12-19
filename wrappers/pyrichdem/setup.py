@@ -27,23 +27,34 @@ ext_modules = [
   )
 ]
 
+long_description = """RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
+
+RichDEM uses parallel processing and state of the art algorithms to quickly process even very large DEMs.
+
+RichDEM offers a variety of flow metrics, such as D8 and D∞.
+
+It can flood or breach depressions, as well as calculate flow accumulation, slopes, curvatures, &c."""
+
 
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.0.2',
+  version           = '0.0.3',
   description       = 'High-Performance Terrain Analysis',
-  long_description  = 'RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools. RichDEM uses parallel processing and state of the art algorithms to quickly process even very large DEMs. RichDEM offers a variety of flow metrics, such as D8 and D∞. It can flood or breach depressions. It can calculate flow accumulation, slopes, curvatures, &c.',
+  long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
   author            = 'Richard Barnes',
   author_email      = 'rbarnes@umn.edu',
-  license           = 'GPLv3', #TODO
+  license           = 'GPLv3',
   packages          = setuptools.find_packages(),
-  #scripts          = ['bin/mander'],
+  #scripts           = glob.glob('bin/*'),
+  entry_points = {'console_scripts': [
+    'rd_depression_remove=richdem.cli:DepressionFilling'
+  ]},
   ext_modules       = ext_modules,
   keywords          = 'GIS terrain hydrology geomorphology raster',
   #packages         = find_packages(exclude=['contrib', 'docs', 'tests*']),
-  install_requires  = ['numpy'],
+  install_requires  = ['numpy>=1.10,<2'],
   #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers

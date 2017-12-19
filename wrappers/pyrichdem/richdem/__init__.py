@@ -16,14 +16,18 @@ try:
 except:
   GDAL_AVAILABLE = False
 
+def _RichDEMVersion():
+  return "RichDEM (Python {pyver}) (hash={hash}, compiled={compdate})".format(
+    pyver    = pkg_resources.require("richdem")[0].version,
+    hash     = "Unknown",
+    compdate = "Unknown"
+  )
+
 def _AddAnalysis(arr, analysis):
   print("Add analysis: {0}".format(analysis))
-  metastr  = "\n{nowdate} | {progname} v{progver} (hash={hash}, compiled={compdate}) | {analysis}".format(
+  metastr  = "\n{nowdate} | {verstr} | {analysis}".format(
     nowdate  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
-    progname = "RichDEM (Python)",
-    progver  = pkg_resources.require("richdem")[0].version,
-    hash     = "Unknown",
-    compdate = "Unknown",
+    verstr   = _RichDEMVersion(),
     analysis = analysis
   )
 
