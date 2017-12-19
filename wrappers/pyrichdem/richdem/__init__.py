@@ -24,7 +24,6 @@ def _RichDEMVersion():
   )
 
 def _AddAnalysis(arr, analysis):
-  print("Add analysis: {0}".format(analysis))
   metastr  = "\n{nowdate} | {verstr} | {analysis}".format(
     nowdate  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
     verstr   = _RichDEMVersion(),
@@ -184,7 +183,7 @@ def SaveGDAL(filename, dem):
   data_set.SetGeoTransform(dem.geotransform)
   data_set.SetProjection(dem.projection)
   band = data_set.GetRasterBand(1)
-  band.SetNoDataValue(dem.noData())
+  band.SetNoDataValue(dem.no_data)
   band.WriteArray(np.array(dem))
   for k,v in dem.metadata.items():
     data_set.SetMetadataItem(str(k),str(v))
@@ -313,12 +312,14 @@ def FlowAccumulation(
      Tarboton          Alias for Dinf.
      Dinf              Alias for Tarboton.
      Quinn             Holmgren with exponent=1.
-     Holmgren          Generalization of Quinn.
-     Freeman           TODO
+     Holmgren(E)       Generalization of Quinn.
+     Freeman(E)        TODO
      FairfieldLeymarie Alias for Rho8.
      Rho8              Alias for FairfieldLeymarie.
      OCallaghan        Alias for D8.                  10.1016/S0734-189X(84)80011-0
      D8                Alias for OCallaghan.          10.1016/S0734-189X(84)80011-0
+
+     Methods marked (E) require the exponent argument.
 
      Returns:
      Flow accumulation according to the desired method.
@@ -360,7 +361,7 @@ def FlowAccumulation(
 def TerrainAttribute(
   dem,
   attrib,
-  zscale = 1
+  zscale = 1.0
 ):
   """Calculates terrain attributes. A variety of methods are available.
 

@@ -49,7 +49,10 @@ setuptools.setup(
   packages          = setuptools.find_packages(),
   #scripts           = glob.glob('bin/*'),
   entry_points = {'console_scripts': [
-    'rd_depression_remove=richdem.cli:DepressionFilling'
+    'rd_depression_filling=richdem.cli:DepressionFilling',
+    'rd_breach_depressions=richdem.cli:BreachDepressions',
+    'rd_flow_accumulation=richdem.cli:FlowAccumulation',
+    'rd_terrain_attribute=richdem.cli:TerrainAttribute'
   ]},
   ext_modules       = ext_modules,
   keywords          = 'GIS terrain hydrology geomorphology raster',
