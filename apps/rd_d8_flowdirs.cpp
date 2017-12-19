@@ -6,7 +6,8 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/flats/flat_resolution.hpp"
 #include "richdem/methods/d8_methods.hpp"
-#include "richdem/common/router.hpp"
+
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(std::string output_prefix, std::string analysis, Array2D<T> elevations){
@@ -22,6 +23,8 @@ int PerformAlgorithm(std::string output_prefix, std::string analysis, Array2D<T>
 
   return 0;
 }
+
+#include "router.hpp"
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc, argv);

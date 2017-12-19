@@ -1,7 +1,7 @@
 export OMPI_CXX=g++
 export CXX=g++
 export MPICXX=mpic++
-export GDAL_LIBS=`gdal-config --libs`
+export GDAL_LIBS=`gdal-config --libs` -DUSEGDAL
 export GDAL_CFLAGS=`gdal-config --cflags`
 RICHDEM_GIT_HASH=`git rev-parse HEAD`
 RICHDEM_COMPILE_TIME=`date -u +'%Y-%m-%d %H:%M:%S UTC'`

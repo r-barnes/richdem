@@ -8,6 +8,8 @@
 #include <limits>
 #include <sstream>
 
+namespace richdem {
+
 our_random_engine& rand_engine(){
   static our_random_engine e[PRNG_THREAD_MAX];
   return e[omp_get_thread_num()];
@@ -61,4 +63,6 @@ RandomEngineState SaveRandomState(){
 void SetRandomState(const RandomEngineState &res){
   std::istringstream iss(res);
   iss>>rand_engine();
+}
+
 }

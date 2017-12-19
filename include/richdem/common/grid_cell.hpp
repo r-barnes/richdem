@@ -11,6 +11,8 @@
 #include <queue>
 #include <cmath>
 
+namespace richdem {
+
 /// Stores the (x,y) coordinates of a grid cell
 class GridCell {
  public:
@@ -102,5 +104,7 @@ class GridCellZk_pq : public std::priority_queue<GridCellZk<T>, std::vector< Gri
     std::priority_queue<GridCellZk<T>, std::vector< GridCellZk<T> >, std::greater<GridCellZk<T> > >::emplace(x,y,z,++count);
   }
 };
+
+}
 
 #endif

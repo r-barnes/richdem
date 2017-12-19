@@ -8,25 +8,124 @@ RichDEM uses parallel processing and state of the art algorithms to quickly
 process even very large DEMs.
 
 RichDEM offers a variety of flow metrics, such as D8 and D∞. It can flood or
-breach depressions. It can calculate flow accumulation, slopes, curvatures, &c.
+breach depressions. It can calculate flow accumulation, slops, curvatures, &c.
+
+RichDEM is available as a performant C++ library, a low-dependency Python
+package, and a set of command-line tools.
 
 Please cite RichDEM (see below).
 
 
 
-Current State of the Repo
-=========================
+Using It
+========
 
-The branch `oldmaster` contains what was, until recently, the master branch. It
-is designed as a limited, simple set of programs. The current master branch
-recasts all of this code as a set of header-only libraries.
+Citing It
+---------
 
-Unless otherwise noted, I consider the code available here as correct. However,
-documentation and testing efforts are on-going; functions may move between
-files. Users are encouraged to double-check results and feedback is very much
-welcome.
+As of 883ea734e957, David A. Wheeler's SLOCCount estimates the value of RichDEM
+at $240,481 and 1.78 person-years of development effort. This value is yours to
+use, but citations are encouraged as they provide justification of continued
+development.
 
-Improvements targeted at achieving the design philosophy below are underway.
+General usage of the library can be cited as:
+
+    Barnes, Richard. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem
+
+An example BibTeX entry is:
+
+    @manual{RichDEM,
+      title        = {RichDEM: Terrain Analysis Software},
+      author       = {Richard Barnes},
+      year         = {2016},
+      url          = {http://github.com/r-barnes/richdem}, 
+    }
+
+This information will be updated as versioned releases become available.
+
+Although I have written all of the code in this library, some of the algorithms
+were discovered or invented by others, and they deserve credit for their good
+work. Citations to particular algorithms will be printed whenever an app,
+program, or library function is run. Such citations are prefixed by the
+character `C` and look like:
+
+    C Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024
+
+A typical academic citation might read as follows:
+
+ > We performed hydrological corrections on our DEM using the Zhou (2016) algorithm implemented in RichDEM (Barnes 2016).
+
+As A Python Package
+-------------------
+
+Get the package with:
+
+    pip3 install richdem
+
+And use:
+
+    import richdem
+
+The command:
+
+    help(richdem)
+
+provides all the relevant documentation.
+
+
+
+As A Command-line Tool
+----------------------
+
+To get the command-line tools, install the Python package with:
+
+    pip3 install richdem
+
+The command-line tools are all named `rd_*`, so typing `rd_` on your command-
+line and hitting tab a few times should give you the full list of what's
+available.
+
+
+
+As A Library
+------------
+
+Upon compilation, point your library search path to the `include` directory.
+Include various files using, e.g.
+
+    #include "richdem/common/Array2D.hpp"
+
+All files include extensive documentation. At this stage the location of certain
+functions may be subject to change. This will be noted in the `NEWS` file. (TODO)
+
+
+
+As A Handy Collection of Tools
+------------------------------
+
+Running `make` in the `apps` directory will produce a large number of useful
+scripts which are essentially wrappers around standard uses of the RichDEM
+libraries. The [apps/README.md](apps/README.md) file and the apps themselves
+contain documentation explaining what they all do.
+
+
+
+For Processing Large Datasets
+-----------------------------
+
+The `programs` directory contains several programs which have not been converted
+to libraries. This is usually because their functionality is specific and they
+are unlikely to be useful as a library. Each directory contains a makefile and a
+readme explaining the purpose of the program.
+
+
+
+Documentation
+-------------
+
+Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
+The documentation is auto-generated from the many `README.md` files throughout
+the codebase and the extensive comments in the source code.
 
 
 
@@ -67,101 +166,24 @@ The design of RichDEM is guided by these principles:
 * **Programs and algorithms will provide useful feedback.** Progress bars will 
   appear if desired and the output will be optimized for machine parsing.
 
-* **Analyses will be reproducible.** Every time you run a RichDEM command that
+* **Analyses will be reproducible." Every time you run a RichDEM command that
   command is logged and timestamped in the output data, along with the version
   of the program you created the output with. Additionally, a history of all
   previous manipulations to the data is kept. Use `rd_view_processing_history`
-  to see this.
+  to see this.**
 
-
-
-Using It
-========
-
-
-
-Citing It
----------
-
-As of 883ea734e957, David A. Wheeler's SLOCCount estimates the value of RichDEM
-at $240,481 and 1.78 person-years of development effort. This value is yours to
-use, but citations are encouraged as they provide justification of continued
-development.
-
-General usage of the library can be cited as:
-
-    Barnes, Richard. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem
-
-An example BibTeX entry is:
-
-    @manual{RichDEM,
-      title        = {RichDEM: Terrain Analysis Software},
-      author       = {Richard Barnes},
-      year         = {2016},
-      url          = {http://github.com/r-barnes/richdem}, 
-    }
-
-This information will be updated as versioned releases become available.
-
-Although I have written all of the code in this library, some of the algorithms
-were discovered or invented by others, and they deserve credit for their good
-work. Citations to particular algorithms will be printed whenever an app,
-program, or library function is run. Such citations are prefixed by the
-character `C` and look like:
-
-    C Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024
-
-A typical academic citation might read as follows:
-
- > We performed hydrological corrections on our DEM using the Zhou (2016) algorithm implemented in RichDEM (Barnes 2016).
-
-
-
-As A Library
-------------
-
-Upon compilation, point your library search path to the `include` directory.
-Include various files using, e.g.
-
-    #include "richdem/common/Array2D.hpp"
-
-All files include extensive documentation. At this stage the location of certain
-functions may be subject to change. This will be noted in the `NEWS` file. (TODO)
-
-
-
-As A Handy Collection of Tools
-------------------------------
-
-Running `make` in the `apps` directory will produce a large number of useful
-scripts which are essentially wrappers around standard uses of the RichDEM
-libraries. The [apps/README.md](apps/README.md) file and the apps themselves
-contain documentation explaining what they all do.
-
-
-
-For Processing Large Datasets
------------------------------
-
-The `programs` directory contains several programs which have not been converted
-to libraries. This is usually because their functionality is specific and they
-are unlikely to be useful as a library. Each directory contains a makefile and a
-readme explaining the purpose of the program.
-
-
-
-Documentation
-=============
-
-Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
-The documentation is auto-generated from the many `README.md` files throughout
-the codebase and the extensive comments in the source code.
 
 
 Testing Methodology
 ===================
-TODO
 
+Simple algorithms are shown to be correct through visual inspection and
+comparison against hand-crafted examples. Correctness for more complex
+algorithms is often "boot-strapped" by comparing the results of simple
+algorithms versus the complex algorithms on a large number of randomly-generated
+datasets.
+
+This is a work in progress. TODO
 
 
 Correctness
@@ -205,7 +227,7 @@ making it easy to parse with a machine.
  * **n**: I/O: Amount of data transferred through a network
 
  * **p**: Progress information: inform the user to keep calm because we're
-          carrying on
+          carrying on.
  
  * **r**: Amount of RAM used
 
@@ -247,25 +269,25 @@ Publications
 ============
 The algorithms used in RichDEM have been published in the following articles. Every algorithm/program will provide its relevant citation information when run.
 
-* Barnes, R., 2016. Parallel Non-divergent Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters. Environmental Modelling & Software: 92, p. 202–212. doi: 10.1016/j.envsoft.2017.02.022
+* Barnes, R., 2017. Parallel non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. Environmental Modelling & Software 92, 202–212. doi:[10.1016/j.envsoft.2017.02.022](https://doi.org/10.1016/j.envsoft.2017.02.022)
 
-* Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences. doi:[10.1016/j.cageo.2016.07.001](http://dx.doi.org/10.1016/j.cageo.2016.07.001)
+* Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences 96, 56–68. doi:[10.1016/j.cageo.2016.07.001](https://doi.org/10.1016/j.cageo.2016.07.001)
 
-* Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021
+* Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:[10.1016/j.cageo.2013.01.009](https://doi.org/10.1016/j.cageo.2013.01.009)
 
-* Barnes, Lehman, Mulla. 2013. "An Efficient Assignment of Drainage Direction Over Flat Surfaces in Raster Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.01.009](http://dx.doi.org/10.1016/j.cageo.2013.01.009)
-
-* Barnes, Lehman, Mulla. 2013. "Priority-Flood: An Optimal Depression-Filling and Watershed-Labeling Algorithm for Digital Elevation Models". Computers &amp; Geosciences. doi: [10.1016/j.cageo.2013.04.024](http://dx.doi.org/10.1016/j.cageo.2013.04.024)
-
-* Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
+* Barnes, R., Lehman, C., Mulla, D., 2014b. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:[10.1016/j.cageo.2013.04.024](https://doi.org/10.1016/j.cageo.2013.04.024)
 
 * Barnes, Lehman, Mulla. 2011. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
 
-* Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319.
-
 * Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918
 
+* Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
+
+* Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319.
+
 * Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
+
+* Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021
 
 
 
@@ -273,12 +295,12 @@ Credits
 =======
 
 RichDEM has been developed and tested using computational resources provided by
-the [Minnesota Supercomputing Institute][1] (MSI) and the U.S. National Science
-Foundation's [XSEDE][2].
+the [Minnesota Supercomputing Institute](https://www.msi.umn.edu/) (MSI) and the
+U.S. National Science Foundation's [XSEDE](https://www.xsede.org/).
 
-Funding for the development of RichDEM has been provided by the [Legislative-Citizen Commission on Minnesota Resources][5] (LCCMR), the U.S. National Science
-Foundation [Graduate Research Fellowship][3], and the U.S. Department of Energy
-[Computational Science Graduate Fellowship][4].
+Funding for the development of RichDEM has been provided by the [Legislative-Citizen Commission on Minnesota Resources](http://www.lccmr.leg.mn/) (LCCMR), the U.S. National Science
+Foundation [Graduate Research Fellowship](https://www.nsfgrfp.org/), and the U.S. Department of Energy
+[Computational Science Graduate Fellowship](https://www.krellinst.org/csgf/).
 
 
 
@@ -289,13 +311,4 @@ _If you see something, say something._
 
 Users are encouraged to report any issues experienced with the code via Github's
 issue tracker. Feedback is also accepted via email (rbarnes@umn.edu), though
-this should be used only in cases wherein the issue tracker is not available.
-
-
-
-
-[1]: https://www.msi.umn.edu/
-[2]: https://www.xsede.org/
-[3]: https://www.nsfgrfp.org/
-[4]: https://www.krellinst.org/csgf/
-[5]: http://www.lccmr.leg.mn/
+this is highly discouraged as it does not provide a resource for others.

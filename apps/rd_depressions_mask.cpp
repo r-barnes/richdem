@@ -2,12 +2,10 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/common/router.hpp"
 #include "richdem/depressions/priority_flood.hpp"
-#include "richdem/depressions/Zhou2016pf.hpp"
 #include "richdem/common/Array2D.hpp"
-//#include "richdem/flats/flat_resolution.hpp"
-//#include "richdem/methods/d8_methods.hpp"
+using namespace richdem;
+
 
 template<class T>
 int PerformAlgorithm(std::string output, std::string analysis, Array2D<T> elevation){
@@ -22,6 +20,10 @@ int PerformAlgorithm(std::string output, std::string analysis, Array2D<T> elevat
   return 0;
 }
 
+#include "router.hpp"
+
+
+
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
   
@@ -31,5 +33,5 @@ int main(int argc, char **argv){
     return -1;
   }
 
-  return PerformAlgorithm(argv[1],argv[2],analysis);
+  return PerformAlgorithm(std::string(argv[1]),std::string(argv[2]),analysis);
 }

@@ -1,6 +1,6 @@
 export CXX=g++
 export GDAL_LIBS=`gdal-config --libs`
-export GDAL_CFLAGS=`gdal-config --cflags`
+export GDAL_CFLAGS=`gdal-config --cflags` -DUSEGDAL
 export OPT_FLAGS=-g -O3 -DNDEBUG
 export DEBUG_FLAGS=-g
 RICHDEM_GIT_HASH=`git rev-parse HEAD`

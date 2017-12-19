@@ -1,0 +1,66 @@
+*Expose all functions
+*Consistency with NO_FLOW values in dall_methods.hpp
+*Expose flat resolution functions
+
+*Example of wrapping NumPy
+*Try to adjust math functions so they'll run on just NumPy
+
+*Copy from NumPy
+*Wrap from NumPy
+*PyPI package
+*bin/ apps
+
+*RichDEM citation with alg citation
+
+*OpenMP capabilities (optional: for use in simultaneous modelling)
+
+*Peckham flow routing
+
+*Weight field for flow accumulation
+
+
+Internet required
+=================
+
+
+Maybe do
+========
+*ufuncs to do math in-place?
+
+
+
+Later
+=====
+*Documentation for Python functions
+*README
+
+
+
+
+
+>>> import matplotlib
+>>> import richdem as rd
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "richdem/__init__.py", line 2, in <module>
+    import _richdem
+  File "build/bdist.linux-x86_64/egg/_richdem.py", line 7, in <module>
+  File "build/bdist.linux-x86_64/egg/_richdem.py", line 6, in __bootstrap__
+ImportError: /home/rick/.cache/Python-Eggs/richdem-0.0.1-py2.7-linux-x86_64.egg-tmp/_richdem.so: undefined symbol: GOMP_critical_end
+
+
+
+
+
+
+
+
+
+
+requirements.txt
+
+BeautifulSoup==3.2.0
+Django==1.3
+Fabric==1.2.0
+Jinja2==2.5.5
+PyYAML==3.09

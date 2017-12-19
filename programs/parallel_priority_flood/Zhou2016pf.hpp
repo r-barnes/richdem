@@ -9,6 +9,8 @@
 #include <map>
 #include <iostream> //TODO
 
+namespace richdem {
+
 template<class elev_t, class label_t>
 label_t GetNewLabelZhou(
   int x,
@@ -223,6 +225,8 @@ void Zhou2015Labels(
   }
 
   my_graph.resize(current_label);
+}
+
 }
 
 #endif

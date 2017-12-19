@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(std::string outname, char *nodata, std::string analysis, Array2D<T> inp){
@@ -12,6 +12,10 @@ int PerformAlgorithm(std::string outname, char *nodata, std::string analysis, Ar
   inp.saveGDAL(outname,analysis);
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);

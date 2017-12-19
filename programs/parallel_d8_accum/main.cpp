@@ -16,6 +16,8 @@
 #include "richdem/common/grid_cell.hpp"
 #include "perimeters.hpp"
 
+using namespace richdem;
+
 const std::string algname  = "Parallel Flow Accumulation";
 const std::string citation = "Barnes, R. 2016. \"Parallel D8 Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters\". In-progress.";
 

@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<class flowdir_t>
 void FollowPath(
@@ -55,6 +55,10 @@ int PerformAlgorithm(Array2D<T> inp){
 
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);

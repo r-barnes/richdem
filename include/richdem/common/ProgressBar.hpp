@@ -25,6 +25,8 @@
 #include <stdexcept>
 #include "richdem/common/timer.hpp"
 
+namespace richdem {
+
 ///Macros used to disguise the fact that we do not have multithreading enabled.
 #ifdef _OPENMP
   #include <omp.h>
@@ -126,5 +128,7 @@ class ProgressBar{
       return work_done;
     }
 };
+
+}
 
 #endif

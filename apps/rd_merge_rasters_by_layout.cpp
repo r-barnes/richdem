@@ -2,7 +2,6 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/constants.hpp"
 #include "richdem/common/timer.hpp"
-#include "richdem/common/router.hpp"
 #include "richdem/tiled/A2Array2D.hpp"
 #include <queue>
 #include <unordered_set>
@@ -10,6 +9,9 @@
 #include <iostream>
 #include <csignal>
 #include <stdexcept>
+using namespace richdem;
+
+
 
 template<class T>
 void Master(std::string layoutfile, int cachesize, std::string outputname, std::string flip_style){
@@ -34,6 +36,8 @@ void Master(std::string layoutfile, int cachesize, std::string outputname, std::
 
   std::cerr<<"Evictions: "<<raster.getEvictions()<<std::endl;
 }
+
+
 
 int main(int argc, char **argv){
   if(argc!=5){

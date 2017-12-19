@@ -11,8 +11,11 @@ described in Barnes (TODO).
 #ifndef _richdem_dinf_flowdirs_hpp_
 #define _richdem_dinf_flowdirs_hpp_
 
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
+
+namespace richdem {
 
 ///Value used to indicate that a flow direction cell has no data
 #define dinf_NO_DATA -1
@@ -126,15 +129,15 @@ template <class T>
 void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs){
   ProgressBar progress;
 
-  std::cerr<<"\nA Dinf Flow Directions"<<std::endl;
-  std::cerr<<"C Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319."<<std::endl;
+  RDLOG_ALG_NAME<<"Dinf Flow Directions";
+  RDLOG_CITATION<<"Tarboton, D.G. 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water Resources Research. Vol. 33. pp 309-319.";
 
-  std::cerr<<"p Setting up the Dinf flow directions matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the Dinf flow directions matrix...";
   flowdirs.resize(elevations);
   flowdirs.setNoData(dinf_NO_DATA);
   flowdirs.setAll(NO_FLOW);
 
-  std::cerr<<"p Calculating Dinf flow directions..."<<std::endl;
+  RDLOG_PROGRESS<<"Calculating Dinf flow directions...";
   progress.start( elevations.size() );
   #pragma omp parallel for
   for(int y=0;y<elevations.height();y++){
@@ -145,7 +148,9 @@ void dinf_flow_directions(const Array2D<T> &elevations, Array2D<float> &flowdirs
       else
         flowdirs(x,y) = dinf_FlowDir(elevations,x,y);
   }
-  std::cerr<<"t Succeeded in = "<<progress.stop()<<" s"<<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
+}
+
 }
 
 #endif

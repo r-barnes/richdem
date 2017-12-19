@@ -6,6 +6,8 @@
 */
 #ifndef _richdem_priority_flood_hpp_
 #define _richdem_priority_flood_hpp_
+
+#include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
 #include "richdem/flowdirs/d8_flowdirs.hpp"
@@ -14,6 +16,7 @@
 #include <iostream>
 #include <cstdlib> //Used for exit
 
+namespace richdem {
 
 /**
   @brief  Determine if a DEM has depressions
@@ -42,17 +45,16 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   ProgressBar progress;
 
-  std::cerr<<"\nA HasDepressions (Based on Priority-Flood)"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"HasDepressions (Based on Priority-Flood)";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding perimeter cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding perimeter cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -66,7 +68,7 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Searching for depressions..."<<std::endl;
+  RDLOG_PROGRESS<<"Searching for depressions...";
   progress.start( elevations.size() );
   while(open.size()>0){
     GridCellZ<elev_t> c=open.top();
@@ -82,15 +84,15 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
 
       closed(nx,ny) = true;
       if(elevations(nx,ny)<elevations(c.x,c.y)){
-        std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
-        std::cerr<<"m Depression found."<<std::endl;
+        RDLOG_TIME_USE<<"Succeeded in    = "<<progress.stop() <<" s";
+        RDLOG_MISC<<"Depression found.";
         return true;
       }
       open.emplace(nx,ny,elevations(nx,ny));
     }
   }
-  std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
-  std::cerr<<"m No depressions found."<<std::endl;
+  RDLOG_TIME_USE<<"t Succeeded in    = "<<progress.stop() <<" s";
+  RDLOG_MISC<<"No depressions found.";
   return false;
 }
 
@@ -131,17 +133,16 @@ void original_priority_flood(Array2D<elev_t> &elevations){
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nA Priority-Flood (Original)"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"A Priority-Flood (Original)";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding perimeter cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding perimeter cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -155,7 +156,7 @@ void original_priority_flood(Array2D<elev_t> &elevations){
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Performing the original Priority Flood..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing the original Priority Flood...";
   progress.start( elevations.size() );
   while(open.size()>0){
     GridCellZ<elev_t> c=open.top();
@@ -177,9 +178,9 @@ void original_priority_flood(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"t Succeeded in    = "<<progress.stop() <<" s"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells       <<std::endl;
-  std::cerr<<"m Cells in pits   = "<<pitc                  <<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in    = "<<progress.stop() <<" s";
+  RDLOG_MISC    <<"Cells processed = "<<processed_cells;
+  RDLOG_MISC    <<"Cells in pits   = "<<pitc;
 }
 
 
@@ -220,17 +221,17 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nPriority-Flood (Improved)"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME << "Priority-Flood (Improved)";
+  RDLOG_CITATION << "Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+
+  RDLOG_PROGRESS << "Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"Priority queue requires approx = "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
 
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
@@ -245,7 +246,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Performing the improved Priority-Flood..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing the improved Priority-Flood...";
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
@@ -277,9 +278,9 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"t Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s";
+  RDLOG_MISC    <<"Cells processed = "<<processed_cells;
+  RDLOG_MISC    <<"Cells in pits = "  <<pitc;
 }
 
 
@@ -321,12 +322,12 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
   auto     PitTop          = elevations.noData();
   int      false_pit_cells = 0;
 
-  std::cerr<<"\nA Priority-Flood+Epsilon"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"Priority-Flood+Epsilon";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -340,7 +341,7 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Performing Priority-Flood+Epsilon..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing Priority-Flood+Epsilon...";
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
@@ -384,47 +385,42 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96mt succeeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+  RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells in pits = "  <<pitc           ;
   if(false_pit_cells)
-    std::cerr<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m"<<std::endl;
+    RDLOG_WARN<<"\033[91mW In assigning negligible gradients to depressions, some depressions rose above the surrounding cells. This implies that a larger storage type should be used. The problem occured for "<<false_pit_cells<<" of "<<elevations.numDataCells()<<".\033[39m";
 }
 
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
 void priority_flood_epsilon(Array2D<uint8_t> &elevations){
-  std::cerr<<"E Priority-Flood+Epsilon is only available for floating-point data types!"<<std::endl;
-  exit(-1);
+  throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
 void priority_flood_epsilon(Array2D<uint16_t> &elevations){
-  std::cerr<<"E Priority-Flood+Epsilon is only available for floating-point data types!"<<std::endl;
-  exit(-1);
+  throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
 void priority_flood_epsilon(Array2D<int16_t> &elevations){
-  std::cerr<<"E Priority-Flood+Epsilon is only available for floating-point data types!"<<std::endl;
-  exit(-1);
+  throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
 void priority_flood_epsilon(Array2D<uint32_t> &elevations){
-  std::cerr<<"E Priority-Flood+Epsilon is only available for floating-point data types!"<<std::endl;
-  exit(-1);
+  throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
 void priority_flood_epsilon(Array2D<int32_t> &elevations){
-  std::cerr<<"E Priority-Flood+Epsilon is only available for floating-point data types!"<<std::endl;
-  exit(-1);
+  throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 
@@ -463,21 +459,20 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
   uint64_t processed_cells = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nA Priority-Flood+Flow Directions"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"Priority-Flood+Flow Directions";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"Setting up the flowdirs matrix..."<<std::endl;  
+  RDLOG_PROGRESS<<"Setting up the flowdirs matrix...";
   flowdirs.resize(elevations.width(),elevations.height());
   flowdirs.setNoData(NO_FLOW);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_PROGRESS<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+                <<"MB of RAM.";
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0));
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1));
@@ -494,7 +489,6 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
     closed(0,y)=true;
     closed(elevations.width()-1,y)=true;
   }
-  std::cerr<<"succeeded."<<std::endl;
 
   flowdirs(0,0)=2;
   flowdirs(flowdirs.width()-1,0)=4;
@@ -502,7 +496,7 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
   flowdirs(flowdirs.width()-1,flowdirs.height()-1)=6;
 
   const int d8_order[9]={0,1,3,5,7,2,4,6,8};
-  std::cerr<<"p Performing Priority-Flood+Flow Directions..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing Priority-Flood+Flow Directions...";
   progress.start( elevations.size() );
   while(open.size()>0){
     auto c=open.top();
@@ -510,9 +504,9 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
     processed_cells++;
 
     for(int no=1;no<=8;no++){
-      int n  = d8_order[no];
-      int nx = c.x+dx[n];
-      int ny = c.y+dy[n];
+      int n=d8_order[no];
+      int nx=c.x+dx[n];
+      int ny=c.y+dy[n];
       if(!elevations.inGrid(nx,ny))
         continue;
       if(closed(nx,ny))
@@ -529,8 +523,8 @@ void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowd
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96mt succeeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
+  RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
 }
 
 
@@ -577,22 +571,21 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nA Pit Mask"<<std::endl;
-  std::cerr<<"C Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"<<std::endl;
+  RDLOG_ALG_NAME<<"Pit Mask";
+  RDLOG_CITATION<<"Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"; //TODO
   
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::flush;
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"p Setting up the pit mask matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up the pit mask matrix...";
   pit_mask.resize(elevations.width(),elevations.height());
   pit_mask.setNoData(3);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -606,15 +599,15 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Performing the pit mask..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing the pit mask...";
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
     if(pit.size()>0){
-      c = pit.front();
+      c=pit.front();
       pit.pop();
     } else {
-      c = open.top();
+      c=open.top();
       open.pop();
     }
     processed_cells++;
@@ -644,9 +637,9 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
 
     progress.update(processed_cells);
   }
-  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in depressions = "  <<pitc           <<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in "<<progress.stop()<<" s";
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells in depressions = "  <<pitc;
 }
 
 
@@ -695,21 +688,20 @@ void priority_flood_watersheds(
   int clabel=1;  //TODO: Thought this was more clear than zero in the results.
   ProgressBar progress;
 
-  std::cerr<<"\nA Priority-Flood+Watershed Labels"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"Priority-Flood+Watershed Labels";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"p Setting up watershed label matrix..."<<std::endl;
+  RDLOG_PROGRESS<<"Setting up watershed label matrix...";
   labels.resize(elevations.width(),elevations.height(),-1);
   labels.setNoData(-1);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
     open.emplace(x,elevations.height()-1,elevations(x,elevations.height()-1) );
@@ -723,7 +715,7 @@ void priority_flood_watersheds(
     closed(elevations.width()-1,y)=true;
   }
 
-  std::cerr<<"p Performing Priority-Flood+Watershed Labels..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing Priority-Flood+Watershed Labels...";
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
@@ -767,11 +759,11 @@ void priority_flood_watersheds(
     progress.update(processed_cells);
   }
 
-  std::cerr<<"\t\033[96msucceeded in "<<progress.stop()<<"s.\033[39m"<<std::endl;
+  RDLOG_TIME_USE<<"succeeded in "<<progress.stop()<<" s";
 
-  std::cerr<<"m Cells processed   = "  <<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits     = "  <<pitc           <<std::endl;
-  std::cerr<<"m Cells not in pits = "  <<openc          <<std::endl;
+  RDLOG_MISC<<"Cells processed   = "  <<processed_cells;
+  RDLOG_MISC<<"Cells in pits     = "  <<pitc;
+  RDLOG_MISC<<"Cells not in pits = "  <<openc;
 }
 
 
@@ -820,17 +812,16 @@ void improved_priority_flood_max_dep(
   uint64_t pitc            = 0;
   ProgressBar progress;
 
-  std::cerr<<"\nPriority-Flood (Improved) with Maximum Size"<<std::endl;
-  std::cerr<<"\nC Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024"<<std::endl;
-  std::cerr<<"p Setting up boolean flood array matrix..."<<std::endl;
+  RDLOG_ALG_NAME<<"\nPriority-Flood (Improved) Limited to Maximum Depression Area";
+  RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
-  std::cerr<<"The priority queue will require approximately "
+  RDLOG_MEM_USE<<"The priority queue will require approximately "
            <<(elevations.width()*2+elevations.height()*2)*((long)sizeof(GridCellZ<elev_t>))/1024/1024
-           <<"MB of RAM."
-           <<std::endl;
+               <<"MB of RAM.";
 
-  std::cerr<<"p Adding cells to the priority queue..."<<std::endl;
+  RDLOG_PROGRESS<<"Adding cells to the priority queue...";
 
   for(int x=0;x<elevations.width();x++){
     open.emplace(x,0,elevations(x,0) );
@@ -848,7 +839,7 @@ void improved_priority_flood_max_dep(
   elev_t dep_elev = 0;             //Elevation of the rim/spill point of the depression we're in
   std::vector<GridCell> dep_cells; //Cells comprising the depression we're in
 
-  std::cerr<<"p Performing the Priority-Flood..."<<std::endl;
+  RDLOG_PROGRESS<<"Performing the improved Priority-Flood...";
   progress.start( elevations.size() );
   while(open.size()>0 || pit.size()>0){
     GridCellZ<elev_t> c;
@@ -887,10 +878,11 @@ void improved_priority_flood_max_dep(
     }
     progress.update(processed_cells);
   }
-  std::cerr<<"t Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s"<<std::endl;
-  std::cerr<<"m Cells processed = "<<processed_cells<<std::endl;
-  std::cerr<<"m Cells in pits = "  <<pitc           <<std::endl;
+  RDLOG_TIME_USE<<"Succeeded in "<<std::fixed<<std::setprecision(1)<<progress.stop()<<" s";
+  RDLOG_MISC<<"Cells processed = "<<processed_cells;
+  RDLOG_MISC<<"Cells in pits = "  <<pitc;
 }
 
+}
 
 #endif

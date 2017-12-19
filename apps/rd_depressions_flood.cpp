@@ -2,10 +2,11 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/common/router.hpp"
 #include "richdem/depressions/Zhou2016pf.hpp"
 #include "richdem/depressions/priority_flood.hpp"
 #include "richdem/common/Array2D.hpp"
+
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(std::string outputname, uint32_t max_dep_size, std::string analysis, Array2D<T> elevation){
@@ -20,6 +21,8 @@ int PerformAlgorithm(std::string outputname, uint32_t max_dep_size, std::string 
 
   return 0;
 }
+
+#include "router.hpp"
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);

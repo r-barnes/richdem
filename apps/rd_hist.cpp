@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "richdem/common/version.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/router.hpp"
+using namespace richdem;
 
 template<class T>
 int PerformAlgorithm(Array2D<T> rast){
@@ -21,6 +21,10 @@ int PerformAlgorithm(Array2D<T> rast){
 
   return 0;
 }
+
+#include "router.hpp"
+
+
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);

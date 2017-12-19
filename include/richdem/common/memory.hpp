@@ -10,6 +10,8 @@
 #include <fstream>
 #include <string>
 
+namespace richdem {
+
 /**
   @brief Return memory statistics of the process
 
@@ -49,6 +51,8 @@ void ProcessMemUsage(long &vmpeak, long &vmhwm){
   #else
     #pragma message("Cannot check memory statistics for this OS.")
   #endif
+}
+
 }
 
 #endif
