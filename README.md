@@ -279,7 +279,7 @@ The algorithms used in RichDEM have been published in the following articles. Ev
 
 * Barnes, Lehman, Mulla. 2011. "Distributed Parallel D8 Up-Slope Area Calculation in Digital Elevation Models". Intn'l Conf. on Parallel & Distributed Processing Techniques & Applications. [Link](http://rbarnes.org/section/sci/2011_barnes_distributed.pdf)
 
-* Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918
+* Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:[10.1109/PROC.1981.11918](http://dx.doi.org/10.1109/PROC.1981.11918)
 
 * Mulla et al. including Barnes. 2012. "Strategic Planning for Minnesota’s Natural and Artificial Watersheds". Report to the Minnesota LCCMR.
 
@@ -287,7 +287,7 @@ The algorithms used in RichDEM have been published in the following articles. Ev
 
 * Zevenbergen, L.W., Thorne, C.R., 1987. Quantitative analysis of land surface topography. Earth surface processes and landforms 12, 47–56.
 
-* Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:http://dx.doi.org/10.1016/j.cageo.2016.02.021
+* Zhou, G., Sun, Z., Fu, S., 2016. An efficient variant of the Priority-Flood algorithm for filling depressions in raster digital elevation models. Computers & Geosciences 90, Part A, 87 – 96. doi:[10.1016/j.cageo.2016.02.021](http://dx.doi.org/10.1016/j.cageo.2016.02.021)
 
 
 
