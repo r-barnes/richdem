@@ -26,7 +26,7 @@ class ManagedVector {
 
   ManagedVector(T* data0, size_t size0){
     _data.reset(data0);
-    _size = size0;
+    _size  = size0;
     _owned = false;
   }
 
