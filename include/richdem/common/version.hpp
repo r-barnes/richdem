@@ -43,6 +43,14 @@ const std::string copyright    = "Richard Barnes © 2016";
 ///Richdem vX.X.X (hash=GIT HASH, compiled=COMPILATION DATE TIME)
 const std::string program_identifier = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
 
+std::string rdHash(){
+  return git_hash;
+}
+
+std::string rdCompileTime() {
+  return compilation_datetime;
+}
+
 ///Takes the program's command line arguments and prints to stdout a header with
 ///a variety of useful information for identifying the particulars of what was
 ///run.
@@ -52,8 +60,8 @@ std::string PrintRichdemHeader(int argc, char **argv){
     analysis += std::string(argv[i])+" ";
 
   std::cout<<"c Program name       = " <<program_name        <<std::endl;
-  std::cout<<"c Script compiled at = " <<compilation_datetime<<std::endl;
-  std::cout<<"c Git hash           = " <<git_hash            <<std::endl;
+  std::cout<<"c Script compiled at = " <<rdCompileTime()     <<std::endl;
+  std::cout<<"c Git hash           = " <<rdHash()            <<std::endl;
   std::cout<<"c Copyright          = " <<copyright           <<std::endl;
   std::cout<<"a Analysis command   = " <<analysis            <<std::endl;
 

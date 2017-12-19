@@ -10,9 +10,9 @@ try:
   fin = [x.strip().split("=") for x in fin]
   for x in fin:
     if x[0]=='hash':
-      RICHDEM_GIT_HASH = x[1]
+      RICHDEM_GIT_HASH = '"' + x[1] + '"'
     elif x[0]=='date':
-      RICHDEM_COMPILE_TIME = x[1]
+      RICHDEM_COMPILE_TIME = '"' + x[1] + '"'
 except:
   pass
 

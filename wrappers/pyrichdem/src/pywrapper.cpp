@@ -160,5 +160,8 @@ PYBIND11_MODULE(_richdem, m) {
   TemplatedWrapper<uint16_t>(m, "uint16_t");
   TemplatedWrapper<uint32_t>(m, "uint32_t");
   TemplatedWrapper<uint64_t>(m, "uint64_t");
+
+  m.def("rdHash",        &rdHash,        "Git hash of previous commit");
+  m.def("rdCompileTime", &rdCompileTime, "Commit time of previous commit");
 }
  
