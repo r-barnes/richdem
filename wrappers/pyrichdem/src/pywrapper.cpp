@@ -55,28 +55,6 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("FA_D8",                 &FA_D8               <T,double>, "TODO");
   m.def("FA_OCallaghan",         &FA_OCallaghan       <T,double>, "TODO");
 
-  //TODO
-  // m.def(
-  //   "WrapNumPy",
-  //   [](py::handle src){
-  //     if (!py::array_t<T>::check_(src))
-  //       throw std::runtime_error("WrapNumPy: Array check failed!");
-
-  //     auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
-  //     if (!buf)
-  //       throw std::runtime_error("WrapNumPy: Could not generate a buffer!")
-
-  //     auto dims = buf.ndim();
-  //     if (dims != 2 )
-  //       throw std::runtime_error("WrapNumPy: NumPy array must have 2 dimensions.")
-
-  //     value = rd::Array2D<T>((T*) buf.data(),buf.shape()[1],buf.shape()[0]);
-
-  //     return true;
-  //   },
-  //   "TODO"
-  // );
-
   py::class_<Array2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<typename Array2D<T>::xy_t, typename Array2D<T>::xy_t,T>())
