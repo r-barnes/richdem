@@ -1,6 +1,7 @@
 import pkg_resources
 import _richdem
 import datetime
+import copy
 
 try:
   import numpy as np
@@ -37,19 +38,19 @@ class rdarray(np.ndarray):
     obj = np.asarray(array, dtype=dtype, order=order).view(cls) 
     
     if meta_obj is not None:
-      obj.metadata     = getattr(meta_obj, 'metadata',     None)
-      obj.no_data      = getattr(meta_obj, 'no_data',      None)
-      obj.projection   = getattr(meta_obj, 'projection',   None)
-      obj.geotransform = getattr(meta_obj, 'geotransform', None)
+      obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     None))
+      obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None))
+      obj.projection   = copy.deepcopy(getattr(meta_obj, 'projection',   None))
+      obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None))
 
     return obj
 
   def __array_finalize__(self, obj):
     if obj is None: return
-    self.metadata     = getattr(obj, 'metadata',     None)
-    self.no_data      = getattr(obj, 'no_data',      None)
-    self.projection   = getattr(obj, 'projection',   None)
-    self.geotransform = getattr(obj, 'geotransform', None)
+    self.metadata     = copy.deepcopy(getattr(obj, 'metadata',     None))
+    self.no_data      = copy.deepcopy(getattr(obj, 'no_data',      None))
+    self.projection   = copy.deepcopy(getattr(obj, 'projection',   None))
+    self.geotransform = copy.deepcopy(getattr(obj, 'geotransform', None))
 
   def wrap(self):
     richdem_arrs = {
