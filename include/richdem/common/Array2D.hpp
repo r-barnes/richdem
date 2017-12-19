@@ -96,7 +96,7 @@ class Array2D {
 
   static const i_t NO_I = std::numeric_limits<i_t>::max(); //TODO: What is this?
 
- protected:
+ private:
   template<typename> friend class Array2D;
 
   std::array<int, 9> _nshift;       ///< Offset to neighbouring cells;
