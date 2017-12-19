@@ -5,6 +5,7 @@
 
 #include "gdal_priv.h"
 #include <iostream>
+#include <typeinfo>
 
 namespace richdem {
 
