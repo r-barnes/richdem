@@ -31,6 +31,23 @@ def _AddAnalysis(arr, analysis):
     arr.metadata["PROCESSING_HISTORY"] = ""
   arr.metadata["PROCESSING_HISTORY"] += metastr
 
+def rdShow(rda, ignore_colours=[], show=True):
+  try:
+    import matplotlib.pyplot as plt
+    import matplotlib
+  except:
+    raise Exception("matplotlib must be installed to use rdShow!")
+  disparr = np.array(rda, copy=True)
+  disparr[disparr==rda.no_data] = np.nan
+  for c in ignore_colours:
+    disparr[disparr==c] = np.nan
+  vmin, vmax = np.nanpercentile(disparr, [2, 98])
+  #current_cmap = matplotlib.cm.get_cmap()
+  #current_cmap.set_bad(color='red')
+  plt.imshow(disparr, vmin=vmin, vmax=vmax)
+  plt.set_cmap('gray')
+  if show:
+    plt.show()
 
 
 class rdarray(np.ndarray):
