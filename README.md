@@ -166,7 +166,7 @@ The design of RichDEM is guided by these principles:
 * **Programs and algorithms will provide useful feedback.** Progress bars will 
   appear if desired and the output will be optimized for machine parsing.
 
-* **Analyses will be reproducible." Every time you run a RichDEM command that
+* **Analyses will be reproducible.** Every time you run a RichDEM command that
   command is logged and timestamped in the output data, along with the version
   of the program you created the output with. Additionally, a history of all
   previous manipulations to the data is kept. Use `rd_view_processing_history`
