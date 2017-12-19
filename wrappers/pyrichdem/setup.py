@@ -3,13 +3,18 @@ import glob
 import datetime
 import subprocess
 
-RICHDEM_COMPILE_TIME = '"'+datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')+'"'
-
+RICHDEM_COMPILE_TIME = "Unknown"
+RICHDEM_GIT_HASH     = "Unknown"
 try:
-  RICHDEM_GIT_HASH = subprocess.check_output(["git", "describe"]).strip()
-  RICHDEM_GIT_HASH = '"'+RICHDEM_GIT_HASH.decode("utf-8")+'"'
+  fin = open('lib/richdem/version.txt','r').readlines()
+  fin = [x.strip().split("=") for x in fin]
+  for x in fin:
+    if x[0]=='hash':
+      RICHDEM_GIT_HASH = x[1]
+    elif x[0]=='date':
+      RICHDEM_COMPILE_TIME = x[1]
 except:
-  RICHDEM_GIT_HASH = ''
+  pass
 
 ext_modules = [
   setuptools.Extension(
