@@ -112,12 +112,12 @@ def LoadGDAL(filename, no_data=None):
      If you need to do something more complicated, look at the source of this
      function.
 
-     Parameters:
-     filename -- Name of the raster file to open
-     no_data  -- Optionally, set the no_data value to this.
+     Args:
+         filename (str):    Name of the raster file to open
+         no_data  (float):  Optionally, set the no_data value to this.
 
      Returns:
-     A RichDEM array
+         A RichDEM array
   """  
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
@@ -157,7 +157,7 @@ def LoadGDAL(filename, no_data=None):
 
 
 
-def SaveGDAL(filename, dem):
+def SaveGDAL(filename, dat):
   """Save a GDAL file.
 
      Saves a RichDEM array to a data file in GeoTIFF format.
@@ -165,12 +165,12 @@ def SaveGDAL(filename, dem):
      If you need to do something more complicated, look at the source of this
      function.
 
-     Parameters:
-     filename -- Name of the raster file to be created
-     dem      -- RichDEM array to save.
+     Args:
+         filename (str):     Name of the raster file to be created
+         dat      (rdarray): Data to save.
 
      Returns:
-     No Return
+         No Return
   """    
   if not GDAL_AVAILABLE:
     raise Exception("richdem.SaveGDAL() requires GDAL.")
@@ -179,13 +179,13 @@ def SaveGDAL(filename, dem):
 
   driver    = gdal.GetDriverByName('GTiff')
   data_type = gdal.GDT_Float32 #TODO
-  data_set  = driver.Create(filename, xsize=dem.shape[1], ysize=dem.shape[0], bands=1, eType=data_type)
-  data_set.SetGeoTransform(dem.geotransform)
-  data_set.SetProjection(dem.projection)
+  data_set  = driver.Create(filename, xsize=dat.shape[1], ysize=dat.shape[0], bands=1, eType=data_type)
+  data_set.SetGeoTransform(dat.geotransform)
+  data_set.SetProjection(dat.projection)
   band = data_set.GetRasterBand(1)
-  band.SetNoDataValue(dem.no_data)
-  band.WriteArray(np.array(dem))
-  for k,v in dem.metadata.items():
+  band.SetNoDataValue(dat.no_data)
+  band.WriteArray(np.array(dat))
+  for k,v in dat.metadata.items():
     data_set.SetMetadataItem(str(k),str(v))
 
 
@@ -197,13 +197,13 @@ def FillDepressions(
 ):
   """Fills all depressions in a DEM using in-place modification.
 
-     Parameters:
-     dem     -- An elevation model
-     epsilon -- If True, an epsilon gradient is imposed to all flat regions.
-                This ensures that there is always a local gradient.
+     Args:
+         dem     (rdarray): An elevation model
+         epsilon (float):   If True, an epsilon gradient is imposed to all flat regions.
+                            This ensures that there is always a local gradient.
 
      Returns:
-     DEM without depressions.
+         DEM without depressions.
   """
 
   if not in_place:
@@ -237,29 +237,34 @@ def BreachDepressions(
 ):
   """Attempts to breach depressions in a DEM using in-place modification.
 
-     Parameters:
-     dem            -- An elevation model
-     mode           -- String. Breaching mode to use (see below).
-     fill           -- True/False. If depressions can't be breached, 
-                       should they be filled?
-     max_path_len   -- Maximum path length in cells that can be dug while
-                       breaching a depression.
-     max_path_depth -- Maximum depth in z-units that can be dug along the 
-                       breaching path.
+     Args:
+         dem          (rdarray):   An elevation model
+         mode         (str):       String. Breaching mode to use (see below).
+         fill         (bool):      True/False. If depressions can't be breached, 
+                                   should they be filled?
+         max_path_len (int):       Maximum path length in cells that can be dug 
+                                   while breaching a depression.
+         max_path_depth (float):   Maximum depth in z-units that can be dug
+                                   along the breaching path.
 
-     Modes:
-     Complete:    Breach everything.
-                  Ignore max_path_len, max_path_depth.
-                  There will be no depressions.
-                  There will be no mercy.
-     Selective:   Only breach those depressions that can be breached using the
-                  above criteria.
-     Constrained: Dig as long a path as necessary, but don't dig it deeper than
-                  max_path_depth.
+     **Modes**
+
+     +------------+---------------------------------------------------------------+
+     | Complete   | Breach everything.                                            |
+     |            | Ignore max_path_len, max_path_depth.                          |
+     |            | There will be no depressions.                                 |
+     |            | There will be no mercy.                                       |
+     +------------+---------------------------------------------------------------+
+     |Selective   | Only breach those depressions that can be breached using the  |
+     |            | above criteria.                                               |
+     +------------+---------------------------------------------------------------+
+     |Constrained | Dig as long a path as necessary, but don't dig it deeper than |
+     |            | max_path_depth.                                               |
+     +------------+---------------------------------------------------------------+
 
      Returns:
-     DEM with depressions breached, filled, or left unaltered, per the above
-     options.
+         DEM with depressions breached, filled, or left unaltered, per the above
+         options.
   """
 
   if not in_place:
@@ -302,27 +307,30 @@ def FlowAccumulation(
 ):
   """Calculates flow accumulation. A variety of methods are available.
 
-     Parameters:
-     dem      -- An elevation model
-     method   -- Flow accumulation method to use. (See below.)
-     exponent -- Some methods require an exponent; refer to the relevant
-                 publications for details.
+     Args:
+         dem      (rdarray): An elevation model
+         method   (str):     Flow accumulation method to use. (See below.)
+         exponent (float):   Some methods require an exponent; refer to the 
+                             relevant publications for details.
 
+     ================= ============================== ===========================
      Method            Note                           Reference
-     Tarboton          Alias for Dinf.
-     Dinf              Alias for Tarboton.
-     Quinn             Holmgren with exponent=1.
-     Holmgren(E)       Generalization of Quinn.
-     Freeman(E)        TODO
-     FairfieldLeymarie Alias for Rho8.
-     Rho8              Alias for FairfieldLeymarie.
-     OCallaghan        Alias for D8.                  10.1016/S0734-189X(84)80011-0
-     D8                Alias for OCallaghan.          10.1016/S0734-189X(84)80011-0
+     ================= ============================== ===========================
+     Tarboton          Alias for Dinf.                `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Dinf              Alias for Tarboton.            `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Quinn             Holmgren with exponent=1.      `Quinn et al. (1991)           doi: 10.1002/hyp.3360050106        <http://dx.doi.org/10.1002/hyp.3360050106>`_
+     Holmgren(E)       Generalization of Quinn.       `Holmgren (1994)               doi: 10.1002/hyp.3360080405        <http://dx.doi.org/10.1002/hyp.3360080405>`_
+     Freeman(E)        TODO                           `Freeman (1991)                doi: 10.1016/0098-3004(91)90048-I  <http://dx.doi.org/10.1016/0098-3004(91)90048-I>`_
+     FairfieldLeymarie Alias for Rho8.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     Rho8              Alias for FairfieldLeymarie.   `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     OCallaghan        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     D8                Alias for OCallaghan.          `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     ================= ============================== ===========================
 
-     Methods marked (E) require the exponent argument.
+     **Methods marked (E) require the exponent argument.**
 
      Returns:
-     Flow accumulation according to the desired method.
+         Flow accumulation according to the desired method.
   """
   facc_methods = {
     "Tarboton":          _richdem.FA_Tarboton,
@@ -365,23 +373,26 @@ def TerrainAttribute(
 ):
   """Calculates terrain attributes. A variety of methods are available.
 
-     Parameters:
-     dem      -- An elevation model
-     attrib   -- Terrain attribute to calculate. (See below.)
-     zscale   -- How much to scale the z-axis by prior to calculation
+     Args:
+         dem    (rdarray):  An elevation model
+         attrib (str):      Terrain attribute to calculate. (See below.)
+         zscale (float):    How much to scale the z-axis by prior to calculation
 
-     Method:
-     slope_riserun
-     slope_percentage
-     slope_degrees
-     slope_radians
-     aspect
-     curvature
-     planform_curvature
-     profile_curvature
+     ======================= =========
+     Method                  Reference
+     ======================= =========
+     slope_riserun           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
+     slope_percentage        `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
+     slope_degrees           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
+     slope_radians           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
+     aspect                  `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
+     curvature               `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
+     planform_curvature      `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
+     profile_curvature       `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
+     ======================= =========
 
      Returns:
-     A raster of the indicated terrain attributes.
+         A raster of the indicated terrain attributes.
   """
   terrain_attribs = {
     #"spi":                _richdem.TA_SPI,
