@@ -6,18 +6,26 @@ RichDEM --- High-Performance Terrain Analysis
     Contents:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    intro
    philosophy
    parsable_output
    citations
+   using_it
 
 .. toctree::
-   :caption: Using It
+   :caption: Operations
    :maxdepth: 2
 
-   using_it
+   depression_filling
+   flow_accumulation
+
+.. toctree::
+   :caption: api
+   :maxdepth: 2
+
+   api
 
 .. toctree::
    :caption: Testing and Correctness

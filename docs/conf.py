@@ -31,7 +31,7 @@ import subprocess
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe']
+extensions = ['sphinx.ext.autodoc', 'breathe', 'sphinx.ext.coverage']
 
 breathe_projects            = {'richdem': '.build/doxygenxml/'}
 breathe_default_project     = 'richdem'

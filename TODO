@@ -1,2 +1,17 @@
 *Implement Peckham flow metric
 *Add LICENSE notices to the top of source files
+
+
+
+Documentation stuff
+===================
+
+More systematic way of including C++
+
+https://breathe.readthedocs.io/en/latest/quickstart.html
+.. doxygenindex::
+.. doxygenfunction::
+.. doxygenstruct::
+.. doxygenenum::
+.. doxygentypedef::
+.. doxygenclass::
