@@ -7,9 +7,13 @@ As A Python Package
 
 Get the package with:
 
+.. code-block:: bash
+
     pip3 install richdem
 
 And use:
+
+.. code-block:: python
 
     import richdem
 
@@ -26,6 +30,8 @@ As A Command-line Tool
 
 To get the command-line tools, install the Python package with:
 
+.. code-block:: bash
+
     pip3 install richdem
 
 The command-line tools are all named `rd_*`, so typing `rd_` on your command-
@@ -39,6 +45,8 @@ As A Library
 
 Upon compilation, point your library search path to the `include` directory.
 Include various files using, e.g.
+
+.. code-block:: c++
 
     #include "richdem/common/Array2D.hpp"
 

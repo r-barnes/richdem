@@ -16,6 +16,6 @@ Please cite RichDEM (see below).
 Documentation
 -------------
 
-Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
+Documentation is available at `richdem.readthedocs.io <https://richdem.readthedocs.io/>`_.
 The documentation is auto-generated from the many `README.md` files throughout
 the codebase and the extensive comments in the source code.
