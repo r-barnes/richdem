@@ -125,7 +125,6 @@ void d8_flow_flats(
   distance away from terrain of higher elevation. The maximal distance
   encountered is noted.
 
-  @param[in]  &elevations   A 2D array of cell elevations
   @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
   @param[out] &flat_mask    A 2D array for storing flat_mask
   @param[in]  &edges        The high-edge FIFO queue from find_flat_edges()
@@ -211,7 +210,6 @@ static void BuildAwayGradient(
   the gradient from BuildAwayGradient() to give the final increments of
   each cell in forming the flat mask.
 
-  @param[in]  &elevations   A 2D array of cell elevations
   @param[in]  &flowdirs     A 2D array indicating each cell's flow direction
   @param[in,out] &flat_mask A 2D array for storing flat_mask
   @param[in]  &edges        The low-edge FIFO queue from find_flat_edges()
@@ -308,8 +306,9 @@ static void BuildTowardsCombinedGradient(
   Performs a flood fill operation which labels all the cells of a flat
   with a common label. Each flat will have a unique label
 
-  @param[in]  x           x-coordinate of flood fill seed
-  @param[in]  y           y-coordinate of flood-fill seed
+  @param[in]  x0
+            x-coordinate of flood fill seed
+  @param[in]  y0          y-coordinate of flood-fill seed
   @param[in]  label       Label to apply to the cells
   @param[out] &labels     2D array which will contain the labels
   @param[in]  &elevations 2D array of cell elevations

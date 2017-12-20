@@ -150,14 +150,23 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
   @brief  Calculates which cells ultimately D8-flow through a given cell
   @author Richard Barnes (rbarnes@umn.edu)
 
-  Given the coordinates x, y of a cell, this returns a grid indicating
-  which cells ultimately flow into the indicated cell.
-  1=Upslope cell
-  2=Member of initializing line
-  All other cells have a noData() value
+  Given the coordinates x0,y0 of a cell and x1,y1 of another, possibly distinct,
+  cell this draws a line between the two using the Bresenham Line-Drawing
+  Algorithm and returns a grid showing all the cells whose flow ultimately
+  passes through the indicated cells.
 
-  @param[in]  &flowdirs  A D8 flowdir grid from d8_flow_directions()
-  @param[out] &area      Returns the up-slope area of each cell
+  The grid has the values:
+
+  * 1=Upslope cell
+  * 2=Member of initializing line
+  * All other cells have a noData() value
+
+  @param[in]  x0              x-coordinate of start of line
+  @param[in]  y0              y-coordinate of start of line
+  @param[in]  x1              x-coordinate of end of line
+  @param[in]  y1              y-coordinate of end of line
+  @param[in]  &flowdirs       A D8 flowdir grid from d8_flow_directions()
+  @param[out] &upslope_cells  A grid of 1/2/NoData, as in the description
 */
 template<class T, class U>
 void d8_upslope_cells(
@@ -240,12 +249,9 @@ void d8_upslope_cells(
 
   \f$(\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001)\cdot(\frac{1}{100}\textit{PercentSlope}+0.001)\f$
 
-  @param[in]   &flow_accumulation
-    A flow accumulation grid (dinf_upslope_area())
-  @param[in]   &percent_slope      
-    A percent_slope grid (d8_slope())
-  @param[out]  &result            
-    Altered to return the calculated SPI
+  @param[in]   &flow_accumulation   A flow accumulation grid (dinf_upslope_area())
+  @param[in]   &riserun_slope       A percent_slope grid (d8_slope())
+  @param[out]  &result              Altered to return the calculated SPI
 
   @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
@@ -296,12 +302,9 @@ void TA_SPI(
 
   \f$\log{\frac{\textit{CellSize}\cdot\textit{FlowAccumulation}+0.001}{\frac{1}{100}\textit{PercentSlope}+0.001}}\f$
 
-  @param[in]  &flow_accumulation 
-    A flow accumulation grid (dinf_upslope_area())
-  @param[in]  &percent_slope     
-    A percent_slope grid (d8_slope())
-  @param[out] &result             
-    Altered to return the calculated SPI
+  @param[in]  &flow_accumulation    A flow accumulation grid (dinf_upslope_area())
+  @param[in]  &riserun_slope        A percent_slope grid (d8_slope())
+  @param[out] &result               Altered to return the calculated SPI
 
   @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
 
@@ -595,6 +598,7 @@ static inline void TerrainProcessor(F func, const Array2D<T> &elevations, const 
 
   @param[in]  &elevations   An elevation grid
   @param[out] &slopes       A slope grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_slope_riserun(
@@ -616,6 +620,7 @@ void TA_slope_riserun(
 
   @param[in]  &elevations   An elevation grid
   @param[out] &slopes       A slope grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_slope_percentage(
@@ -637,6 +642,7 @@ void TA_slope_percentage(
 
   @param[in]  &elevations   An elevation grid
   @param[out] &slopes       A slope grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_slope_degrees(
@@ -658,6 +664,7 @@ void TA_slope_degrees(
 
   @param[in]  &elevations   An elevation grid
   @param[out] &slopes       A slope grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_slope_radians(
@@ -679,6 +686,7 @@ void TA_slope_radians(
 
   @param[in]  &elevations   An elevation grid
   @param[out] &aspects      An aspect grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_aspect(
@@ -700,6 +708,7 @@ void TA_aspect(
 
   @param[in]  &elevations   An elevation grid
   @param[out] &curvatures   A curvature grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_curvature(
@@ -722,6 +731,7 @@ void TA_curvature(
 
   @param[in]  &elevations          An elevation grid
   @param[out] &planform_curvatures A planform curvature grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_planform_curvature(
@@ -743,6 +753,7 @@ void TA_planform_curvature(
 
   @param[in]  &elevations         An elevation grid
   @param[out] &profile_curvatures A profile curvature grid
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 */
 template<class T>
 void TA_profile_curvature(

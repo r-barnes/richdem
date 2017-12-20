@@ -111,7 +111,7 @@ void ProcessPit_onepass(
     reduces the number of items which must pass through the priority queue, thus
     achieving greater efficiencies.
 
-  @param[in,out]  &elevations   A grid of cell elevations
+  @param[in,out]  &dem   A grid of cell elevations
 
   @pre
     1. **elevations** contains the elevations of every cell or a value _NoData_

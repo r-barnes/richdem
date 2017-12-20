@@ -29,7 +29,8 @@
     described in detail in Jenness (2004)
     <doi:10.2193/0091-7648(2004)032[0829:CLSAFD]2.0.CO;2>
 
-  @param[in]  &elevations A grid of elevations
+  @param[in]  &elevations   A grid of elevations
+  @param[in]   zscale       DEM is scaled by this factor prior to calculation
 
   @return The surface area of the digital elevation model
 */

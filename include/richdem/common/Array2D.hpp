@@ -83,7 +83,7 @@ std::map<std::string, std::string> ProcessMetadata(char **metadata){
 template<class T>
 class Array2D {
  public:
-  std::string filename;             ///< TODO
+  std::string filename;             ///< File, if any, from which the data was loaded
   std::string basename;             ///< Filename without path or extension
   std::vector<double> geotransform; ///< Geotransform of the raster
   std::string projection;           ///< Projection of the raster
@@ -347,8 +347,6 @@ class Array2D {
   /**
     @brief Caches the raster data and all its properties to disk. Data is then
            purged from RAM.
-
-    @param[in] filename File to save the data to
 
     @post  Calls to loadData() after this will result in data being loaded from
            the cache.
@@ -637,7 +635,7 @@ class Array2D {
     return 0<=x && x<view_width && 0<=y && y<view_height;
   }
 
-  /**
+  /*
     @brief Test whether a cell lies within the boundaries of the raster.
 
     Obviously this bears some difference from `inGrid(x,y)`.
@@ -1055,6 +1053,8 @@ class Array2D {
     their algorithm is orientating data correctly.
 
     @param[in]  size   Output stamp will be size x size
+    @param[in]  msg    Message to print prior to the stamp
+
   */
   void printStamp(int size, std::string msg="") const {
     #ifdef SHOW_STAMPS
@@ -1086,10 +1086,10 @@ class Array2D {
     @brief Prints a square of cells centered at x,y. Useful for debugging.
 
     @param[in]  radius   Output stamp will be 2*radius x 2*radius
-    @param[in]       x   X-coordinate of block center
-    @param[in]       y   Y-coordinate of block center
+    @param[in]      x0   X-coordinate of block center
+    @param[in]      y0   Y-coordinate of block center
     @param[in]   color   Print the (x,y) cell in colour?
-    @parma[in]     msg   Optional message to print above the block
+    @param[in]     msg   Optional message to print above the block
   */
   void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
     if(msg.size()!=0)
@@ -1115,7 +1115,7 @@ class Array2D {
   /**
     @brief Prints the entire array
 
-    @parma[in]     msg   Optional message to print above the block
+    @param[in]     msg   Optional message to print above the block
   */
   void printAll(const std::string msg="") const {
     if(!msg.empty())
