@@ -22,18 +22,28 @@ def _RichDEMVersion():
     compdate = _richdem.rdCompileTime()
   )
 
-def _AddAnalysis(arr, analysis):
+def _AddAnalysis(rda, analysis):
+  if type(rda) is not rdarray:
+    raise Exception("An rdarray is required!")
+
   metastr  = "\n{nowdate} | {verstr} | {analysis}".format(
     nowdate  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
     verstr   = _RichDEMVersion(),
     analysis = analysis
   )
 
-  if not "PROCESSING_HISTORY" in arr.metadata:
-    arr.metadata["PROCESSING_HISTORY"] = ""
-  arr.metadata["PROCESSING_HISTORY"] += metastr
+  if rda.metadata is None:
+    rda.metadata = dict()
+  if not "PROCESSING_HISTORY" in rda.metadata:
+    rda.metadata["PROCESSING_HISTORY"] = ""
+  rda.metadata["PROCESSING_HISTORY"] += metastr
 
 def rdShow(rda, ignore_colours=[], show=True):
+  if type(rda) is np.ndarray:
+    rda = rdarray(rda)
+  elif type(rda) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
   try:
     import matplotlib.pyplot as plt
     import matplotlib
@@ -53,23 +63,29 @@ def rdShow(rda, ignore_colours=[], show=True):
 
 
 class rdarray(np.ndarray):
-  def __new__(cls, array, meta_obj=None, dtype=None, order=None, **kwargs):
+  def __new__(cls, array, meta_obj=None, no_data=None, dtype=None, order=None, **kwargs):
     obj = np.asarray(array, dtype=dtype, order=order).view(cls) 
     
     if meta_obj is not None:
-      obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     None))
-      obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None))
-      obj.projection   = copy.deepcopy(getattr(meta_obj, 'projection',   None))
-      obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None))
+      obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     dict()))
+      obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None  ))
+      obj.projection   = copy.deepcopy(getattr(meta_obj, 'projection',   ""    ))
+      obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None  ))
+
+    if no_data is not None:
+      obj.no_data = -9999
+
+    if no_data is None:
+      raise Exception("A no_data value must be specified!")
 
     return obj
 
   def __array_finalize__(self, obj):
     if obj is None: return
-    self.metadata     = copy.deepcopy(getattr(obj, 'metadata',     None))
-    self.no_data      = copy.deepcopy(getattr(obj, 'no_data',      None))
-    self.projection   = copy.deepcopy(getattr(obj, 'projection',   None))
-    self.geotransform = copy.deepcopy(getattr(obj, 'geotransform', None))
+    self.metadata     = copy.deepcopy(getattr(obj, 'metadata',     dict()))
+    self.no_data      = copy.deepcopy(getattr(obj, 'no_data',      None  ))
+    self.projection   = copy.deepcopy(getattr(obj, 'projection',   ""    ))
+    self.geotransform = copy.deepcopy(getattr(obj, 'geotransform', None  ))
 
   def wrap(self):
     richdem_arrs = {
@@ -87,13 +103,21 @@ class rdarray(np.ndarray):
     dtype = str(self.dtype)
     if not dtype in richdem_arrs:
       raise Exception("No equivalent RichDEM datatype.")
+    
     rda = richdem_arrs[dtype](self)
-    rda.setNoData(self.no_data)
+
+    if self.no_data is None:
+      print("Warning! no_data was None. Setting it to -9999!")
+      rda.setNoData(-9999)
+    else:
+      rda.setNoData(self.no_data)
+
     if self.geotransform:
       rda.geotransform = np.array(self.geotransform, dtype='float64')
     else:
       print("Warning! No geotransform defined. Choosing a standard one!")
       rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
+
     return rda 
 
   def copyFromWrapped(self, wrapped):
@@ -126,7 +150,13 @@ def LoadGDAL(filename, no_data=None):
   #Read in data
   src_ds  = gdal.Open(filename)
   srcband = src_ds.GetRasterBand(1)
-  srcdata = rdarray(srcband.ReadAsArray())
+
+  if no_data is None:
+    no_data = srcband.GetNoDataValue()
+    if no_data is None:
+      raise Exception("The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry.")
+
+  srcdata = rdarray(srcband.ReadAsArray(), no_data=no_data)
 
   # raster_srs = osr.SpatialReference()
   # raster_srs.ImportFromWkt(raster.GetProjectionRef())
@@ -136,15 +166,6 @@ def LoadGDAL(filename, no_data=None):
 
   srcdata.projection   = src_ds.GetProjectionRef()
   srcdata.geotransform = src_ds.GetGeoTransform()
-
-  if no_data is None:
-    srcband_no_data = srcband.GetNoDataValue()
-    if srcband_no_data is None:
-      raise Exception("The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry.")
-    else:
-      srcdata.no_data = srcband.GetNoDataValue()
-  else:
-    srcdata.no_data = no_data
 
   srcdata.metadata = dict()
   for k,v in src_ds.GetMetadata().items():
@@ -170,11 +191,12 @@ def SaveGDAL(filename, dat):
 
      Returns:
          No Return
-  """    
+  """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
   if not GDAL_AVAILABLE:
     raise Exception("richdem.SaveGDAL() requires GDAL.")
-  if not NUMPY_AVAILABLE:
-    raise Exception("richdem.SaveGDAL() requires NumPy.")
 
   driver    = gdal.GetDriverByName('GTiff')
   data_type = gdal.GDT_Float32 #TODO
@@ -204,6 +226,8 @@ def FillDepressions(
      Returns:
          DEM without depressions.
   """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
   if not in_place:
     print("Copying dem")
@@ -265,6 +289,8 @@ def BreachDepressions(
          DEM with depressions breached, filled, or left unaltered, per the above
          options.
   """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
   if not in_place:
     dem = dem.copy()
@@ -331,6 +357,9 @@ def FlowAccumulation(
      Returns:
          Flow accumulation according to the desired method.
   """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
   facc_methods = {
     "Tarboton":          _richdem.FA_Tarboton,
     "Dinf":              _richdem.FA_Tarboton,
@@ -393,6 +422,9 @@ def TerrainAttribute(
      Returns:
          A raster of the indicated terrain attributes.
   """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
   terrain_attribs = {
     #"spi":                _richdem.TA_SPI,
     #"cti":                _richdem.TA_CTI,
