@@ -1,17 +1,12 @@
 import pkg_resources
 import datetime
 import copy
+import numpy as np
 
 try:
   import _richdem
 except ImportError:
   print('COULD NOT LOAD RichDEM ENGINE! NOTHING WILL WORK!')
-
-try:
-  import numpy as np
-  NUMPY_AVAILABLE = True
-except:
-  NUMPY_AVAILABLE = False
 
 try:
   from osgeo import gdal

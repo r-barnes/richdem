@@ -1,6 +1,5 @@
-
-Using It
-========
+Ways To Use It
+==============
 
 As A Python Package
 -------------------
