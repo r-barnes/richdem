@@ -38,7 +38,7 @@ def _AddAnalysis(rda, analysis):
     rda.metadata["PROCESSING_HISTORY"] = ""
   rda.metadata["PROCESSING_HISTORY"] += metastr
 
-def rdShow(rda, ignore_colours=[], show=True):
+def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None, vmax=None):
   if type(rda) is np.ndarray:
     rda = rdarray(rda)
   elif type(rda) is not rdarray:
@@ -53,13 +53,20 @@ def rdShow(rda, ignore_colours=[], show=True):
   disparr[disparr==rda.no_data] = np.nan
   for c in ignore_colours:
     disparr[disparr==c] = np.nan
-  vmin, vmax = np.nanpercentile(disparr, [2, 98])
+  vmin_calc, vmax_calc = np.nanpercentile(disparr, [2, 98])
+  if vmin is None:
+    vmin = vmin_calc
+  if vmax is None:
+    vmax = vmax_calc
   #current_cmap = matplotlib.cm.get_cmap()
   #current_cmap.set_bad(color='red')
   plt.imshow(disparr, vmin=vmin, vmax=vmax)
-  plt.set_cmap('gray')
+  plt.set_cmap(cmap)
+  if not axes:
+    plt.axis('off')
   if show:
     plt.show()
+  return {"vmin": vmin, "vmax": vmax}
 
 
 class rdarray(np.ndarray):
@@ -177,7 +184,7 @@ def LoadGDAL(filename, no_data=None):
 
 
 
-def SaveGDAL(filename, dat):
+def SaveGDAL(filename, rda):
   """Save a GDAL file.
 
      Saves a RichDEM array to a data file in GeoTIFF format.
@@ -187,12 +194,12 @@ def SaveGDAL(filename, dat):
 
      Args:
          filename (str):     Name of the raster file to be created
-         dat      (rdarray): Data to save.
+         rda      (rdarray): Data to save.
 
      Returns:
          No Return
   """
-  if type(dem) is not rdarray:
+  if type(rda) is not rdarray:
     raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
   if not GDAL_AVAILABLE:
@@ -200,13 +207,13 @@ def SaveGDAL(filename, dat):
 
   driver    = gdal.GetDriverByName('GTiff')
   data_type = gdal.GDT_Float32 #TODO
-  data_set  = driver.Create(filename, xsize=dat.shape[1], ysize=dat.shape[0], bands=1, eType=data_type)
-  data_set.SetGeoTransform(dat.geotransform)
-  data_set.SetProjection(dat.projection)
+  data_set  = driver.Create(filename, xsize=rda.shape[1], ysize=rda.shape[0], bands=1, eType=data_type)
+  data_set.SetGeoTransform(rda.geotransform)
+  data_set.SetProjection(rda.projection)
   band = data_set.GetRasterBand(1)
-  band.SetNoDataValue(dat.no_data)
-  band.WriteArray(np.array(dat))
-  for k,v in dat.metadata.items():
+  band.SetNoDataValue(rda.no_data)
+  band.WriteArray(np.array(rda))
+  for k,v in rda.metadata.items():
     data_set.SetMetadataItem(str(k),str(v))
 
 
@@ -375,7 +382,7 @@ def FlowAccumulation(
     "Holmgren":          _richdem.FA_Holmgren
   }
 
-  accum  = rdarray(np.zeros(shape=dem.shape, dtype='float64'), meta_obj=dem)
+  accum  = rdarray(np.zeros(shape=dem.shape, dtype='float64'), meta_obj=dem, no_data=-1)
   accumw = accum.wrap()
 
   _AddAnalysis(accum, "FlowAccumulation(dem, method={0})".format(method))
@@ -441,7 +448,7 @@ def TerrainAttribute(
   if not attrib in terrain_attribs:
     raise Exception("Invalid TerrainAttributes attribute. Valid attributes are: " + ', '.join(terrain_attribs.keys()))
 
-  result  = rdarray(np.zeros(shape=dem.shape, dtype='float32'), meta_obj=dem)
+  result  = rdarray(np.zeros(shape=dem.shape, dtype='float32'), meta_obj=dem, no_data=-9999)
   resultw = result.wrap()
 
   _AddAnalysis(result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib,zscale))

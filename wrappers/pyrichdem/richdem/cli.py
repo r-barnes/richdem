@@ -114,3 +114,40 @@ profile_curvature
   rd._AddAnalysis(dem, ' '.join(sys.argv))
   tattrib = rd.TerrainAttribute(dem, attrib=args.attrib, zscale=args.zscale)
   rd.SaveGDAL(args.outname, tattrib)
+
+
+
+def RdInfo():
+  parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Dataset Information
+
+A variety of methods are available.
+
+Parameters:
+rda      -- A dataset
+""")
+  parser.add_argument('rda',              type=str,                help='Elevation model')
+  args = parser.parse_args()
+
+  rda = rd.LoadGDAL(args.rda)
+
+  print('File      = {0}    '.format(args.rda                 ))
+  print('Data type = {0}    '.format(rda.dtype                ))
+  print('Width     = {0}    '.format(rda.shape[1]             ))
+  print('Height    = {0}    '.format(rda.shape[0]             ))
+  print('Shape     = {0}x{1}'.format(rda.shape[1],rda.shape[0]))
+  print('Metadata:')
+
+  for k,v in rda.metadata.items():
+    if k=='PROCESSING_HISTORY':
+      continue
+    print('\t{0} = {1}'.format(k,v))
+
+  print('Processing History:')
+  print('-------------------')
+  if 'PROCESSING_HISTORY' in rda.metadata:
+    for ph in rda.metadata['PROCESSING_HISTORY'].split('\n'):
+      ph = ph.strip()
+      if len(ph)==0:
+        continue
+      print(ph)
+  print('-------------------')

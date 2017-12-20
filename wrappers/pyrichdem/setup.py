@@ -57,7 +57,8 @@ setuptools.setup(
     'rd_depression_filling=richdem.cli:DepressionFilling',
     'rd_breach_depressions=richdem.cli:BreachDepressions',
     'rd_flow_accumulation=richdem.cli:FlowAccumulation',
-    'rd_terrain_attribute=richdem.cli:TerrainAttribute'
+    'rd_terrain_attribute=richdem.cli:TerrainAttribute',
+    'rd_info=richdem.cli:RdInfo'
   ]},
   ext_modules       = ext_modules,
   keywords          = 'GIS terrain hydrology geomorphology raster',
