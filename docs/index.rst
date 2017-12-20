@@ -23,9 +23,10 @@ RichDEM --- High-Performance Terrain Analysis
 
 .. toctree::
    :caption: api
-   :maxdepth: 2
+   :maxdepth: 1
 
-   api
+   cpp_api
+   python_api
 
 .. toctree::
    :caption: Testing and Correctness
