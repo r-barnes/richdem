@@ -1,1 +1,2 @@
 breathe == 4.5.0
+sphinxcontrib-napoleon >= 0.6
