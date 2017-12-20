@@ -12,6 +12,7 @@
 #include "depressions/Lindsay2016.hpp"
 #include "depressions/priority_flood.hpp"
 #include "depressions/Zhou2016pf.hpp"
+#include "depressions/depressions.hpp"
 
 #include "flats/flat_resolution_dinf.hpp"
 #include "flats/flat_resolution.hpp"
