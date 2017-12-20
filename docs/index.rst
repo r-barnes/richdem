@@ -22,7 +22,7 @@ RichDEM --- High-Performance Terrain Analysis
    flow_accumulation
 
 .. toctree::
-   :caption: api
+   :caption: API
    :maxdepth: 1
 
    cpp_api

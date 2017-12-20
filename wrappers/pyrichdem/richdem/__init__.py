@@ -1,7 +1,11 @@
 import pkg_resources
-import _richdem
 import datetime
 import copy
+
+try:
+  import _richdem
+except ImportError:
+  print('COULD NOT LOAD RichDEM ENGINE! NOTHING WILL WORK!')
 
 try:
   import numpy as np
