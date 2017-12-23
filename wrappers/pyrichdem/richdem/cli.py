@@ -4,6 +4,7 @@ import richdem as rd
 import sys
 import argparse
 from argparse import RawTextHelpFormatter
+import numpy as np
 
 def DepressionFilling():
   parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description='RichDEM Depression Filling')
@@ -120,8 +121,6 @@ profile_curvature
 def RdInfo():
   parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Dataset Information
 
-A variety of methods are available.
-
 Parameters:
 rda      -- A dataset
 """)
@@ -151,3 +150,40 @@ rda      -- A dataset
         continue
       print(ph)
   print('-------------------')
+
+
+
+def RdCompare():
+  parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Dataset Comparison
+
+Parameters:
+rda      -- A dataset
+""")
+  parser.add_argument('rda1',              type=str,            help='Elevation model')
+  parser.add_argument('rda2',              type=str,            help='Elevation model')
+  args = parser.parse_args()
+
+  ds1 = rd.LoadGDAL(args.rda1)
+  ds2 = rd.LoadGDAL(args.rda2)
+
+  if ds1.no_data!=ds2.no_data:
+    print("NoData differs")
+
+  if ds1.geotransform!=ds2.geotransform:
+    print("Geotransform differs")
+
+  if ds1.projection!=ds2.projection:
+    print("Projection differs")    
+
+  if np.any(np.isnan(ds1)):
+    print("NaN in '{0}'".format(filename))
+
+  if np.any(np.isnan(ds2)):
+    print("NaN in '{0}'".format(filename))    
+
+  diff = np.array(ds1-ds2)
+
+  print("Max difference: {0:10.6}".format(np.nanmax(diff)))
+  print("Min difference: {0:10.6}".format(np.nanmin(diff)))
+  print("Avg difference: {0:10.6}".format(np.mean  (diff)))
+  print("RMS difference: {0:10.6}".format(np.sqrt(np.mean(np.square(diff)))))
