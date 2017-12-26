@@ -2,9 +2,11 @@ import setuptools
 import glob
 import datetime
 import subprocess
+import re
 
-RICHDEM_COMPILE_TIME = "Unknown"
-RICHDEM_GIT_HASH     = "Unknown"
+RICHDEM_COMPILE_TIME = None
+RICHDEM_GIT_HASH     = None
+
 try:
   fin = open('lib/richdem/version.txt','r').readlines()
   fin = [x.strip().split("=") for x in fin]
@@ -14,7 +16,25 @@ try:
     elif x[0]=='date':
       RICHDEM_COMPILE_TIME = '"' + x[1] + '"'
 except:
+  print("Warning! Could not find RichDEM version... falling back on git.")
   pass
+
+if RICHDEM_GIT_HASH is None:
+  try:
+    shash = subprocess.Popen(["git log --pretty=format:'%h' -n 1"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
+    sdate = subprocess.Popen(["git log -1 --pretty='%ci'"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
+    if re.match(r'^[0-9a-z]+$', shash) and re.match(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.*$', sdate):
+      RICHDEM_COMPILE_TIME = '"' + sdate + '"'
+      RICHDEM_GIT_HASH     = '"' + shash + '"'
+  except:
+    print("Warning! Could not find RichDEM version. Software will still work, but reproducibility will be compromised.")
+    pass
+
+if RICHDEM_GIT_HASH is None:
+  RICHDEM_COMPILE_TIME = "\"Unknown\""
+  RICHDEM_GIT_HASH     = "\"Unknown\""
+
+print("Using RichDEM hash={0}, time={1}".format(RICHDEM_GIT_HASH, RICHDEM_COMPILE_TIME))
 
 ext_modules = [
   setuptools.Extension(
@@ -44,7 +64,7 @@ It can flood or breach depressions, as well as calculate flow accumulation, slop
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.0.4',
+  version           = '0.0.5',
   description       = 'High-Performance Terrain Analysis',
   long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
