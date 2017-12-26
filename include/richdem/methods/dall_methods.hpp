@@ -199,7 +199,7 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
   //to 1.
   constexpr double d1   = 1;
   constexpr double d2   = 1;
-  constexpr float  dang = std::atan2(d2,d1);
+  const     float  dang = std::atan2(d2,d1);
 
   const auto nwrap = [](int8_t n){ return (n==9)?1:n; };
 

@@ -751,7 +751,7 @@ class Array2D {
 
     if(new_width==view_width && new_height==view_height)
       return;    
-    if(!owned)
+    if(!owned())
       throw std::runtime_error("RichDEM can only expand memory it owns!");
 
     if(new_width<view_width)
