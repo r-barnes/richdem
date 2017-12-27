@@ -62,6 +62,7 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
   #current_cmap.set_bad(color='red')
   plt.imshow(disparr, vmin=vmin, vmax=vmax)
   plt.set_cmap(cmap)
+  plt.colorbar()
   if not axes:
     plt.axis('off')
   if show:
