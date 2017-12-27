@@ -122,7 +122,7 @@ class rdarray(np.ndarray):
     if self.geotransform:
       rda.geotransform = np.array(self.geotransform, dtype='float64')
     else:
-      print("Warning! No geotransform defined. Choosing a standard one!")
+      print("Warning! No geotransform defined. Choosing a standard one! (Top left cell's top let corner at <0,0>; cells are 1x1.)")
       rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
 
     return rda 
