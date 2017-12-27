@@ -1,6 +1,73 @@
 Concepts
 ===================================
 
+Gridded Data
+-----------------------------------
+
+RichDEM assumes that data is provided in the form of a rectangular grid of cells
+with some *width* and *height*. Furthermore, the data comprising this grid must
+be laid out in a flat array such that the value of any cell `(x,y)` can be
+accessed via the equation `y*width+x`. This is known as **row-major** ordering.
+
+Data can be passed to RichDEM in one of three ways.
+
+  1. Data can be loaded via GDAL. GDAL handles the heavy lifting of ensuring
+     that data is loaded in a form which complies with the above assumptions.
+
+  2. Data can be manually added to a `richdem::Array2D<T>` object (C++) or a 
+     `richdem.rdarray` object (Python).
+
+  3. A `richdem::Array2D<T>` (C++) or `richdem.rdarray` (Python) object can be
+     used to wrap existing row-major memory. This capability allows RichDEM to
+     easily integrate with existing code.
+
+
+
+Metadata
+-----------------------------------
+
+A RichDEM array is accompanied by several kinds of metadata. These can be loaded
+by GDAL or specified manually.
+
+ - A **NoData value**, as discussed below.
+ - A **projection**. This is, typically, a PROJ4 or WKT string that identifies 
+   the projection the data maps to. The choice of projection does not affect
+   RichDEM's operations.
+ - A **geotransform**. This is a six element array which determines where in a
+   projection a RichDEM array's data is located, as well as the cell sizes.
+   Further details are below. This setting does affect how RichDEM processes
+   data.
+ - A **metadata** entry which contains arbitrary metadata strings such as 
+   `PROCESSING_HISTORY` (see below).
+
+
+
+Geotransform
+-----------------------------------
+
+A **geotransform** is a six element array which determines where in a
+projection a RichDEM array's data is located, as well as the cell sizes.
+
+Typically, the geotransform is an affine transform consisting of six
+coefficients which map pixel/line coordinates into a georeferenced space using
+the following relationship:
+
+    Xgeo = GT(0) + Xpixel*GT(1) + Yline*GT(2)
+    Ygeo = GT(3) + Xpixel*GT(4) + Yline*GT(5)
+
+In case of north up images, the `GT(2)` and `GT(4)` coefficients are zero, and
+the `GT(1)` is pixel width, and `GT(5)` is pixel height. The `(GT(0),GT(3))`
+position is the top left corner of the top left pixel of the raster.
+
+Note that the pixel/line coordinates in the above are from `(0.0,0.0)` at the
+top left corner of the top left pixel to (width_in_pixels,height_in_pixels) at
+the bottom right corner of the bottom right pixel. The pixel/line location of
+the center of the top left pixel would therefore be `(0.5,0.5)`
+
+(Text drawn from GDAL documentation.)
+
+
+
 NoData values
 -----------------------------------
 
