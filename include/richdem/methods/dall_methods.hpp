@@ -189,7 +189,7 @@ namespace richdem {
 
 
 template<class elev_t>
-std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
+std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
@@ -308,10 +308,15 @@ std::vector<float> FP_Tarboton(const Array2D<elev_t> &elevations){
   return props;
 }
 
+template<class E>
+std::vector<float> FM_Dinfinity(const Array2D<E> &elevations){
+  return FM_Tarboton(elevations);
+}
+
 
 
 template<class E>
-std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam){
+std::vector<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam){
   RDLOG_ALG_NAME<<"Holmgren (1994) Flow Accumulation (aka MFD, MD8)";
   RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.";
   RDLOG_CONFIG<<"x = "<<xparam;
@@ -370,16 +375,16 @@ std::vector<float> FP_Holmgren(const Array2D<E> &elevations, const double xparam
 }
 
 template<class E>
-std::vector<float> FP_Quinn(const Array2D<E> &elevations){
+std::vector<float> FM_Quinn(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Quinn (1991) Flow Accumulation (aka MFD, MD8)";
   RDLOG_CITATION<<"Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79."; 
-  return FP_Holmgren(elevations, 1.0);
+  return FM_Holmgren(elevations, 1.0);
 }
 
 
 
 template<class E>
-std::vector<float> FP_Freeman(
+std::vector<float> FM_Freeman(
   const Array2D<E> &elevations,
   const double xparam
 ){
@@ -437,7 +442,7 @@ std::vector<float> FP_Freeman(
 }
 
 template<class E>
-std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
+std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
@@ -493,16 +498,16 @@ std::vector<float> FP_FairfieldLeymarie(const Array2D<E> &elevations){
 }
 
 template<class E>
-std::vector<float> FP_Rho8(const Array2D<E> &elevations){
-  //Algorithm headers are taken care of in FP_FairfieldLeymarie()
-  return FP_FairfieldLeymarie(elevations);
+std::vector<float> FM_Rho8(const Array2D<E> &elevations){
+  //Algorithm headers are taken care of in FM_FairfieldLeymarie()
+  return FM_FairfieldLeymarie(elevations);
 }
 
 
 
 //TODO: Add Marks et al (1984)
 template<class E>
-static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
+static std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
@@ -552,8 +557,8 @@ static std::vector<float> FP_OCallaghan(const Array2D<E> &elevations){
 
 
 template<class E>
-std::vector<float> FP_D8(const Array2D<E> &elevations){
-  return FP_OCallaghan(elevations);
+std::vector<float> FM_D8(const Array2D<E> &elevations){
+  return FM_OCallaghan(elevations);
 }
 
 
@@ -629,14 +634,14 @@ static void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &a
 
 
 
-template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Tarboton<elev_t>         , elevations, accum); }
-template<class elev_t, class accum_t> void FA_Holmgren          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Holmgren<elev_t>         , elevations, accum, xparam); }
-template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Quinn<elev_t>            , elevations, accum); }
-template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FP_Freeman<elev_t>          , elevations, accum, xparam); }
-template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_FairfieldLeymarie<elev_t>, elevations, accum); }
-template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_Rho8<elev_t>             , elevations, accum); }
-template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
-template<class elev_t, class accum_t> void FA_OCallaghan        (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FP_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Tarboton          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Tarboton<elev_t>         , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Holmgren          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FM_Holmgren<elev_t>         , elevations, accum, xparam); }
+template<class elev_t, class accum_t> void FA_Quinn             (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Quinn<elev_t>            , elevations, accum); }
+template<class elev_t, class accum_t> void FA_Freeman           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FM_Freeman<elev_t>          , elevations, accum, xparam); }
+template<class elev_t, class accum_t> void FA_FairfieldLeymarie (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_FairfieldLeymarie<elev_t>, elevations, accum); }
+template<class elev_t, class accum_t> void FA_Rho8              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Rho8<elev_t>             , elevations, accum); }
+template<class elev_t, class accum_t> void FA_D8                (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_D8<elev_t>               , elevations, accum); }
+template<class elev_t, class accum_t> void FA_OCallaghan        (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_D8<elev_t>               , elevations, accum); }
 
 
 
@@ -927,7 +932,7 @@ static void DistanceDispersionEstimate(
 
 
 // template<class E, class A>
-// void FP_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x){
+// void FM_SeibertMcGlynn(const Array2D<E> &elevations, Array2D<A> &accum, double x){
 //   RDLOG_ALG_NAME<<"Seibert and McGlynn (2007) Flow Accumulation (aka MD-Infinity, MD∞)";
 //   RDLOG_WARN<<"TODO: This flow accumulation method is not yet functional.";
 //   RDLOG_CONFIG<<"x = "<<x;
@@ -935,7 +940,7 @@ static void DistanceDispersionEstimate(
 // }
 
 // template<class E, class A>
-// void FP_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
+// void FM_Orlandini(const Array2D<E> &elevations, Array2D<A> &accum, OrlandiniMode mode, double lambda){
 //   RDLOG_ALG_NAME<<"Orlandini et al. (2003) Flow Accumulation (aka D8-LTD, D8-LAD)";
 //   RDLOG_CITATION<<"Orlandini, S., Moretti, G., Franchini, M., Aldighieri, B., Testa, B., 2003. Path-based methods for the determination of nondispersive drainage directions in grid-based digital elevation models: TECHNICAL NOTE. Water Resources Research 39(6). doi:10.1029/2002WR001639.";
 //   RDLOG_CONFIG<<"lambda = "<<lambda;
