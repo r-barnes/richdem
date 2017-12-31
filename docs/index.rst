@@ -20,6 +20,7 @@ RichDEM --- High-Performance Terrain Analysis
 
    concepts
    example_dems
+   loading_data
    depression_filling
    flow_metrics
    flow_accumulation

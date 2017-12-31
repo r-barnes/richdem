@@ -27,8 +27,10 @@ For reference, the original DEM appears as follows:
     :context: reset
 
     import richdem as rd
-    beau           = rd.LoadGDAL("../data/beauford.tif")
-    beaufig        = rd.rdShow(beau, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
+    import numpy as np
+    
+    beau    = rd.rdarray(np.load('imgs/beauford.npz')['beauford'], no_data=-9999)
+    beaufig = rd.rdShow(beau, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
 
 
 Complete Filling
