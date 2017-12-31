@@ -19,7 +19,9 @@ RichDEM --- High-Performance Terrain Analysis
    :maxdepth: 2
 
    concepts
+   example_dems
    depression_filling
+   flow_metrics
    flow_accumulation
 
 .. toctree::

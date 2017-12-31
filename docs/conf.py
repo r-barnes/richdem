@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.abspath('../wrappers/pyrichdem/'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'breathe', 'sphinx.ext.coverage', 'sphinxcontrib.napoleon']
+extensions = ['sphinx.ext.autodoc', 'breathe', 'sphinx.ext.coverage', 'sphinxcontrib.napoleon', 'matplotlib.sphinxext.plot_directive']
 
 breathe_projects            = {'richdem': '.build/doxygenxml/'}
 breathe_default_project     = 'richdem'

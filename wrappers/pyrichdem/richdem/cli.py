@@ -186,7 +186,7 @@ rda      -- A dataset
 
   diff = np.array(ds1-ds2)
 
-  print("Max difference: {0:10.6}".format(np.nanmax(diff)))
-  print("Min difference: {0:10.6}".format(np.nanmin(diff)))
-  print("Avg difference: {0:10.6}".format(np.mean  (diff)))
-  print("RMS difference: {0:10.6}".format(np.sqrt(np.mean(np.square(diff)))))
+  print("Absolute Max difference: {0:10.6}".format(np.nanmax(np.abs(diff))))
+  print("Absolute Min difference: {0:10.6}".format(np.nanmin(np.abs(diff))))
+  print("Absolute Avg difference: {0:10.6}".format(np.mean  (np.abs(diff))))
+  print("RMS difference:          {0:10.6}".format(np.sqrt(np.mean(np.square(diff)))))

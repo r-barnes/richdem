@@ -15,12 +15,16 @@ try:
 except:
   GDAL_AVAILABLE = False
 
+
+
 def _RichDEMVersion():
   return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
     pyver    = pkg_resources.require("richdem")[0].version,
     hash     = _richdem.rdHash(),
     compdate = _richdem.rdCompileTime()
   )
+
+
 
 def _AddAnalysis(rda, analysis):
   if type(rda) is not rdarray:
@@ -38,7 +42,9 @@ def _AddAnalysis(rda, analysis):
     rda.metadata["PROCESSING_HISTORY"] = ""
   rda.metadata["PROCESSING_HISTORY"] += metastr
 
-def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None, vmax=None):
+
+
+def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None, vmax=None, xmin=None, xmax=None, ymin=None, ymax=None, zxmin=None, zxmax=None, zymin=None, zymax=None, figsize=(4,4), zcolor='red', zloc=1):
   if type(rda) is np.ndarray:
     rda = rdarray(rda)
   elif type(rda) is not rdarray:
@@ -49,6 +55,21 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
     import matplotlib
   except:
     raise Exception("matplotlib must be installed to use rdShow!")
+
+  zoom_vars = [zxmin, zxmax, zymin, zymax]
+  some_zoom = any(x is not None for x in zoom_vars)
+  all_zoom  = all(x is not None for x in zoom_vars)
+
+  if some_zoom and not all_zoom:
+    raise Exception("All zoom limits must be set for zooming to work!")
+  elif all_zoom:
+    try:
+      #from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+      from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+      from matplotlib.patches import Rectangle
+    except:
+      raise Exception("mpl_toolkits.axes_grid1 must be available!")
+
   disparr = np.array(rda, copy=True)
   disparr[disparr==rda.no_data] = np.nan
   for c in ignore_colours:
@@ -58,16 +79,39 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
     vmin = vmin_calc
   if vmax is None:
     vmax = vmax_calc
+
+  fig, (ax, cax) = plt.subplots(ncols=2,figsize=figsize, gridspec_kw={"width_ratios":[1, 0.05]})
+
   #current_cmap = matplotlib.cm.get_cmap()
   #current_cmap.set_bad(color='red')
-  plt.imshow(disparr, vmin=vmin, vmax=vmax)
-  plt.set_cmap(cmap)
-  plt.colorbar()
+  iax = ax.imshow(disparr, vmin=vmin, vmax=vmax, cmap=cmap)
+  ax.set_xlim(xmin=xmin, xmax=xmax)
+  ax.set_ylim(ymin=ymin, ymax=ymax)
+
+  if all_zoom:
+    axins = inset_axes(ax, width=2, height=2, loc=zloc, borderpad=0) #, bbox_to_anchor=(0.9, -0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=0)
+    axins.set_xlim(xmin=zxmin,xmax=zxmax) 
+    axins.set_ylim(ymin=zymin,ymax=zymax)
+    plt.setp(axins.get_xticklabels(), visible=False)
+    plt.setp(axins.get_yticklabels(), visible=False)
+    plt.setp(axins.get_xticklines(),  visible=False)
+    plt.setp(axins.get_yticklines(),  visible=False)
+    #mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec='r', lw=2, ls=None) #ec='1.0' = top of colormap
+    ax.add_patch(Rectangle((zxmin, zymin), zxmax-zxmin, zymax-zymin, facecolor='none', edgecolor=zcolor, lw=2))#, transform=fig.transFigure, facecolor='none'))
+    plt.setp(tuple(axins.spines.values()), color=zcolor, lw=2)
+    axins.imshow(disparr, vmin=vmin, vmax=vmax, cmap=cmap)
+
+
+  fig.colorbar(iax, cax=cax)
+
+  plt.tight_layout()
+
   if not axes:
     plt.axis('off')
   if show:
     plt.show()
   return {"vmin": vmin, "vmax": vmax}
+
 
 
 class rdarray(np.ndarray):

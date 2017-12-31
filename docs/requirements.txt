@@ -1,3 +1,5 @@
 breathe ~= 4.7.3
 sphinxcontrib-napoleon ~= 0.6.1
 numpy ~= 1.13.3
+richdem ~= 0.0.5
+gdal ~= 2.2.3
