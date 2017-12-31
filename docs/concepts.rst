@@ -116,7 +116,7 @@ is then examined.
 .. code-block:: python
 
     import richdem as rd
-    dem   = rd.LoadGDAL("/home/rick/data/gis/beauford.tif")
+    dem   = rd.LoadGDAL("../data/beauford.tif")
     rd.FillDepressions(dem, epsilon=False, in_place=True)
     accum = rd.FlowAccumulation(dem, method='D8')
     rd.SaveGDAL('/z/out.tif', accum)
@@ -134,7 +134,7 @@ The processing history appears as follows.
 
 .. code-block:: text
 
-    2017-12-20 17:55:19.892388 UTC | RichDEM (Python 0.0.4) (hash=e02d5e2, hashdate=2017-12-19 23:52:52 -0600) | LoadGDAL(filename=/home/rick/data/gis/beauford.tif, no_data=-9999.0)
+    2017-12-20 17:55:19.892388 UTC | RichDEM (Python 0.0.4) (hash=e02d5e2, hashdate=2017-12-19 23:52:52 -0600) | LoadGDAL(filename=../data/beauford.tif, no_data=-9999.0)
     2017-12-20 17:55:19.900234 UTC | RichDEM (Python 0.0.4) (hash=e02d5e2, hashdate=2017-12-19 23:52:52 -0600) | FillDepressions(dem, epsilon=False)
     2017-12-20 17:55:20.514098 UTC | RichDEM (Python 0.0.4) (hash=e02d5e2, hashdate=2017-12-19 23:52:52 -0600) | FlowAccumulation(dem, method=D8)
 

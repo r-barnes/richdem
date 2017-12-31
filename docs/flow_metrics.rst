@@ -70,7 +70,7 @@ This is a convergent flow method.
     :context: reset
 
     import richdem as rd
-    dem = rd.LoadGDAL("/home/rick/data/gis/beauford.tif")
+    dem = rd.LoadGDAL("../data/beauford.tif")
     rd.FillDepressions(dem, epsilon=True, in_place=True)
     accum_d8 = rd.FlowAccumulation(dem, method='D8')
     rd.rdShow(accum_d8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
