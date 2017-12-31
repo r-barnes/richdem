@@ -64,8 +64,8 @@ Complete Filling is available via the following commands:
 ================= ==============================
 Language          Command
 ================= ==============================
-Python            `richdem.FillDepressions(dem)`
-C++               `richdem::FillDepression(dem)`
+Python            `richdem.FillDepressions()`
+C++               `richdem::FillDepression()`
 ================= ==============================
 
 +----------------+--------------------------------------+
@@ -118,8 +118,8 @@ from the depression's outlet: this is the effect of the epsilon.
 ================= ============================================
 Language          Command
 ================= ============================================
-Python            `richdem.FillDepressions(dem, epsilon=True)`
-C++               `richdem::FillDepressionsEpsilon(dem)`
+Python            `richdem.FillDepressions()`
+C++               `richdem::FillDepressionsEpsilon()`
 ================= ============================================
 
 +-------------------+--------------------------------------------+

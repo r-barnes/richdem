@@ -62,7 +62,7 @@ slope. When such a neighbour does not exist, no flow direction is assigned. When
 two or more neighbours have the same slope, the chosen neighbour is the first
 one considered by the algorithm.
 
-This is a convergent flow method.
+This is a convergent, deterministic flow method.
 
 .. plot::
     :width: 800pt
@@ -119,6 +119,70 @@ C++               `richdem::FM_Rho8()` or `richdem::FM_FairfieldLeymarie()`
 
 
 
+Quinn (1991)
+-------------------------------
+
+    Quinn, P., Beven, K., Chevallier, P., Planchon, O., 1991. The Prediction Of Hillslope Flow Paths For Distributed Hydrological Modelling Using Digital Terrain Models. Hydrological Processes 5, 59–79.
+
+The Quinn (1991) method apportions flow from a focal cell to one or more, and
+possibly all, of its 8 neighbouring cells. To do so, the amount of flow
+apportioned to each neighbour is a function :math:`\tan(\beta)^1` of the slope
+:math:`\beta` to that neighbour. This is a special case of the Holmgren (1994)
+method.
+
+This is a divergent, deterministic flow method.
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+
+    accum_quinn = rd.FlowAccumulation(dem, method='Quinn')
+    rd.rdShow(accum_quinn, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+
+================= ==============================
+Language          Command
+================= ==============================
+C++               `richdem::FM_Quinn()`
+================= ==============================
+
+
+
+Holmgren (1994)
+-------------------------------
+
+    Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.
+
+.. todo:: Add a comparison figure from Holmgren (1994)
+
+The Holmgren (1994) method apportions flow from a focal cell to one or more, and
+possibly all, of its 8 neighbouring cells. To do so, the amount of flow
+apportioned to each neighbour is a function :math:`\tan(\beta)^x` of the slope
+:math:`\beta` to that neighbour weighted by an exponent :math:`x` which must be
+specified by the user. This is a generalization of the Quinn (1991) method; for
+Quinn (1991), the exponent is 1 and the function is :math:`\tan(\beta)^x`. As
+:math:`x \rightarrow \infty`, this method approximates the D8 method.
+
+Holmgren recommends choosing :math:`x \in [4,6]`.
+
+This is a divergent, deterministic flow method.
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+
+    accum_holmgren = rd.FlowAccumulation(dem, method='Holmgren', exponent=5)
+    rd.rdShow(accum_holmgren, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+
+================= ==============================
+Language          Command
+================= ==============================
+C++               `richdem::FM_Holmgren()`
+================= ==============================
+
+
+
 D∞ (Tarboton, 1997)
 -------------------------------
 
@@ -130,7 +194,7 @@ calculated by doing localized surface fitting between the focal cell and
 adjacent pairs of its neighbouring cell. This line often falls between two
 neighbours.
 
-This is a divergent flow method.
+This is a divergent, deterministic flow method.
 
 .. image:: imgs/fm_dinfinity.png
     :width: 50%
@@ -158,18 +222,24 @@ Side-by-Side Comparisons of Flow Metrics
 ========================================
 
 .. plot::
-    :width: 800pt
+    :width:   800pt
+    :height:  600pt
     :context: close-figs
 
     metrics = (
-      ('D8', accum_d8),
-      ('Rho8', accum_rho8),
-      ('Dinf', accum_dinf)
+      ('D8',       accum_d8      ),
+      ('Rho8',     accum_rho8    ),
+      ('Dinf',     accum_dinf    ),
+      ('Quinn',    accum_quinn   ),
+      ('Holmgren', accum_holmgren)
     )
 
     subr = lambda x: x[450:550,450:550]
 
-    fig, axs = plt.subplots(nrows=1, ncols=3)
+    fig, axs = plt.subplots(nrows=2, ncols=3)
+
+    #Flatten list
+    axs = [item for sublist in axs for item in sublist]
 
     vmin, vmax = np.nanpercentile(subr(accum_d8), [2, 98])
 
@@ -177,4 +247,5 @@ Side-by-Side Comparisons of Flow Metrics
       axs[i].imshow(subr(met[1]), vmin=vmin, vmax=vmax, cmap='jet')
       axs[i].set_title(met[0])
 
+    plt.tight_layout()
     plt.show()

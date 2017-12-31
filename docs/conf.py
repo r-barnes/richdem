@@ -38,7 +38,15 @@ if not os.path.exists('../data/beauford.tif'):
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'breathe', 'sphinx.ext.coverage', 'sphinxcontrib.napoleon', 'matplotlib.sphinxext.plot_directive']
+extensions = [
+  'sphinx.ext.autodoc',
+  'breathe',
+  'sphinx.ext.coverage',
+  'sphinxcontrib.napoleon',
+  'matplotlib.sphinxext.plot_directive',
+  'sphinx.ext.mathjax',
+  'sphinx.ext.todo'
+]
 
 breathe_projects            = {'richdem': '.build/doxygenxml/'}
 breathe_default_project     = 'richdem'
