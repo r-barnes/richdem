@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e -x
 
+mkdir -p /io/wheelhouse
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install -r /io/wrappers/pyrichdem/requirements.txt
-    "${PYBIN}/pip" wheel /io/wrappers/pyrichdem/ -w wheelhouse/
+    #"${PYBIN}/pip" wheel /io/wrappers/pyrichdem/ -w wheelhouse/ #Original many linux command
 
+    #The following is my hackery
     cd /io/wrappers/pyrichdem
-    "${PYBIN}/python" setup.py bdist_wheel -d ../../wheelhouse/
+    "${PYBIN}/python" setup.py bdist_wheel -d /io/wheelhouse/
     rm -rf build/ richdem.egg-info/ dist/
 done
 
