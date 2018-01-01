@@ -115,6 +115,13 @@ class ManagedVector {
     return _data.get();
   }
 
+  ///Get a raw constant pointer to the managed data
+  ///
+  ///@return A raw constant pointer to the managed data
+  inline const T* data() const {
+    return _data.get();
+  }
+
   ///Are there more than zero elements being managed?
   ///
   ///@return True, if zero elements are managed; otherwise, false

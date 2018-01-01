@@ -1,8 +1,10 @@
 #include <pybind11/pybind11.h>
-#include <richdem/richdem.hpp>
+#include <richdem/depressions/depressions.hpp>
+#include <richdem/depressions/Lindsay2016.hpp>
+#include <richdem/methods/.hpp>
+#include <richdem/methods/flow_accumulation_generic.hpp>
 #include <pybind11/numpy.h>
 #include <pybind11/stl_bind.h>
-#include <richdem/flowmet/flowdirs_generic.hpp>
 #include <pybind11/stl.h>
 // #include "pybind11_array2d.hpp"
 #include <string>
@@ -28,8 +30,8 @@ using namespace richdem;
 
 template<class T>
 void TemplatedWrapper(py::module &m, std::string tname){
-  m.def("rdFillDepressions",     &Zhou2016<T>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<T>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdFillDepressions",     &PriorityFlood_Zhou2016<T>,          "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<T>, "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<T>,                  "TODO");
   
