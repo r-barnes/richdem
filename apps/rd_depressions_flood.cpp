@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include "richdem/common/version.hpp"
 #include "richdem/depressions/Zhou2016pf.hpp"
-#include "richdem/depressions/priority_flood.hpp"
+#include "richdem/depressions/Barnes2014.hpp"
 #include "richdem/common/Array2D.hpp"
 
 using namespace richdem;

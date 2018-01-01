@@ -1,6 +1,6 @@
 #include "richdem/common/interface.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/depressions/priority_flood.hpp"
+#include "richdem/depressions/Barnes2014.hpp"
 #include <string>
 #include <iostream>
 #include <cstdint>

@@ -7,7 +7,7 @@
 #include <richdem/methods/d8_methods.hpp>
 #include <richdem/common/grid_cell.hpp>
 #include <richdem/depressions/Zhou2016pf.hpp>
-#include <richdem/depressions/priority_flood.hpp>
+#include <richdem/depressions/Barnes2014.hpp>
 #include <richdem/methods/dall_methods.hpp>
 #include <richdem/common/ManagedVector.hpp>
 using namespace richdem;

@@ -2,7 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/depressions/priority_flood.hpp"
+#include "richdem/depressions/Barnes2014.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/flats/flat_resolution.hpp"
 #include "richdem/methods/d8_methods.hpp"

@@ -1,8 +1,8 @@
 #ifndef _richdem_depressions_
 #define _richdem_depressions_
 
-#include <richdem/depressions/priority_flood.hpp>
-#include <richdem/depressions/Zhou2016pf.hpp>
+#include <richdem/depressions/Barnes2014.hpp>
+#include <richdem/depressions/Zhou2016.hpp>
 
 namespace richdem {
 
