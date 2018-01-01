@@ -7,7 +7,7 @@
 #define _richdem_flat_resolution_dinf_hpp_
 
 #include "richdem/flats/flat_resolution.hpp"
-#include "richdem/flowdirs/dinf_flowdirs.hpp"
+#include "richdem/flowmet/dinf_flowdirs.hpp"
 #include "richdem/common/logger.hpp"
 
 namespace richdem {

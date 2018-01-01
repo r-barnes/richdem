@@ -10,7 +10,7 @@
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/grid_cell.hpp"
-#include "richdem/flowdirs/d8_flowdirs.hpp"
+#include "richdem/flowmet/d8_flowdirs.hpp"
 #include <queue>
 #include <limits>
 #include <iostream>
