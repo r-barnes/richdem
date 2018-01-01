@@ -2,7 +2,7 @@
 #include <richdem/richdem.hpp>
 #include <pybind11/numpy.h>
 #include <pybind11/stl_bind.h>
-#include <richdem/methods/dall_methods.hpp>
+#include <richdem/flowdirs/flowdirs_generic.hpp>
 #include <pybind11/stl.h>
 // #include "pybind11_array2d.hpp"
 #include <string>

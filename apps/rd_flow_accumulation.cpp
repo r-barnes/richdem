@@ -2,7 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/methods/dall_methods.hpp"
+#include "richdem/flowdirs/flowdirs_generic.hpp"
 #include "richdem/common/Array2D.hpp"
 using namespace richdem;
 
