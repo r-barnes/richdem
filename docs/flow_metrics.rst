@@ -51,6 +51,18 @@ a large diversity of divergent methods.
 
 
 
+Note on the examples
+-------------------------------
+
+Epsilon depression-filling replaces a depression with a predictable, convergent
+flow pattern. Beauford watershed has a number of depressions, as is evident in
+the example images below. A flow metric should not necessarily be judged by its
+behaviour within a filled depression. For convenience, a zoomed view of a non-
+depression area is shown and, at the end of this chapter, the views are
+compared.
+
+
+
 D8 (O'Callaghan and Mark, 1984)
 -------------------------------
 
@@ -76,7 +88,7 @@ This is a convergent, deterministic flow method.
 
     rd.FillDepressions(dem, epsilon=True, in_place=True)
     accum_d8 = rd.FlowAccumulation(dem, method='D8')
-    rd.rdShow(accum_d8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+    d8_fig = rd.rdShow(accum_d8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet')
 
 ================= ==============================
 Language          Command
@@ -109,7 +121,7 @@ This is a convergent, stochastic flow method.
     :context: close-figs
 
     accum_rho8 = rd.FlowAccumulation(dem, method='Rho8')
-    rd.rdShow(accum_rho8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+    rd.rdShow(accum_rho8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
 
 ================= ==============================
 Language          Command
@@ -138,12 +150,47 @@ This is a divergent, deterministic flow method.
     :context: close-figs
 
     accum_quinn = rd.FlowAccumulation(dem, method='Quinn')
-    rd.rdShow(accum_quinn, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+    rd.rdShow(accum_quinn, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
 
 ================= ==============================
 Language          Command
 ================= ==============================
 C++               `richdem::FM_Quinn()`
+================= ==============================
+
+
+
+Freeman (1991)
+-------------------------------
+
+    Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422.
+
+The Freeman (1991) method apportions flow from a focal cell to one or more, and
+possibly all, of its 8 neighbouring cells. To do so, the amount of flow
+apportioned to each neighbour is a function of the slope to that neighbour and a
+tuning parameter :math:`p`. In particular, the fraction :math:`f_i` of flow
+apportioned to neighbour :math:`i` is
+
+.. math::
+
+    f_i = \frac{\max(0,\beta_i^p)}{\sum_{j \in N} \max(0,\beta_j^p)}
+
+Freeman recommends choosing :math:`p \approx 1.1`.
+
+This is a divergent, deterministic flow method.
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+
+    accum_freeman = rd.FlowAccumulation(dem, method='Freeman', exponent=1.1)
+    rd.rdShow(accum_freeman, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
+
+================= ==============================
+Language          Command
+================= ==============================
+C++               `richdem::FM_Freeman()`
 ================= ==============================
 
 
@@ -157,11 +204,16 @@ Holmgren (1994)
 
 The Holmgren (1994) method apportions flow from a focal cell to one or more, and
 possibly all, of its 8 neighbouring cells. To do so, the amount of flow
-apportioned to each neighbour is a function :math:`\tan(\beta)^x` of the slope
-:math:`\beta` to that neighbour weighted by an exponent :math:`x` which must be
-specified by the user. This is a generalization of the Quinn (1991) method; for
-Quinn (1991), the exponent is 1 and the function is :math:`\tan(\beta)^x`. As
-:math:`x \rightarrow \infty`, this method approximates the D8 method.
+apportioned to each neighbour is a function of the slope that neighbour and a
+user-specified exponent :math:`x`. In particular, the fraction :math:`f_i` of
+flow apportioned to neighbour :math:`i` is
+
+.. math::
+
+    f_i = \frac{(\tan \beta_i)^x}{\sum_{j \in N} (tan \beta_j)^x} \forall \tan \beta > 0
+
+This is a generalization of the Quinn (1991) method in which the exponent is 1.
+As :math:`x \rightarrow \infty`, this method approximates the D8 method.
 
 Holmgren recommends choosing :math:`x \in [4,6]`.
 
@@ -173,7 +225,7 @@ This is a divergent, deterministic flow method.
     :context: close-figs
 
     accum_holmgren = rd.FlowAccumulation(dem, method='Holmgren', exponent=5)
-    rd.rdShow(accum_holmgren, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+    rd.rdShow(accum_holmgren, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
 
 ================= ==============================
 Language          Command
@@ -208,7 +260,7 @@ This is a divergent, deterministic flow method.
     :context: close-figs
 
     accum_dinf = rd.FlowAccumulation(dem, method='Dinf')
-    rd.rdShow(accum_dinf, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False)
+    rd.rdShow(accum_dinf, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
 
 ================= ==============================
 Language          Command
@@ -231,7 +283,8 @@ Side-by-Side Comparisons of Flow Metrics
       ('Rho8',     accum_rho8    ),
       ('Dinf',     accum_dinf    ),
       ('Quinn',    accum_quinn   ),
-      ('Holmgren', accum_holmgren)
+      ('Holmgren', accum_holmgren),
+      ('Freeman',  accum_freeman )
     )
 
     subr = lambda x: x[450:550,450:550]
@@ -249,3 +302,14 @@ Side-by-Side Comparisons of Flow Metrics
 
     plt.tight_layout()
     plt.show()
+
+Note that Quinn (1991) and Freeman (1991) produce rather similar results;
+nonetheless, they are different:
+
+.. plot::
+    :width:   800pt
+    :height:  600pt
+    :context: close-figs
+
+    quinn_freeman_diff = accum_quinn - accum_freeman
+    rd.rdShow(quinn_freeman_diff, figsize=(8,5.5), axes=False, cmap='jet', ignore_colours=[0])
