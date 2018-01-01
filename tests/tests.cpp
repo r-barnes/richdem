@@ -4,12 +4,7 @@
 #include "doctest.h"
 #include "richdem/common/Array2D.hpp"
 
-#include <richdem/methods/d8_methods.hpp>
-#include <richdem/common/grid_cell.hpp>
-#include <richdem/depressions/Zhou2016pf.hpp>
-#include <richdem/depressions/Barnes2014.hpp>
-#include <richdem/flowmet/flowdirs_generic.hpp>
-#include <richdem/common/ManagedVector.hpp>
+#include <richdem/richdem.hpp>
 using namespace richdem;
 
 #include <experimental/filesystem>

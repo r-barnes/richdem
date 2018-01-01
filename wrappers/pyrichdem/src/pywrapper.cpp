@@ -1,8 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <richdem/depressions/depressions.hpp>
 #include <richdem/depressions/Lindsay2016.hpp>
-#include <richdem/methods/.hpp>
-#include <richdem/methods/flow_accumulation_generic.hpp>
+#include <richdem/methods/terrain_attributes.hpp>
+#include <richdem/methods/flow_accumulation.hpp>
 #include <pybind11/numpy.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
