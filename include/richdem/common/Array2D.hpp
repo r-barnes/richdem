@@ -660,14 +660,30 @@ class Array2D {
     return x==0 || y==0 || x==view_width-1 || y==view_height-1;
   }
 
+  ///@brief Determines whether an (x,y) pair is the top left of the DEM
+  ///@return True, if the (x,y) pair is the top left of the DEM; otherwise, false
   bool isTopLeft    (xy_t x, xy_t y) const { return x==0         && y==0;          }
+  ///@brief Determines whether an (x,y) pair is the top right of the DEM
+  ///@return True, if the (x,y) pair is the top right of the DEM; otherwise, false
   bool isTopRight   (xy_t x, xy_t y) const { return x==width()-1 && y==0;          }
+  ///@brief Determines whether an (x,y) pair is the bottom left of the DEM
+  ///@return True, if the (x,y) pair is the bottom left of the DEM; otherwise, false
   bool isBottomLeft (xy_t x, xy_t y) const { return x==0         && y==height()-1; }
+  ///@brief Determines whether an (x,y) pair is the bottom right of the DEM
+  ///@return True, if the (x,y) pair is the bottom right of the DEM; otherwise, false
   bool isBottomRight(xy_t x, xy_t y) const { return x==width()-1 && y==height()-1; }
 
+  ///@brief Determines whether an (x,y) pair is in the top row of the DEM
+  ///@return True, if the (x,y) pair is in the top row of the DEM; otherwise, false
   bool isTopRow    (xy_t x, xy_t y) const { return y==0;          }
+  ///@brief Determines whether an (x,y) pair is in the bottom row of the DEM
+  ///@return True, if the (x,y) pair is in the bottom row of the DEM; otherwise, false
   bool isBottomRow (xy_t x, xy_t y) const { return y==height()-1; }
+  ///@brief Determines whether an (x,y) pair is in the left column of the DEM
+  ///@return True, if the (x,y) pair is in the left column of the DEM; otherwise, false
   bool isLeftCol   (xy_t x, xy_t y) const { return x==0;          }
+  ///@brief Determines whether an (x,y) pair is in the right column of the DEM
+  ///@return True, if the (x,y) pair is in the right column of the DEM; otherwise, false
   bool isRightCol  (xy_t x, xy_t y) const { return x==width()-1;  }
 
   /**

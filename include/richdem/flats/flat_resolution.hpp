@@ -81,7 +81,7 @@ static int d8_masked_FlowDir(
   @pre
     1. **flat_mask** contains the number of increments to be applied to each
        cell to form a gradient which will drain the flat it is a part of.
-    2. Any cell without a local gradient has a value of #NO_FLOW in
+    2. Any cell without a local gradient has a value of NO_FLOW in
        **flowdirs**; all other cells have defined flow directions.
     3. If a cell is part of a flat, it has a value greater than zero in
        **labels** indicating which flat it is a member of; otherwise, it has a
@@ -91,7 +91,7 @@ static int d8_masked_FlowDir(
     1. Every cell whose flow direction could be resolved by this algorithm
        (all drainable flats) will have a defined flow direction in
        **flowdirs**. Any cells which could not be resolved (non-drainable
-       flats) will still be marked #NO_FLOW.
+       flats) will still be marked NO_FLOW.
 */
 template<class U>
 void d8_flow_flats(
@@ -135,7 +135,7 @@ void d8_flow_flats(
     1. Every cell in **labels** is marked either 0, indicating that the cell is
        not part of a flat, or a number greater than zero which identifies the
        flat to which the cell belongs.
-    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    2. Any cell without a local gradient is marked NO_FLOW in **flowdirs**.
     3. Every cell in **flat_mask** is initialized to 0.
     4. **edges** contains, in no particular order, all the high edge cells of
        the DEM (those flat cells adjacent to higher terrain) which are part of
@@ -220,7 +220,7 @@ static void BuildAwayGradient(
     1. Every cell in **labels** is marked either 0, indicating that the cell
        is not part of a flat, or a number greater than zero which identifies
        the flat to which the cell belongs.
-    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    2. Any cell without a local gradient is marked NO_FLOW in **flowdirs**.
     3. Every cell in **flat_mask** has either a value of 0, indicating
        that the cell is not part of a flat, or a value greater than zero
        indicating the number of increments which must be added to it to form a
@@ -370,7 +370,7 @@ static void label_this(
   @pre
     1. **elevations** contains the elevations of every cell or a value _NoData_
        for cells not part of the DEM.
-    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    2. Any cell without a local gradient is marked NO_FLOW in **flowdirs**.
 
   @post
     1. **high_edges** will contain, in no particular order, all the high edge
@@ -433,7 +433,7 @@ static void find_flat_edges(
   @pre
     1. **elevations** contains the elevations of every cell or the _NoData_
         value for cells not part of the DEM.
-    2. Any cell without a local gradient is marked #NO_FLOW in **flowdirs**.
+    2. Any cell without a local gradient is marked NO_FLOW in **flowdirs**.
 
   @post
     1. **flat_mask** will have a value greater than or equal to zero for every

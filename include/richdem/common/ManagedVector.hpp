@@ -6,32 +6,40 @@
 
 namespace richdem {
 
+///ManagedVector works like a regular vector, but can wrap external memory
 template<class T>
 class ManagedVector {
  private:
   template<typename> friend class ManagedVector;
 
   std::unique_ptr<T[]> _data;
-  bool   _owned = true;
-  size_t _size  = 0;
+  bool   _owned = true;        ///< If this is true, we are responsible for clean-up of the data
+  size_t _size  = 0;           ///< Number of elements being managed
 
  public:
-  ManagedVector(){
-    //std::cerr<<"Empty ManagedVector created"<<std::endl;
-  } 
+  ///Creates an empty ManagedVector
+  ManagedVector() = default;
 
+  ///Creates a ManagedVector with \p size members each set to \p default_val
+  ///
+  ///@param[in] size         Number of elements to be created in the vector
+  ///@param[in] default_val  Initial value of the elements
   ManagedVector(size_t size, T default_val=T()){
     _size = size;
-    _data.reset(new T[size]);
-    for(size_t i=0;i<size;i++)
+    _data.reset(new T[size]);   //Create unique pointer to newly allocated memory
+    for(size_t i=0;i<size;i++)  //Initialize all members to default value
       _data[i] = default_val;
     //std::cerr<<"ManagedVector construct with owned data at "<<((void*)_data.get())<<std::endl;
   }
 
-  ManagedVector(T* data0, size_t size0){
+  ///Creates a ManagedVector which wraps \p data0 of length \p size0
+  ///
+  ///@param[in] data         Memory to wrap
+  ///@param[in] size         Number of elements to wrap
+  ManagedVector(T* data, size_t size){
     //std::cerr<<"ManagedVector construct with unowned data at "<<((void*)data0)<<std::endl;
-    _data.reset(data0);
-    _size  = size0;
+    _data.reset(data);
+    _size  = size;
     _owned = false;
   }
 
@@ -100,18 +108,30 @@ class ManagedVector {
     return *this;
   }
 
+  ///Get a raw pointer to the managed data
+  ///
+  ///@return A raw pointer to the managed data
   inline T* data() {
     return _data.get();
   }
 
+  ///Are there more than zero elements being managed?
+  ///
+  ///@return True, if zero elements are managed; otherwise, false
   inline bool empty() const {
     return _size==0;
   }
 
+  ///Get the number of elements being managed
+  ///
+  ///@return The number of elements being managed
   inline size_t size() const {
     return _size;
   }
 
+  ///Determine whether the ManagedVector owns the memory it is managing
+  ///
+  ///@return True, if this ManagedVector owns its memory; otherwise, false
   inline bool owned() const {
     return _owned;
   }

@@ -253,9 +253,9 @@ void d8_upslope_cells(
   @param[in]   &riserun_slope       A percent_slope grid (d8_slope())
   @param[out]  &result              Altered to return the calculated SPI
 
-  @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
+  @pre \p flow_accumulation and \p percent_slope must be the same size
 
-  @post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
+  @post \p result takes the properties and dimensions of \p flow_accumulation
 
   @todo Generalize for float and int grids
 */
@@ -306,9 +306,9 @@ void TA_SPI(
   @param[in]  &riserun_slope        A percent_slope grid (d8_slope())
   @param[out] &result               Altered to return the calculated SPI
 
-  @pre \pname{flow_accumulation} and \pname{percent_slope} must be the same size
+  @pre \p flow_accumulation and \p percent_slope must be the same size
 
-  @post \pname{result} takes the properties and dimensions of \pname{flow_accumulation}
+  @post \p result takes the properties and dimensions of \p flow_accumulation
 
   @todo Generalize for float and int grids
 */
@@ -375,12 +375,12 @@ void TA_CTI(
   @pre This function should never be called on a NoData cell
 */
 
-class TA_Setup_Vars {
+static class TA_Setup_Vars {
  public:
   double a,b,c,d,e,f,g,h,i;
 };
 
-class TA_Setup_Curves_Vars {
+static class TA_Setup_Curves_Vars {
  public:
   double L,D,E,F,G,H;
 };
@@ -549,14 +549,14 @@ static inline double Terrain_Slope_Degree(const Array2D<T> &elevations, const in
 
   Possible attribute values are
   <ul>
-    <li>#TATTRIB_CURVATURE</li>
-    <li>#TATTRIB_PLANFORM_CURVATURE</li>
-    <li>#TATTRIB_PROFILE_CURVATURE</li>
-    <li>#TATTRIB_ASPECT</li>
-    <li>#TATTRIB_SLOPE_RISERUN</li>
-    <li>#TATTRIB_SLOPE_PERCENT</li>
-    <li>#TATTRIB_SLOPE_RADIAN</li>
-    <li>#TATTRIB_SLOPE_DEGREE</li>
+    <li>TATTRIB_CURVATURE</li>
+    <li>TATTRIB_PLANFORM_CURVATURE</li>
+    <li>TATTRIB_PROFILE_CURVATURE</li>
+    <li>TATTRIB_ASPECT</li>
+    <li>TATTRIB_SLOPE_RISERUN</li>
+    <li>TATTRIB_SLOPE_PERCENT</li>
+    <li>TATTRIB_SLOPE_RADIAN</li>
+    <li>TATTRIB_SLOPE_DEGREE</li>
   </ul>
 
   @param[in]  func         The attribute function to be used
@@ -564,7 +564,7 @@ static inline double Terrain_Slope_Degree(const Array2D<T> &elevations, const in
   @param[in]  zscale       Value by which to scale elevation
   @param[out] &output      A grid to hold the results
 
-  @post \pname{output} takes the properties and dimensions of \pname{elevations}
+  @post \p output takes the properties and dimensions of \p elevations
 */
 template<class F, class T>
 static inline void TerrainProcessor(F func, const Array2D<T> &elevations, const float zscale, Array2D<float> &output){

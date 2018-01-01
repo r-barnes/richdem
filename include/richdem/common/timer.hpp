@@ -17,9 +17,9 @@ namespace richdem {
 ///Such as how long it takes a given function to run, or how long I/O has taken.
 class Timer{
   private:
-    timeval start_time;      ///< Last time the timer was started
-    double accumulated_time; ///< Accumulated running time since creation
-    bool running;            ///< True when the timer is running
+    timeval start_time;                 ///< Last time the timer was started
+    double accumulated_time = 0;        ///< Accumulated running time since creation
+    bool   running          = false;    ///< True when the timer is running
 
     ///Number of (fractional) seconds between two time objects
     double timediff(timeval beginning, timeval end){
@@ -29,12 +29,10 @@ class Timer{
       return seconds + useconds/1000000.0;
     }
   public:
-    Timer(){
-      accumulated_time = 0;
-      running          = false;
-    }
+    ///Creates a Timer which is not running and has no accumulated time
+    Timer() = default;
 
-    ///Start the timer. Throws an exception if timer was already running.
+    ///Start the timers. Throws an exception if timer was already running.
     void start(){
       if(running)
         throw std::runtime_error("Timer was already started!");
@@ -44,6 +42,7 @@ class Timer{
 
     ///Stop the timer. Throws an exception if timer was already stopped.
     ///Calling this adds to the timer's accumulated time.
+    ///
     ///@return The accumulated time in seconds.
     double stop(){
       if(!running)
@@ -59,6 +58,8 @@ class Timer{
 
     ///Returns the timer's accumulated time. Throws an exception if the timer is
     ///running.
+    ///
+    ///@return The timer's accumulated time, in seconds.
     double accumulated(){
       if(running)
         throw std::runtime_error("Timer is still running!");
@@ -67,6 +68,8 @@ class Timer{
 
     ///Returns the time between when the timer was started and the current
     ///moment. Throws an exception if the timer is not running.
+    ///
+    ///@return Time since the timer was started and current moment, in seconds.
     double lap(){
       if(!running)
         throw std::runtime_error("Timer was not started!");
