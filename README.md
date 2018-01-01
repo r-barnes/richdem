@@ -1,6 +1,8 @@
 RichDEM
 =======
 
+[![ReadTheDocs](https://readthedocs.org/projects/richdem/badge/?version=latest)](https://richdem.readthedocs.io/)
+
 Author: Richard Barnes (rbarnes@umn.edu)
 
 RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
