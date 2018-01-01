@@ -1,6 +1,8 @@
 RichDEM
 =======
 
+[![Travis](https://travis-ci.org/r-barnes/richdem.svg?branch=master)](https://travis-ci.org/r-barnes/richdem)
+
 Author: Richard Barnes (rbarnes@umn.edu)
 
 RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
