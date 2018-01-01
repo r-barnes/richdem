@@ -4,6 +4,9 @@
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/logger.hpp>
 #include <richdem/common/ProgressBar.hpp>
+#include <queue>
+
+namespace richdem {
 
 template<class F, class E, class A, typename... Args>
 void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, Args... args ){
@@ -70,6 +73,8 @@ void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, A
       accum(i)=accum.noData();
 
   RDLOG_TIME_USE<<"Wall-time       = "<<overall.stop()<<" s"     ;
+}
+
 }
 
 #endif

@@ -13,22 +13,22 @@ int PerformAlgorithm(std::string output, int algorithm, float z_scale, std::stri
   Array2D<float> result(dem);
 
   switch(algorithm){
-    case 1:  //d8_slope_riserun
-      d8_slope_riserun(dem,result,z_scale);      break;
-    case 2:  //d8_slope_percentage
-      d8_slope_percentage(dem,result,z_scale);   break;
-    case 3:  //d8_slope_degrees
-      d8_slope_degrees(dem,result,z_scale);      break;
-    case 4:  //d8_slope_radians
-      d8_slope_radians(dem,result,z_scale);      break;
-    case 5:  //d8_aspect
-      d8_aspect(dem,result,z_scale);             break;
-    case 6:  //d8_curvature
-      d8_curvature(dem,result,z_scale);          break;
-    case 7:  //d8_planform_curvature
-      d8_planform_curvature(dem,result,z_scale); break;
-    case 8: //d8_profile_curvature
-      d8_profile_curvature(dem,result,z_scale);  break;
+    case 1: 
+      TA_slope_riserun     (dem,result,z_scale); break;
+    case 2: 
+      TA_slope_percentage  (dem,result,z_scale); break;
+    case 3: 
+      TA_slope_degrees     (dem,result,z_scale); break;
+    case 4: 
+      TA_slope_radians     (dem,result,z_scale); break;
+    case 5: 
+      TA_aspect            (dem,result,z_scale); break;
+    case 6: 
+      TA_curvature         (dem,result,z_scale); break;
+    case 7: 
+      TA_planform_curvature(dem,result,z_scale); break;
+    case 8: 
+      TA_profile_curvature (dem,result,z_scale); break;
   }
 
   result.saveGDAL(output,analysis);

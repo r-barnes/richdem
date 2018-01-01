@@ -1,6 +1,8 @@
 #ifndef _richdem_Orlandini2003_hpp_
 #define _richdem_Orlandini2003_hpp_
 
+namespace richdem {
+
 // enum OrlandiniMode {
 //   LAD,
 //   LTD
@@ -184,5 +186,7 @@
 //   Array2D<double> delta(elevations,0);
 //   KernelFlowdir(KernelOrlandini<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,delta,mode,lambda);
 // }
+
+}
 
 #endif

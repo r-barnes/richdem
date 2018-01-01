@@ -375,12 +375,12 @@ void TA_CTI(
   @pre This function should never be called on a NoData cell
 */
 
-static class TA_Setup_Vars {
+class TA_Setup_Vars {
  public:
   double a,b,c,d,e,f,g,h,i;
 };
 
-static class TA_Setup_Curves_Vars {
+class TA_Setup_Curves_Vars {
  public:
   double L,D,E,F,G,H;
 };

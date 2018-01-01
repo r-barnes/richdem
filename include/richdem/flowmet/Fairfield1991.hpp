@@ -6,6 +6,8 @@
 #include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/random.hpp"
 
+namespace richdem {
+
 template<class E>
 std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
@@ -66,6 +68,8 @@ template<class E>
 std::vector<float> FM_Rho8(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
   return FM_FairfieldLeymarie(elevations);
+}
+
 }
 
 #endif

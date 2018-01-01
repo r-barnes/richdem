@@ -2,7 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include "richdem/common/version.hpp"
-#include "richdem/flowmet/flowdirs_generic.hpp"
+#include "richdem/methods/flow_accumulation.hpp"
 #include "richdem/common/Array2D.hpp"
 using namespace richdem;
 

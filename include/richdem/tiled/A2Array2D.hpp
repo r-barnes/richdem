@@ -25,7 +25,7 @@ GDALDataType peekLayoutType(const std::string &layout_filename) {
     std::string tile_path = lf.getPath()+lf.getFilename();
     GDALDataset *fin = (GDALDataset*)GDALOpen(tile_path.c_str(), GA_ReadOnly);
     if(fin==NULL)
-      throw std::runtime_error("Could not open '"<<(lf.getPath()+lf.getFilename())<<"' to determine layout type.");
+      throw std::runtime_error("Could not open '"+(lf.getPath()+lf.getFilename())+"' to determine layout type.");
 
     GDALRasterBand *band   = fin->GetRasterBand(1);
     GDALDataType data_type = band->GetRasterDataType();

@@ -313,7 +313,7 @@ class Array2D {
     @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array2D(const Array2D<U> &other, const T& val) : Array2D() {
+  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;

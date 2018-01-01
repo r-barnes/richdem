@@ -1,6 +1,8 @@
 #ifndef _richdem_Seibert2007_hpp_
 #define _richdem_Seibert2007_hpp_
 
+namespace richdem {
+
 // template<class AccumF, class E, class A>
 // static void KernelSeibertMcGlynn(
 //   const FDMode mode,
@@ -136,5 +138,7 @@
 //   RDLOG_CONFIG<<"x = "<<x;
 //   KernelFlowdir(KernelSeibertMcGlynn<decltype(PassAccumulation<A>),E,A>,PassAccumulation<A>,elevations,accum,x);
 // }
+
+}
 
 #endif

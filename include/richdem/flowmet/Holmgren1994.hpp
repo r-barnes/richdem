@@ -5,6 +5,8 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+namespace richdem {
+
 template<class E>
 std::vector<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam){
   RDLOG_ALG_NAME<<"Holmgren (1994) Flow Accumulation (aka MFD, MD8)";
@@ -62,6 +64,8 @@ std::vector<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam
   progress.stop();
 
   return props;
+}
+
 }
 
 #endif

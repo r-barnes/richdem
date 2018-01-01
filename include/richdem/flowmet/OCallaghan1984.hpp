@@ -5,6 +5,8 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+namespace richdem {
+
 //TODO: Add Marks et al (1984)
 template<class E>
 static std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
@@ -59,6 +61,8 @@ static std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
 template<class E>
 std::vector<float> FM_D8(const Array2D<E> &elevations){
   return FM_OCallaghan(elevations);
+}
+
 }
 
 #endif

@@ -5,6 +5,8 @@
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+namespace richdem {
+
 template<class elev_t>
 std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
@@ -128,6 +130,8 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
 template<class E>
 std::vector<float> FM_Dinfinity(const Array2D<E> &elevations){
   return FM_Tarboton(elevations);
+}
+
 }
 
 #endif
