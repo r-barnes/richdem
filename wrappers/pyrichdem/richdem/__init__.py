@@ -107,7 +107,7 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
   plt.tight_layout()
 
   if not axes:
-    plt.axis('off')
+    ax.axis('off')
   if show:
     plt.show()
   return {"vmin": vmin, "vmax": vmax}

@@ -448,7 +448,8 @@ void TA_slope_radians(
   @author Richard Barnes (rbarnes@umn.edu), Horn (1981)
 
   Calculates the aspect per Horn 1981, as described by Burrough 1998's
-  "Principles of Geographical Information Systems" (p. 190)
+  "Principles of Geographical Information Systems" (p. 190) The value return is
+  in Degrees.
 
   @param[in]  &elevations   An elevation grid
   @param[out] &aspects      An aspect grid
