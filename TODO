@@ -15,3 +15,15 @@ https://breathe.readthedocs.io/en/latest/quickstart.html
 .. doxygenenum::
 .. doxygentypedef::
 .. doxygenclass::
+
+
+Plane curvature
+Profile curvature
+Slope (percent rise)
+Aspect
+Flow accumulation
+SPI
+CTI
+
+Do with D8 & Dinf, Pit-filled & ~Pit-filled
+
