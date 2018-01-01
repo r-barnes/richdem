@@ -7,7 +7,7 @@
 namespace richdem {
 
 template<class T> void FillDepressions       (Array2D<T> &dem){ Zhou2016              (dem); }
-template<class T> void FillDepressionsEpsilon(Array2D<T> &dem){ priority_flood_epsilon(dem); }
+template<class T> void FillDepressionsEpsilon(Array2D<T> &dem){ PriorityFloodEpsilon_Barnes2014(dem); }
 
 }
 

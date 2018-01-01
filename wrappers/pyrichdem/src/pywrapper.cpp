@@ -29,7 +29,7 @@ using namespace richdem;
 template<class T>
 void TemplatedWrapper(py::module &m, std::string tname){
   m.def("rdFillDepressions",     &Zhou2016<T>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<T>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<T>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<T>,                  "TODO");
   

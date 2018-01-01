@@ -13,9 +13,9 @@ int PerformAlgorithm(std::string outputname, uint32_t max_dep_size, std::string 
   elevation.loadData();
 
   if(max_dep_size==0)
-    Zhou2016(elevation);
+    PriorityFlood_Zhou2016(elevation);
   else
-    improved_priority_flood_max_dep(elevation,max_dep_size);
+    PriorityFlood_Barnes2014_max_dep(elevation,max_dep_size);
 
   elevation.saveGDAL(outputname,analysis);
 

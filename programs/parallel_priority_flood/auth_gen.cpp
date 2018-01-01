@@ -4,7 +4,7 @@
 #include "Array2D.hpp"
 #include "common.hpp"
 
-//improved_priority_flood
+//PriorityFlood_Barnes2014
 /**
   @brief  Fills all pits and removes all digital dams from a DEM
   @author Richard Barnes (rbarnes@umn.edu)

@@ -1,5 +1,5 @@
   m.def("rdFillDepressions",     &Zhou2016<float>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<float>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<float>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<float>,                  "TODO");
 
@@ -125,7 +125,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<double>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<double>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<double>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<double>,                  "TODO");
 
@@ -251,7 +251,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<int8_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<int8_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<int8_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<int8_t>,                  "TODO");
 
@@ -377,7 +377,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<int16_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<int16_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<int16_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<int16_t>,                  "TODO");
 
@@ -503,7 +503,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<int32_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<int32_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<int32_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<int32_t>,                  "TODO");
 
@@ -629,7 +629,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<int64_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<int64_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<int64_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<int64_t>,                  "TODO");
 
@@ -755,7 +755,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<uint8_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<uint8_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<uint8_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<uint8_t>,                  "TODO");
 
@@ -881,7 +881,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<uint16_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<uint16_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<uint16_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<uint16_t>,                  "TODO");
 
@@ -1007,7 +1007,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<uint32_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<uint32_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<uint32_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<uint32_t>,                  "TODO");
 
@@ -1133,7 +1133,7 @@
           return a(i);
         }
       );        m.def("rdFillDepressions",     &Zhou2016<uint64_t>,                     "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &priority_flood_epsilon<uint64_t>,       "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<uint64_t>,       "Fill all depressions with epsilon."); //TODO
 
   m.def("rdBreach",              &Lindsay2016<uint64_t>,                  "TODO");
 

@@ -124,7 +124,7 @@ void ProcessPit_onepass(
     2. **elevations** contains no landscape depressions or digital dams.
 */
 template<class elev_t>
-void Zhou2016(
+void PriorityFlood_Zhou2016(
   Array2D<elev_t> &dem
 ){
   std::queue<int> traceQueue;

@@ -127,7 +127,7 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void original_priority_flood(Array2D<elev_t> &elevations){
+void PriorityFlood_Original(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   uint64_t processed_cells = 0;
   uint64_t pitc            = 0;
@@ -214,7 +214,7 @@ void original_priority_flood(Array2D<elev_t> &elevations){
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void improved_priority_flood(Array2D<elev_t> &elevations){
+void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
   uint64_t processed_cells = 0;
@@ -313,7 +313,7 @@ void improved_priority_flood(Array2D<elev_t> &elevations){
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void priority_flood_epsilon(Array2D<elev_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
   ProgressBar progress;
@@ -395,31 +395,31 @@ void priority_flood_epsilon(Array2D<elev_t> &elevations){
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
-void priority_flood_epsilon(Array2D<uint8_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint8_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
-void priority_flood_epsilon(Array2D<uint16_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint16_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
-void priority_flood_epsilon(Array2D<int16_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<int16_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
-void priority_flood_epsilon(Array2D<uint32_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint32_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<>
-void priority_flood_epsilon(Array2D<int32_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<int32_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
@@ -454,7 +454,7 @@ void priority_flood_epsilon(Array2D<int32_t> &elevations){
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void priority_flood_flowdirs(const Array2D<elev_t> &elevations, Array2D<d8_flowdir_t> &flowdirs){
+void PriorityFloodFlowdirs_Barnes2014(const Array2D<elev_t> &elevations, Array2D<d8_flowdir_t> &flowdirs){
   GridCellZk_pq<elev_t> open;
   uint64_t processed_cells = 0;
   ProgressBar progress;
@@ -659,7 +659,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
   @param[in,out] elevations        A grid of cell elevations
   @param[out]    labels            A grid to hold the watershed labels
   @param[in]     alter_elevations
-    If true, then **elevations** is altered as though improved_priority_flood()
+    If true, then **elevations** is altered as though PriorityFlood_Barnes2014()
     had been applied. The result is that all cells drain to the edges of the
     DEM. Otherwise, **elevations** is not altered.
 
@@ -678,7 +678,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
     The correctness of this command is determined by inspection. (TODO)
 */
 template<class elev_t>
-void priority_flood_watersheds(
+void PriorityFloodWatersheds_Barnes2014(
   Array2D<elev_t> &elevations, Array2D<int32_t> &labels, bool alter_elevations
 ){
   GridCellZ_pq<elev_t> open;
@@ -802,7 +802,7 @@ void priority_flood_watersheds(
     The correctness of this command is determined by inspection. (TODO)
 */
 template <class elev_t>
-void improved_priority_flood_max_dep(
+void PriorityFlood_Barnes2014_max_dep(
   Array2D<elev_t> &elevations,
   uint64_t max_dep_size
 ){

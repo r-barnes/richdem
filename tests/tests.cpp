@@ -171,38 +171,38 @@ TEST_CASE("Checking depression filling") {
   Array2D<int> elevation_orig("depressions/testdem1.dem");
   RDLOG_DEBUG<<"Loaded depressions/testdem1.dem";
 
-  SUBCASE("original_priority_flood"){
+  SUBCASE("PriorityFlood_Original"){
     auto elevation = elevation_orig;
-    original_priority_flood(elevation);
+    PriorityFlood_Original(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
-  SUBCASE("improved_priority_flood"){
+  SUBCASE("PriorityFlood_Barnes2014"){
     auto elevation = elevation_orig;
-    improved_priority_flood(elevation);
+    PriorityFlood_Barnes2014(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
   SUBCASE("Zhou2016"){
     auto elevation = elevation_orig;
-    Zhou2016(elevation);
+    PriorityFlood_Zhou2016(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
   }
 
-  SUBCASE("improved_priority_flood_max_dep"){
+  SUBCASE("PriorityFlood_Barnes2014_max_dep"){
     auto elevation = elevation_orig;
-    improved_priority_flood_max_dep(elevation,1);
+    PriorityFlood_Barnes2014_max_dep(elevation,1);
     elevation.printAll();
     Array2D<int> manually_flooded("depressions/testdem1.1.out");
     REQUIRE(elevation==manually_flooded);
   }
 
-  SUBCASE("improved_priority_flood_max_dep"){
+  SUBCASE("PriorityFlood_Barnes2014_max_dep"){
     auto elevation = elevation_orig;
-    improved_priority_flood_max_dep(elevation,2);
+    PriorityFlood_Barnes2014_max_dep(elevation,2);
     elevation.printAll();
     Array2D<int> manually_flooded("depressions/testdem1.2.out");
     REQUIRE(elevation==manually_flooded);

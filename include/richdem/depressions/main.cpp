@@ -21,7 +21,7 @@ int PerformAlgorithm(char alg, std::string filename, std::string output_prefix){
   switch(alg){
     case '1':
       algtimer.start();
-      original_priority_flood(elevations);
+      PriorityFlood_Original(elevations);
       algtimer.stop();
 
       output_name = "-pf-original.tif";
@@ -37,7 +37,7 @@ int PerformAlgorithm(char alg, std::string filename, std::string output_prefix){
 
     case '2':
       algtimer.start();
-      improved_priority_flood(elevations);
+      PriorityFlood_Barnes2014(elevations);
       algtimer.stop();
 
       output_name = "-pf-improved.tif";
@@ -53,7 +53,7 @@ int PerformAlgorithm(char alg, std::string filename, std::string output_prefix){
 
     case '3':
       algtimer.start();
-      priority_flood_epsilon(elevations);
+      PriorityFloodEpsilon_Barnes2014(elevations);
       algtimer.stop();
 
       output_name = "-pf-epsilon.tif";
@@ -69,7 +69,7 @@ int PerformAlgorithm(char alg, std::string filename, std::string output_prefix){
 
     case '4':
       algtimer.start();
-      priority_flood_flowdirs(elevations,flowdirs);
+      PriorityFloodFlowdirs_Barnes2014(elevations,flowdirs);
       algtimer.stop();
 
       output_name = "-pf-flowdirs.tif";
@@ -85,7 +85,7 @@ int PerformAlgorithm(char alg, std::string filename, std::string output_prefix){
 
     case '5':
       algtimer.start();
-      priority_flood_watersheds(elevations,pit_mask,false);
+      PriorityFloodWatersheds_Barnes2014(elevations,pit_mask,false);
       algtimer.stop();
 
       output_name = "-pf-wlabels.tif";
