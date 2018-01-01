@@ -5,7 +5,13 @@ set -e -x
 for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install -r /io/wrappers/pyrichdem/requirements.txt
     "${PYBIN}/pip" wheel /io/wrappers/pyrichdem/ -w wheelhouse/
+
+    cd /io/wrappers/pyrichdem
+    "${PYBIN}/python" setup.py bdist_wheel -d ../../wheelhouse/
+    rm -rf build/ richdem.egg-info/ dist/
 done
+
+cd /io/
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/*.whl; do
