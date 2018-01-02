@@ -24,11 +24,11 @@ import zipfile
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../wrappers/pyrichdem/'))
 
-if not os.path.exists('../data/beauford.tif'):
-  print('Extracting Beauford data for figure generation...')
-  zip_ref = zipfile.ZipFile('../data/beauford.zip', 'r')
-  zip_ref.extractall('../data/')
-  zip_ref.close()
+# if not os.path.exists('../data/beauford.tif'):
+#   print('Extracting Beauford data for figure generation...')
+#   zip_ref = zipfile.ZipFile('../data/beauford.zip', 'r')
+#   zip_ref.extractall('../data/')
+#   zip_ref.close()
 
 # -- General configuration ------------------------------------------------
 
