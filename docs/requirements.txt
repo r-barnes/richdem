@@ -2,3 +2,4 @@ breathe ~= 4.7.3
 sphinxcontrib-napoleon ~= 0.6.1
 numpy ~= 1.13.3
 richdem ~= 0.0.9
+matplotlib ~= 2.0.2
