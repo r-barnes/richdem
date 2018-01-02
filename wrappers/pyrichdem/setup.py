@@ -84,7 +84,18 @@ setuptools.setup(
   ext_modules       = ext_modules,
   keywords          = 'GIS terrain hydrology geomorphology raster',
   #packages         = find_packages(exclude=['contrib', 'docs', 'tests*']),
-  install_requires  = ['numpy==1.12'],
+  install_requires  = [
+    "numpy>=1.7,<2; python_version > '3.4'",
+    "numpy>=1.7,<1.12; python_version < '3.4'"
+  ],
+  # extras_require    = {
+  #   ':python_version > "3.4"': [
+  #     'numpy>=1.7,<2'
+  #   ],
+  #   ':python_version < "3.4"': [
+  #     'numpy>=1.7,<1.12'
+  #   ]
+  # },  
   #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers
