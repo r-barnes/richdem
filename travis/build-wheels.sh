@@ -5,7 +5,8 @@ mkdir -p /io/wheelhouse
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    /io/travis/repipinator.sh "${PYBIN}/pip" -r /io/wrappers/pyrichdem/requirements.txt
+    #/io/travis/repipinator.sh 
+    "${PYBIN}/pip" install -r /io/wrappers/pyrichdem/requirements.txt
     #"${PYBIN}/pip" wheel /io/wrappers/pyrichdem/ -w wheelhouse/ #Original many linux command
 
     #The following is my hackery
