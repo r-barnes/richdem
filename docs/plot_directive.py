@@ -76,7 +76,8 @@ The ``plot`` directive supports the following options:
     outname : str
         If specified, the names of the generated plots will start with the value
         of `:outname:`. This is handy for preserving output results if code is
-        reordered between runs.
+        reordered between runs. The value of `:outname:` must be unique across
+        the generated documentation.
 
 Additionally, this directive supports all of the options of the
 `image` directive, except for `target` (since plot will add its own
@@ -189,6 +190,8 @@ else:
 from matplotlib import _pylab_helpers
 
 __version__ = 2
+
+outname_list = set()
 
 #------------------------------------------------------------------------------
 # Registration hook
@@ -703,6 +706,11 @@ def run(arguments, content, options, state_machine, state, lineno):
 
     #Get output name of the images, if the option was provided
     outname = options.get('outname', '') 
+
+    if outname in outname_list:
+      raise Exception("The outname '{0}' is not unique!".format(outname))
+    else:
+      outname_list.add(outname)
 
     if config.plot_preserve_dir:
       config.plot_preserve_dir = os.path.join(config.plot_preserve_dir, '') #Ensure it ends with a slash
