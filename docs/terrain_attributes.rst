@@ -18,7 +18,7 @@ chosen is the maximum of this surface and can be returned in several formats.
     :width: 800pt
     :include-source:
     :context: reset
-    :cached: richdem-docs/terrain_slope
+    :outname: terrain_slope
 
     import richdem as rd
     import numpy as np
@@ -51,7 +51,7 @@ cell. The value returned is in Degrees.
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/terrain_aspect
+    :outname: terrain_aspect
 
     aspect = rd.TerrainAttribute(beau, attrib='aspect')
     rd.rdShow(aspect, axes=False, cmap='jet', figsize=(8,5.5))
@@ -88,7 +88,7 @@ curvature of zero indicates a linear slope (C).
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/terrain_profile_curvature
+    :outname: terrain_profile_curvature
 
     profile_curvature = rd.TerrainAttribute(beau, attrib='profile_curvature')
     rd.rdShow(profile_curvature, axes=False, cmap='jet', figsize=(8,5.5))
@@ -122,7 +122,7 @@ curvature of zero indicates a linear slope (C).
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/terrain_planform_curvature
+    :outname: terrain_planform_curvature
 
     planform_curvature = rd.TerrainAttribute(beau, attrib='planform_curvature')
     rd.rdShow(planform_curvature, axes=False, cmap='jet', figsize=(8,5.5))
@@ -151,7 +151,7 @@ neighbours. It combines profile and planform curvature.
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/terrain_curvature
+    :outname: terrain_curvature
 
     curvature = rd.TerrainAttribute(beau, attrib='curvature')
     rd.rdShow(curvature, axes=False, cmap='jet', figsize=(8,5.5))

@@ -25,7 +25,7 @@ For reference, the original DEM appears as follows:
     :width: 800pt
     :include-source:
     :context: reset
-    :cached: richdem-docs/depression_original
+    :outname: depression_original
 
     import richdem as rd
     import numpy as np
@@ -46,7 +46,7 @@ The result looks as follows:
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/depression_complete
+    :outname: depression_complete
 
     beau_filled    = rd.FillDepressions(beau, in_place=False)
     beaufig_filled = rd.rdShow(beau_filled, ignore_colours=[0], axes=False, cmap='jet', vmin=beaufig['vmin'], vmax=beaufig['vmax'], figsize=(8,5.5))
@@ -57,7 +57,7 @@ We can visualize the difference between the two like so:
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/depression_complete_original_diff
+    :outname: depression_complete_original_diff
 
     beau_diff    = beau_filled - beau
     beaufig_diff = rd.rdShow(beau_diff, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
@@ -101,7 +101,7 @@ DEM like so:
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/depression_eps_diff
+    :outname: depression_eps_diff
 
     beau_epsilon         = rd.FillDepressions(beau, epsilon=True, in_place=False)
     beau_eps_diff        = beau_epsilon - beau
@@ -115,7 +115,7 @@ from the depression's outlet: this is the effect of the epsilon.
     :width: 800pt
     :include-source:
     :context: close-figs
-    :cached: richdem-docs/depression_filled_eps_diff
+    :outname: depression_filled_eps_diff
 
     beau_diffeps_diff    = beau_epsilon - beau_filled
     beaufig_diffeps_diff = rd.rdShow(beau_diffeps_diff, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))

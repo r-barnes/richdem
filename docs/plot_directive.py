@@ -73,9 +73,10 @@ The ``plot`` directive supports the following options:
         be inserted.  This is usually useful with the ``:context:``
         option.
 
-    cached : str
-        If specified, the plots located at the basename specified by the
-        `:cached:` option will be used and no computation will be done. CHEESE
+    outname : str
+        If specified, the names of the generated plots will start with the value
+        of `:outname:`. This is handy for preserving output results if code is
+        reordered between runs.
 
 Additionally, this directive supports all of the options of the
 `image` directive, except for `target` (since plot will add its own
@@ -137,9 +138,16 @@ The plot directive has the following configuration options:
 
     plot_template
         Provide a customized template for preparing restructured text.
+
+    plot_preserve_dir
+        Files with outnames are copied to this directory and files in this 
+        directory are copied back from into the build directory prior to the
+        build beginning.
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
+import re
 
 import six
 from six.moves import xrange
@@ -150,7 +158,6 @@ import traceback
 import warnings
 
 import glob
-import pickle
 
 if not six.PY3:
     import cStringIO
@@ -270,7 +277,7 @@ def setup(app):
                'context':        _option_context,
                'nofigs':         directives.flag,
                'encoding':       directives.encoding,
-               'cached':         str
+               'outname':        str
     }
 
     app.add_directive('plot', plot_directive, True, (0, 2, False), **options)
@@ -284,6 +291,7 @@ def setup(app):
     app.add_config_value('plot_apply_rcparams',        False, True)
     app.add_config_value('plot_working_directory',     None,  True)
     app.add_config_value('plot_template',              None,  True)
+    app.add_config_value('plot_preserve_dir',          '',    True)
 
     app.connect(str('doctree-read'), mark_plot_labels)
 
@@ -440,23 +448,16 @@ Exception occurred rendering plot.
 plot_context = dict()
 
 class ImageFile(object):
-    def __init__(self, basename, dirname, cachebase=None):
+    def __init__(self, basename, dirname):
         self.basename  = basename
         self.dirname   = dirname
         self.formats   = []
-        self.cachebase = cachebase
 
     def filename(self, format):
         return os.path.join(self.dirname, "%s.%s" % (self.basename, format))
 
     def filenames(self):
         return [self.filename(fmt) for fmt in self.formats]
-
-    def cachename(self, format):
-        return "{0}.{1}".format(self.cachebase, format)
-
-    def cachenames(self):
-        return [self.cachename(fmt) for fmt in self.formats]
 
 
 def out_of_date(original, derived):
@@ -581,7 +582,7 @@ def get_plot_formats(config):
 
 def render_figures(code, code_path, output_dir, output_base, context,
                    function_name, config, context_reset=False,
-                   close_figs=False, cached=False):
+                   close_figs=False, outname=''):
     """
     Run a pyplot script and save the images in *output_dir*.
 
@@ -594,23 +595,9 @@ def render_figures(code, code_path, output_dir, output_base, context,
 
     code_pieces = split_code_at_show(code)
 
-    if cached and os.path.exists(cached+'.pickle'):
-        try:
-            results = pickle.load(open(cached+'.pickle', 'rb'))
-        except Exception as err:
-            raise PlotError(traceback.format_exc())        
-
-        for code_piece, imglist in results:
-            for img in imglist:
-                for cache_name, dest_name in zip(img.cachenames(),img.filenames()):
-                    shutil.copyfile(cache_name, dest_name)
-
-        return results
-
-
     # Look for single-figure output files first
     all_exists = True
-    img        = ImageFile(basename=output_base, dirname=output_dir, cachebase=cached)
+    img        = ImageFile(basename=output_base, dirname=output_dir)
     for format, dpi in formats:
         if out_of_date(code_path, img.filename(format)):
             all_exists = False
@@ -627,9 +614,9 @@ def render_figures(code, code_path, output_dir, output_base, context,
         images = []
         for j in xrange(1000):
             if len(code_pieces) > 1:
-                img = ImageFile(basename='%s_%02d_%02d' % (output_base, i, j), dirname=output_dir, cachebase=cached)
+                img = ImageFile(basename='%s_%02d_%02d' % (output_base, i, j), dirname=output_dir)
             else:
-                img = ImageFile(basename='%s_%02d'      % (output_base, j),    dirname=output_dir, cachebase=cached)
+                img = ImageFile(basename='%s_%02d'      % (output_base, j),    dirname=output_dir)
             for format, dpi in formats:
                 if out_of_date(code_path, img.filename(format)):
                     all_exists = False
@@ -675,17 +662,18 @@ def render_figures(code, code_path, output_dir, output_base, context,
         fig_managers = _pylab_helpers.Gcf.get_all_fig_managers()
         for j, figman in enumerate(fig_managers):
             if len(fig_managers) == 1 and len(code_pieces) == 1:
-                img = ImageFile(output_base, output_dir, cachebase=cached)
+                img = ImageFile(output_base, output_dir)
             elif len(code_pieces) == 1:
-                img = ImageFile("%s_%02d"      % (output_base, j),    output_dir, cachebase=cached)
+                img = ImageFile("%s_%02d"      % (output_base, j),    output_dir)
             else:
-                img = ImageFile("%s_%02d_%02d" % (output_base, i, j), output_dir, cachebase=cached)
+                img = ImageFile("%s_%02d_%02d" % (output_base, i, j), output_dir)
             images.append(img)
             for format, dpi in formats:
                 try:
                     figman.canvas.figure.savefig(img.filename(format), dpi=dpi)
-                    if cached:
-                      shutil.copyfile(img.filename(format), img.cachename(format))
+                    if config.plot_preserve_dir and outname:
+                      print("Preserving '{0}' into '{1}'".format(img.filename(format), config.plot_preserve_dir))
+                      shutil.copy2(img.filename(format), config.plot_preserve_dir)
                 except Exception as err:
                     raise PlotError(traceback.format_exc())
                 img.formats.append(format)
@@ -694,12 +682,6 @@ def render_figures(code, code_path, output_dir, output_base, context,
 
     if not context or config.plot_apply_rcparams:
         clear_state(config.plot_rcparams, close=not context)
-
-    if cached:
-        try:
-            pickle.dump(results, open(cached+'.pickle', 'wb'), protocol=2)
-        except Exception as err:
-            raise PlotError(traceback.format_exc())        
 
     return results
 
@@ -719,8 +701,11 @@ def run(arguments, content, options, state_machine, state, lineno):
     rst_file = document.attributes['source']
     rst_dir  = os.path.dirname(rst_file)
 
-    #Get basename of the cached files, if the option was provided
-    cached = options.get('cached', False) 
+    #Get output name of the images, if the option was provided
+    outname = options.get('outname', '') 
+
+    if config.plot_preserve_dir:
+      config.plot_preserve_dir = os.path.join(config.plot_preserve_dir, '') #Ensure it ends with a slash
 
     if len(arguments):
         if not config.plot_basedir:
@@ -757,6 +742,8 @@ def run(arguments, content, options, state_machine, state, lineno):
         output_base = base
     else:
         source_ext = ''
+
+    output_base = re.sub('^[^-]*', outname, output_base)
 
     # ensure that LaTeX includegraphics doesn't choke in foo.bar.pdf filenames
     output_base = output_base.replace('.', '-')
@@ -804,6 +791,12 @@ def run(arguments, content, options, state_machine, state, lineno):
         build_dir_link = build_dir
     source_link = dest_dir_link + '/' + output_base + source_ext
 
+    if config.plot_preserve_dir and outname:
+      outfiles = glob.glob(os.path.join(config.plot_preserve_dir,outname) + '*')
+      for of in outfiles:
+        print("Copying preserved copy of '{0}' into '{1}'".format(of, build_dir))
+        shutil.copy2(of, build_dir)
+
     # make figures
     try:
         results = render_figures(code,
@@ -815,7 +808,7 @@ def run(arguments, content, options, state_machine, state, lineno):
                                  config,
                                  context_reset = context_opt == 'reset',
                                  close_figs    = context_opt == 'close-figs',
-                                 cached = cached)
+                                 outname = outname)
         errors = []
     except PlotError as err:
         reporter = state.memo.reporter
