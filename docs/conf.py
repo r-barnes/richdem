@@ -24,6 +24,8 @@ import zipfile
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../wrappers/pyrichdem/'))
 
+sys.path.append(os.path.abspath('.'))
+
 # if not os.path.exists('../data/beauford.tif'):
 #   print('Extracting Beauford data for figure generation...')
 #   zip_ref = zipfile.ZipFile('../data/beauford.zip', 'r')
@@ -43,7 +45,8 @@ extensions = [
   'breathe',
   'sphinx.ext.coverage',
   'sphinxcontrib.napoleon',
-  'matplotlib.sphinxext.plot_directive',
+  #'matplotlib.sphinxext.plot_directive',
+  'plot_directive',
   'sphinx.ext.mathjax',
   'sphinx.ext.todo'
 ]
