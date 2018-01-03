@@ -697,7 +697,7 @@ def render_figures(code, code_path, output_dir, output_base, context,
 
     if cached:
         try:
-            pickle.dump(results, open(cached+'.pickle', 'wb'))
+            pickle.dump(results, open(cached+'.pickle', 'wb'), protocol=2)
         except Exception as err:
             raise PlotError(traceback.format_exc())        
 
