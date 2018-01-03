@@ -148,17 +148,13 @@ The plot directive has the following configuration options:
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import re
-
 import six
 from six.moves import xrange
 
-import sys, os, shutil, io, re, textwrap
+import sys, os, shutil, io, re, textwrap, glob
 from os.path import relpath
 import traceback
 import warnings
-
-import glob
 
 if not six.PY3:
     import cStringIO
@@ -191,7 +187,10 @@ from matplotlib import _pylab_helpers
 
 __version__ = 2
 
-outname_list = set()
+#Outnames must be unique. This variable stores the outnames that
+#have been seen so we can guarantee this and warn the user if a
+#duplicate is encountered.
+_outname_list = set()
 
 #------------------------------------------------------------------------------
 # Registration hook
@@ -707,10 +706,12 @@ def run(arguments, content, options, state_machine, state, lineno):
     #Get output name of the images, if the option was provided
     outname = options.get('outname', '') 
 
-    if outname in outname_list:
+    #Ensure that the outname is unique, otherwise copied images will
+    #not be what user expects
+    if outname and outname in _outname_list:
       raise Exception("The outname '{0}' is not unique!".format(outname))
     else:
-      outname_list.add(outname)
+      _outname_list.add(outname)
 
     if config.plot_preserve_dir:
       config.plot_preserve_dir = os.path.join(config.plot_preserve_dir, '') #Ensure it ends with a slash
@@ -751,7 +752,10 @@ def run(arguments, content, options, state_machine, state, lineno):
     else:
         source_ext = ''
 
-    output_base = re.sub('^[^-]*', outname, output_base)
+    #outname, if present, overrides output_base, but preserve
+    #numbering of multi-figure code snippets
+    if outname:
+      output_base = re.sub('^[^-]*', outname, output_base)
 
     # ensure that LaTeX includegraphics doesn't choke in foo.bar.pdf filenames
     output_base = output_base.replace('.', '-')
@@ -799,6 +803,9 @@ def run(arguments, content, options, state_machine, state, lineno):
         build_dir_link = build_dir
     source_link = dest_dir_link + '/' + output_base + source_ext
 
+    #If we previously preserved copies of the generated figures
+    #this copies them into the build directory so that they will
+    #not be remade
     if config.plot_preserve_dir and outname:
       outfiles = glob.glob(os.path.join(config.plot_preserve_dir,outname) + '*')
       for of in outfiles:
