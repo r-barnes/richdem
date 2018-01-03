@@ -1,0 +1,3 @@
+[submodule "docs/richdem-docs"]
+	path = docs/richdem-docs
+	url = git@github.com:r-barnes/richdem-docs.git
