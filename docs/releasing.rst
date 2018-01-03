@@ -38,3 +38,19 @@ documentation.
 From without the container run, e.g.:
 
     docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp27-cp27m-linux_x86_64.whl ./
+
+Upload the wheel to PyPI with
+
+    twine upload richdem-0.0.9-cp*
+
+
+Updating Source Dist
+--------------------------------------------------
+
+To generate a source distribution, run
+
+    python3 setup.py sdist
+
+Upload it to PyPI with, e.g.
+
+    twine upload dist/richdem-0.0.10.tar.gz

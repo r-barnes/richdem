@@ -26,39 +26,3 @@ SPI
 CTI
 
 Do with D8 & Dinf, Pit-filled & ~Pit-filled
-
-
-
-
-
-  239  ls
-  240  docker ps
-  241  docker cp wizardly_mclean:/io/wheelhouse/* ./
-  242  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp27-cp27m-linux_x86_64.whl ./
-  243  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp27-cp27m-manylinux1_x86_64.whl ./
-  244  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp27-cp27mu-linux_x86_64.whl ./
-  245  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp27-cp27mu-manylinux1_x86_64.whl ./
-  246  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp33-cp33m-linux_x86_64.whl ./
-  247  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp33-cp33m-manylinux1_x86_64.whl ./
-  248  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp34-cp34m-linux_x86_64.whl ./
-  249  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp34-cp34m-manylinux1_x86_64.whl ./
-  250  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp35-cp35m-linux_x86_64.whl ./
-  251  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp35-cp35m-manylinux1_x86_64.whl ./
-  252  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp36-cp36m-linux_x86_64.whl ./
-  253  docker cp wizardly_mclean:/io/wheelhouse/richdem-0.0.9-cp36-cp36m-manylinux1_x86_64.whl ./
-  254  docker ps
-  255  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp27-cp27m-linux_x86_64.whl ./
-  256  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp27-cp27m-manylinux1_x86_64.whl ./
-  257  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp27-cp27mu-linux_x86_64.whl ./
-  258  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp27-cp27mu-manylinux1_x86_64.whl ./
-  259  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp33-cp33m-linux_x86_64.whl ./
-  260  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp33-cp33m-manylinux1_x86_64.whl ./
-  261  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp34-cp34m-linux_x86_64.whl ./
-  262  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp34-cp34m-manylinux1_x86_64.whl ./
-  263  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp35-cp35m-linux_x86_64.whl ./
-  264  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp35-cp35m-manylinux1_x86_64.whl ./
-  265  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp36-cp36m-linux_x86_64.whl ./
-  266  docker cp mystifying_darwin:/io/wheelhouse/richdem-0.0.9-cp36-cp36m-manylinux1_x86_64.whl ./
-
-rm -f *linux_x86*
-twine upload richdem-0.0.9-cp*
