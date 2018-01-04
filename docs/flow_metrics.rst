@@ -80,6 +80,7 @@ This is a convergent, deterministic flow method.
     :width: 800pt
     :include-source:
     :context: reset
+    :outname: flow_metric_d8
 
     import richdem as rd
     import numpy as np
@@ -119,6 +120,7 @@ This is a convergent, stochastic flow method.
     :width: 800pt
     :include-source:
     :context: close-figs
+    :outname: flow_metric_rho8
 
     accum_rho8 = rd.FlowAccumulation(dem, method='Rho8')
     rd.rdShow(accum_rho8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
@@ -148,6 +150,7 @@ This is a divergent, deterministic flow method.
     :width: 800pt
     :include-source:
     :context: close-figs
+    :outname: flow_metric_quinn1991
 
     accum_quinn = rd.FlowAccumulation(dem, method='Quinn')
     rd.rdShow(accum_quinn, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
@@ -183,6 +186,7 @@ This is a divergent, deterministic flow method.
     :width: 800pt
     :include-source:
     :context: close-figs
+    :outname: flow_metric_freeman1991
 
     accum_freeman = rd.FlowAccumulation(dem, method='Freeman', exponent=1.1)
     rd.rdShow(accum_freeman, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
@@ -223,6 +227,7 @@ This is a divergent, deterministic flow method.
     :width: 800pt
     :include-source:
     :context: close-figs
+    :outname: flow_metric_holmgren1994
 
     accum_holmgren = rd.FlowAccumulation(dem, method='Holmgren', exponent=5)
     rd.rdShow(accum_holmgren, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
@@ -258,6 +263,7 @@ This is a divergent, deterministic flow method.
     :width: 800pt
     :include-source:
     :context: close-figs
+    :outname: flow_metric_tarboton1997
 
     accum_dinf = rd.FlowAccumulation(dem, method='Dinf')
     rd.rdShow(accum_dinf, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
@@ -277,6 +283,7 @@ Side-by-Side Comparisons of Flow Metrics
     :width:   800pt
     :height:  600pt
     :context: close-figs
+    :outname: flow_metric_comparison
 
     metrics = (
       ('D8',       accum_d8      ),
@@ -310,6 +317,7 @@ nonetheless, they are different:
     :width:   800pt
     :height:  600pt
     :context: close-figs
+    :outname: flow_metric_quinn_freeman_compare
 
     quinn_freeman_diff = accum_quinn - accum_freeman
     rd.rdShow(quinn_freeman_diff, figsize=(8,5.5), axes=False, cmap='jet', ignore_colours=[0])

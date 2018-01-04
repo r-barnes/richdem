@@ -64,7 +64,7 @@ It can flood or breach depressions, as well as calculate flow accumulation, slop
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.0.9',
+  version           = '0.0.10',
   description       = 'High-Performance Terrain Analysis',
   long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
@@ -84,7 +84,18 @@ setuptools.setup(
   ext_modules       = ext_modules,
   keywords          = 'GIS terrain hydrology geomorphology raster',
   #packages         = find_packages(exclude=['contrib', 'docs', 'tests*']),
-  install_requires  = ['numpy>=1.10,<2'],
+  install_requires  = [
+    "numpy>=1.7,<2; python_version > '3.4' or python_version < '3.0'",
+    "numpy>=1.7,<1.12; python_version < '3.4' and python_version > '3.0'"
+  ],
+  # extras_require    = {
+  #   ':python_version > "3.4"': [
+  #     'numpy>=1.7,<2'
+  #   ],
+  #   ':python_version < "3.4"': [
+  #     'numpy>=1.7,<1.12'
+  #   ]
+  # },  
   #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers

@@ -6,6 +6,7 @@ Beauford Watershed, Minnesota, USA is frqeuently used as an example dataset.
 .. plot::
     :width: 800pt
     :include-source:
+    :outname: beauford_example
 
     import richdem as rd
     import numpy as np

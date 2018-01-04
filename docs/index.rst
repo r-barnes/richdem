@@ -53,3 +53,9 @@ RichDEM --- High-Performance Terrain Analysis
    publications
    sponsors
    feedback
+
+.. toctree::
+   :caption: For Developers
+   :maxdepth: 1
+
+   releasing

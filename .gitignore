@@ -4,3 +4,4 @@ upserver.sh
 perf.data*
 dev/
 experiments/
+*.pyc
