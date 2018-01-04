@@ -16,14 +16,15 @@ script:
 - docker run --rm -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
 - ls wheelhouse/
 before_deploy:
-    pip install twine
+    - cd /
+    #pip install twine
 deploy:
   provider: pypi
   user: rbarnes
   password:
     secure: qvHDwk04g7uuSvG13rMn1HoL5Sl6CRMMnguVvVmOSuyiornPJ+3ezxPm/B7KtNKpDAtpBImlJxEZnBBdlYE8KUZo2Dpqkey1oPTO5+Y9+MaDGjAL4M1umcUj5BxjknpeL/YObToctZcz5VyE6g2H3EZXSZIZLhITcTv3+W7yaEweh6tEjodAlwPV1Wt59IxRZGRCXQ+UFtrOU7vDUEG9sB8KE7DHkklRMXTJHUJAsh2325lLnoTfRsT2uiay52R6SiUPsai6xewYjL9ahOEL6vXSIpKJWTCqLlhWMGOHZ8czd0VhVFYpPX7fKUenxnh4peNsHSunU/Ca0dkvCDI7rBzhDoyq4iiLD6y56ZMtaEP9+WwwLAfhhV7YzLYOC5C01v5jbk0EdzmPZLOfP6NDQSVgpz+0VIBoTybJYwxiabDpNn9KDHHwFFTlQwNtvNDy/sqNZrT2pU/E4BWk5P+6jTNyDlEuwjIPgIT8ycXAGIMe0K8wH02pQWmdVj2dnzQxWqMKqmXMRdD2NLCTNFnpMAEO55HP9ZxzNMwbnJskn4O1yYKFOXw3PsxyGgWL5nkkYrTIrDQtxSW4kWDVMFmfmfhpFD1myrH0gYb30VM4Cbe7jkJx/kBwYuGg5tUSyvFtJyzhNl8PnpnK0YL2pEKB9K/3MBleP7eYplK5+DQN6bw=
-  on:
-    tags: true
+#  on:
+#    tags: true
   file: /io/wheelhouse/*
   skip_cleanup: true
   overwrite: true
