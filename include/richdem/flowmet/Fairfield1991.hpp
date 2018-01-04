@@ -1,6 +1,7 @@
 #ifndef _richdem_Fairfield1991_hpp_
 #define _richdem_Fairfield1991_hpp_
 
+#include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -13,7 +14,7 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  std::vector<float> props(9*elevations.size(),0);
+  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -55,6 +56,7 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
     if(greatest_n==0)
       continue;
 
+    props.at(9*ci+0)          = HAS_FLOW_GEN;
     props.at(9*ci+greatest_n) = 1;
 
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill

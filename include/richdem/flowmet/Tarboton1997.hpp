@@ -1,6 +1,7 @@
 #ifndef _flowdirs_Tarboton1997_hpp_
 #define _flowdirs_Tarboton1997_hpp_
 
+#include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -12,7 +13,7 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
-  std::vector<float> props(9*elevations.size(),0); //TODO: NO_FLOW
+  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
 
   //TODO: Assumes that the width and height of grid cells are equal and scaled
   //to 1.
@@ -51,6 +52,8 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   for(int y=1;y<elevations.height()-1;y++)
   for(int x=1;x<elevations.width()-1;x++){
     ++progress;
+
+    const int ci = elevations.xyToI(x,y);
 
     int8_t nmax = -1;
     double smax = 0;
@@ -100,6 +103,8 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
     if(nmax==-1)
       continue;
 
+    props.at(9*ci+0) = HAS_FLOW_GEN;
+
     if(af[nmax]==1 && rmax==0)
       rmax = dang;
     else if(af[nmax]==1 && rmax==dang)
@@ -114,12 +119,12 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
     //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
 
     if(rmax==0){
-      props.at(9*elevations.xyToI(x,y)+nmax) = 1;
+      props.at(9*ci+nmax) = 1;
     } else if(rmax==dang){
-      props.at(9*elevations.xyToI(x,y)+nwrap(nmax+1)) = 1;
+      props.at(9*ci+nwrap(nmax+1)) = 1;
     } else {
-      props.at(9*elevations.xyToI(x,y)+nmax)          = rmax/(M_PI/4.);
-      props.at(9*elevations.xyToI(x,y)+nwrap(nmax+1)) = 1-rmax/(M_PI/4.);      
+      props.at(9*ci+nmax)          = rmax/(M_PI/4.);
+      props.at(9*ci+nwrap(nmax+1)) = 1-rmax/(M_PI/4.);      
     }
   }
   progress.stop();

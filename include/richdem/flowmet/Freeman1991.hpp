@@ -1,6 +1,7 @@
 #ifndef _richdem_Freeman1991_hpp_
 #define _richdem_Freeman1991_hpp_
 
+#include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -16,7 +17,7 @@ std::vector<float> FM_Freeman(
   RDLOG_CITATION<<"Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422.";
   RDLOG_CONFIG<<"p = "<<xparam;
 
-  std::vector<float> props(9*elevations.size(),0);
+  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -45,19 +46,24 @@ std::vector<float> FM_Freeman(
         const double rise = e-ne;
         const double run  = dr[n];
         const double grad = rise/run;
-        props[9*ci+n]     = std::pow(grad,xparam);
-        C                += props.at(9*ci+n);
+        const auto cval   = std::pow(grad,xparam)
+        props[9*ci+n]     = cval;
+        C                += cval;
       }
     }
 
-    C = 1/C; //TODO
+    if(C>0){
+      props.at(9*ci+0) = HAS_FLOW_GEN;
 
-    for(int n=1;n<=8;n++){
-      auto &this_por = props.at(9*ci+n);
-      if(this_por>0)
-        this_por *= C;
-      else
-        this_por = 0;
+      C = 1/C; //TODO
+
+      for(int n=1;n<=8;n++){
+        auto &this_por = props.at(9*ci+n);
+        if(this_por>0)
+          this_por *= C;
+        else
+          this_por = 0;
+      }
     }
   }
   progress.stop();

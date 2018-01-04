@@ -14,6 +14,8 @@
 #include <richdem/common/grid_cell.hpp>
 #include <richdem/common/Array2D.hpp>
 
+#include <richdem/flats/find_flats.hpp>
+
 #include <deque>
 #include <vector>
 #include <queue>
@@ -33,7 +35,7 @@ namespace richdem {
   distance away from terrain of higher elevation. The maximal distance
   encountered is noted.
 
-  @param[in]  &flowdirs     A flow metric array from an `FM_` method
+  @param[in]  &flats        2D array indicating flat membership from FindFlats()
   @param[out] &flat_mask    A 2D array for storing flat_mask
   @param[in]  &edges        The high-edge FIFO queue from FindFlatEdges()
   @param[out] &flat_height  Vector with length equal to max number of labels
@@ -43,7 +45,7 @@ namespace richdem {
     1. Every cell in **labels** is marked either 0, indicating that the cell is
        not part of a flat, or a number greater than zero which identifies the
        flat to which the cell belongs.
-    2. Any cell without a local gradient is marked NO_FLOW_GEN in **flowdirs**.
+    2. Any cell without a local gradient is marked IS_A_FLAT in **flats**.
     3. Every cell in **flat_mask** is initialized to 0.
     4. **edges** contains, in no particular order, all the high edge cells of
        the DEM (those flat cells adjacent to higher terrain) which are part of
@@ -58,7 +60,7 @@ namespace richdem {
        flat will have a value of 0.
 */
 static void BuildAwayGradient(
-  const std::vector<float> &flowdirs,
+  const Array2D<int8_t>    &flats,
   Array2D<int32_t>         &flat_mask,
   std::deque<GridCell>     &high_edges,
   std::vector<int>         &flat_height,
@@ -93,10 +95,13 @@ static void BuildAwayGradient(
     for(int n=1;n<=8;n++){
       const int nx = c.x+dx[n];
       const int ny = c.y+dy[n];
-      if(labels.inGrid(nx,ny)
-          && labels(nx,ny)==labels(c.x,c.y)
-          && flowdirs.at(9*(ny*flat_mask.width()+nx))==NO_FLOW_GEN)
+      if(
+           labels.inGrid(nx,ny)
+        && labels(nx,ny)==labels(c.x,c.y)
+        && flats(nx,ny)==IS_A_FLAT
+      ){
         edges.emplace_back(nx,ny);
+      }
     }
   }
 
@@ -116,7 +121,7 @@ static void BuildAwayGradient(
   the gradient from BuildAwayGradient() to give the final increments of
   each cell in forming the flat mask.
 
-  @param[in]  &flowdirs     A flow metric array from an `FM_` method
+  @param[in]  &flats        2D array indicating flat membership from FindFlats()
   @param[in,out] &flat_mask A 2D array for storing flat_mask
   @param[in]  &edges        The low-edge FIFO queue from FindFlatEdges()
   @param[in]  &flat_height  Vector with length equal to max number of labels
@@ -126,7 +131,7 @@ static void BuildAwayGradient(
     1. Every cell in **labels** is marked either 0, indicating that the cell
        is not part of a flat, or a number greater than zero which identifies
        the flat to which the cell belongs.
-    2. Any cell without a local gradient is marked NO_FLOW_GEN in **flowdirs**.
+    2. Any cell without a local gradient is marked IS_A_FLAT in **flats**.
     3. Every cell in **flat_mask** has either a value of 0, indicating
        that the cell is not part of a flat, or a value greater than zero
        indicating the number of increments which must be added to it to form a
@@ -145,11 +150,11 @@ static void BuildAwayGradient(
        have a value of 0.
 */
 static void BuildTowardsCombinedGradient(
-  const std::vector<float>  &flowdirs,
-  Array2D<int32_t>          &flat_mask,
-  std::deque<GridCell>      &low_edges,
-  std::vector<int>          &flat_height,
-  const Array2D<int32_t>    &labels
+  Array2D<int8_t>        &flats,
+  Array2D<int32_t>       &flat_mask,
+  std::deque<GridCell>   &low_edges,
+  std::vector<int>       &flat_height,
+  const Array2D<int32_t> &labels
 ){
   Timer timer;
   timer.start();
@@ -164,7 +169,7 @@ static void BuildTowardsCombinedGradient(
   #pragma omp parallel for collapse(2)
   for(int x=0;x<flat_mask.width();x++)
   for(int y=0;y<flat_mask.height();y++)
-    flat_mask(x,y)*=-1;
+    flat_mask(x,y) *= -1;
 
 
   //Incrementation
@@ -191,10 +196,13 @@ static void BuildTowardsCombinedGradient(
     for(int n=1;n<=8;n++){
       const int nx = c.x+dx[n];
       const int ny = c.y+dy[n];
-      if(labels.inGrid(nx,ny)
-          && labels(nx,ny)==labels(c.x,c.y)
-          && flowdirs.at(9*(ny*flat_mask.width()+nx))==NO_FLOW_GEN)
+      if(
+           labels.inGrid(nx,ny)
+        && labels(nx,ny)==labels(c.x,c.y)
+        && flats (nx,ny)==IS_A_FLAT
+      ){
         edges.emplace_back(nx,ny);
+      }
     }
   }
 
@@ -282,13 +290,13 @@ static void LabelFlat(
 
   @param[out] &low_edges  Queue for storing cells adjacent to lower terrain
   @param[out] &high_edges Queue for storing cells adjacent to higher terrain
-  @param[in]  &flowdirs   A flow metric array from an `FM_` method
+  @param[in]  &flats      2D array indicating flat membership from FindFlats()
   @param[in]  &elevations 2D array of cell elevations
 
   @pre
     1. **elevations** contains the elevations of every cell or a value _NoData_
        for cells not part of the DEM.
-    2. Any cell without a local gradient is marked NO_FLOW_GEN in **flowdirs**.
+    2. Any cell without a local gradient is marked IS_A_FLAT in **flats**.
 
   @post
     1. **high_edges** will contain, in no particular order, all the high edge
@@ -298,75 +306,83 @@ static void LabelFlat(
 */
 template <class T>
 static void FindFlatEdges(
-  std::deque<GridCell>     &low_edges,
-  std::deque<GridCell>     &high_edges,
-  const std::vector<float> &flowdirs,
-  const Array2D<T>         &elevations
+  std::deque<GridCell>  &low_edges,
+  std::deque<GridCell>  &high_edges,
+  const Array2D<int8_t> &flats,
+  const Array2D<T>      &elevations
 ){
   int cells_without_flow=0;
   ProgressBar progress;
   RDLOG_PROGRESS<<"Searching for flats...";
-  progress.start( flowdirs.size() );
-  for(int y=0;y<flowdirs.height();y++)
-  for(int x=0;x<flowdirs.width();x++){
+
+  progress.start( flats.size() );
+
+  #pragma omp parallel for collapse(2)
+  for(int y=0;y<flats.height();y++)
+  for(int x=0;x<flats.width();x++){
     ++progress;
 
-    if(flowdirs.isNoData(x,y))
-      continue;
-    
-    if(flowdirs(x,y)==NO_FLOW_GEN)
+    if(flats(x,y)==IS_A_FLAT)
       cells_without_flow++;
 
-    for(int n=1;n<=8;n++){
-      int nx = x+dx[n];
-      int ny = y+dy[n];
+    if(flats.isNoData(x,y))
+      continue;
 
-      if(!flowdirs.inGrid(nx,ny)) continue;
-      if(flowdirs.isNoData(nx,ny)) continue;
+    for(int n=1;n<=8;n++){
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
+
+      if(!flats.inGrid(nx,ny))
+        continue;
 
       //If the focal cell has flow, but has a neighbour without flow at the same
       //elevation, then the focal cell is at the edge of a flat containing that
       //neighbour
       if(
-        flowdirs.at(9*( y*flat_mask.width()+ x))!=NO_FLOW_GEN && 
-        flowdirs.at(9*(ny*flat_mask.width()+nx))==NO_FLOW_GEN &&
-        elevations(nx,ny)==elevations(x,y)
+           flats( x, y)==NOT_A_FLAT
+        && flats(nx,ny)==IS_A_FLAT
+        && elevations(nx,ny)==elevations(x,y)
       ){
+        #pragma omp critical
         low_edges.emplace_back(x,y);
         break;
 
       //If the focal cell has no flow and has a neighbour which is at a higher
       //elevation, then the focal cell is at the edge of a flat
       } else if(
-        flowdirs.at(9*( y*flat_mask.width()+ x))==NO_FLOW_GEN &&
-        elevations(x,y)<elevations(nx,ny)
+           flats(x,y)==IS_A_FLAT     
+        && elevations(x,y)<elevations(nx,ny)
       ){
+        #pragma omp critical
         high_edges.emplace_back(x,y);
         break;
       }
     }
   }
+
   RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
   RDLOG_MISC<<"Cells with no flow direction = "<<cells_without_flow;
+  RDLOG_MISC<<"Low edge cells               = "<<low_edges.size();
+  RDLOG_MISC<<"High edge cells              = "<<high_edges.size();
 }
 
 
 
 /**
-  @brief  Performs the flat resolution by Barnes, Lehman, and Mulla.
+  @brief  Generates a flat resolution mask in the style of Barnes (2014)
   @author Richard Barnes (rbarnes@umn.edu)
 
-  TODO
+  This algorithm is a modification of that presented by Barnes (2014). It has
+  been rejiggered so that a knowledge of flow directions is not necessary to run
+  it.
 
   @param[in]  &elevations 2D array of cell elevations
-  @param[in]  &flowdirs   A flow metric array from an `FM_` method
   @param[in]  &flat_mask  2D array which will hold incremental elevation mask
   @param[in]  &labels     2D array indicating flat membership
 
   @pre
     1. **elevations** contains the elevations of every cell or the _NoData_
         value for cells not part of the DEM.
-    2. Any cell without a local gradient is marked NO_FLOW_GEN in **flowdirs**.
 
   @post
     1. **flat_mask** will have a value greater than or equal to zero for every
@@ -380,7 +396,6 @@ static void FindFlatEdges(
 template <class T>
 static void GetFlatMask(
   const Array2D<T>         &elevations,
-  const std::vector<float> &flowdirs,
   Array2D<int32_t>         &flat_mask,
   Array2D<int32_t>         &labels
 ){
@@ -392,10 +407,13 @@ static void GetFlatMask(
 
   RDLOG_ALG_NAME<<"Barnes (2014) Flat Resolution Flat Mask Generation";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009";
+  
+  Array2D<int8_t> flats;
+  FindFlats(elevations, flats);
 
   RDLOG_PROGRESS<<"Setting up labels matrix...";
   labels.templateCopy(elevations);
-  labels.resize(flowdirs);
+  labels.resize(elevations);
   labels.setAll(0);
 
   RDLOG_PROGRESS<<"Setting up flat resolution mask...";
@@ -404,7 +422,7 @@ static void GetFlatMask(
   flat_mask.setAll(0);
   flat_mask.setNoData(-1);
 
-  FindFlatEdges(low_edges, high_edges, flowdirs, elevations);
+  FindFlatEdges(low_edges, high_edges, flats, elevations);
 
   if(low_edges.size()==0){
     if(high_edges.size()>0)
@@ -440,12 +458,8 @@ static void GetFlatMask(
   RDLOG_PROGRESS<<"Creating flat height vector...";
   std::vector<int> flat_height(group_number);
 
-  BuildAwayGradient(
-    flowdirs, flat_mask, high_edges, flat_height, labels
-  );
-  BuildTowardsCombinedGradient(
-    flowdirs, flat_mask, low_edges, flat_height, labels
-  );
+  BuildAwayGradient           (flats, flat_mask, high_edges, flat_height, labels);
+  BuildTowardsCombinedGradient(flats, flat_mask, low_edges,  flat_height, labels);
 
   RDLOG_TIME_USE<<"Wall-time = "<<timer.stop()<<" s";
 }
@@ -665,7 +679,7 @@ void ResolveFlatsBarnes2014(
 ){
   Array2D<int32_t> flat_mask, labels;
 
-  GetFlatMask(elevations, flowdirs, flat_mask, labels);
+  GetFlatMask(elevations, flat_mask, labels);
 
   if(alter)
     ResolveFlatsEpsilon_Barnes2014(flat_mask, labels, elevations);

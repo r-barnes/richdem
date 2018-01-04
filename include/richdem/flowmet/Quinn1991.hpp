@@ -3,7 +3,7 @@
 
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
-#include "richdem/common/ProgressBar.hpp"
+#include <richdem/flowmet/Holmgren1994.hpp>
 
 namespace richdem {
 

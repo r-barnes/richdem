@@ -1,6 +1,7 @@
 #ifndef _richdem_Holmgren1994_
 #define _richdem_Holmgren1994_
 
+#include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
 #include "richdem/common/ProgressBar.hpp"
@@ -13,7 +14,7 @@ std::vector<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam
   RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.";
   RDLOG_CONFIG<<"x = "<<xparam;
 
-  std::vector<float> props(9*elevations.size(),0);
+  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
 
   constexpr double L1   = 0.5;
   constexpr double L2   = 0.354; //TODO: More decimal places
@@ -52,13 +53,17 @@ std::vector<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam
       }
     }
 
-    C = 1/C;
+    if(C>0){
+      props.at(9*ci+0) = HAS_FLOW_GEN;
 
-    for(int n=1;n<=8;n++){
-      if(props[9*ci+n]>0)
-        props.at(9*ci+n) *= C;
-      else
-        props.at(9*ci+n) = 0;
+      C = 1/C;
+
+      for(int n=1;n<=8;n++){
+        if(props[9*ci+n]>0)
+          props.at(9*ci+n) *= C;
+        else
+          props.at(9*ci+n) = 0;
+      }
     }
   }
   progress.stop();
