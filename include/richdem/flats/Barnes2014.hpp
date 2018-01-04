@@ -501,6 +501,8 @@ void ResolveFlatsEpsilon_Barnes2014(
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014a. An efficient assignment of drainage direction over flat surfaces in raster digital elevation models. Computers & Geosciences 62, 128–135. doi:10.1016/j.cageo.2013.01.009";
   progress.start( flat_mask.size() );
 
+  int raise_warn = 0;
+
   #pragma omp parallel for collapse(2)
   for(int y=1;y<flat_mask.height()-1;y++)
   for(int x=1;x<flat_mask.width()-1;x++){
@@ -536,9 +538,10 @@ void ResolveFlatsEpsilon_Barnes2014(
       //I am higher than or of equal elevation to my neighbour, but I was
       //originally lower than my neighbour. This is a problem.
       if(lower[n])
-        RDLOG_WARN<<"Attempting to raise ("<<x<<","<<y<<") resulted in an invalid alteration of the DEM!";
+        raise_warn++;
     }
   }
+  RDLOG_WARN<<"Cells inappropriately raised above surrounding terrain = "<<raise_warn;
   RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
 }
 
