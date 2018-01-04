@@ -11,13 +11,13 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
-#include "richdem/common/version.hpp"
-#include "richdem/common/Layoutfile.hpp"
-#include "richdem/common/communication.hpp"
-#include "richdem/common/memory.hpp"
-#include "richdem/common/timer.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/grid_cell.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/common/Layoutfile.hpp>
+#include <richdem/common/communication.hpp>
+#include <richdem/common/memory.hpp>
+#include <richdem/common/timer.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
 #include "Zhou2016pf.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
@@ -1068,8 +1068,10 @@ void Preparer(
   timer_overall.stop();
   std::cerr<<"t Preparer time = "<<timer_overall.accumulated()<<" s"<<std::endl;
 
-  std::cerr<<"c Flip horizontal = "<<((reptile->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
-  std::cerr<<"c Flip vertical =   "<<((reptile->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  if(reptile){
+    std::cerr<<"c Flip horizontal = "<<((reptile->flip & FLIP_HORZ)?"YES":"NO")<<std::endl;
+    std::cerr<<"c Flip vertical =   "<<((reptile->flip & FLIP_VERT)?"YES":"NO")<<std::endl;
+  }
   std::cerr<<"c Input data type = "<<GDALGetDataTypeName(file_type)<<std::endl;
 
   switch(file_type){
