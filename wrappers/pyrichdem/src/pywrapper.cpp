@@ -1,6 +1,5 @@
 #include <pybind11/pybind11.h>
 #include <richdem/depressions/depressions.hpp>
-#include <richdem/depressions/Lindsay2016.hpp>
 #include <richdem/methods/terrain_attributes.hpp>
 #include <richdem/methods/flow_accumulation.hpp>
 #include <richdem/flats/flats.hpp>
@@ -34,8 +33,6 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("rdFillDepressions",     &PriorityFlood_Zhou2016<T>,          "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
   m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<T>, "Fill all depressions with epsilon."); //TODO
 
-  m.def("rdBreach",              &Lindsay2016<T>,                  "TODO");
-  
   m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
 
   //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
