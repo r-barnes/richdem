@@ -17,7 +17,7 @@ for PYBIN in /opt/python/*/bin; do
     rm -rf build/ richdem.egg-info/ dist/
 done
 
-cd /io/
+cd /io/wrappers/pyrichdem
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/*.whl; do
