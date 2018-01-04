@@ -1,6 +1,8 @@
 #ifndef _richdem_flats_hpp_
 #define _richdem_flats_hpp_
 
+#include <richdem/flats/Barnes2014.hpp>
+
 namespace richdem {
 
 /**
@@ -18,7 +20,7 @@ namespace richdem {
 */
 template<class T>
 void ResolveFlatsEpsilon(
-  Array2D<U> &elevations
+  Array2D<T> &elevations
 ){
   Array2D<int32_t> flat_mask, labels;
   GetFlatMask(elevations, flat_mask, labels);

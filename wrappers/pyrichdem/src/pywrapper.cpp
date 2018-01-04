@@ -3,6 +3,7 @@
 #include <richdem/depressions/Lindsay2016.hpp>
 #include <richdem/methods/terrain_attributes.hpp>
 #include <richdem/methods/flow_accumulation.hpp>
+#include <richdem/flats/flats.hpp>
 #include <pybind11/numpy.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
@@ -35,6 +36,8 @@ void TemplatedWrapper(py::module &m, std::string tname){
 
   m.def("rdBreach",              &Lindsay2016<T>,                  "TODO");
   
+  m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
+
   //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
 
   m.def("TA_SPI",                &TA_SPI<T, float, double>,       "TODO");         

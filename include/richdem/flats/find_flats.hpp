@@ -7,9 +7,9 @@
 
 namespace richdem {
 
-const int FLAT_NO_DATA = -1;
-const int NOT_A_FLAT   = 0
-const int IS_A_FLAT    = 1;
+#define FLAT_NO_DATA    -1
+#define NOT_A_FLAT       0
+#define IS_A_FLAT        1
 
 /**
   @brief  Finds flats: cells with no local gradient
@@ -38,8 +38,8 @@ void FindFlats(
   progress.start( elevations.size() );
 
   #pragma omp parallel for
-  for(int y=0;y<height;y++)
-  for(int x=0;x<width;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     if(elevations.isNoData(x,y)){
       flats(x,y) = FLAT_NO_DATA;
       continue;

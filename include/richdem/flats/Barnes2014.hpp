@@ -75,14 +75,14 @@ static void BuildAwayGradient(
   RDLOG_PROGRESS<<"Performing Barnes flat resolution's away gradient...";
 
   //Incrementation
-  edges.push_back(iteration_marker);
-  while(edges.size()!=1){  //Only iteration marker is left in the end
-    const auto c = edges.front();
-    edges.pop_front();
+  high_edges.push_back(iteration_marker);
+  while(high_edges.size()!=1){  //Only iteration marker is left in the end
+    const auto c = high_edges.front();
+    high_edges.pop_front();
 
     if(c.x==-1){  //I'm an iteration marker
       loops++;
-      edges.push_back(iteration_marker);
+      high_edges.push_back(iteration_marker);
       continue;
     }
 
@@ -100,7 +100,7 @@ static void BuildAwayGradient(
         && labels(nx,ny)==labels(c.x,c.y)
         && flats(nx,ny)==IS_A_FLAT
       ){
-        edges.emplace_back(nx,ny);
+        high_edges.emplace_back(nx,ny);
       }
     }
   }
@@ -173,14 +173,14 @@ static void BuildTowardsCombinedGradient(
 
 
   //Incrementation
-  edges.push_back(iteration_marker);
-  while(edges.size()!=1){  //Only iteration marker is left in the end
-    const auto c = edges.front();
-    edges.pop_front();
+  low_edges.push_back(iteration_marker);
+  while(low_edges.size()!=1){  //Only iteration marker is left in the end
+    const auto c = low_edges.front();
+    low_edges.pop_front();
 
     if(c.x==-1){  //I'm an iteration marker
       loops++;
-      edges.push_back(iteration_marker);
+      low_edges.push_back(iteration_marker);
       continue;
     }
 
@@ -201,7 +201,7 @@ static void BuildTowardsCombinedGradient(
         && labels(nx,ny)==labels(c.x,c.y)
         && flats (nx,ny)==IS_A_FLAT
       ){
-        edges.emplace_back(nx,ny);
+        low_edges.emplace_back(nx,ny);
       }
     }
   }
@@ -394,7 +394,7 @@ static void FindFlatEdges(
        flat. A value of 0 means the cell is not part of a flat.
 */
 template <class T>
-static void GetFlatMask(
+void GetFlatMask(
   const Array2D<T>         &elevations,
   Array2D<int32_t>         &flat_mask,
   Array2D<int32_t>         &labels
@@ -519,7 +519,7 @@ void ResolveFlatsEpsilon_Barnes2014(
 
     //Raise the focal cell by the appropriate number of increments
     for(int i=0;i<flat_mask(x,y);++i)
-      elevations(x,y) = std::nexafter(elevations(x,y),std::numeric_limits<U>::infinity());
+      elevations(x,y) = std::nextafter(elevations(x,y),std::numeric_limits<U>::infinity());
 
     //Check the surrounding cells to see if we are inappropriately higher than
     //any of them
@@ -584,7 +584,7 @@ void ResolveFlatsEpsilon_Barnes2014(
 */
 template<class U>
 void ResolveFlatsFlowdirs_Barnes2014(
-  const std::vector<float> &flat_mask,
+  const Array2D<int32_t>   &flat_mask,
   const Array2D<int32_t>   &labels,
   Array2D<U>               &flowdirs
 ){
@@ -621,85 +621,12 @@ void ResolveFlatsFlowdirs_Barnes2014(
       }
     }
 
-    flowdirs.at(9*ci+0)       = HAS_FLOW_GEN
+    flowdirs.at(9*ci+0)       = HAS_FLOW_GEN;
     flowdirs.at(9*ci+flowdir) = 1;
   }
 
   RDLOG_TIME_USE<<"Succeeded in = "<<progress.stop()<<" s";
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
-  @brief  Resolve flats in the style of Barnes (2014)
-  @author Richard Barnes (rbarnes@umn.edu)
-
-  Cells without a local gradient may not have defined flow directions. These
-  regions, called flats, may be resolved with this function.
-
-  Uses the helper function ResolveFlatsEpsilon_Barnes2014()
-  Uses the helper function ResolveFlatsFlowdirs_Barnes2014()
-
-  @param[in]  &elevations     An elevation field
-  @param[in]  &flowdirs       A flow metric vector
-  @param[in]  alter           Whether the elevation model should be modified
-
-  @pre
-    1. **flat_mask** contains the number of increments to be applied to each
-       cell to form a gradient which will drain the flat it is a part of.
-    2. Any cell without a local gradient has a value of NO_FLOW_GEN in
-       **flowdirs**; all other cells have defined flow directions.
-    3. If a cell is part of a flat, it has a value greater than zero in
-       **labels** indicating which flat it is a member of; otherwise, it has a
-       value of 0.
-
-  @post
-    1. Every cell whose flow direction could be resolved by this algorithm
-       (all drainable flats) will have a defined flow direction in
-       **flowdirs**. Any cells which could not be resolved (non-drainable
-       flats) will still be marked NO_FLOW_GEN.
-*/
-template<class T, class U>
-void ResolveFlatsBarnes2014(
-  Array2D<T>         &elevations,
-  std::vector<float> &flowdirs,
-  const bool alter
-){
-  Array2D<int32_t> flat_mask, labels;
-
-  GetFlatMask(elevations, flat_mask, labels);
-
-  if(alter)
-    ResolveFlatsEpsilon_Barnes2014(flat_mask, labels, elevations);
-  else
-    ResolveFlatsFlowdirs_Barnes2014(flat_mask,labels,flowdirs);
-
-  flowdirs.templateCopy(elevations);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 

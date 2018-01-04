@@ -46,7 +46,7 @@ std::vector<float> FM_Freeman(
         const double rise = e-ne;
         const double run  = dr[n];
         const double grad = rise/run;
-        const auto cval   = std::pow(grad,xparam)
+        const auto cval   = std::pow(grad,xparam);
         props[9*ci+n]     = cval;
         C                += cval;
       }

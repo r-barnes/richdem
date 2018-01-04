@@ -274,6 +274,8 @@ def FillDepressions(
          dem     (rdarray): An elevation model
          epsilon (float):   If True, an epsilon gradient is imposed to all flat regions.
                             This ensures that there is always a local gradient.
+         in_place (bool):   If True, the DEM is modified in place and there is
+                            no return; otherwise, a new, altered DEM is returned.                                     
 
      Returns:
          DEM without depressions.
@@ -321,6 +323,9 @@ def BreachDepressions(
                                    while breaching a depression.
          max_path_depth (float):   Maximum depth in z-units that can be dug
                                    along the breaching path.
+         in_place (bool):   If True, the DEM is modified in place and there is
+                            no return; otherwise, a new, altered DEM is returned.         
+
 
      **Modes**
 
@@ -369,6 +374,39 @@ def BreachDepressions(
   demw = dem.wrap()
 
   _richdem.rdBreach(demw, modes[mode], fill, max_path_len, max_path_depth)
+
+  dem.copyFromWrapped(demw)
+
+  if not in_place:
+    return dem
+
+
+
+def ResolveFlats(
+  dem,
+  in_place = False
+):
+  """Attempts to resolve flats by imposing a local gradient
+
+     Args:
+         dem          (rdarray):   An elevation model
+         in_place (bool):   If True, the DEM is modified in place and there is
+                            no return; otherwise, a new, altered DEM is returned.         
+
+     Returns:
+         DEM modified such that all flats drain.
+  """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+  if not in_place:
+    dem = dem.copy()
+
+  _AddAnalysis(dem, "ResolveFlats(dem, in_place={in_place})".format(in_place=in_place))
+
+  demw = dem.wrap()
+
+  _richdem.rdResolveFlatsEpsilon(demw)
 
   dem.copyFromWrapped(demw)
 

@@ -76,6 +76,8 @@ C++               `richdem::FillDepression()`
 +----------------+--------------------------------------+
 
 
+.. _epsilon-filling-label:
+
 Epsilon Filling
 ----------------------------
 
@@ -85,7 +87,7 @@ every cell in the region is raised some small amount, ε, above cells which are
 closer to a depression's spill point.
 
 This must be done carefully. In floating-point DEMs, the value ε is non-constant
-and must be chosen using the `std::nextafter` function. If a depression is too
+and must be chosen using the !`std::nextafter` function. If a depression is too
 large, the imposed gradient may result in the interior of the depression being
 raised above the surrounding landscape. Using `double` instead of `float`
 reduces the potential for problems at a cost of twice the space used. If a
