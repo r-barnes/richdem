@@ -3,9 +3,11 @@ set -e -x
 
 mkdir -p /io/wheelhouse
 
+#Ensure the build directory is empty
+rm -rf /io/wheelhouse/*
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    #/io/travis/repipinator.sh 
     "${PYBIN}/pip" install -r /io/wrappers/pyrichdem/requirements.txt
     #"${PYBIN}/pip" wheel /io/wrappers/pyrichdem/ -w wheelhouse/ #Original many linux command
 
