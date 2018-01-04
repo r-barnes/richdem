@@ -57,6 +57,9 @@ that looks like this:
     :context: reset
     :outname: flat_resolution_dep_fill_epsilon
 
+    import richdem as rd
+    import numpy as np
+
     #Load dataset
     beau        = rd.rdarray(np.load('imgs/beauford.npz')['beauford'], no_data=-9999)
 
@@ -66,7 +69,7 @@ that looks like this:
     #Construct the epsilon drainage surface via filling
     beau_eps    = rd.FillDepressions(beau, epsilon=True, in_place=False)
 
-    diff    = beau_eps - beau
+    diff    = beau_eps - beau_filled
     rd.rdShow(diff, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
 
 In contrast, the Barnes (2014) convergent elevation adjustment looks like this:
@@ -80,8 +83,22 @@ In contrast, the Barnes (2014) convergent elevation adjustment looks like this:
     #Resolve flats by imposing a convergent epsilon gradient
     beau_flat_eps = rd.ResolveFlats(beau_filled, in_place=False)
 
-    diff    = beau_flat_eps - beau
+    diff    = beau_flat_eps - beau_filled
     rd.rdShow(diff, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
+
+The difference versus the depression-filling epsilon adjustment appears as
+follows. Note the deep V-shaped notches in the flats indicating the increased
+convergence of the Barnes (2014) method.
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+    :outname: flat_resolution_diff_df_b2014
+
+    diff    = beau_flat_eps - beau_eps
+    rd.rdShow(diff, ignore_colours=[0], axes=False, cmap='jet', figsize=(8,5.5))
+
 
 ================= ============================================
 Language          Command
