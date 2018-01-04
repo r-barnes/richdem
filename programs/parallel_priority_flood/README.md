@@ -99,7 +99,12 @@ acts as a master process. It does limited computation but stores information
 from all of the other processes. This requires less memory than one would think,
 as discussed in the manuscript.
 
+Debugging the Program
+---------------------
 
+Debugging can be accomplished using, e.g.:
+
+    mpirun -n 4 xterm -hold -e gdb -ex run --args ./parallel_pf.exe many @evict layout.layout temp/%f.tif
 
 Layout Files
 ------------
