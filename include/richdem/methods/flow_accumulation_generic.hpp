@@ -8,6 +8,28 @@
 
 namespace richdem {
 
+
+/**
+  @brief  Calculate flow accumulation from a flow metric array
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  Given a flow metric function \p func, this calculations the flow accumulation.
+   
+  @param[in]     func         The flow metric to use
+  @param[in]     &elevations  An elevation field
+  @param[in,out] &accum       Accumulation matrix: must be already initialized
+  @param[in]     args         Arguments passed to the flow metric (e.g. exponent)
+
+  @pre
+    1. The accumulation matrix must already be initialized to the amount of flow
+       each cell will generate. A good default value is 1, in which case the
+       accumulation matrix will be modified to show how many cells' flow
+       ultimately passes through each cell.
+
+  @post
+    1. \p accum is modified so that each cell indicates how much upstrema flow
+       passes through it (in addition to flow generated within the cell itself).
+*/
 template<class F, class E, class A, typename... Args>
 void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, Args... args ){
   Timer overall;
@@ -15,8 +37,10 @@ void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, A
 
   RDLOG_ALG_NAME<<"Generic Flow Accumulation Algorithm";
 
-  accum.resize(elevations,1);
   accum.setNoData(ACCUM_NO_DATA);
+
+  if(accum.width()!=elevations.width() || accum.height()!=elevations.height())
+    throw std::runtime_error("Accumulation array must have same dimensions as elevations!");
 
   const auto props = func(elevations, args...);
 
