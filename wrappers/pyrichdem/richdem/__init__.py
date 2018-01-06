@@ -125,7 +125,7 @@ class rdarray(np.ndarray):
       obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None  ))
 
     if no_data is not None:
-      obj.no_data = -9999
+      obj.no_data = no_data
 
     if no_data is None:
       raise Exception("A no_data value must be specified!")
