@@ -12,10 +12,10 @@ and test data sets.
 
 These are available as follows:
 
- * Flat-resolution algorithm. `Link <https://github.com/r-barnes/Barnes2013-FlatSurfaces>`_
- * Depression-filling algorithm. `Link <https://github.com/r-barnes/Barnes2013-Depressions>`_
- * Large dataset depression-filling algorithm. `Link <https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood>`_
- * Large dataset flow accumulation algorithm. `Link <https://github.com/r-barnes/Barnes2016-ParallelFlowAccum>`_
+ * Flat-resolution algorithm. `Link <https://github.com/r-barnes/Barnes2013-FlatSurfaces>`__
+ * Depression-filling algorithm. `Link <https://github.com/r-barnes/Barnes2013-Depressions>`__
+ * Large dataset depression-filling algorithm. `Link <https://github.com/r-barnes/Barnes2016-ParallelPriorityFlood>`__
+ * Large dataset flow accumulation algorithm. `Link <https://github.com/r-barnes/Barnes2016-ParallelFlowAccum>`__
 
 
 
