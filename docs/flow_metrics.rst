@@ -277,7 +277,7 @@ C++               `richdem::FM_Tarboton()` or `richdem::FM_Dinfinity()`
 
 
 Side-by-Side Comparisons of Flow Metrics
-========================================
+----------------------------------------
 
 .. plot::
     :width:   800pt
