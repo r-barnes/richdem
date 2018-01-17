@@ -10,7 +10,7 @@ namespace richdem {
 
 //TODO: Add Marks et al (1984)
 template<class E>
-static std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
+std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
