@@ -2,6 +2,33 @@
 *Add LICENSE notices to the top of source files
 
 
+
+# Add two addtional methods.
+# MFD without diagonals (MFD-D4)
+# MFD with square root (Katy will send either a paper or derrivation to Richard)
+
+# change proportion ordering so that proportions are listed in math order of index
+# center, E, NE, N, NW, W, SW, S, SE
+
+# option 1
+flow_proportions = rd.CalculateProportions(dem, method='D8')
+ts = rd.TopologicSort(flow_proportions)
+# ts would be an object with these attributes
+ts.queue
+ts.levels
+accum = rd.FlowAccumGeneric(ts, flow_proportions)
+
+#option 2
+accum = rd.FlowAccumulation(dem, method='D8')
+
+Topographic Wetness Index
+Catchment Delineation
+
+
+
+
+
+
 plot_directive comments
 weighted flow accumulation katy
 1/2 power mfd katy
