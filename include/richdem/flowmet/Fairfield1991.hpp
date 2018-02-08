@@ -10,7 +10,7 @@
 namespace richdem {
 
 template<class E>
-std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
+std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations, const bool d4){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
@@ -30,6 +30,9 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
     int    greatest_n     = 0; //TODO: Use a constant
     double greatest_slope = 0;
     for(int n=1;n<=8;n++){
+      if(d4 && n_diag[n])            //Skip diagonals
+        continue;
+
       const int nx = x+dx[n];
       const int ny = y+dy[n];
 
@@ -69,7 +72,13 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
 template<class E>
 std::vector<float> FM_Rho8(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarie(elevations);
+  return FM_FairfieldLeymarie(elevations, false);
+}
+
+template<class E>
+std::vector<float> FM_Rho4(const Array2D<E> &elevations){
+  //Algorithm headers are taken care of in FM_FairfieldLeymarie()
+  return FM_FairfieldLeymarie(elevations, true);
 }
 
 }
