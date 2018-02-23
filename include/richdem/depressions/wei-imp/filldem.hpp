@@ -92,18 +92,15 @@ void ProcessTraceQue(
   std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
 ){
-  bool HaveSpillPathOrLowerSpillOutlet;
   std::queue<Node > potentialQueue;
   int indexThreshold=2;  //index threshold, default to 2
   while (!traceQueue.empty()){
-    auto node = traceQueue.front();
+    const auto node = traceQueue.front();
     traceQueue.pop();
-    auto noderow=node.row;
-    auto nodecol=node.col;
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i,noderow);
-      auto iCol = Get_colTo(i,nodecol);
+      auto iRow = Get_rowTo(i,node.row);
+      auto iCol = Get_colTo(i,node.col);
       if(flag.IsProcessedDirect(iRow,iCol))
         continue;
 
@@ -112,21 +109,21 @@ void ProcessTraceQue(
         flag.SetFlag(iRow,iCol);
       } else {
         //initialize all masks as false   
-        HaveSpillPathOrLowerSpillOutlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
+        bool have_spill_path_or_lower_spill_outlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
         for(int k = 0; k < 8; k++){
           auto kRow = Get_rowTo(k,iRow);
           auto kCol = Get_colTo(k,iCol);
-          if((Mask[kRow-noderow+2][kCol-nodecol+2]) ||
+          if((Mask[kRow-node.row+2][kCol-node.col+2]) ||
             (flag.IsProcessedDirect(kRow,kCol)&&dem(kCol,kRow)<node.spill)
             )
           {
-            Mask[iRow-noderow+2][iCol-nodecol+2]=true;
-            HaveSpillPathOrLowerSpillOutlet=true;
+            Mask[iRow-node.row+2][iCol-node.col+2]=true;
+            have_spill_path_or_lower_spill_outlet=true;
             break;
           }
         }
         
-        if(!HaveSpillPathOrLowerSpillOutlet){
+        if(!have_spill_path_or_lower_spill_outlet){
           if (i<indexThreshold) potentialQueue.push(node);
           else
             priorityQueue.push(node);
@@ -137,15 +134,13 @@ void ProcessTraceQue(
   }
 
   while (!potentialQueue.empty()){
-    auto node = potentialQueue.front();
+    const auto node = potentialQueue.front();
     potentialQueue.pop();
-    auto noderow=node.row;
-    auto nodecol=node.col;
 
     //first case
     for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i,noderow);
-      auto iCol = Get_colTo(i,nodecol);
+      auto iRow = Get_rowTo(i,node.row);
+      auto iCol = Get_colTo(i,node.col);
       if(flag.IsProcessedDirect(iRow,iCol))
         continue;
 
