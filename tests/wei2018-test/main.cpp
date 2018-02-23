@@ -49,7 +49,7 @@ richdem::Array2D<double> createPerlinNoiseDEM(int width,int height){
 }
 
 int main(int argc, char* argv[]){
-	const int SIZE=1000;
+	const int SIZE = 5000;
 
 	auto dem = createPerlinNoiseDEM(SIZE,SIZE);
 

@@ -2,7 +2,9 @@
 #define _richdem_wei2008_hpp_
 
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/logger.hpp>
 #include <richdem/common/grid_cell.hpp>
+#include <richdem/common/timer.hpp>
 #include <iostream>
 #include <queue>
 
@@ -155,7 +157,12 @@ void PriorityFlood_Wei2018(Array2D<T> &dem){
   std::queue<GridCellZ<T> > traceQueue;
   std::queue<GridCellZ<T> > depressionQue;
   
-  std::cout<<"Using our proposed variant to fill DEM"<<std::endl;
+  RDLOG_ALG_NAME<<"Priority-Flood (Wei2018 version)";
+  RDLOG_CITATION<<"Wei, H., Zhou, G., Fu, S., 2018. Efficient Priority-Flood depression filling in raster digital elevation models. International Journal of Digital Earth 0, 1–13. https://doi.org/10.1080/17538947.2018.1429503";
+
+  Timer timer;
+  timer.start();
+
   Array2D<bool> flag(dem.width(),dem.height(),false);
 
   GridCellZ_pq<T> priorityQueue;
@@ -193,6 +200,9 @@ void PriorityFlood_Wei2018(Array2D<T> &dem){
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
     }
   }
+
+  timer.stop();
+  RDLOG_TIME_USE<<"Wei2018 wall-time = "<<timer.accumulated()<<" s";  
 }
 
 }
