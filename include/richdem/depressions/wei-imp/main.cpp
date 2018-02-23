@@ -6,7 +6,6 @@
 #include <queue>
 #include <algorithm>
 #include "dem.h"
-#include "utils.h"
 #include <time.h>
 #include <list>
 #include <unordered_map>
