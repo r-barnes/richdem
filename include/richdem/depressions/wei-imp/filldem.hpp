@@ -2,6 +2,7 @@
 #define _richdem_wei2008_hpp_
 
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
 #include <algorithm>
 #include <iostream>
 #include <queue>
@@ -11,45 +12,14 @@
 namespace richdem {
 
 
-#include <functional>
-class Node {
- public:
-  int row;
-  int col;
-  float spill;
-  int N;
-  Node(){
-    row   = 0;
-    col   = 0;
-    spill = -9999.0;
-    N     = -1;
-  }
-
-  Node(int row0, int col0, float spill0) : row(row0), col(col0), spill(spill0) {}
-
-  struct Greater : public std::binary_function< Node, Node, bool > {
-    bool operator()(const Node n1, const Node n2) const {
-      return n1.spill > n2.spill;
-    }
-  };
-
-  bool operator>(const Node& a)  {
-    return this->spill > a.spill;
-  }
-};
-
-
-
-
-typedef std::priority_queue<Node, std::vector<Node>, Node::Greater> PriorityQueue;
 
 template<class T>
 void InitPriorityQue(
   Array2D<T>& dem,
   Array2D<bool>& flag,
-  PriorityQueue& priorityQueue
+  GridCellZ_pq<T>& priorityQueue
 ){
-  std::queue<Node> depressionQue;
+  std::queue<GridCellZ<T> > depressionQue;
 
   // push border cells into the PQ
   for(int y = 0; y < dem.height(); y++)
@@ -69,13 +39,13 @@ void InitPriorityQue(
           continue;
 
         if (!dem.isNoData(nx, ny)){
-          priorityQueue.emplace(ny,nx,dem(nx, ny));
+          priorityQueue.emplace(nx,ny,dem(nx, ny));
           flag(nx,ny)=true;
         }
       }
     } else if(dem.isEdgeCell(x,y)){
       //on the DEM border
-      priorityQueue.emplace(y,x,dem(x,y));
+      priorityQueue.emplace(x,y,dem(x,y));
       flag(x,y)=true;          
     }
   }
@@ -87,23 +57,23 @@ template<class T>
 void ProcessTraceQue(
   Array2D<T>& dem,
   Array2D<bool>& flag,
-  std::queue<Node>& traceQueue,
-  PriorityQueue& priorityQueue
+  std::queue<GridCellZ<T> >& traceQueue,
+  GridCellZ_pq<T>& priorityQueue
 ){
-  std::queue<Node > potentialQueue;
+  std::queue<GridCellZ<T>  > potentialQueue;
   int indexThreshold=2;  //index threshold, default to 2
   while (!traceQueue.empty()){
     const auto node = traceQueue.front();
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int i=1;i<=8; i++){
-      auto ny = node.row+dy[i];
-      auto nx = node.col+dx[i];
+      auto ny = node.y+dy[i];
+      auto nx = node.x+dx[i];
       if(flag(nx,ny))
         continue;
 
-      if (dem(nx,ny)>node.spill){
-        traceQueue.emplace(ny,nx, dem(nx,ny));
+      if (dem(nx,ny)>node.z){
+        traceQueue.emplace(nx,ny, dem(nx,ny));
         flag(nx,ny)=true;
       } else {
         //initialize all masks as false   
@@ -111,11 +81,11 @@ void ProcessTraceQue(
         for(int k=1;k<=8; k++){
           auto kRow = ny+dy[k];
           auto kCol = nx+dx[k];
-          if((Mask[kRow-node.row+2][kCol-node.col+2]) ||
-            (flag(kCol,kRow)&&dem(kCol,kRow)<node.spill)
+          if((Mask[kRow-node.y+2][kCol-node.x+2]) ||
+            (flag(kCol,kRow)&&dem(kCol,kRow)<node.z)
             )
           {
-            Mask[ny-node.row+2][nx-node.col+2]=true;
+            Mask[ny-node.y+2][nx-node.x+2]=true;
             have_spill_path_or_lower_spill_outlet=true;
             break;
           }
@@ -137,8 +107,8 @@ void ProcessTraceQue(
 
     //first case
     for (int i=1;i<=8; i++){
-      auto ny = node.row+dy[i];
-      auto nx = node.col+dx[i];
+      auto ny = node.y+dy[i];
+      auto nx = node.x+dx[i];
       if(flag(nx,ny))
         continue;
 
@@ -154,30 +124,30 @@ template<class T>
 void ProcessPit(
   Array2D<T>& dem, 
   Array2D<bool>& flag, 
-  std::queue<Node>& depressionQue,
-  std::queue<Node>& traceQueue,
-  PriorityQueue& priorityQueue
+  std::queue<GridCellZ<T> >& depressionQue,
+  std::queue<GridCellZ<T> >& traceQueue,
+  GridCellZ_pq<T>& priorityQueue
 ){
   while (!depressionQue.empty()){
     auto node = depressionQue.front();
     depressionQue.pop();
     for (int i=1;i<=8; i++){
-      auto ny = node.row+dy[i];
-      auto nx = node.col+dx[i];
+      auto ny = node.y+dy[i];
+      auto nx = node.x+dx[i];
       if (flag(nx,ny))
         continue;    
 
       auto iSpill = dem(nx,ny);
-      if (iSpill > node.spill){ //slope cell
+      if (iSpill > node.z){ //slope cell
         flag(nx,ny)=true;
-        traceQueue.emplace(ny,nx,iSpill);
+        traceQueue.emplace(nx,ny,iSpill);
         continue;
       }
 
       //depression cell
       flag(nx,ny)=true;
-      dem(nx, ny) = node.spill;
-      depressionQue.emplace(ny,nx,node.spill);
+      dem(nx, ny) = node.z;
+      depressionQue.emplace(nx,ny,node.z);
     }
   }
 }
@@ -186,13 +156,13 @@ void ProcessPit(
 
 template<class T>
 void fillDEM(Array2D<T> &dem){
-  std::queue<Node> traceQueue;
-  std::queue<Node> depressionQue;
+  std::queue<GridCellZ<T> > traceQueue;
+  std::queue<GridCellZ<T> > depressionQue;
   
   std::cout<<"Using our proposed variant to fill DEM"<<std::endl;
   Array2D<bool> flag(dem.width(),dem.height(),false);
 
-  PriorityQueue priorityQueue;
+  GridCellZ_pq<T> priorityQueue;
 
   int numberofall   = 0;
   int numberofright = 0;
@@ -201,9 +171,9 @@ void fillDEM(Array2D<T> &dem){
   while (!priorityQueue.empty()){
     auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
-    auto row   = tmpNode.row;
-    auto col   = tmpNode.col;
-    auto spill = tmpNode.spill;
+    auto row   = tmpNode.y;
+    auto col   = tmpNode.x;
+    auto spill = tmpNode.z;
 
     for (int i=1;i<=8; i++){
       auto ny = row+dy[i];
@@ -220,12 +190,12 @@ void fillDEM(Array2D<T> &dem){
         //depression cell
         dem(nx,ny) = spill;
         flag(nx,ny) = true;
-        depressionQue.emplace(ny,nx,spill);
+        depressionQue.emplace(nx,ny,spill);
         ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
       } else {
         //slope cell
         flag(nx,ny) = true;
-        traceQueue.emplace(ny,nx,iSpill);
+        traceQueue.emplace(nx,ny,iSpill);
       }     
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
     }
