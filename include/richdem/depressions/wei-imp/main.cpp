@@ -12,8 +12,10 @@
 #include <list>
 #include <unordered_map>
 #include "perlin.h"
+#include "filldem.hpp"
 
 #include <richdem/richdem.hpp>
+#include <richdem/common/Array2D.hpp>
 #include <stdexcept>
 
 
@@ -32,22 +34,14 @@ typedef std::vector<Node> NodeVector;
 typedef std::priority_queue<Node, NodeVector, Node::Greater> PriorityQueue;
 
 
-void fillDEM(CDEM &dem);
-
 //generate DEM with Perlin Noise 
-CDEM createPerlinNoiseDEM(int rows,int cols){
-	CDEM dem;
-	float fre=(float)randomi(0,512)/10;
-	dem.SetHeight(rows);
-	dem.SetWidth(cols);
-	if (!dem.Allocate()) {
-		throw std::runtime_error("Failed to allocate memory correctly!");
-	}
-	for (int x = 0; x < rows; ++x){
-		for (int y = 0; y < cols; ++y){
-			float vec2[] = { x / fre , y/ fre };
-			dem.Set_Value(x,y,noise2(vec2)*1000);
-		}
+richdem::Array2D<double> createPerlinNoiseDEM(int width,int height){
+	richdem::Array2D<double> dem(width,height);
+	float fre = (float)randomi(0,512)/10;
+	for (int y = 0; y < height; ++y)
+	for (int x = 0; x < width; ++x){
+		float vec2[] = { x / fre , y/ fre };
+		dem(x,y)     = 1000*noise2(vec2);
 	}
 
 	return dem;
@@ -58,40 +52,44 @@ int main(int argc, char* argv[]){
 
 	auto dem = createPerlinNoiseDEM(SIZE,SIZE);
 
-	richdem::Array2D<float> rddem(SIZE,SIZE);
-	for(int y=0;y<SIZE;y++)
-	for(int x=0;x<SIZE;x++)
-		rddem(x,y) = dem.asFloat(y,x);
+	auto dem2 = dem;
 
 
-  fillDEM(dem);
 
-	richdem::Array2D<float> outdem(SIZE,SIZE);
-	for(int y=0;y<SIZE;y++)
-	for(int x=0;x<SIZE;x++)
-		outdem(x,y) = dem.asFloat(y,x);
+	// richdem::Array2D<float> rddem(SIZE,SIZE);
+	// for(int y=0;y<SIZE;y++)
+	// for(int x=0;x<SIZE;x++)
+	// 	rddem(x,y) = dem.asFloat(y,x);
+
+  dem.saveGDAL("/z/before.tif");
+
+  richdem::fillDEM(dem);
+
+	// richdem::Array2D<float> outdem(SIZE,SIZE);
+	// for(int y=0;y<SIZE;y++)
+	// for(int x=0;x<SIZE;x++)
+	// 	outdem(x,y) = dem.asFloat(y,x);
 
 
 
 
   std::cout<<"Rich"<<std::endl;
 
-  rddem.saveGDAL("/z/before.tif");
 
-  richdem::FillDepressions(rddem);
+  richdem::FillDepressions(dem2);
 
-	rddem.saveGDAL("/z/after_richdem.tif");
-	outdem.saveGDAL("/z/after_wei.tif");
+	dem.saveGDAL("/z/after_wei.tif");
+	dem2.saveGDAL("/z/after_richdem.tif");
 
-	outdem.setNoData(rddem.noData());
+	dem2.setNoData(dem.noData());
 
 	double diff = 0;
-	for(int i=0;i<rddem.size();i++)
-		diff += std::abs(outdem(i)-rddem(i));
+	for(int i=0;i<dem.size();i++)
+		diff += std::abs(dem(i)-dem2(i));
 
 	std::cout<<"Diff: "<<std::setprecision(20)<<diff<<std::endl;
 
-  std::cout<<"Comparing "<<(int)(outdem==rddem)<<std::endl;
+  std::cout<<"Comparing "<<(int)(dem==dem2)<<std::endl;
 
 	return 0;
 }
