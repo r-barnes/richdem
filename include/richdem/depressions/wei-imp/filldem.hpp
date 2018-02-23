@@ -47,8 +47,7 @@ class Node {
 
 
 
-typedef std::vector<Node> NodeVector;
-typedef std::priority_queue<Node, NodeVector, Node::Greater> PriorityQueue;
+typedef std::priority_queue<Node, std::vector<Node>, Node::Greater> PriorityQueue;
 
 template<class T>
 void InitPriorityQue(
