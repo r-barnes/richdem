@@ -31,6 +31,8 @@ class Node {
     N     = -1;
   }
 
+  Node(int row0, int col0, float spill0) : row(row0), col(col0), spill(spill0) {}
+
   struct Greater : public std::binary_function< Node, Node, bool > {
     bool operator()(const Node n1, const Node n2) const {
       return n1.spill > n2.spill;
@@ -54,7 +56,6 @@ void InitPriorityQue(
   Flag& flag,
   PriorityQueue& priorityQueue
 ){
-  Node tmpNode;
   int iRow, iCol;
 
   std::queue<Node> depressionQue;
@@ -73,19 +74,13 @@ void InitPriorityQue(
           continue;
 
         if (!dem.isNoData(iCol, iRow)){
-          tmpNode.row   = iRow;
-          tmpNode.col   = iCol;
-          tmpNode.spill = dem(iCol, iRow);
-          priorityQueue.push(tmpNode);
+          priorityQueue.emplace(iRow,iCol,dem(iCol, iRow));
           flag.SetFlag(iRow,iCol);
         }
       }
     } else if (y==0 || y==dem.height()-1 || x==0 || x==dem.width()-1){
       //on the DEM border
-      tmpNode.row   = y;
-      tmpNode.col   = x;
-      tmpNode.spill = dem(x,y);
-      priorityQueue.push(tmpNode);
+      priorityQueue.emplace(y,x,dem(x,y));
       flag.SetFlag(y,x);          
     }
   }
@@ -239,7 +234,7 @@ void fillDEM(Array2D<T> &dem){
 
   InitPriorityQue(dem,flag,priorityQueue); 
   while (!priorityQueue.empty()){
-    Node tmpNode = priorityQueue.top();
+    auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
     row   = tmpNode.row;
     col   = tmpNode.col;
@@ -257,18 +252,12 @@ void fillDEM(Array2D<T> &dem){
         //depression cell
         dem(iCol,iRow) = spill;
         flag.SetFlag(iRow,iCol);
-        tmpNode.row   = iRow;
-        tmpNode.col   = iCol;
-        tmpNode.spill = spill;
-        depressionQue.push(tmpNode);
+        depressionQue.emplace(iRow,iCol,spill);
         ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
       } else {
         //slope cell
         flag.SetFlag(iRow,iCol);
-        tmpNode.row   = iRow;
-        tmpNode.col   = iCol;
-        tmpNode.spill = iSpill;
-        traceQueue.push(tmpNode);
+        traceQueue.emplace(iRow,iCol,iSpill);
       }     
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
     }
