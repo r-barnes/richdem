@@ -3,15 +3,11 @@
 
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/grid_cell.hpp>
-#include <algorithm>
 #include <iostream>
 #include <queue>
-#include <vector>
 
 
 namespace richdem {
-
-
 
 template<class T>
 void InitPriorityQue(
@@ -29,8 +25,8 @@ void InitPriorityQue(
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
       for (int i=1;i<=8; i++){
-        auto ny = y+dy[i];
-        auto nx = x+dx[i];
+        const auto nx = x+dx[i];
+        const auto ny = y+dy[i];
 
         if(!dem.inGrid(nx,ny))
           continue;
@@ -67,8 +63,8 @@ void ProcessTraceQue(
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int i=1;i<=8; i++){
-      auto ny = node.y+dy[i];
-      auto nx = node.x+dx[i];
+      const auto nx = node.x+dx[i];
+      const auto ny = node.y+dy[i];
       if(flag(nx,ny))
         continue;
 
@@ -107,8 +103,8 @@ void ProcessTraceQue(
 
     //first case
     for (int i=1;i<=8; i++){
-      auto ny = node.y+dy[i];
-      auto nx = node.x+dx[i];
+      const auto nx = node.x+dx[i];
+      const auto ny = node.y+dy[i];
       if(flag(nx,ny))
         continue;
 
@@ -132,8 +128,8 @@ void ProcessPit(
     auto node = depressionQue.front();
     depressionQue.pop();
     for (int i=1;i<=8; i++){
-      auto ny = node.y+dy[i];
-      auto nx = node.x+dx[i];
+      const auto nx = node.x+dx[i];
+      const auto ny = node.y+dy[i];
       if (flag(nx,ny))
         continue;    
 
@@ -169,15 +165,12 @@ void fillDEM(Array2D<T> &dem){
 
   InitPriorityQue(dem,flag,priorityQueue); 
   while (!priorityQueue.empty()){
-    auto tmpNode = priorityQueue.top();
+    const auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
-    auto row   = tmpNode.y;
-    auto col   = tmpNode.x;
-    auto spill = tmpNode.z;
 
     for (int i=1;i<=8; i++){
-      auto ny = row+dy[i];
-      auto nx = col+dx[i];
+      auto ny = tmpNode.y+dy[i];
+      auto nx = tmpNode.x+dx[i];
 
       if(!dem.inGrid(nx,ny))
         continue;
@@ -186,11 +179,11 @@ void fillDEM(Array2D<T> &dem){
         continue;
 
       auto iSpill = dem(nx,ny);
-      if (iSpill <= spill){
+      if (iSpill <= tmpNode.z){
         //depression cell
-        dem(nx,ny) = spill;
+        dem(nx,ny) = tmpNode.z;
         flag(nx,ny) = true;
-        depressionQue.emplace(nx,ny,spill);
+        depressionQue.emplace(nx,ny,tmpNode.z);
         ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
       } else {
         //slope cell
