@@ -173,19 +173,12 @@ void ProcessPit(CDEM& dem, Flag& flag, queue<Node>& depressionQue,
 		}
 	}
 }
-void fillDEM(char* inputFile, char* outputFilledPath)
-{
+
+void fillDEM(CDEM &dem){
 	queue<Node> traceQueue;
 	queue<Node> depressionQue;
-	//read float-type DEM
-	CDEM dem;
-	double geoTransformArgs[6];
-	std::cout<<"Reading input tiff file..."<<endl;
-	if (!readTIFF(inputFile, GDALDataType::GDT_Float32, dem, geoTransformArgs)){
-		printf("Error occurred while reading GeoTIFF file!\n");
-		return;
-	}	
-	std::cout<<"Finish reading file"<<endl;
+	
+
 	time_t timeStart, timeEnd;
 	int width = dem.Get_NX();
 	int height = dem.Get_NY();
@@ -245,10 +238,4 @@ void fillDEM(char* inputFile, char* outputFilledPath)
 	double consumeTime = difftime(timeEnd, timeStart);
 	std::cout<<"Time used:"<<consumeTime<<" seconds"<<endl;
 
-	double min, max, mean, stdDev;
-	calculateStatistics(dem, &min, &max, &mean, &stdDev);
-	CreateGeoTIFF(outputFilledPath, dem.Get_NY(), dem.Get_NX(), 
-		(void *)dem.getDEMdata(),GDALDataType::GDT_Float32, geoTransformArgs,
-		&min, &max, &mean, &stdDev, -9999);
-	return;
 }

@@ -2,7 +2,7 @@ IDIR =.
 CC=g++
 
 #Compilation flags. Feel free to add optimization options here
-CFLAGS=-I$(IDIR) --std=c++11 -fpermissive -O3 `gdal-config --cflags`
+CFLAGS=-I$(IDIR) --std=c++11 -fpermissive -O3 `gdal-config --cflags` -I/home/rick/projects/watershed/richdem/include -DUSEGDAL
 
 ODIR=.
 

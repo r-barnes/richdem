@@ -26,7 +26,7 @@ static unsigned char inverse[8] = {16, 32, 64, 128, 1, 2, 4, 8};
 static unsigned char	dir[8] = {1, 2, 4, 8, 16, 32, 64, 128};
 class CDEM
 {
-protected:
+public:
 	float* pDem;
 	int width, height;
 public:

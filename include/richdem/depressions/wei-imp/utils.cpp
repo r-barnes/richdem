@@ -4,6 +4,7 @@
 #include <string>
 #include <math.h>
 #include <time.h>
+
 //create a new GeoTIFF file
 bool  CreateGeoTIFF(char* path,int height, int width,void* pData, GDALDataType type, double* geoTransformArray6Eles,
 					double* min, double* max, double* mean, double* stdDev, double nodatavalue)
@@ -38,6 +39,8 @@ bool  CreateGeoTIFF(char* path,int height, int width,void* pData, GDALDataType t
 
 	return true;
 }
+
+
 //read a DEM GeoTIFF file 
 bool readTIFF(const char* path, GDALDataType type, CDEM& dem, double* geoTransformArray6Eles)
 {
