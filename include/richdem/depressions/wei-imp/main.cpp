@@ -5,12 +5,11 @@
 #include <fstream>
 #include <queue>
 #include <algorithm>
-#include "dem.h"
 #include <time.h>
 #include <list>
 #include <unordered_map>
 #include "perlin.h"
-#include "filldem.hpp"
+#include "Wei2018.hpp"
 
 #include <richdem/richdem.hpp>
 #include <richdem/common/Array2D.hpp>
