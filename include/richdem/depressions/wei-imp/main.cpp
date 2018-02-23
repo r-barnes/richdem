@@ -18,16 +18,23 @@
 #include <stdexcept>
 
 
-using namespace std;
-using std::cout;
-using std::endl;
-using std::string;
-using std::getline;
-using std::fstream;
-using std::ifstream;
-using std::priority_queue;
-using std::binary_function;
-
+int randomi(int m,int n){
+	int pos, dis;
+	srand((unsigned)time(NULL));
+	if (m == n){
+		return m;
+	}
+	else if (m > n){
+		pos = n;
+		dis = m - n + 1;
+		return rand() % dis + pos;
+	}
+	else{
+		pos = m;
+		dis = n - m + 1;
+		return rand() % dis + pos;
+	}
+}
 
 
 
