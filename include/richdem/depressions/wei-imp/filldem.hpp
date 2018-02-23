@@ -64,9 +64,9 @@ void InitPriorityQue(
 
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
-      for (int i = 0; i < 8; i++){
-        auto iRow = Get_rowTo(i, y);
-        auto iCol = Get_colTo(i, x);
+      for (int i=1;i<=8; i++){
+        auto iRow = y+dy[i];
+        auto iCol = x+dx[i];
 
         if(!dem.inGrid(iCol,iRow))
           continue;
@@ -102,9 +102,9 @@ void ProcessTraceQue(
     const auto node = traceQueue.front();
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
-    for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i,node.row);
-      auto iCol = Get_colTo(i,node.col);
+    for (int i=1;i<=8; i++){
+      auto iRow = node.row+dy[i];
+      auto iCol = node.col+dx[i];
       if(flag(iCol,iRow))
         continue;
 
@@ -114,9 +114,9 @@ void ProcessTraceQue(
       } else {
         //initialize all masks as false   
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
-        for(int k = 0; k < 8; k++){
-          auto kRow = Get_rowTo(k,iRow);
-          auto kCol = Get_colTo(k,iCol);
+        for(int k=1;k<=8; k++){
+          auto kRow = iRow+dy[k];
+          auto kCol = iCol+dx[k];
           if((Mask[kRow-node.row+2][kCol-node.col+2]) ||
             (flag(kCol,kRow)&&dem(kCol,kRow)<node.spill)
             )
@@ -142,9 +142,9 @@ void ProcessTraceQue(
     potentialQueue.pop();
 
     //first case
-    for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i,node.row);
-      auto iCol = Get_colTo(i,node.col);
+    for (int i=1;i<=8; i++){
+      auto iRow = node.row+dy[i];
+      auto iCol = node.col+dx[i];
       if(flag(iCol,iRow))
         continue;
 
@@ -167,9 +167,9 @@ void ProcessPit(
   while (!depressionQue.empty()){
     auto node = depressionQue.front();
     depressionQue.pop();
-    for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i, node.row);
-      auto iCol = Get_colTo(i,  node.col);
+    for (int i=1;i<=8; i++){
+      auto iRow = node.row+dy[i];
+      auto iCol = node.col+dx[i];
       if (flag(iCol,iRow))
         continue;    
 
@@ -213,9 +213,9 @@ void fillDEM(Array2D<T> &dem){
     auto col   = tmpNode.col;
     auto spill = tmpNode.spill;
 
-    for (int i = 0; i < 8; i++){
-      auto iRow = Get_rowTo(i, row);
-      auto iCol = Get_colTo(i, col);
+    for (int i=1;i<=8; i++){
+      auto iRow = row+dy[i];
+      auto iCol = col+dx[i];
 
       if(!dem.inGrid(iCol,iRow))
         continue;

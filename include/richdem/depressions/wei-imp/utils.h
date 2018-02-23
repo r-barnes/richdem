@@ -6,16 +6,6 @@
 #include "dem.h"
 
 
-extern int	ix[8];
-extern int	iy[8];
-
-inline int Get_rowTo(int dir, int row)
-{
-	return( row + ix[dir] );
-}
-inline int Get_colTo(int dir, int col){
-	return( col + iy[dir] );
-}
 
 
 
