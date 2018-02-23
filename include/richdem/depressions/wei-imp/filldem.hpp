@@ -55,8 +55,6 @@ void InitPriorityQue(
   Flag& flag,
   PriorityQueue& priorityQueue
 ){
-  int iRow, iCol;
-
   std::queue<Node> depressionQue;
 
   // push border cells into the PQ
@@ -67,8 +65,8 @@ void InitPriorityQue(
     if (dem.isNoData(x,y)) {
       flag.SetFlag(y,x);
       for (int i = 0; i < 8; i++){
-        iRow = Get_rowTo(i, y);
-        iCol = Get_colTo(i, x);
+        auto iRow = Get_rowTo(i, y);
+        auto iCol = Get_colTo(i, x);
         if (flag.IsProcessed(iRow,iCol)) 
           continue;
 
@@ -95,36 +93,29 @@ void ProcessTraceQue(
   PriorityQueue& priorityQueue
 ){
   bool HaveSpillPathOrLowerSpillOutlet;
-  int i,iRow,iCol;
-  int k,kRow,kCol;
-  int noderow,nodecol;
-  Node N,node;
-  std::queue<Node> potentialQueue;
+  std::queue<Node > potentialQueue;
   int indexThreshold=2;  //index threshold, default to 2
   while (!traceQueue.empty()){
-    node = traceQueue.front();
+    auto node = traceQueue.front();
     traceQueue.pop();
-    noderow=node.row;
-    nodecol=node.col;
+    auto noderow=node.row;
+    auto nodecol=node.col;
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
-    for (i = 0; i < 8; i++){
-      iRow = Get_rowTo(i,noderow);
-      iCol = Get_colTo(i,nodecol);
+    for (int i = 0; i < 8; i++){
+      auto iRow = Get_rowTo(i,noderow);
+      auto iCol = Get_colTo(i,nodecol);
       if(flag.IsProcessedDirect(iRow,iCol))
         continue;
 
       if (dem(iCol,iRow)>node.spill){
-        N.col   = iCol;
-        N.row   = iRow;
-        N.spill = dem(iCol,iRow);
-        traceQueue.push(N);
+        traceQueue.emplace(iRow,iCol, dem(iCol,iRow));
         flag.SetFlag(iRow,iCol);
       } else {
         //initialize all masks as false   
         HaveSpillPathOrLowerSpillOutlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
-        for(k = 0; k < 8; k++){
-          kRow = Get_rowTo(k,iRow);
-          kCol = Get_colTo(k,iCol);
+        for(int k = 0; k < 8; k++){
+          auto kRow = Get_rowTo(k,iRow);
+          auto kCol = Get_colTo(k,iCol);
           if((Mask[kRow-noderow+2][kCol-nodecol+2]) ||
             (flag.IsProcessedDirect(kRow,kCol)&&dem(kCol,kRow)<node.spill)
             )
@@ -146,15 +137,15 @@ void ProcessTraceQue(
   }
 
   while (!potentialQueue.empty()){
-    node = potentialQueue.front();
+    auto node = potentialQueue.front();
     potentialQueue.pop();
-    noderow=node.row;
-    nodecol=node.col;
+    auto noderow=node.row;
+    auto nodecol=node.col;
 
     //first case
-    for (i = 0; i < 8; i++){
-      iRow = Get_rowTo(i,noderow);
-      iCol = Get_colTo(i,nodecol);
+    for (int i = 0; i < 8; i++){
+      auto iRow = Get_rowTo(i,noderow);
+      auto iCol = Get_colTo(i,nodecol);
       if(flag.IsProcessedDirect(iRow,iCol))
         continue;
 
@@ -174,36 +165,26 @@ void ProcessPit(
   std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
 ){
-  int iRow, iCol,i;
-  float iSpill;
-  Node N;
-  Node node;
   while (!depressionQue.empty()){
-    node= depressionQue.front();
+    auto node = depressionQue.front();
     depressionQue.pop();
-    for (i = 0; i < 8; i++){
-      iRow = Get_rowTo(i, node.row);
-      iCol = Get_colTo(i,  node.col);
+    for (int i = 0; i < 8; i++){
+      auto iRow = Get_rowTo(i, node.row);
+      auto iCol = Get_colTo(i,  node.col);
       if (flag.IsProcessedDirect(iRow,iCol))
         continue;    
 
-      iSpill = dem(iCol,iRow);
+      auto iSpill = dem(iCol,iRow);
       if (iSpill > node.spill){ //slope cell
-        N.row = iRow;
-        N.col = iCol;
-        N.spill = iSpill;       
         flag.SetFlag(iRow,iCol);
-        traceQueue.push(N);
+        traceQueue.emplace(iRow,iCol,iSpill);
         continue;
       }
 
       //depression cell
       flag.SetFlag(iRow,iCol);
       dem(iCol, iRow) = node.spill;
-      N.row   = iRow;
-      N.col   = iCol;
-      N.spill = node.spill;
-      depressionQue.push(N);
+      depressionQue.emplace(iRow,iCol,node.spill);
     }
   }
 }
@@ -225,8 +206,6 @@ void fillDEM(Array2D<T> &dem){
   }
 
   PriorityQueue priorityQueue;
-  int iRow, iCol, row,col;
-  float iSpill,spill;
 
   int numberofall   = 0;
   int numberofright = 0;
@@ -235,18 +214,18 @@ void fillDEM(Array2D<T> &dem){
   while (!priorityQueue.empty()){
     auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
-    row   = tmpNode.row;
-    col   = tmpNode.col;
-    spill = tmpNode.spill;
+    auto row   = tmpNode.row;
+    auto col   = tmpNode.col;
+    auto spill = tmpNode.spill;
 
     for (int i = 0; i < 8; i++){
-      iRow = Get_rowTo(i, row);
-      iCol = Get_colTo(i, col);
+      auto iRow = Get_rowTo(i, row);
+      auto iCol = Get_colTo(i, col);
 
       if (flag.IsProcessed(iRow,iCol))
         continue;
 
-      iSpill = dem(iCol,iRow);
+      auto iSpill = dem(iCol,iRow);
       if (iSpill <= spill){
         //depression cell
         dem(iCol,iRow) = spill;
