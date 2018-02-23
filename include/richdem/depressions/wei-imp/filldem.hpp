@@ -6,7 +6,6 @@
 #include <fstream>
 #include <queue>
 #include <algorithm>
-#include "Node.h"
 #include "utils.h"
 #include <time.h>
 #include <list>
@@ -17,6 +16,65 @@ using namespace std;
 
 
 namespace richdem {
+
+
+#include <functional>
+class Node
+{
+public:
+  int row;
+  int col;
+  float spill;
+  int N;
+  Node()
+  {
+    row = 0;
+    col = 0;
+    spill = -9999.0;
+    N=-1;
+  }
+
+  struct Greater : public std::binary_function< Node, Node, bool >
+  {
+    bool operator()(const Node n1, const Node n2) const
+    {
+      return n1.spill > n2.spill;
+    }
+  };
+
+  bool operator==(const Node& a)
+  {
+    return (this->col == a.col) && (this->row == a.row);
+  }
+  bool operator!=(const Node& a)
+  {
+    return (this->col != a.col) || (this->row != a.row);
+  }
+  bool operator<(const Node& a)
+  {
+    return this->spill < a.spill;
+  }
+  bool operator>(const Node& a)
+  {
+    return this->spill > a.spill;
+  }
+  bool operator>=(const Node& a)
+  {
+    return this->spill >= a.spill;
+  }
+  bool operator<=(const Node& a)
+  {
+    return this->spill <= a.spill;
+  }
+};
+
+
+
+
+
+
+
+
 
 typedef std::vector<Node> NodeVector;
 typedef std::priority_queue<Node, NodeVector, Node::Greater> PriorityQueue;
@@ -39,13 +97,13 @@ void InitPriorityQue(
 
     if (dem.isNoData(x,y)) {
       flag.SetFlag(y,x);
-      for (int i = 0; i < 8; i++)
-      {
+      for (int i = 0; i < 8; i++){
         iRow = Get_rowTo(i, y);
         iCol = Get_colTo(i, x);
-        if (flag.IsProcessed(iRow,iCol)) continue;
-        if (!dem.isNoData(iCol, iRow))
-        {
+        if (flag.IsProcessed(iRow,iCol)) 
+          continue;
+
+        if (!dem.isNoData(iCol, iRow)){
           tmpNode.row   = iRow;
           tmpNode.col   = iCol;
           tmpNode.spill = dem(iCol, iRow);
@@ -53,15 +111,13 @@ void InitPriorityQue(
           flag.SetFlag(iRow,iCol);
         }
       }
-    } else {
-      if (y==0 || y==dem.height()-1 || x==0 || x==dem.width()-1){
-        //on the DEM border
-        tmpNode.row   = y;
-        tmpNode.col   = x;
-        tmpNode.spill = dem(x,y);
-        priorityQueue.push(tmpNode);
-        flag.SetFlag(y,x);          
-      }
+    } else if (y==0 || y==dem.height()-1 || x==0 || x==dem.width()-1){
+      //on the DEM border
+      tmpNode.row   = y;
+      tmpNode.col   = x;
+      tmpNode.spill = dem(x,y);
+      priorityQueue.push(tmpNode);
+      flag.SetFlag(y,x);          
     }
   }
 }
@@ -91,7 +147,9 @@ void ProcessTraceQue(
     for (i = 0; i < 8; i++){
       iRow = Get_rowTo(i,noderow);
       iCol = Get_colTo(i,nodecol);
-      if(flag.IsProcessedDirect(iRow,iCol)) continue;
+      if(flag.IsProcessedDirect(iRow,iCol))
+        continue;
+
       if (dem(iCol,iRow)>node.spill){
         N.col   = iCol;
         N.row   = iRow;
@@ -113,6 +171,7 @@ void ProcessTraceQue(
             break;
           }
         }
+        
         if(!HaveSpillPathOrLowerSpillOutlet){
           if (i<indexThreshold) potentialQueue.push(node);
           else
@@ -133,11 +192,11 @@ void ProcessTraceQue(
     for (i = 0; i < 8; i++){
       iRow = Get_rowTo(i,noderow);
       iCol = Get_colTo(i,nodecol);
-      if(flag.IsProcessedDirect(iRow,iCol)) continue;
-      else {
-        priorityQueue.push(node);
-        break;
-      }
+      if(flag.IsProcessedDirect(iRow,iCol))
+        continue;
+
+      priorityQueue.push(node);
+      break;
     }   
   }
 }
@@ -162,7 +221,9 @@ void ProcessPit(
     for (i = 0; i < 8; i++){
       iRow = Get_rowTo(i, node.row);
       iCol = Get_colTo(i,  node.col);
-      if (flag.IsProcessedDirect(iRow,iCol)) continue;    
+      if (flag.IsProcessedDirect(iRow,iCol))
+        continue;    
+
       iSpill = dem(iCol,iRow);
       if (iSpill > node.spill){ //slope cell
         N.row = iRow;
@@ -172,6 +233,7 @@ void ProcessPit(
         traceQueue.push(N);
         continue;
       }
+
       //depression cell
       flag.SetFlag(iRow,iCol);
       dem(iCol, iRow) = node.spill;
@@ -198,6 +260,7 @@ void fillDEM(Array2D<T> &dem){
     printf("Failed to allocate memory!\n");
     return;
   }
+
   PriorityQueue priorityQueue;
   int iRow, iCol, row,col;
   float iSpill,spill;
@@ -217,7 +280,9 @@ void fillDEM(Array2D<T> &dem){
       iRow = Get_rowTo(i, row);
       iCol = Get_colTo(i, col);
 
-      if (flag.IsProcessed(iRow,iCol)) continue;
+      if (flag.IsProcessed(iRow,iCol))
+        continue;
+
       iSpill = dem(iCol,iRow);
       if (iSpill <= spill){
         //depression cell
