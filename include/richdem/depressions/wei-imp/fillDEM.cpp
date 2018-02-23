@@ -23,44 +23,39 @@ void InitPriorityQue(
 	int width=dem.Get_NX();
 	int height=dem.Get_NY();
 	Node tmpNode;
-	int iRow, iCol,row,col;
+	int iRow, iCol;
 
 	queue<Node> depressionQue;
 
 	// push border cells into the PQ
-	for (row = 0; row < height; row++)
-	{
-		for (col = 0; col < width; col++)
-		{
-			if (flag.IsProcessedDirect(row,col)) continue;
+	for(int y = 0; y < height; y++)
+	for(int x = 0; x < width; x++){
+		if (flag.IsProcessedDirect(y,x)) continue;
 
-			if (dem.is_NoData(row, col)) {
-				flag.SetFlag(row,col);
-				for (int i = 0; i < 8; i++)
+		if (dem.is_NoData(y, x)) {
+			flag.SetFlag(y,x);
+			for (int i = 0; i < 8; i++)
+			{
+				iRow = Get_rowTo(i, y);
+				iCol = Get_colTo(i, x);
+				if (flag.IsProcessed(iRow,iCol)) continue;
+				if (!dem.is_NoData(iRow, iCol))
 				{
-					iRow = Get_rowTo(i, row);
-					iCol = Get_colTo(i, col);
-					if (flag.IsProcessed(iRow,iCol)) continue;
-					if (!dem.is_NoData(iRow, iCol))
-					{
-						tmpNode.row   = iRow;
-						tmpNode.col   = iCol;
-						tmpNode.spill = dem.asFloat(iRow, iCol);
-						priorityQueue.push(tmpNode);
-						flag.SetFlag(iRow,iCol);
-					}
+					tmpNode.row   = iRow;
+					tmpNode.col   = iCol;
+					tmpNode.spill = dem.asFloat(iRow, iCol);
+					priorityQueue.push(tmpNode);
+					flag.SetFlag(iRow,iCol);
 				}
 			}
-			else
-			{
-				if (row==0 || row==height-1 || col==0 || col==width-1){
-					//on the DEM border
-					tmpNode.row   = row;
-					tmpNode.col   = col;
-					tmpNode.spill = dem.asFloat(row, col);
-					priorityQueue.push(tmpNode);
-					flag.SetFlag(row,col);					
-				}
+		} else {
+			if (y==0 || y==height-1 || x==0 || x==width-1){
+				//on the DEM border
+				tmpNode.row   = y;
+				tmpNode.col   = x;
+				tmpNode.spill = dem.asFloat(y, x);
+				priorityQueue.push(tmpNode);
+				flag.SetFlag(y,x);					
 			}
 		}
 	}
@@ -97,7 +92,7 @@ void ProcessTraceQue(
 				N.spill = dem.asFloat(iRow,iCol);
 				traceQueue.push(N);
 				flag.SetFlag(iRow,iCol);
-			}else{
+			} else {
 				//initialize all masks as false		
 				HaveSpillPathOrLowerSpillOutlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
 				for(k = 0; k < 8; k++){
@@ -220,16 +215,16 @@ void fillDEM(CDEM &dem){
 				//depression cell
 				dem.Set_Value(iRow, iCol, spill);
 				flag.SetFlag(iRow,iCol);
-				tmpNode.row = iRow;
-				tmpNode.col = iCol;
+				tmpNode.row   = iRow;
+				tmpNode.col   = iCol;
 				tmpNode.spill = spill;
 				depressionQue.push(tmpNode);
 				ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
 			} else {
 				//slope cell
 				flag.SetFlag(iRow,iCol);
-				tmpNode.row = iRow;
-				tmpNode.col = iCol;
+				tmpNode.row   = iRow;
+				tmpNode.col   = iCol;
 				tmpNode.spill = iSpill;
 				traceQueue.push(tmpNode);
 			}			
