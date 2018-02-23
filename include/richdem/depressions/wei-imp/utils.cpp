@@ -1,86 +1,10 @@
 #include "utils.h"
-#include "gdal_priv.h"
 #include "dem.h"
 #include <string>
 #include <math.h>
 #include <time.h>
 
-//create a new GeoTIFF file
-bool  CreateGeoTIFF(char* path,int height, int width,void* pData, GDALDataType type, double* geoTransformArray6Eles,
-					double* min, double* max, double* mean, double* stdDev, double nodatavalue)
-{
-    GDALDataset *poDataset;   
-    GDALAllRegister();
-	CPLSetConfigOption("GDAL_FILENAME_IS_UTF8","NO");
- 
-	GDALDriver* poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    char **papszOptions = NULL;
-    poDataset = poDriver->Create(path,width, height, 1, type, 
-                                papszOptions );
-	
 
-	if (geoTransformArray6Eles != NULL)
-		poDataset->SetGeoTransform(geoTransformArray6Eles);
-
-
-	GDALRasterBand* poBand;
-	poBand= poDataset->GetRasterBand(1);
-	
-	poBand->SetNoDataValue(nodatavalue);
-
-	if (min != NULL && max != NULL && mean != NULL && stdDev != NULL)
-	{
-		poBand->SetStatistics(*min, *max, *mean, *stdDev);
-	}
-	poBand->RasterIO( GF_Write, 0, 0, width, height, 
-                      pData, width, height, type, 0, 0 );    
-
-	GDALClose( (GDALDatasetH) poDataset );
-
-	return true;
-}
-
-
-//read a DEM GeoTIFF file 
-bool readTIFF(const char* path, GDALDataType type, CDEM& dem, double* geoTransformArray6Eles)
-{
-	GDALDataset *poDataset;   
-    GDALAllRegister();
-	CPLSetConfigOption("GDAL_FILENAME_IS_UTF8","NO");
-	poDataset = (GDALDataset* )GDALOpen(path, GA_ReadOnly);
-	if (poDataset == NULL)
-	{
-		printf("Failed to read the GeoTIFF file\n");
-		return false;
-	}
-
-	GDALRasterBand* poBand;
-	poBand = poDataset->GetRasterBand(1);
-	GDALDataType dataType = poBand->GetRasterDataType();
-	if (dataType != type)
-	{
-		return false;
-	}
-	if (geoTransformArray6Eles == NULL)
-	{
-		printf("Transformation parameters can not be NULL\n");
-		return false;
-	}
-
-	memset(geoTransformArray6Eles, 0, 6);
-	poDataset->GetGeoTransform(geoTransformArray6Eles);
-
-	dem.SetWidth(poBand->GetXSize());
-	dem.SetHeight(poBand->GetYSize());
-	
-	if (!dem.Allocate()) return false;
-
-	poBand->RasterIO(GF_Read, 0, 0, dem.Get_NX(), dem.Get_NY(), 
-		(void *)dem.getDEMdata(), dem.Get_NX(), dem.Get_NY(), dataType, 0, 0);
-
-	GDALClose((GDALDatasetH)poDataset);
-	return true;
-}
 /*
 *	neighbor index
 *	5  6  7

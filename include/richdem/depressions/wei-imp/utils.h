@@ -1,7 +1,6 @@
 #ifndef UTILS_HEAD_H
 #define UTILS_HEAD_H
 
-#include "gdal_priv.h"
 #include <queue>
 #include <algorithm>
 #include "dem.h"
@@ -26,11 +25,7 @@ void setNoData(unsigned char* data, int length, unsigned char noDataValue);
 void setNoData(float* data, int length, float noDataValue);
 void setFlag(int index, unsigned char* flagArray);
 bool isProcessed(int index, const unsigned char* flagArray);
-bool  CreateGeoTIFF(char* path,int height, int width,void* pData, GDALDataType type, double* geoTransformArray6Eles,
-					double* min, double* max, double* mean, double* stdDev, double nodatavalue);
-bool readTIFF(const char* path, GDALDataType type, CDEM& dem, double* geoTransformArray6Eles);
 CDEM* diff(CDEM& demA, CDEM& demB);
-void CreateDiffImage(const char *demA, const char *demB, char *resultPath, GDALDataType type, double nodatavalue);
 float randomf(float m,float n);
 int randomi(int m,int n);
 extern const unsigned char value[8];

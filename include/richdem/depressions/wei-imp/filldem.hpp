@@ -1,6 +1,7 @@
 #ifndef _richdem_wei2008_hpp_
 #define _richdem_wei2008_hpp_
 
+#include <richdem/common/Array2D.hpp>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -11,7 +12,6 @@
 #include <list>
 #include <stack>
 #include <vector>
-#include <richdem/common/Array2D.hpp>
 using namespace std;
 
 
@@ -19,59 +19,29 @@ namespace richdem {
 
 
 #include <functional>
-class Node
-{
-public:
+class Node {
+ public:
   int row;
   int col;
   float spill;
   int N;
-  Node()
-  {
-    row = 0;
-    col = 0;
+  Node(){
+    row   = 0;
+    col   = 0;
     spill = -9999.0;
-    N=-1;
+    N     = -1;
   }
 
-  struct Greater : public std::binary_function< Node, Node, bool >
-  {
-    bool operator()(const Node n1, const Node n2) const
-    {
+  struct Greater : public std::binary_function< Node, Node, bool > {
+    bool operator()(const Node n1, const Node n2) const {
       return n1.spill > n2.spill;
     }
   };
 
-  bool operator==(const Node& a)
-  {
-    return (this->col == a.col) && (this->row == a.row);
-  }
-  bool operator!=(const Node& a)
-  {
-    return (this->col != a.col) || (this->row != a.row);
-  }
-  bool operator<(const Node& a)
-  {
-    return this->spill < a.spill;
-  }
-  bool operator>(const Node& a)
-  {
+  bool operator>(const Node& a)  {
     return this->spill > a.spill;
   }
-  bool operator>=(const Node& a)
-  {
-    return this->spill >= a.spill;
-  }
-  bool operator<=(const Node& a)
-  {
-    return this->spill <= a.spill;
-  }
 };
-
-
-
-
-
 
 
 

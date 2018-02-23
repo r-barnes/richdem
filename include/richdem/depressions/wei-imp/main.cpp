@@ -6,7 +6,6 @@
 #include <queue>
 #include <algorithm>
 #include "dem.h"
-#include "Node.h"
 #include "utils.h"
 #include <time.h>
 #include <list>
@@ -30,8 +29,6 @@ using std::priority_queue;
 using std::binary_function;
 
 
-typedef std::vector<Node> NodeVector;
-typedef std::priority_queue<Node, NodeVector, Node::Greater> PriorityQueue;
 
 
 //generate DEM with Perlin Noise 
