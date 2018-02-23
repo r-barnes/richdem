@@ -2,14 +2,9 @@
 #define _richdem_wei2008_hpp_
 
 #include <richdem/common/Array2D.hpp>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <queue>
 #include <algorithm>
-#include <time.h>
-#include <list>
-#include <stack>
+#include <iostream>
+#include <queue>
 #include <vector>
 
 
@@ -194,9 +189,7 @@ void fillDEM(Array2D<T> &dem){
   std::queue<Node> traceQueue;
   std::queue<Node> depressionQue;
   
-  time_t timeStart, timeEnd;
   std::cout<<"Using our proposed variant to fill DEM"<<std::endl;
-  timeStart = time(NULL);
   Array2D<bool> flag(dem.width(),dem.height(),false);
 
   PriorityQueue priorityQueue;
@@ -237,9 +230,6 @@ void fillDEM(Array2D<T> &dem){
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
     }
   }
-  timeEnd = time(NULL);
-  double consumeTime = difftime(timeEnd, timeStart);
-  std::cout<<"Time used:"<<consumeTime<<" seconds"<<std::endl;
 }
 
 }
