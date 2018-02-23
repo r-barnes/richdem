@@ -12,7 +12,6 @@
 #include <list>
 #include <stack>
 #include <vector>
-using namespace std;
 
 
 namespace richdem {
@@ -58,7 +57,7 @@ void InitPriorityQue(
   Node tmpNode;
   int iRow, iCol;
 
-  queue<Node> depressionQue;
+  std::queue<Node> depressionQue;
 
   // push border cells into the PQ
   for(int y = 0; y < dem.height(); y++)
@@ -98,7 +97,7 @@ template<class T>
 void ProcessTraceQue(
   Array2D<T>& dem,
   Flag& flag,
-  queue<Node>& traceQueue,
+  std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
 ){
   bool HaveSpillPathOrLowerSpillOutlet;
@@ -106,7 +105,7 @@ void ProcessTraceQue(
   int k,kRow,kCol;
   int noderow,nodecol;
   Node N,node;
-  queue<Node> potentialQueue;
+  std::queue<Node> potentialQueue;
   int indexThreshold=2;  //index threshold, default to 2
   while (!traceQueue.empty()){
     node = traceQueue.front();
@@ -177,8 +176,8 @@ template<class T>
 void ProcessPit(
   Array2D<T>& dem, 
   Flag& flag, 
-  queue<Node>& depressionQue,
-  queue<Node>& traceQueue,
+  std::queue<Node>& depressionQue,
+  std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
 ){
   int iRow, iCol,i;
@@ -219,11 +218,11 @@ void ProcessPit(
 
 template<class T>
 void fillDEM(Array2D<T> &dem){
-  queue<Node> traceQueue;
-  queue<Node> depressionQue;
+  std::queue<Node> traceQueue;
+  std::queue<Node> depressionQue;
   
   time_t timeStart, timeEnd;
-  std::cout<<"Using our proposed variant to fill DEM"<<endl;
+  std::cout<<"Using our proposed variant to fill DEM"<<std::endl;
   timeStart = time(NULL);
   Flag flag;
   if (!flag.Init(dem.width(),dem.height())) {
@@ -276,7 +275,7 @@ void fillDEM(Array2D<T> &dem){
   }
   timeEnd = time(NULL);
   double consumeTime = difftime(timeEnd, timeStart);
-  std::cout<<"Time used:"<<consumeTime<<" seconds"<<endl;
+  std::cout<<"Time used:"<<consumeTime<<" seconds"<<std::endl;
 }
 
 }
