@@ -75,7 +75,7 @@ void InitPriorityQue(
           flag.SetFlag(iRow,iCol);
         }
       }
-    } else if (y==0 || y==dem.height()-1 || x==0 || x==dem.width()-1){
+    } else if(dem.isEdgeCell(x,y)){
       //on the DEM border
       priorityQueue.emplace(y,x,dem(x,y));
       flag.SetFlag(y,x);          
