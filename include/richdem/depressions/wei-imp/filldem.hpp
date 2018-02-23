@@ -64,18 +64,18 @@ void InitPriorityQue(
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
       for (int i=1;i<=8; i++){
-        auto iRow = y+dy[i];
-        auto iCol = x+dx[i];
+        auto ny = y+dy[i];
+        auto nx = x+dx[i];
 
-        if(!dem.inGrid(iCol,iRow))
+        if(!dem.inGrid(nx,ny))
           continue;
 
-        if (flag(iCol,iRow)) 
+        if (flag(nx,ny)) 
           continue;
 
-        if (!dem.isNoData(iCol, iRow)){
-          priorityQueue.emplace(iRow,iCol,dem(iCol, iRow));
-          flag(iCol,iRow)=true;
+        if (!dem.isNoData(nx, ny)){
+          priorityQueue.emplace(ny,nx,dem(nx, ny));
+          flag(nx,ny)=true;
         }
       }
     } else if(dem.isEdgeCell(x,y)){
@@ -102,25 +102,25 @@ void ProcessTraceQue(
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int i=1;i<=8; i++){
-      auto iRow = node.row+dy[i];
-      auto iCol = node.col+dx[i];
-      if(flag(iCol,iRow))
+      auto ny = node.row+dy[i];
+      auto nx = node.col+dx[i];
+      if(flag(nx,ny))
         continue;
 
-      if (dem(iCol,iRow)>node.spill){
-        traceQueue.emplace(iRow,iCol, dem(iCol,iRow));
-        flag(iCol,iRow)=true;
+      if (dem(nx,ny)>node.spill){
+        traceQueue.emplace(ny,nx, dem(nx,ny));
+        flag(nx,ny)=true;
       } else {
         //initialize all masks as false   
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
         for(int k=1;k<=8; k++){
-          auto kRow = iRow+dy[k];
-          auto kCol = iCol+dx[k];
+          auto kRow = ny+dy[k];
+          auto kCol = nx+dx[k];
           if((Mask[kRow-node.row+2][kCol-node.col+2]) ||
             (flag(kCol,kRow)&&dem(kCol,kRow)<node.spill)
             )
           {
-            Mask[iRow-node.row+2][iCol-node.col+2]=true;
+            Mask[ny-node.row+2][nx-node.col+2]=true;
             have_spill_path_or_lower_spill_outlet=true;
             break;
           }
@@ -142,9 +142,9 @@ void ProcessTraceQue(
 
     //first case
     for (int i=1;i<=8; i++){
-      auto iRow = node.row+dy[i];
-      auto iCol = node.col+dx[i];
-      if(flag(iCol,iRow))
+      auto ny = node.row+dy[i];
+      auto nx = node.col+dx[i];
+      if(flag(nx,ny))
         continue;
 
       priorityQueue.push(node);
@@ -167,22 +167,22 @@ void ProcessPit(
     auto node = depressionQue.front();
     depressionQue.pop();
     for (int i=1;i<=8; i++){
-      auto iRow = node.row+dy[i];
-      auto iCol = node.col+dx[i];
-      if (flag(iCol,iRow))
+      auto ny = node.row+dy[i];
+      auto nx = node.col+dx[i];
+      if (flag(nx,ny))
         continue;    
 
-      auto iSpill = dem(iCol,iRow);
+      auto iSpill = dem(nx,ny);
       if (iSpill > node.spill){ //slope cell
-        flag(iCol,iRow)=true;
-        traceQueue.emplace(iRow,iCol,iSpill);
+        flag(nx,ny)=true;
+        traceQueue.emplace(ny,nx,iSpill);
         continue;
       }
 
       //depression cell
-      flag(iCol,iRow)=true;
-      dem(iCol, iRow) = node.spill;
-      depressionQue.emplace(iRow,iCol,node.spill);
+      flag(nx,ny)=true;
+      dem(nx, ny) = node.spill;
+      depressionQue.emplace(ny,nx,node.spill);
     }
   }
 }
@@ -213,26 +213,26 @@ void fillDEM(Array2D<T> &dem){
     auto spill = tmpNode.spill;
 
     for (int i=1;i<=8; i++){
-      auto iRow = row+dy[i];
-      auto iCol = col+dx[i];
+      auto ny = row+dy[i];
+      auto nx = col+dx[i];
 
-      if(!dem.inGrid(iCol,iRow))
+      if(!dem.inGrid(nx,ny))
         continue;
 
-      if(flag(iCol,iRow))
+      if(flag(nx,ny))
         continue;
 
-      auto iSpill = dem(iCol,iRow);
+      auto iSpill = dem(nx,ny);
       if (iSpill <= spill){
         //depression cell
-        dem(iCol,iRow) = spill;
-        flag(iCol,iRow) = true;
-        depressionQue.emplace(iRow,iCol,spill);
+        dem(nx,ny) = spill;
+        flag(nx,ny) = true;
+        depressionQue.emplace(ny,nx,spill);
         ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
       } else {
         //slope cell
-        flag(iCol,iRow) = true;
-        traceQueue.emplace(iRow,iCol,iSpill);
+        flag(nx,ny) = true;
+        traceQueue.emplace(ny,nx,iSpill);
       }     
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
     }
