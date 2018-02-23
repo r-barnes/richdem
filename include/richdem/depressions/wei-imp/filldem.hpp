@@ -24,9 +24,9 @@ void InitPriorityQue(
 
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
-      for (int i=1;i<=8; i++){
-        const auto nx = x+dx[i];
-        const auto ny = y+dy[i];
+      for (int n=1;n<=8; n++){
+        const auto nx = x+dx[n];
+        const auto ny = y+dy[n];
 
         if(!dem.inGrid(nx,ny))
           continue;
@@ -62,9 +62,9 @@ void ProcessTraceQue(
     const auto node = traceQueue.front();
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
-    for (int i=1;i<=8; i++){
-      const auto nx = node.x+dx[i];
-      const auto ny = node.y+dy[i];
+    for (int n=1;n<=8; n++){
+      const auto nx = node.x+dx[n];
+      const auto ny = node.y+dy[n];
       if(flag(nx,ny))
         continue;
 
@@ -73,7 +73,7 @@ void ProcessTraceQue(
         flag(nx,ny)=true;
       } else {
         //initialize all masks as false   
-        bool have_spill_path_or_lower_spill_outlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
+        bool have_spill_path_or_lower_spill_outlet=false; //whether cell n has a spill path or a lower spill outlet than node if n is a depression cell
         for(int k=1;k<=8; k++){
           auto kRow = ny+dy[k];
           auto kCol = nx+dx[k];
@@ -88,7 +88,7 @@ void ProcessTraceQue(
         }
         
         if(!have_spill_path_or_lower_spill_outlet){
-          if (i<indexThreshold) potentialQueue.push(node);
+          if (n<indexThreshold) potentialQueue.push(node);
           else
             priorityQueue.push(node);
           break; // make sure node is not pushed twice into PQ
@@ -102,9 +102,9 @@ void ProcessTraceQue(
     potentialQueue.pop();
 
     //first case
-    for (int i=1;i<=8; i++){
-      const auto nx = node.x+dx[i];
-      const auto ny = node.y+dy[i];
+    for (int n=1;n<=8; n++){
+      const auto nx = node.x+dx[n];
+      const auto ny = node.y+dy[n];
       if(flag(nx,ny))
         continue;
 
@@ -127,9 +127,9 @@ void ProcessPit(
   while (!depressionQue.empty()){
     auto node = depressionQue.front();
     depressionQue.pop();
-    for (int i=1;i<=8; i++){
-      const auto nx = node.x+dx[i];
-      const auto ny = node.y+dy[i];
+    for (int n=1;n<=8; n++){
+      const auto nx = node.x+dx[n];
+      const auto ny = node.y+dy[n];
       if (flag(nx,ny))
         continue;    
 
@@ -141,7 +141,7 @@ void ProcessPit(
       }
 
       //depression cell
-      flag(nx,ny)=true;
+      flag(nx,ny) = true;
       dem(nx, ny) = node.z;
       depressionQue.emplace(nx,ny,node.z);
     }
@@ -168,9 +168,9 @@ void fillDEM(Array2D<T> &dem){
     const auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
 
-    for (int i=1;i<=8; i++){
-      auto ny = tmpNode.y+dy[i];
-      auto nx = tmpNode.x+dx[i];
+    for (int n=1;n<=8; n++){
+      auto ny = tmpNode.y+dy[n];
+      auto nx = tmpNode.x+dx[n];
 
       if(!dem.inGrid(nx,ny))
         continue;
