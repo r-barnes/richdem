@@ -75,10 +75,10 @@ void ProcessTraceQue(
         //initialize all masks as false   
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell n has a spill path or a lower spill outlet than node if n is a depression cell
         for(int k=1;k<=8; k++){
-          auto kRow = ny+dy[k];
-          auto kCol = nx+dx[k];
-          if((Mask[kRow-node.y+2][kCol-node.x+2]) ||
-            (flag(kCol,kRow)&&dem(kCol,kRow)<node.z)
+          const auto nny = ny+dy[k];
+          const auto nnx = nx+dx[k];
+          if((Mask[nny-node.y+2][nnx-node.x+2]) ||
+            (flag(nnx,nny) && dem(nnx,nny)<node.z)
             )
           {
             Mask[ny-node.y+2][nx-node.x+2]=true;
@@ -133,7 +133,7 @@ void ProcessPit(
       if (flag(nx,ny))
         continue;    
 
-      auto iSpill = dem(nx,ny);
+      const auto iSpill = dem(nx,ny);
       if (iSpill > node.z){ //slope cell
         flag(nx,ny)=true;
         traceQueue.emplace(nx,ny,iSpill);
