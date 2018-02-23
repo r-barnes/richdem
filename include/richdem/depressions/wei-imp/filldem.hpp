@@ -52,7 +52,7 @@ typedef std::priority_queue<Node, std::vector<Node>, Node::Greater> PriorityQueu
 template<class T>
 void InitPriorityQue(
   Array2D<T>& dem,
-  Flag& flag,
+  Array2D<bool>& flag,
   PriorityQueue& priorityQueue
 ){
   std::queue<Node> depressionQue;
@@ -60,25 +60,29 @@ void InitPriorityQue(
   // push border cells into the PQ
   for(int y = 0; y < dem.height(); y++)
   for(int x = 0; x < dem.width(); x++){
-    if (flag.IsProcessedDirect(y,x)) continue;
+    if (flag(x,y)) continue;
 
     if (dem.isNoData(x,y)) {
-      flag.SetFlag(y,x);
+      flag(x,y)=true;
       for (int i = 0; i < 8; i++){
         auto iRow = Get_rowTo(i, y);
         auto iCol = Get_colTo(i, x);
-        if (flag.IsProcessed(iRow,iCol)) 
+
+        if(!dem.inGrid(iCol,iRow))
+          continue;
+
+        if (flag(iCol,iRow)) 
           continue;
 
         if (!dem.isNoData(iCol, iRow)){
           priorityQueue.emplace(iRow,iCol,dem(iCol, iRow));
-          flag.SetFlag(iRow,iCol);
+          flag(iCol,iRow)=true;
         }
       }
     } else if(dem.isEdgeCell(x,y)){
       //on the DEM border
       priorityQueue.emplace(y,x,dem(x,y));
-      flag.SetFlag(y,x);          
+      flag(x,y)=true;          
     }
   }
 }
@@ -88,7 +92,7 @@ void InitPriorityQue(
 template<class T>
 void ProcessTraceQue(
   Array2D<T>& dem,
-  Flag& flag,
+  Array2D<bool>& flag,
   std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
 ){
@@ -101,12 +105,12 @@ void ProcessTraceQue(
     for (int i = 0; i < 8; i++){
       auto iRow = Get_rowTo(i,node.row);
       auto iCol = Get_colTo(i,node.col);
-      if(flag.IsProcessedDirect(iRow,iCol))
+      if(flag(iCol,iRow))
         continue;
 
       if (dem(iCol,iRow)>node.spill){
         traceQueue.emplace(iRow,iCol, dem(iCol,iRow));
-        flag.SetFlag(iRow,iCol);
+        flag(iCol,iRow)=true;
       } else {
         //initialize all masks as false   
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
@@ -114,7 +118,7 @@ void ProcessTraceQue(
           auto kRow = Get_rowTo(k,iRow);
           auto kCol = Get_colTo(k,iCol);
           if((Mask[kRow-node.row+2][kCol-node.col+2]) ||
-            (flag.IsProcessedDirect(kRow,kCol)&&dem(kCol,kRow)<node.spill)
+            (flag(kCol,kRow)&&dem(kCol,kRow)<node.spill)
             )
           {
             Mask[iRow-node.row+2][iCol-node.col+2]=true;
@@ -141,7 +145,7 @@ void ProcessTraceQue(
     for (int i = 0; i < 8; i++){
       auto iRow = Get_rowTo(i,node.row);
       auto iCol = Get_colTo(i,node.col);
-      if(flag.IsProcessedDirect(iRow,iCol))
+      if(flag(iCol,iRow))
         continue;
 
       priorityQueue.push(node);
@@ -155,7 +159,7 @@ void ProcessTraceQue(
 template<class T>
 void ProcessPit(
   Array2D<T>& dem, 
-  Flag& flag, 
+  Array2D<bool>& flag, 
   std::queue<Node>& depressionQue,
   std::queue<Node>& traceQueue,
   PriorityQueue& priorityQueue
@@ -166,18 +170,18 @@ void ProcessPit(
     for (int i = 0; i < 8; i++){
       auto iRow = Get_rowTo(i, node.row);
       auto iCol = Get_colTo(i,  node.col);
-      if (flag.IsProcessedDirect(iRow,iCol))
+      if (flag(iCol,iRow))
         continue;    
 
       auto iSpill = dem(iCol,iRow);
       if (iSpill > node.spill){ //slope cell
-        flag.SetFlag(iRow,iCol);
+        flag(iCol,iRow)=true;
         traceQueue.emplace(iRow,iCol,iSpill);
         continue;
       }
 
       //depression cell
-      flag.SetFlag(iRow,iCol);
+      flag(iCol,iRow)=true;
       dem(iCol, iRow) = node.spill;
       depressionQue.emplace(iRow,iCol,node.spill);
     }
@@ -194,11 +198,7 @@ void fillDEM(Array2D<T> &dem){
   time_t timeStart, timeEnd;
   std::cout<<"Using our proposed variant to fill DEM"<<std::endl;
   timeStart = time(NULL);
-  Flag flag;
-  if (!flag.Init(dem.width(),dem.height())) {
-    printf("Failed to allocate memory!\n");
-    return;
-  }
+  Array2D<bool> flag(dem.width(),dem.height(),false);
 
   PriorityQueue priorityQueue;
 
@@ -217,19 +217,22 @@ void fillDEM(Array2D<T> &dem){
       auto iRow = Get_rowTo(i, row);
       auto iCol = Get_colTo(i, col);
 
-      if (flag.IsProcessed(iRow,iCol))
+      if(!dem.inGrid(iCol,iRow))
+        continue;
+
+      if(flag(iCol,iRow))
         continue;
 
       auto iSpill = dem(iCol,iRow);
       if (iSpill <= spill){
         //depression cell
         dem(iCol,iRow) = spill;
-        flag.SetFlag(iRow,iCol);
+        flag(iCol,iRow) = true;
         depressionQue.emplace(iRow,iCol,spill);
         ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
       } else {
         //slope cell
-        flag.SetFlag(iRow,iCol);
+        flag(iCol,iRow) = true;
         traceQueue.emplace(iRow,iCol,iSpill);
       }     
       ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
