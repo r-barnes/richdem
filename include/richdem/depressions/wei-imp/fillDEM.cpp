@@ -15,8 +15,11 @@ using namespace std;
 typedef std::vector<Node> NodeVector;
 typedef std::priority_queue<Node, NodeVector, Node::Greater> PriorityQueue;
 
-void InitPriorityQue(CDEM& dem, Flag& flag,  PriorityQueue& priorityQueue)
-{
+void InitPriorityQue(
+	CDEM& dem,
+	Flag& flag,
+	PriorityQueue& priorityQueue
+){
 	int width=dem.Get_NX();
 	int height=dem.Get_NY();
 	Node tmpNode;
@@ -40,8 +43,8 @@ void InitPriorityQue(CDEM& dem, Flag& flag,  PriorityQueue& priorityQueue)
 					if (flag.IsProcessed(iRow,iCol)) continue;
 					if (!dem.is_NoData(iRow, iCol))
 					{
-						tmpNode.row = iRow;
-						tmpNode.col = iCol;
+						tmpNode.row   = iRow;
+						tmpNode.col   = iCol;
 						tmpNode.spill = dem.asFloat(iRow, iCol);
 						priorityQueue.push(tmpNode);
 						flag.SetFlag(iRow,iCol);
@@ -52,8 +55,8 @@ void InitPriorityQue(CDEM& dem, Flag& flag,  PriorityQueue& priorityQueue)
 			{
 				if (row==0 || row==height-1 || col==0 || col==width-1){
 					//on the DEM border
-					tmpNode.row = row;
-					tmpNode.col = col;
+					tmpNode.row   = row;
+					tmpNode.col   = col;
 					tmpNode.spill = dem.asFloat(row, col);
 					priorityQueue.push(tmpNode);
 					flag.SetFlag(row,col);					
@@ -62,8 +65,15 @@ void InitPriorityQue(CDEM& dem, Flag& flag,  PriorityQueue& priorityQueue)
 		}
 	}
 }
-void ProcessTraceQue(CDEM& dem,Flag& flag,queue<Node>& traceQueue, PriorityQueue& priorityQueue) 
-{
+
+
+
+void ProcessTraceQue(
+	CDEM& dem,
+	Flag& flag,
+	queue<Node>& traceQueue,
+	PriorityQueue& priorityQueue
+){
 	bool HaveSpillPathOrLowerSpillOutlet;
 	int i,iRow,iCol;
 	int k,kRow,kCol;
@@ -71,8 +81,7 @@ void ProcessTraceQue(CDEM& dem,Flag& flag,queue<Node>& traceQueue, PriorityQueue
 	Node N,node;
 	queue<Node> potentialQueue;
 	int indexThreshold=2;  //index threshold, default to 2
-	while (!traceQueue.empty())
-	{
+	while (!traceQueue.empty()){
 		node = traceQueue.front();
 		traceQueue.pop();
 		noderow=node.row;
@@ -83,13 +92,12 @@ void ProcessTraceQue(CDEM& dem,Flag& flag,queue<Node>& traceQueue, PriorityQueue
 			iCol = Get_colTo(i,nodecol);
 			if(flag.IsProcessedDirect(iRow,iCol)) continue;
 			if (dem.asFloat(iRow,iCol)>node.spill){
-				N.col = iCol;
-				N.row = iRow;
+				N.col   = iCol;
+				N.row   = iRow;
 				N.spill = dem.asFloat(iRow,iCol);
 				traceQueue.push(N);
 				flag.SetFlag(iRow,iCol);
-			}
-			else{
+			}else{
 				//initialize all masks as false		
 				HaveSpillPathOrLowerSpillOutlet=false; //whether cell i has a spill path or a lower spill outlet than node if i is a depression cell
 				for(k = 0; k < 8; k++){
@@ -114,16 +122,14 @@ void ProcessTraceQue(CDEM& dem,Flag& flag,queue<Node>& traceQueue, PriorityQueue
 		}//end of for loop
 	}
 
-	while (!potentialQueue.empty())
-	{
+	while (!potentialQueue.empty()){
 		node = potentialQueue.front();
 		potentialQueue.pop();
 		noderow=node.row;
 		nodecol=node.col;
 
 		//first case
-		for (i = 0; i < 8; i++)
-		{
+		for (i = 0; i < 8; i++){
 			iRow = Get_rowTo(i,noderow);
 			iCol = Get_colTo(i,nodecol);
 			if(flag.IsProcessedDirect(iRow,iCol)) continue;
@@ -135,27 +141,28 @@ void ProcessTraceQue(CDEM& dem,Flag& flag,queue<Node>& traceQueue, PriorityQueue
 	}
 }
 
-void ProcessPit(CDEM& dem, Flag& flag, queue<Node>& depressionQue,
-	queue<Node>& traceQueue,PriorityQueue& priorityQueue)
-{
+void ProcessPit(
+	CDEM& dem, 
+	Flag& flag, 
+	queue<Node>& depressionQue,
+	queue<Node>& traceQueue,
+	PriorityQueue& priorityQueue
+){
 	int iRow, iCol,i;
 	float iSpill;
 	Node N;
 	Node node;
-	int width=dem.Get_NX();
-	int height=dem.Get_NY();
-	while (!depressionQue.empty())
-	{
+	int width  = dem.Get_NX();
+	int height = dem.Get_NY();
+	while (!depressionQue.empty()){
 		node= depressionQue.front();
 		depressionQue.pop();
-		for (i = 0; i < 8; i++)
-		{
+		for (i = 0; i < 8; i++){
 			iRow = Get_rowTo(i, node.row);
 			iCol = Get_colTo(i,  node.col);
 			if (flag.IsProcessedDirect(iRow,iCol)) continue;		
 			iSpill = dem.asFloat(iRow, iCol);
-			if (iSpill > node.spill)     
-			{ //slope cell
+			if (iSpill > node.spill){ //slope cell
 				N.row = iRow;
 				N.col = iCol;
 				N.spill = iSpill;				
@@ -166,8 +173,8 @@ void ProcessPit(CDEM& dem, Flag& flag, queue<Node>& depressionQue,
 			//depression cell
 			flag.SetFlag(iRow,iCol);
 			dem.Set_Value(iRow, iCol, node.spill);
-			N.row = iRow;
-			N.col = iCol;
+			N.row   = iRow;
+			N.col   = iCol;
 			N.spill = node.spill;
 			depressionQue.push(N);
 		}
@@ -178,9 +185,8 @@ void fillDEM(CDEM &dem){
 	queue<Node> traceQueue;
 	queue<Node> depressionQue;
 	
-
 	time_t timeStart, timeEnd;
-	int width = dem.Get_NX();
+	int width  = dem.Get_NX();
 	int height = dem.Get_NY();
 	std::cout<<"Using our proposed variant to fill DEM"<<endl;
 	timeStart = time(NULL);
@@ -193,20 +199,18 @@ void fillDEM(CDEM &dem){
 	int iRow, iCol, row,col;
 	float iSpill,spill;
 
-	int numberofall=0;
-	int numberofright=0;
+	int numberofall   = 0;
+	int numberofright = 0;
 
 	InitPriorityQue(dem,flag,priorityQueue); 
-	while (!priorityQueue.empty())
-	{
+	while (!priorityQueue.empty()){
 		Node tmpNode = priorityQueue.top();
 		priorityQueue.pop();
-		row = tmpNode.row;
-		col = tmpNode.col;
+		row   = tmpNode.row;
+		col   = tmpNode.col;
 		spill = tmpNode.spill;
 
-		for (int i = 0; i < 8; i++)
-		{
+		for (int i = 0; i < 8; i++){
 			iRow = Get_rowTo(i, row);
 			iCol = Get_colTo(i, col);
 
@@ -221,9 +225,7 @@ void fillDEM(CDEM &dem){
 				tmpNode.spill = spill;
 				depressionQue.push(tmpNode);
 				ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
-			}
-			else
-			{
+			} else {
 				//slope cell
 				flag.SetFlag(iRow,iCol);
 				tmpNode.row = iRow;
@@ -237,5 +239,4 @@ void fillDEM(CDEM &dem){
 	timeEnd = time(NULL);
 	double consumeTime = difftime(timeEnd, timeStart);
 	std::cout<<"Time used:"<<consumeTime<<" seconds"<<endl;
-
 }
