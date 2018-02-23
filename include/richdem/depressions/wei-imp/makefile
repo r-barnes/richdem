@@ -8,7 +8,7 @@ ODIR=.
 
 LIBS=-lm -lgdal 
 
-_DEPS = Node.h dem.h utils.h perlin.h perlin.c
+_DEPS = Node.h dem.h utils.h perlin.h perlin.c filldem.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ =dem.o main.o utils.o perlin.o

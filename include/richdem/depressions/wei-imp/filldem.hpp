@@ -1,3 +1,6 @@
+#ifndef _richdem_wei2008_hpp_
+#define _richdem_wei2008_hpp_
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -242,3 +245,5 @@ void fillDEM(Array2D<T> &dem){
 }
 
 }
+
+#endif
