@@ -10,7 +10,7 @@
 namespace richdem {
 
 template<class T>
-void InitPriorityQue(
+static void InitPriorityQue(
   Array2D<T>& dem,
   Array2D<bool>& flag,
   GridCellZ_pq<T>& priorityQueue
@@ -50,7 +50,7 @@ void InitPriorityQue(
 
 
 template<class T>
-void ProcessTraceQue(
+static void ProcessTraceQue(
   Array2D<T>& dem,
   Array2D<bool>& flag,
   std::queue<GridCellZ<T> >& traceQueue,
@@ -117,7 +117,7 @@ void ProcessTraceQue(
 
 
 template<class T>
-void ProcessPit(
+static void ProcessPit(
   Array2D<T>& dem, 
   Array2D<bool>& flag, 
   std::queue<GridCellZ<T> >& depressionQue,
@@ -151,7 +151,7 @@ void ProcessPit(
 
 
 template<class T>
-void fillDEM(Array2D<T> &dem){
+void PriorityFlood_Wei2018(Array2D<T> &dem){
   std::queue<GridCellZ<T> > traceQueue;
   std::queue<GridCellZ<T> > depressionQue;
   

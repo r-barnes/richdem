@@ -9,9 +9,8 @@
 #include <list>
 #include <unordered_map>
 #include "perlin.h"
-#include "Wei2018.hpp"
 
-#include <richdem/richdem.hpp>
+#include <richdem/depressions/depressions.hpp>
 #include <richdem/common/Array2D.hpp>
 #include <stdexcept>
 
@@ -56,27 +55,9 @@ int main(int argc, char* argv[]){
 
 	auto dem2 = dem;
 
-
-
-	// richdem::Array2D<float> rddem(SIZE,SIZE);
-	// for(int y=0;y<SIZE;y++)
-	// for(int x=0;x<SIZE;x++)
-	// 	rddem(x,y) = dem.asFloat(y,x);
-
   dem.saveGDAL("/z/before.tif");
 
-  richdem::fillDEM(dem);
-
-	// richdem::Array2D<float> outdem(SIZE,SIZE);
-	// for(int y=0;y<SIZE;y++)
-	// for(int x=0;x<SIZE;x++)
-	// 	outdem(x,y) = dem.asFloat(y,x);
-
-
-
-
-  std::cout<<"Rich"<<std::endl;
-
+  richdem::PriorityFlood_Wei2018(dem);
 
   richdem::FillDepressions(dem2);
 

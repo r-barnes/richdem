@@ -3,6 +3,7 @@
 
 #include <richdem/depressions/Barnes2014.hpp>
 #include <richdem/depressions/Zhou2016.hpp>
+#include <richdem/depressions/Wei2018.hpp>
 
 namespace richdem {
 
