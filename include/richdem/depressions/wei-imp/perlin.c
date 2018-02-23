@@ -6,7 +6,6 @@ In this project,we use the Perlin Noise to generating synthetic DEMs to check th
 
 #include <stdlib.h>
 #include <math.h>
-#include "dem.h"
 #include <iostream>
 #include "perlin.h"
 
