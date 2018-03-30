@@ -35,6 +35,8 @@ void TemplatedWrapper(py::module &m, std::string tname){
 
   m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
 
+  m.def("rdBreachDepressions",   &BreachDepressions<T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
+
   //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
 
   m.def("TA_SPI",                &TA_SPI<T, float, double>,       "TODO");         
