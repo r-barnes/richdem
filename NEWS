@@ -5,3 +5,4 @@ RichDEM v2.1.0
   defined the weight field prior to its use.
 * Bugfix: rd.rdarray now accepts the `no_data` argument.
 * Various documentation updates and bug fixes.
+* Added `BreachDepressions()`
