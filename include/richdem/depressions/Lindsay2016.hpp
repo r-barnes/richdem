@@ -26,6 +26,7 @@ template<class T>
 void Lindsay2016(
   Array2D<T>  &dem,
   int         mode,
+  bool        eps_gradients,
   bool        fill_depressions,
   uint32_t    maxpathlen,
   T           maxdepth
@@ -44,8 +45,6 @@ void Lindsay2016(
   Timer                 overall;
 
   overall.start();
-
-  dem.setNoData(-9999); //TODO
 
   uint32_t total_pits = 0;
 
@@ -90,8 +89,12 @@ void Lindsay2016(
     //This is a pit cell if it is lower than any of its neighbours. In this
     //case: raise the cell to be just lower than its lowest neighbour. This
     //makes the breaching/tunneling procedures work better.
-    if(dem(x,y)<lowest_neighbour)
-      dem(x,y) = std::nextafter(lowest_neighbour, std::numeric_limits<T>::lowest());
+    if(dem(x,y)<lowest_neighbour){
+      if(eps_gradients)
+        dem(x,y) = std::nextafter(lowest_neighbour, std::numeric_limits<T>::lowest());
+      else
+        dem(x,y) = lowest_neighbour;
+    }
 
     //Since depressions might have flat bottoms, we treat flats as pits. Mark
     //flat/pits as such now.
@@ -129,7 +132,8 @@ void Lindsay2016(
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
           dem(cc)       = target_height;
           cc            = backlinks(cc);                                                  //Follow path back
-          target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+          if(eps_gradients)
+            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
         }
       } else {
         //Trace path back to a cell low enough for the path to drain into it, or
@@ -137,7 +141,8 @@ void Lindsay2016(
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
           pathdepth     = std::max(pathdepth, (T)(dem(cc)-target_height));                //Figure out deepest breach necessary on path //TODO: CHeck this for issues with int8_t subtraction overflow
           cc            = backlinks(cc);                                                  //Follow path back
-          target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+          if(eps_gradients)
+            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
           pathlen++;                                                                      //Make path longer
         }
 
@@ -150,7 +155,8 @@ void Lindsay2016(
           while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
             dem(cc)       = target_height;
             cc            = backlinks(cc);                                                  //Follow path back
-            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+            if(eps_gradients)
+              target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
           }
         } else if(mode==CONSTRAINED_BREACHING){ //TODO: Refine this with regards to the paper
           T current_height = dem(cc);
@@ -159,7 +165,8 @@ void Lindsay2016(
               dem(cc) = current_height;
             else
               dem(cc) -= pathdepth;
-            current_height = std::nextafter(current_height,std::numeric_limits<T>::lowest());
+            if(eps_gradients)
+              current_height = std::nextafter(current_height,std::numeric_limits<T>::lowest());
             cc             = backlinks(cc);
           }
         }
@@ -199,8 +206,12 @@ void Lindsay2016(
     for(const auto f: flood_array){
       ++progress;
       auto parent = backlinks(f);
-      if(dem(f)<=dem(parent))
-        dem(f) = std::nextafter(dem(parent),std::numeric_limits<T>::max());
+      if(dem(f)<=dem(parent)){
+        if(eps_gradients)
+          dem(f) = std::nextafter(dem(parent),std::numeric_limits<T>::max());
+        else
+          dem(f) = dem(parent);
+      }
     }
     progress.stop();
   }
@@ -210,17 +221,17 @@ void Lindsay2016(
 
 //TODO: Specialize all integer types
 template<>
-void Lindsay2016(Array2D<uint8_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, uint8_t maxdepth){
+void Lindsay2016(Array2D<uint8_t> &dem, int mode, bool eps_gradients, bool fill_depressions, uint32_t maxpathlen, uint8_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for uint8_t.");
 }
 
 template<>
-void Lindsay2016(Array2D<int16_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, int16_t maxdepth){
+void Lindsay2016(Array2D<int16_t> &dem, int mode, bool eps_gradients, bool fill_depressions, uint32_t maxpathlen, int16_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for int16_t.");
 }
 
 template<>
-void Lindsay2016(Array2D<uint16_t> &dem, int mode, bool fill_depressions, uint32_t maxpathlen, uint16_t maxdepth){
+void Lindsay2016(Array2D<uint16_t> &dem, int mode, bool eps_gradients, bool fill_depressions, uint32_t maxpathlen, uint16_t maxdepth){
   throw std::runtime_error("Lindsay2016 not available for uint16_t.");
 }
 

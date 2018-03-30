@@ -187,6 +187,20 @@ TEST_CASE("Checking depression filling") {
     REQUIRE(elevation==manually_flooded);
   }
 
+  SUBCASE("Wei2018"){
+    auto elevation = elevation_orig;
+    PriorityFlood_Wei2018(elevation);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out");
+    REQUIRE(elevation==manually_flooded);
+  }  
+
+  SUBCASE("FillDepressions"){
+    auto elevation = elevation_orig;
+    FillDepressions(elevation);
+    Array2D<int> manually_flooded("depressions/testdem1.all.out");
+    REQUIRE(elevation==manually_flooded);
+  }  
+
   SUBCASE("PriorityFlood_Barnes2014_max_dep"){
     auto elevation = elevation_orig;
     PriorityFlood_Barnes2014_max_dep(elevation,1);
@@ -205,15 +219,35 @@ TEST_CASE("Checking depression filling") {
 
 }
 
-TEST_CASE("Checking depression filling") {
-  Array2D<float> beauford("beauford/beauford.tif");
 
-  SUBCASE("FA_Tarboton")          {Array2D<double> accum; FA_Tarboton          (beauford, accum); }
-  SUBCASE("FA_Holmgren")          {Array2D<double> accum; FA_Holmgren          (beauford, accum, 0.8); }
-  SUBCASE("FA_Quinn")             {Array2D<double> accum; FA_Quinn             (beauford, accum); }
-  SUBCASE("FA_Freeman")           {Array2D<double> accum; FA_Freeman           (beauford, accum, 0.8); }
-  SUBCASE("FA_FairfieldLeymarie") {Array2D<double> accum; FA_FairfieldLeymarie (beauford, accum); }
-  SUBCASE("FA_Rho8")              {Array2D<double> accum; FA_Rho8              (beauford, accum); }
-  // SUBCASE("FA_D8")                {Array2D<double> accum; FA_D8                (beauford, accum); }
+
+TEST_CASE("Checking depression breaching") {
+  RDLOG_DEBUG<<"About to load depressions/testdem1.dem";
+  Array2D<int> elevation_orig("breaching/testdem1.dem");
+  RDLOG_DEBUG<<"Loaded breaching/testdem1.dem";
+
+  SUBCASE("Lindsay2016 Complete Breaching"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::COMPLETE_BREACHING,false,false,0,0);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.complete.out");
+    REQUIRE(elevation==manually_flooded);
+  }
+
+}
+
+
+TEST_CASE("Checking flow accumulation") {
+  Array2D<float> beauford("beauford/beauford.tif");
+  PriorityFlood_Wei2018(beauford);
+
+
+  SUBCASE("FA_Tarboton")          {Array2D<double> accum(beauford); FA_Tarboton          (beauford, accum); }
+  SUBCASE("FA_Holmgren")          {Array2D<double> accum(beauford); FA_Holmgren          (beauford, accum, 0.8); }
+  SUBCASE("FA_Quinn")             {Array2D<double> accum(beauford); FA_Quinn             (beauford, accum); }
+  SUBCASE("FA_Freeman")           {Array2D<double> accum(beauford); FA_Freeman           (beauford, accum, 0.8); }
+  SUBCASE("FA_FairfieldLeymarie") {Array2D<double> accum(beauford); FA_FairfieldLeymarie (beauford, accum); }
+  SUBCASE("FA_Rho8")              {Array2D<double> accum(beauford); FA_Rho8              (beauford, accum); }
+  SUBCASE("FA_D8")                {Array2D<double> accum(beafurdo); FA_D8                (beauford, accum); }
 
 }
