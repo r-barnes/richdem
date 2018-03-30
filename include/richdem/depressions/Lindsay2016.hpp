@@ -24,6 +24,27 @@ enum LindsayCellType {
 
 
 
+/**
+  @brief  Breach depressions
+  @author John Lindsay, implementation by Richard Barnes (rbarnes@umn.edu)
+
+    Depression breaching drills a path from a depression's pit cell (its lowest
+    point) along the least-cost (Priority-Flood) path to the nearest cell
+    outside the depression to have the same or lower elevation.
+
+  @param[in,out] &elevations   A grid of cell elevations
+
+  @pre
+    1. **elevations** contains the elevations of every cell or a value _NoData_
+       for cells not part of the DEM. Note that the _NoData_ value is assumed to
+       be a negative number less than any actual data value.
+
+  @return The breached DEM.
+
+  @correctness
+    The correctness of this command is determined by inspection and simple unit 
+    tests.
+*/
 template<class T>
 void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
   RDLOG_ALG_NAME<<"Lindsay2016: Breach Depressions";
@@ -158,7 +179,7 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
 
 
 /**
-  @brief  Breach and fill depressions
+  @brief  Breach and fill depressions (EXPERIMENTAL)
   @author John Lindsay, implementation by Richard Barnes (rbarnes@umn.edu)
 
     Depression breaching drills a path from a depression's pit cell (its lowest
