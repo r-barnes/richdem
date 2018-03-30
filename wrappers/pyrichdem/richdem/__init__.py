@@ -268,7 +268,7 @@ def FillDepressions(
   epsilon  = False,
   in_place = False
 ):
-  """Fills all depressions in a DEM using in-place modification.
+  """Fills all depressions in a DEM.
 
      Args:
          dem     (rdarray): An elevation model
@@ -284,7 +284,6 @@ def FillDepressions(
     raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
   if not in_place:
-    print("Copying dem")
     dem = dem.copy()
 
   _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
@@ -299,7 +298,39 @@ def FillDepressions(
   dem.copyFromWrapped(demw)
 
   if not in_place:
-    print("Returning dem")
+    return dem
+
+
+
+def BreachDepressions(
+  dem,
+  in_place = False
+):
+  """Breaches all depressions in a DEM.
+
+     Args:
+         dem     (rdarray): An elevation model
+         in_place (bool):   If True, the DEM is modified in place and there is
+                            no return; otherwise, a new, altered DEM is returned.                                     
+
+     Returns:
+         DEM without depressions.
+  """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+  if not in_place:
+    dem = dem.copy()
+
+  _AddAnalysis(dem, "BreachDepressions(dem)")
+
+  demw = dem.wrap()
+
+  _richdem.rdBreachDepressions(demw)
+
+  dem.copyFromWrapped(demw)
+
+  if not in_place:
     return dem
 
 

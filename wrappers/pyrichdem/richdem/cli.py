@@ -23,31 +23,16 @@ def DepressionFilling():
 
 
 def BreachDepressions():
-  parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Depression Breaching
-
-Modes:
-Complete:    Breach everything.
-            Ignore max_path_len, max_path_depth.
-            There will be no depressions.
-            There will be no mercy.
-Selective:   Only breach those depressions that can be breached using the
-            above criteria.
-Constrained: Dig as long a path as necessary, but don't dig it deeper than
-            max_path_depth.
-""")
+  parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Depression Breaching""")
 
   parser.add_argument('dem',                    type=str,                help='Elevation model')
   parser.add_argument('outname',                type=str,                help='Name of output file')
-  parser.add_argument('-m', '--mode',           required=True, type=str, help='Breaching mode to use')
-  parser.add_argument('-f', '--fill',           action='store_true',     help="If depressions can't be breached, should they be filled?")
-  parser.add_argument('-l', '--max_path_len',   type=int,                help="Maximum length of breaching path in cells")
-  parser.add_argument('-d', '--max_path_depth', type=float,              help="Maximum depth of breaching path in z-units")
   parser.add_argument('-v', '--version',  action='version', version=rd._RichDEMVersion())
   args = parser.parse_args()
 
   dem = rd.LoadGDAL(args.dem)
   rd._AddAnalysis(dem, ' '.join(sys.argv))
-  rd.BreachDepressions(dem, mode=args.mode, fill=args.fill, max_path_len=args.max_path_len, max_path_depth=args.max_path_depth, in_place=True)
+  rd.BreachDepressions(dem)
   rd.SaveGDAL(args.outname, dem)
 
 
