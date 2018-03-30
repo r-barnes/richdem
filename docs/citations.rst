@@ -16,7 +16,7 @@ An example BibTeX entry is:
       title        = {RichDEM: Terrain Analysis Software},
       author       = {Richard Barnes},
       year         = {2016},
-      url          = {http://github.com/r-barnes/richdem}, 
+      url          = {http://github.com/r-barnes/richdem}
     }
 
 This information will be updated as versioned releases become available.
