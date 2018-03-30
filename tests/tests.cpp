@@ -228,9 +228,57 @@ TEST_CASE("Checking depression breaching") {
 
   SUBCASE("Lindsay2016 Complete Breaching"){
     auto elevation = elevation_orig;
-    Lindsay2016(elevation,LindsayMode::COMPLETE_BREACHING,false,false,0,0);
+    CompleteBreaching_Lindsay2016(elevation);
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.complete.out");
+    REQUIRE(elevation==manually_flooded);
+  }
+
+  SUBCASE("Lindsay2016 Selective Breaching (Length=2, Depth=9e99)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::SELECTIVE_BREACHING,false,false,2,9999);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.selective-len2-depth9999.out");
+    REQUIRE(elevation==manually_flooded);
+  }
+
+  SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=9e99)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::SELECTIVE_BREACHING,false,false,4,9999);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth9999.out");
+    REQUIRE(elevation==manually_flooded);
+  }  
+
+  SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::SELECTIVE_BREACHING,false,false,4,2);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2.out");
+    REQUIRE(elevation==manually_flooded);
+  }  
+
+  SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2, Fill Depressions)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::SELECTIVE_BREACHING,false,true,4,2);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2-filldep.out");
+    REQUIRE(elevation==manually_flooded);
+  }  
+
+  SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=8)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::SELECTIVE_BREACHING,false,false,4,8);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth8.out");
+    REQUIRE(elevation==manually_flooded);
+  }
+
+  SUBCASE("Lindsay2016 Constrained Breaching (Length=4, Depth=3)"){
+    auto elevation = elevation_orig;
+    Lindsay2016(elevation,LindsayMode::CONSTRAINED_BREACHING,false,false,4,3);
+    elevation.printAll();
+    Array2D<int> manually_flooded("breaching/testdem1.constrained-len4-depth3.out");
     REQUIRE(elevation==manually_flooded);
   }
 
@@ -248,6 +296,6 @@ TEST_CASE("Checking flow accumulation") {
   SUBCASE("FA_Freeman")           {Array2D<double> accum(beauford); FA_Freeman           (beauford, accum, 0.8); }
   SUBCASE("FA_FairfieldLeymarie") {Array2D<double> accum(beauford); FA_FairfieldLeymarie (beauford, accum); }
   SUBCASE("FA_Rho8")              {Array2D<double> accum(beauford); FA_Rho8              (beauford, accum); }
-  SUBCASE("FA_D8")                {Array2D<double> accum(beafurdo); FA_D8                (beauford, accum); }
+  SUBCASE("FA_D8")                {Array2D<double> accum(beauford); FA_D8                (beauford, accum); }
 
 }
