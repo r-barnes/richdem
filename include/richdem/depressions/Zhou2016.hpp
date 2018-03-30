@@ -9,9 +9,9 @@
 #ifndef _richdem_zhou2016pf_hpp_
 #define _richdem_zhou2016pf_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/timer.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/timer.hpp>
 #include <queue>
 #include <vector>
 #include <map>

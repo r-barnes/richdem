@@ -5,3 +5,4 @@ perf.data*
 dev/
 experiments/
 *.pyc
+a.out

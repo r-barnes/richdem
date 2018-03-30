@@ -11,7 +11,10 @@ template<class T>
 int PerformAlgorithm(std::string analysis, Array2D<T> elevation){
   elevation.loadData();
 
-  HasDepressions(elevation);  
+  if(HasDepressions(elevation))
+    std::cout<<"m Depressions found."<<std::endl;
+  else
+    std::cout<<"m No depressions found."<<std::endl;
 
   return 0;
 }
