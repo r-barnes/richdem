@@ -131,10 +131,8 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
     //This cell is a pit: let's consider doing some breaching
     if(pits(c.x,c.y)){
       //Locate a cell that is lower than the pit cell, or an edge cell
-      uint32_t pathlen       = 0;                                
-      auto     cc            = dem.xyToI(c.x,c.y);               //Current cell on the path
-      T        pathdepth     = std::numeric_limits<T>::lowest(); //Maximum depth found along the path
-      T        target_height = dem(c.x,c.y);                     //Depth to which the cell currently being considered should be carved
+      auto cc            = dem.xyToI(c.x,c.y);               //Current cell on the path
+      T    target_height = dem(c.x,c.y);                     //Depth to which the cell currently being considered should be carved
 
       //Trace path back to a cell low enough for the path to drain into it, or
       //to an edge of the DEM
