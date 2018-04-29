@@ -10,7 +10,65 @@
 namespace richdem {
 
 template<class E>
-std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
+std::vector<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
+  RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho4\" Flow Accumulation";
+  RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
+
+  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
+
+  ProgressBar progress;
+  progress.start(elevations.size());
+
+  #pragma omp parallel for collapse(2)
+  for(int y=1;y<elevations.height()-1;y++)
+  for(int x=1;x<elevations.width()-1;x++){
+    ++progress;
+
+    const int ci = elevations.xyToI(x,y);
+    const E e    = elevations(x,y);
+
+    int    greatest_n     = 0; //TODO: Use a constant
+    double greatest_slope = 0;
+    for(int n=1;n<=4;n++){
+      const int nx = x+d4x[n];
+      const int ny = y+d4y[n];
+
+      if(!elevations.inGrid(nx,ny))
+        continue;
+      if(elevations.isNoData(nx,ny)) //TODO: Don't I want water to drain this way?
+        continue;
+
+      const E ne = elevations(nx,ny);
+
+      if(ne>=e)
+        continue;
+
+      double rho_slop4 = (e-ne);
+      if(n==D4_NORTH || n==D4_SOUTH)
+        rho_slop4 *= 1/(1/uniform_rand_real(0,1)-1);
+
+      if(rho_slop4>greatest_slope){
+        greatest_n     = n;
+        greatest_slope = rho_slop4;
+      }
+    }
+
+    if(greatest_n==0)
+      continue;
+
+    props.at(9*ci+0)          = HAS_FLOW_GEN;
+    props.at(9*ci+greatest_n) = 1;
+
+    assert(elevations(x,y)>=elevations(x+d4x[greatest_n],y+d4y[greatest_n])); //Ensure flow goes downhill
+  }
+  progress.stop();
+
+  return props;
+}
+
+
+template<class E>
+std::vector<float> FM_FairfieldLeymarieD8(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
@@ -67,9 +125,15 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
 }
 
 template<class E>
-std::vector<float> FM_Rho8(const Array2D<E> &elevations){
+std::vector<float> FM_RhoD8(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarie(elevations);
+  return FM_FairfieldLeymarieD8(elevations, false);
+}
+
+template<class E>
+std::vector<float> FM_Rho4(const Array2D<E> &elevations){
+  //Algorithm headers are taken care of in FM_FairfieldLeymarie()
+  return FM_FairfieldLeymarieD4(elevations, true);
 }
 
 }
