@@ -11,8 +11,8 @@ namespace richdem {
 
 //TODO: Add Marks et al (1984)
 template<class E>
-Array3D<float> FM_OCallaghan(const Array2D<E> &elevations){
-  RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)";
+Array3D<float> FM_OCallaghan(const Array2D<E> &elevations, const bool d4){
+  RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
   Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
@@ -31,6 +31,9 @@ Array3D<float> FM_OCallaghan(const Array2D<E> &elevations){
     int lowest_n      = 0;
     E   lowest_n_elev = std::numeric_limits<E>::max();
     for(int n=1;n<=8;n++){
+      if(d4 && n_diag[n])         //Skip diagonals
+        continue;
+
       const int ni = ci + elevations.nshift(n);
 
       if(elevations.isNoData(ni)) //TODO: Don't I want water to drain this way?
@@ -63,8 +66,13 @@ Array3D<float> FM_OCallaghan(const Array2D<E> &elevations){
 
 
 template<class E>
-Array3D<float> FM_D8(const Array2D<E> &elevations){
-  return FM_OCallaghan(elevations);
+Array3D<float><float> FM_D8(const Array2D<E> &elevations){
+  return FM_OCallaghan(elevations, false);
+}
+
+template<class E>
+Array3D<float> FM_D4(const Array2D<E> &elevations){
+  return FM_OCallaghan(elevations, true);
 }
 
 }
