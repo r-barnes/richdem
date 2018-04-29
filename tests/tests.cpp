@@ -289,13 +289,16 @@ TEST_CASE("Checking flow accumulation") {
   Array2D<float> beauford("beauford/beauford.tif");
   PriorityFlood_Wei2018(beauford);
 
-
-  SUBCASE("FA_Tarboton")          {Array2D<double> accum(beauford); FA_Tarboton          (beauford, accum); }
-  SUBCASE("FA_Holmgren")          {Array2D<double> accum(beauford); FA_Holmgren          (beauford, accum, 0.8); }
-  SUBCASE("FA_Quinn")             {Array2D<double> accum(beauford); FA_Quinn             (beauford, accum); }
-  SUBCASE("FA_Freeman")           {Array2D<double> accum(beauford); FA_Freeman           (beauford, accum, 0.8); }
-  SUBCASE("FA_FairfieldLeymarie") {Array2D<double> accum(beauford); FA_FairfieldLeymarie (beauford, accum); }
-  SUBCASE("FA_Rho8")              {Array2D<double> accum(beauford); FA_Rho8              (beauford, accum); }
-  SUBCASE("FA_D8")                {Array2D<double> accum(beauford); FA_D8                (beauford, accum); }
+  SUBCASE("FA_Tarboton")            {Array2D<double> accum(beauford); FA_Tarboton            (beauford, accum); }
+  SUBCASE("FA_Dinfinity")           {Array2D<double> accum(beauford); FA_Dinfinity           (beauford, accum); }
+  SUBCASE("FA_Holmgren")            {Array2D<double> accum(beauford); FA_Holmgren            (beauford, accum, 0.8); }
+  SUBCASE("FA_Quinn")               {Array2D<double> accum(beauford); FA_Quinn               (beauford, accum); }
+  SUBCASE("FA_Freeman")             {Array2D<double> accum(beauford); FA_Freeman             (beauford, accum, 0.8); }
+  SUBCASE("FA_FairfieldLeymarieD8") {Array2D<double> accum(beauford); FA_FairfieldLeymarieD8 (beauford, accum); }
+  SUBCASE("FA_FairfieldLeymarieD4") {Array2D<double> accum(beauford); FA_FairfieldLeymarieD4 (beauford, accum); }
+  SUBCASE("FA_Rho8")                {Array2D<double> accum(beauford); FA_Rho8                (beauford, accum); }
+  SUBCASE("FA_Rho4")                {Array2D<double> accum(beauford); FA_Rho4                (beauford, accum); }
+  SUBCASE("FA_D8")                  {Array2D<double> accum(beauford); FA_D8                  (beauford, accum); }
+  SUBCASE("FA_D4")                  {Array2D<double> accum(beauford); FA_D4                  (beauford, accum); }
 
 }
