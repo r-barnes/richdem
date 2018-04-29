@@ -25,7 +25,6 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
   for(int x=1;x<elevations.width()-1;x++){
     ++progress;
 
-    const int ci = elevations.xyToI(x,y);
     const E e    = elevations(x,y);
 
     int    greatest_n     = 0; //TODO: Use a constant
