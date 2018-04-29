@@ -51,7 +51,7 @@ void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, A
   for(int x=1;x<elevations.width()-1;x++){
     const int ci = elevations.xyToI(x,y);
     for(int n=1;n<=8;n++)
-      if(props[9*ci+n]>0){
+      if(props(x,y,n)>0){
         const int ni = ci + elevations.nshift(n);
         deps(ni)++;
       }
@@ -79,12 +79,12 @@ void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, A
     const auto c_accum = accum(ci);
 
     for(int n=1;n<=8;n++){
-      if(props[9*ci+n]<=0)
+      if(props.getIN(ci,n)<=0)
         continue;
       const int ni = ci+elevations.nshift(n);
       if(elevations.isNoData(ni))
         continue;
-      accum(ni) += props[9*ci+n]*c_accum;
+      accum(ni) += props.getIN(ci,n)*c_accum;
       if(--deps(ni)==0)
         q.emplace(ni);
       assert(deps(ni)>=0);

@@ -4,16 +4,17 @@
 #include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/Array3D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
 namespace richdem {
 
 template<class elev_t>
-std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
+Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
-  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
+  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
 
   //TODO: Assumes that the width and height of grid cells are equal and scaled
   //to 1.
@@ -133,7 +134,7 @@ std::vector<float> FM_Tarboton(const Array2D<elev_t> &elevations){
 }
 
 template<class E>
-std::vector<float> FM_Dinfinity(const Array2D<E> &elevations){
+Array3D<float> FM_Dinfinity(const Array2D<E> &elevations){
   return FM_Tarboton(elevations);
 }
 

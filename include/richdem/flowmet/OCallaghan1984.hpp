@@ -4,17 +4,18 @@
 #include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/Array3D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
 namespace richdem {
 
 //TODO: Add Marks et al (1984)
 template<class E>
-std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
+Array3D<float> FM_OCallaghan(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) Flow Accumulation (aka D8)";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
-  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
+  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -49,11 +50,11 @@ std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
     if(lowest_n==0)
       continue;
 
-    props.at(9*ci+0) = HAS_FLOW_GEN;
+    props.at(x,y,0) = HAS_FLOW_GEN;
 
     assert(elevations(ci)>=elevations(ci+elevations.nshift(lowest_n))); //Ensure flow goes downhill
 
-    props.at(9*ci+lowest_n) = 1;
+    props.at(x,y,lowest_n) = 1;
   }
   progress.stop();
 
@@ -62,7 +63,7 @@ std::vector<float> FM_OCallaghan(const Array2D<E> &elevations){
 
 
 template<class E>
-std::vector<float> FM_D8(const Array2D<E> &elevations){
+Array3D<float> FM_D8(const Array2D<E> &elevations){
   return FM_OCallaghan(elevations);
 }
 

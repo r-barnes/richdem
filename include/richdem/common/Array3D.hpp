@@ -95,7 +95,7 @@ class Array3D {
     @param[in] height  Height of the data
   */
   Array3D(T *data0, const xy_t width, const xy_t height) : Array3D() {
-    data        = ManagedVector<T>(data0, 8*width*height);
+    data        = ManagedVector<T>(data0, 9*width*height);
     view_width  = width;
     view_height = height;
   }
@@ -116,7 +116,7 @@ class Array3D {
   T* getData() { return data.data(); }
 
   ///@brief Number of cells in the DEM
-  i_t size() const { return data.size()/8; }
+  i_t size() const { return view_width*view_height; }
 
   ///Width of the raster
   xy_t width() const { return view_width; }
@@ -141,8 +141,8 @@ class Array3D {
     @return Returns the index coordinate i of (x,y)
   */
   inline i_t xyToI(xy_t x, xy_t y, n_t n) const {
-    assert(0<=n && n<=8);
-    return (i_t)y*8*(i_t)view_width+8*(i_t)x+n;
+    assert(0<=n && n<=9);
+    return (i_t)y*9*(i_t)view_width+9*(i_t)x+n;
   }
 
   /**
@@ -255,7 +255,7 @@ class Array3D {
                           raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
-    data.resize(8*width0*height0);
+    data.resize(9*width0*height0);
 
     view_width  = width0;
     view_height = height0;
@@ -289,7 +289,7 @@ class Array3D {
     assert(n>=0);
     assert(x<width());
     assert(y<height());
-    assert(n<8);
+    assert(n<9);
     return data[xyToI(x,y,n)];
   }
 
@@ -307,8 +307,16 @@ class Array3D {
     assert(n>=0);
     assert(x<width());
     assert(y<height());
-    assert(n<8);
+    assert(n<9);
     return data[xyToI(x,y,n)];
+  }
+
+  T& getIN(i_t i, n_t n){
+    assert(0<=i);
+    assert(i<size());
+    assert(0<=n);
+    assert(n<9);
+    return data[9*i+n];
   }
 
   ///Clears all raster data from RAM

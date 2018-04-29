@@ -4,17 +4,18 @@
 #include "richdem/common/constants.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/Array3D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 #include "richdem/common/random.hpp"
 
 namespace richdem {
 
 template<class E>
-std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
+Array3D<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
+  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -24,7 +25,6 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
   for(int x=1;x<elevations.width()-1;x++){
     ++progress;
 
-    const int ci = elevations.xyToI(x,y);
     const E e    = elevations(x,y);
 
     int    greatest_n     = 0; //TODO: Use a constant
@@ -56,8 +56,8 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
     if(greatest_n==0)
       continue;
 
-    props.at(9*ci+0)          = HAS_FLOW_GEN;
-    props.at(9*ci+greatest_n) = 1;
+    props(x,y,0)          = HAS_FLOW_GEN;
+    props(x,y,greatest_n) = 1;
 
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
@@ -67,7 +67,7 @@ std::vector<float> FM_FairfieldLeymarie(const Array2D<E> &elevations){
 }
 
 template<class E>
-std::vector<float> FM_Rho8(const Array2D<E> &elevations){
+Array3D<float> FM_Rho8(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
   return FM_FairfieldLeymarie(elevations);
 }
