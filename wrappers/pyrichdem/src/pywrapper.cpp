@@ -50,14 +50,19 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("TA_planform_curvature", &TA_planform_curvature<T>,       "TODO");                        
   m.def("TA_profile_curvature",  &TA_profile_curvature <T>,       "TODO");                       
 
-  m.def("FA_Tarboton",           &FA_Tarboton         <T,double>, "TODO");
-  m.def("FA_Holmgren",           &FA_Holmgren         <T,double>, "TODO");
-  m.def("FA_Quinn",              &FA_Quinn            <T,double>, "TODO");
-  m.def("FA_Freeman",            &FA_Freeman          <T,double>, "TODO");
-  m.def("FA_FairfieldLeymarie",  &FA_FairfieldLeymarie<T,double>, "TODO");
-  m.def("FA_Rho8",               &FA_Rho8             <T,double>, "TODO");
-  m.def("FA_D8",                 &FA_D8               <T,double>, "TODO");
-  m.def("FA_OCallaghan",         &FA_OCallaghan       <T,double>, "TODO");
+  m.def("FA_Tarboton",            &FA_Tarboton           <T,double>, "TODO");
+  m.def("FA_Dinfinity",           &FA_Dinfinity          <T,double>, "TODO");
+  m.def("FA_Holmgren",            &FA_Holmgren           <T,double>, "TODO");
+  m.def("FA_Quinn",               &FA_Quinn              <T,double>, "TODO");
+  m.def("FA_Freeman",             &FA_Freeman            <T,double>, "TODO");
+  m.def("FA_FairfieldLeymarieD8", &FA_FairfieldLeymarieD8<T,double>, "TODO");
+  m.def("FA_FairfieldLeymarieD4", &FA_FairfieldLeymarieD4<T,double>, "TODO");
+  m.def("FA_Rho8",                &FA_Rho8               <T,double>, "TODO");
+  m.def("FA_Rho4",                &FA_Rho4               <T,double>, "TODO");
+  m.def("FA_D8",                  &FA_D8                 <T,double>, "TODO");
+  m.def("FA_D4",                  &FA_D4                 <T,double>, "TODO");
+  m.def("FA_OCallaghanD8",        &FA_OCallaghanD8       <T,double>, "TODO");
+  m.def("FA_OCallaghanD4",        &FA_OCallaghanD4       <T,double>, "TODO");
 
   py::class_<Array2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())

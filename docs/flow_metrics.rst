@@ -13,25 +13,15 @@ Below, the various flow metrics included in RichDEM are discussed.
 
 Wherever possible, algorithms are named according to the named according to
 their creators as well as by the name the authors gave the algorithm. For
-instance, `FM_Rho8` and `FM_FairfieldLeymarie` refer to the same function.
+instance, `FM_Rho8` and `FM_FairfieldLeymarieD8` refer to the same function.
+
+All flow metric functions are prefixed with !`FM_`.
+
 
 Note that, in some cases, it is difficult or impossible to include a flow metric
 because the authors have included insufficient detail in their manuscript and
 have not provided source code. In these cases, the flow metric will either be
 absent or a "best effort" attempt has been made at implementation.
-
-
-
-Data Format
--------------------------------
-
-All flow metric functions are prefixed with !`FM_`.
-
-Flow metric functions return a flat array with !`width*height*N` elements, where
-`N` is the number of neighbours each cell has (recalling that RichDEM uses a
-regular grid). In this system, the flow from a given cell!`(x,y)` to its
-neighbour !`n` is stored at !`N*(y*width+x)+n`. There is not yet a convenience
-wrapper around these arrays (TODO).s
 
 
 
@@ -94,7 +84,43 @@ This is a convergent, deterministic flow method.
 ================= ==============================
 Language          Command
 ================= ==============================
-C++               `richdem::FM_OCallaghan()` or `richdem::FM_D8()`
+C++               `richdem::FM_OCallaghanD8()` or `richdem::FM_D8()`
+================= ==============================
+
+
+
+D4 (O'Callaghan and Mark, 1984)
+-------------------------------
+
+    O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.
+
+The D4 method assigns flow from a focal cell to one and only one of its 4 north,
+south, east, or west neighbouring cells. The chosen neighbour is the one
+accessed via the steepest slope. When such a neighbour does not exist, no flow
+direction is assigned. When two or more neighbours have the same slope, the
+chosen neighbour is the first one considered by the algorithm.
+
+This is a convergent, deterministic flow method.
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: reset
+    :outname: flow_metric_d4
+
+    import richdem as rd
+    import numpy as np
+
+    dem = rd.rdarray(np.load('imgs/beauford.npz')['beauford'], no_data=-9999)
+
+    rd.FillDepressions(dem, epsilon=True, in_place=True)
+    accum_d4 = rd.FlowAccumulation(dem, method='D4')
+    d8_fig = rd.rdShow(accum_d8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet')
+
+================= ==============================
+Language          Command
+================= ==============================
+C++               `richdem::FM_OCallaghanD4()` or `richdem::FM_D4()`
 ================= ==============================
 
 
@@ -108,8 +134,6 @@ The Rho8 method apportions flow from a focal cell to one and only one of its 8
 neighbouring cells. To do so, the slope to each neighbouring cell is calculated
 and a neighbouring cell is selected randomly with a probability weighted by the
 slope.
-
-There is also a *Rho4* method which RichDEM does not implement. (TODO)
 
 This is a convergent, stochastic flow method.
 
@@ -128,7 +152,39 @@ This is a convergent, stochastic flow method.
 ================= ==============================
 Language          Command
 ================= ==============================
-C++               `richdem::FM_Rho8()` or `richdem::FM_FairfieldLeymarie()`
+C++               `richdem::FM_Rho8()` or `richdem::FM_FairfieldLeymarieD8()`
+================= ==============================
+
+
+
+Rho4 (Fairfield and Leymarie, 1991)
+-----------------------------------
+
+    Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.
+
+The Rho4 method apportions flow from a focal cell to one and only one of its 8
+neighbouring cells. To do so, the slope to each neighbouring cell is calculated
+and a neighbouring cell is selected randomly with a probability weighted by the
+slope.
+
+This is a convergent, stochastic flow method.
+
+.. image:: imgs/fm_rho8_comp.png
+    :width: 100%
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+    :outname: flow_metric_rho4
+
+    accum_rho4 = rd.FlowAccumulation(dem, method='Rho4')
+    rd.rdShow(accum_rho4, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet', vmin=d8_fig['vmin'], vmax=d8_fig['vmax'])
+
+================= ==============================
+Language          Command
+================= ==============================
+C++               `richdem::FM_Rho4()` or `richdem::FM_FairfieldLeymarieD4()`
 ================= ==============================
 
 
@@ -291,7 +347,9 @@ Side-by-Side Comparisons of Flow Metrics
       ('Dinf',     accum_dinf    ),
       ('Quinn',    accum_quinn   ),
       ('Holmgren', accum_holmgren),
-      ('Freeman',  accum_freeman )
+      ('Freeman',  accum_freeman ),
+      ('Rho4',     accum_rho4    ),
+      ('D4',       accum_d4      ),
     )
 
     subr = lambda x: x[450:550,450:550]

@@ -14,6 +14,7 @@
 namespace richdem {
 
 template<class elev_t, class accum_t> void FA_Tarboton           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Tarboton<elev_t>           , elevations, accum        ); }
+template<class elev_t, class accum_t> void FA_Dinfinity          (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Dinfinity<elev_t>          , elevations, accum        ); }
 template<class elev_t, class accum_t> void FA_Holmgren           (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FM_Holmgren<elev_t>           , elevations, accum, xparam); }
 template<class elev_t, class accum_t> void FA_Quinn              (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum)                {FlowAccumulation(FM_Quinn<elev_t>              , elevations, accum        ); }
 template<class elev_t, class accum_t> void FA_Freeman            (const Array2D<elev_t> &elevations, Array2D<accum_t> &accum, double xparam) {FlowAccumulation(FM_Freeman<elev_t>            , elevations, accum, xparam); }
