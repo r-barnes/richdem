@@ -391,19 +391,23 @@ def FlowAccumulation(
                              just be a view of the modified data if `in_place` 
                              is True.
 
-     ================= ============================== ===========================
-     Method            Note                           Reference
-     ================= ============================== ===========================
-     Tarboton          Alias for Dinf.                `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
-     Dinf              Alias for Tarboton.            `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
-     Quinn             Holmgren with exponent=1.      `Quinn et al. (1991)           doi: 10.1002/hyp.3360050106        <http://dx.doi.org/10.1002/hyp.3360050106>`_
-     Holmgren(E)       Generalization of Quinn.       `Holmgren (1994)               doi: 10.1002/hyp.3360080405        <http://dx.doi.org/10.1002/hyp.3360080405>`_
-     Freeman(E)        TODO                           `Freeman (1991)                doi: 10.1016/0098-3004(91)90048-I  <http://dx.doi.org/10.1016/0098-3004(91)90048-I>`_
-     FairfieldLeymarie Alias for Rho8.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
-     Rho8              Alias for FairfieldLeymarie.   `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
-     OCallaghan        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
-     D8                Alias for OCallaghan.          `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
-     ================= ============================== ===========================
+     =================== ============================== ===========================
+     Method              Note                           Reference
+     =================== ============================== ===========================
+     Tarboton            Alias for Dinf.                `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Dinf                Alias for Tarboton.            `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Quinn               Holmgren with exponent=1.      `Quinn et al. (1991)           doi: 10.1002/hyp.3360050106        <http://dx.doi.org/10.1002/hyp.3360050106>`_
+     Holmgren(E)         Generalization of Quinn.       `Holmgren (1994)               doi: 10.1002/hyp.3360080405        <http://dx.doi.org/10.1002/hyp.3360080405>`_
+     Freeman(E)          TODO                           `Freeman (1991)                doi: 10.1016/0098-3004(91)90048-I  <http://dx.doi.org/10.1016/0098-3004(91)90048-I>`_
+     FairfieldLeymarieD8 Alias for Rho8.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     FairfieldLeymarieD4 Alias for Rho4.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     Rho8                Alias for FairfieldLeymarieD8. `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     Rho4                Alias for FairfieldLeymarieD4. `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     OCallaghanD8        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     OCallaghanD4        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     D8                  Alias for OCallaghanD8.        `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     D4                  Alias for OCallaghanD4.        `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     =================== ============================== ===========================
 
      **Methods marked (E) require the exponent argument.**
 
@@ -416,13 +420,17 @@ def FlowAccumulation(
     raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
   facc_methods = {
-    "Tarboton":          _richdem.FA_Tarboton,
-    "Dinf":              _richdem.FA_Tarboton,
-    "Quinn":             _richdem.FA_Quinn,
-    "FairfieldLeymarie": _richdem.FA_FairfieldLeymarie,
-    "Rho8":              _richdem.FA_Rho8,
-    "OCallaghan":        _richdem.FA_OCallaghan,
-    "D8":                _richdem.FA_D8
+    "Tarboton":            _richdem.FA_Tarboton,
+    "Dinf":                _richdem.FA_Tarboton,
+    "Quinn":               _richdem.FA_Quinn,
+    "FairfieldLeymarieD8": _richdem.FA_FairfieldLeymarieD8,
+    "FairfieldLeymarieD4": _richdem.FA_FairfieldLeymarieD4,
+    "Rho8":                _richdem.FA_Rho8,
+    "Rho4":                _richdem.FA_Rho4,
+    "OCallaghanD8":        _richdem.FA_OCallaghanD8,
+    "OCallaghanD4":        _richdem.FA_OCallaghanD4,
+    "D8":                  _richdem.FA_D8,
+    "D4":                  _richdem.FA_D4
   }
 
   facc_methods_exponent = {
