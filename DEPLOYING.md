@@ -52,6 +52,19 @@ Copy built files from docker:
     docker cp 23659cfa50b3:/io/wheelhouse/richdem-0.2.0-cp34-cp34m-manylinux1_i686.whl         /z/
     docker cp 23659cfa50b3:/io/wheelhouse/richdem-0.2.0-cp36-cp36m-manylinux1_i686.whl       /z/
 
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp27-cp27m-linux_x86_64.whl         /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp34-cp34m-linux_x86_64.whl /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp27-cp27m-manylinux1_x86_64.whl    /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp34-cp34m-manylinux1_x86_64.whl /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp27-cp27mu-linux_x86_64.whl        /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp35-cp35m-linux_x86_64.whl /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp27-cp27mu-manylinux1_x86_64.whl   /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp35-cp35m-manylinux1_x86_64.whl /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp33-cp33m-linux_x86_64.whl         /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp36-cp36m-linux_x86_64.whl /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp33-cp33m-manylinux1_x86_64.whl    /z/
+    docker cp f7f25ab807da:/io/wheelhouse/richdem-0.2.0-cp36-cp36m-manylinux1_x86_64.whl /z/
+
 List docker containers:
 
     docker ps -a
@@ -75,7 +88,7 @@ Compiling a source distribution
 
     python3 setup.py sdist
 
-    
+
 
 Uploading packages to PyPI
 ==========================
