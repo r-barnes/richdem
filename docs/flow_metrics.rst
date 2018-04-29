@@ -105,7 +105,7 @@ This is a convergent, deterministic flow method.
 .. plot::
     :width: 800pt
     :include-source:
-    :context: reset
+    :context: close-figs
     :outname: flow_metric_d4
 
     import richdem as rd
@@ -115,7 +115,7 @@ This is a convergent, deterministic flow method.
 
     rd.FillDepressions(dem, epsilon=True, in_place=True)
     accum_d4 = rd.FlowAccumulation(dem, method='D4')
-    d8_fig = rd.rdShow(accum_d8, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet')
+    d8_fig = rd.rdShow(accum_d4, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet')
 
 ================= ==============================
 Language          Command
@@ -333,7 +333,7 @@ C++               `richdem::FM_Tarboton()` or `richdem::FM_Dinfinity()`
 
 
 Side-by-Side Comparisons of Flow Metrics
-========================================
+----------------------------------------
 
 .. plot::
     :width:   800pt
@@ -343,23 +343,23 @@ Side-by-Side Comparisons of Flow Metrics
 
     metrics = (
       ('D8',       accum_d8      ),
+      ('D4',       accum_d4      ),
       ('Rho8',     accum_rho8    ),
+      ('Rho4',     accum_rho4    ),
       ('Dinf',     accum_dinf    ),
       ('Quinn',    accum_quinn   ),
       ('Holmgren', accum_holmgren),
-      ('Freeman',  accum_freeman ),
-      ('Rho4',     accum_rho4    ),
-      ('D4',       accum_d4      ),
+      ('Freeman',  accum_freeman )
     )
 
     subr = lambda x: x[450:550,450:550]
 
-    fig, axs = plt.subplots(nrows=2, ncols=3)
+    fig, axs = plt.subplots(nrows=2, ncols=4)
 
     #Flatten list
     axs = [item for sublist in axs for item in sublist]
 
-    vmin, vmax = np.nanpercentile(subr(accum_d8), [2, 98])
+    vmin, vmax = np.nanpercentile(subr(accum_d4), [2, 98])
 
     for i, met in enumerate(metrics):
       axs[i].imshow(subr(met[1]), vmin=vmin, vmax=vmax, cmap='jet')
