@@ -54,8 +54,6 @@ Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   for(int x=1;x<elevations.width()-1;x++){
     ++progress;
 
-    const int ci = elevations.xyToI(x,y);
-
     int8_t nmax = -1;
     double smax = 0;
     float  rmax = 0;
@@ -104,7 +102,7 @@ Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
     if(nmax==-1)
       continue;
 
-    props.at(9*ci+0) = HAS_FLOW_GEN;
+    props(x,y,0) = HAS_FLOW_GEN;
 
     if(af[nmax]==1 && rmax==0)
       rmax = dang;
@@ -120,12 +118,12 @@ Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
     //   rg = (af[nmax]*rmax+ac[nmax]*M_PI/2);
 
     if(rmax==0){
-      props.at(9*ci+nmax) = 1;
+      props(x,y,nmax) = 1;
     } else if(rmax==dang){
-      props.at(9*ci+nwrap(nmax+1)) = 1;
+      props(x,y,nwrap(nmax+1)) = 1;
     } else {
-      props.at(9*ci+nmax)          = rmax/(M_PI/4.);
-      props.at(9*ci+nwrap(nmax+1)) = 1-rmax/(M_PI/4.);      
+      props(x,y,nmax)          = rmax/(M_PI/4.);
+      props(x,y,nwrap(nmax+1)) = 1-rmax/(M_PI/4.);      
     }
   }
   progress.stop();

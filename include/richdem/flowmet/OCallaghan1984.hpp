@@ -66,7 +66,7 @@ Array3D<float> FM_OCallaghanD4(const Array2D<E> &elevations){
 
 //TODO: Add Marks et al (1984)
 template<class E>
-std::vector<float> FM_OCallaghanD8(const Array2D<E> &elevations){
+Array3D<float> FM_OCallaghanD8(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) D8 Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
@@ -118,7 +118,7 @@ std::vector<float> FM_OCallaghanD8(const Array2D<E> &elevations){
 
 
 template<class E>
-Array3D<float><float> FM_D8(const Array2D<E> &elevations){
+Array3D<float> FM_D8(const Array2D<E> &elevations){
   return FM_OCallaghanD8(elevations);
 }
 

@@ -53,7 +53,7 @@ Array3D<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam){
     }
 
     if(C>0){
-      props.at(x,y,0) = HAS_FLOW_GEN;
+      props(x,y,0) = HAS_FLOW_GEN;
 
       C = 1/C;
 

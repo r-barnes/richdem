@@ -15,7 +15,7 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho4\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  std::vector<float> props(9*elevations.size(),NO_FLOW_GEN);
+  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -30,9 +30,12 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
 
     int    greatest_n     = 0; //TODO: Use a constant
     double greatest_slope = 0;
-    for(int n=1;n<=4;n++){
-      const int nx = x+d4x[n];
-      const int ny = y+d4y[n];
+    for(int n=1;n<=8;n++){
+      if(n_diag[n]) //Skip diagonals
+        continue;
+
+      const int nx = x+dx[n];
+      const int ny = y+dy[n];
 
       if(!elevations.inGrid(nx,ny))
         continue;
@@ -45,7 +48,7 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
         continue;
 
       double rho_slop4 = (e-ne);
-      if(n==D4_NORTH || n==D4_SOUTH)
+      if(n==D8_NORTH || n==D8_SOUTH)
         rho_slop4 *= 1/(1/uniform_rand_real(0,1)-1);
 
       if(rho_slop4>greatest_slope){
@@ -57,10 +60,10 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
     if(greatest_n==0)
       continue;
 
-    props.at(9*ci+0)          = HAS_FLOW_GEN;
-    props.at(9*ci+greatest_n) = 1;
+    props(x,y,0)          = HAS_FLOW_GEN;
+    props(x,y,greatest_n) = 1;
 
-    assert(elevations(x,y)>=elevations(x+d4x[greatest_n],y+d4y[greatest_n])); //Ensure flow goes downhill
+    assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
   progress.stop();
 
@@ -127,13 +130,13 @@ Array3D<E> FM_FairfieldLeymarieD8(const Array2D<E> &elevations){
 template<class E>
 Array3D<float> FM_Rho8(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarieD8(elevations, false);
+  return FM_FairfieldLeymarieD8(elevations);
 }
 
 template<class E>
 Array3D<float> FM_Rho4(const Array2D<E> &elevations){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarieD4(elevations, true);
+  return FM_FairfieldLeymarieD4(elevations);
 }
 
 }
