@@ -30,8 +30,12 @@ const int  dx[9]     = {0, -1, -1,  0,  1, 1, 1, 0, -1}; ///< x offsets of D8 ne
 const int  dy[9]     = {0,  0, -1, -1, -1, 0, 1, 1,  1}; ///< y offsets of D8 neighbours, from a central cell
 const bool n_diag[9] = {0,  0,  1,  0,  1, 0, 1, 0,  1}; ///< True along diagonal directions, false along north, south, east, west
 
-const int  d4x[9]    = {0, -1,  0, 1, 0}; ///< x offsets of D4 neighbours, from a central cell
-const int  d4y[9]    = {0,  0, -1, 0, 1}; ///< y offsets of D4 neighbours, from a central cell
+const int d4x[9]   = {0, -1,  0, 1, 0}; ///< x offsets of D4 neighbours, from a central cell
+const int d4y[9]   = {0,  0, -1, 0, 1}; ///< y offsets of D4 neighbours, from a central cell
+const int D4_WEST  = 1;
+const int D4_SOUTH = 2;
+const int D4_EAST  = 3;
+const int D4_NORTH = 4;
 
 ///@brief Directions from neighbours to the central cell.
 ///Neighbours are labeled 0-8. This is the inverse direction leading from a
