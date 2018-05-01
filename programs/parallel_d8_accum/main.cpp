@@ -1,3 +1,7 @@
+//This algorithm is discussed in the manuscript:
+//    Barnes, R., 2017. Parallel non-divergent flow accumulation for trillion 
+//    cell digital elevation models on desktops or clusters. Environmental 
+//    Modelling & Software 92, 202–212. doi:10.1016/j.envsoft.2017.02.022
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
@@ -18,8 +22,8 @@
 
 using namespace richdem;
 
-const std::string algname  = "Parallel Flow Accumulation";
-const std::string citation = "Barnes, R. 2016. \"Parallel D8 Flow Accumulation For Trillion Cell Digital Elevation Models On Desktops Or Clusters\". In-progress.";
+const std::string algname  = "Barnes (2017) Parallel Non-divergent Flow Accumulation";
+const std::string citation = "Barnes, R., 2017. Parallel non-divergent flow accumulation for trillion cell digital elevation models on desktops or clusters. Environmental Modelling & Software 92, 202-212. doi:10.1016/j.envsoft.2017.02.022";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation

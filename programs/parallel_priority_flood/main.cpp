@@ -1,7 +1,7 @@
 //This algorithm is discussed in the manuscript:
-//    Barnes, R., 2016. "Parallel priority-flood depression filling for trillion
-//    cell digital elevation models on desktops or clusters". Computers &
-//    Geosciences. doi:10.1016/j.cageo.2016.07.001
+//    Barnes, R., 2016. Parallel priority-flood depression filling for trillion
+//    cell digital elevation models on desktops or clusters. Computers &
+//    Geosciences 96, 56–68. doi:10.1016/j.cageo.2016.07.001
 #include "gdal_priv.h"
 #include <iostream>
 #include <iomanip>
@@ -22,6 +22,9 @@
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
 using namespace richdem;
+
+const std::string algname  = "Barnes (2016) Parallel Priority-Flood";
+const std::string citation = "Barnes, R., 2016. Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters. Computers & Geosciences 96, 56-68. doi:10.1016/j.cageo.2016.07.001";
 
 //We use the cstdint library here to ensure that the program behaves as expected
 //across platforms, especially with respect to the expected limits of operation
@@ -1122,8 +1125,8 @@ int main(int argc, char **argv){
 
     std::string analysis = PrintRichdemHeader(argc,argv);
 
-    std::cerr<<"A "<<"A Barnes (2016) Parallel Priority-Flood" <<std::endl;
-    std::cerr<<"C "<<"C Barnes, R., 2016. \"Parallel priority-flood depression filling for trillion cell digital elevation models on desktops or clusters\". Computers & Geosciences. doi:10.1016/j.cageo.2016.07.001"<<std::endl;
+    std::cerr<<"A "<<algname <<std::endl;
+    std::cerr<<"C "<<citation<<std::endl;
 
     std::string help=
     #include "help.txt"
