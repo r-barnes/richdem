@@ -67,7 +67,8 @@ const d8_flowdir_t NO_FLOW = 0;
 
 ///Value used to indicate NoFlow in generic flow metric outputs
 const float NO_FLOW_GEN  = -1;
-const float HAS_FLOW_GEN = 0;
+const float HAS_FLOW_GEN =  0;
+const float NO_DATA_GEN  = -2;
 
 ///Value used to indicate that a flow accumulation cell is NoData
 const int32_t ACCUM_NO_DATA = -1;

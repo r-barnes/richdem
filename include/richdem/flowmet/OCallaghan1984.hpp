@@ -19,14 +19,23 @@ void FM_OCallaghanD4(
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
+
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
 
     const int ci = elevations.xyToI(x,y);
     const E   e  = elevations(x,y);
@@ -80,9 +89,17 @@ void FM_OCallaghanD8(
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
+
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
 
     const int ci = elevations.xyToI(x,y);
     const E   e  = elevations(x,y);

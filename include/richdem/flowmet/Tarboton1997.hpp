@@ -18,6 +18,7 @@ void FM_Tarboton(
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   //TODO: Assumes that the width and height of grid cells are equal and scaled
   //to 1.
@@ -53,9 +54,17 @@ void FM_Tarboton(
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
+
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
 
     int8_t nmax = -1;
     double smax = 0;

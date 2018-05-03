@@ -54,6 +54,11 @@ namespace richdem {
 template<class T>
 class Array3D {
  public:
+  std::string filename;             ///< File, if any, from which the data was loaded
+  std::string basename;             ///< Filename without path or extension
+  std::vector<double> geotransform; ///< Geotransform of the raster
+  std::string projection;           ///< Projection of the raster
+  std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
 
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
@@ -63,18 +68,15 @@ class Array3D {
 
   static const i_t NO_I = std::numeric_limits<i_t>::max(); //TODO: What is this?
 
-  std::string filename;             ///< File, if any, from which the data was loaded
-  std::string basename;             ///< Filename without path or extension
-  std::vector<double> geotransform; ///< Geotransform of the raster
-  std::string projection;           ///< Projection of the raster
-  std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
-
  private:
   template<typename> friend class Array2D;
   template<typename> friend class Array3D;
 
   ManagedVector<T> data;            ///< Holds the raster data in a 1D array
-                                    ///< this improves caching versus a 3D array
+                                    ///< this improves caching versus a 2D array
+
+  T   no_data;                       ///< NoData value of the raster
+  mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
   xy_t view_width  = 0;              ///< Height of raster in cells
   xy_t view_height = 0;              ///< Width of raster in cells
@@ -149,8 +151,19 @@ class Array3D {
   ///Height of the raster
   xy_t height() const { return view_height; }
 
+  ///X-Offset of this subregion of whatever raster we loaded from
+  xy_t viewXoff() const { return view_xoff; }
+
+  ///Y-Offset of this subregion of whatever raster we loaded from
+  xy_t viewYoff() const { return view_yoff; }
+
   ///Returns TRUE if no data is present in RAM
   bool empty() const { return data.empty(); }
+
+  ///Returns the NoData value of the raster. Cells equal to this value sould
+  ///generally not be used in calculations. But note that the isNoData() method
+  ///is a much better choice for testing whether a cell is NoData or not.
+  T noData() const { return no_data; }
 
   //TODO
   inline i_t i0() const {
@@ -184,6 +197,32 @@ class Array3D {
   }
 
   /**
+    @brief Whether or not a cell is NoData using x,y coordinates
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   Y-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isNoData(xy_t x, xy_t y) const {
+    assert(0<=x && x<view_width);
+    assert(0<=y && y<view_height);
+    return operator()(x,y,0)==no_data;
+  }
+
+  /**
+    @brief Whether or not a cell is NoData using i coordinates
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isNoData(i_t i) const {
+    assert(0<=i && i<size());
+    return operator()(i,0)==no_data;
+  }
+
+  /**
     @brief Test whether a cell lies within the boundaries of the raster
 
     @param[in]  x   X-coordinate of cell to test
@@ -207,6 +246,15 @@ class Array3D {
   // bool inGrid(i_t i) const {
   //   return 0<=i && i<size();
   // }
+
+  /**
+    @brief Sets the NoData value of the raster
+
+    @param[in]   ndval    Value to change NoData to
+  */
+  void setNoData(const T &ndval){
+    no_data = ndval;
+  }
 
   /**
     @brief Sets all of the raster's cells to 'val'
@@ -246,6 +294,28 @@ class Array3D {
   void resize(const Array3D<U> &other, const T& val = T()){
     resize(other.width(), other.height(), val);
   }
+
+  /**
+    @brief Counts the number of cells which are not NoData.
+  */
+  void countDataCells() const {
+    num_data_cells = 0;
+    for(unsigned int i=0;i<size();i++)
+      if(data[i]!=no_data)
+        num_data_cells++;
+  }
+
+  /**
+    @brief Returns the number of cells which are not NoData. May count them.
+
+    @return Returns the number of cells which are not NoData.
+  */
+  i_t numDataCells() const {
+    if(num_data_cells==NO_I)
+      countDataCells();
+    return num_data_cells;
+  }
+
 
   /**
     @brief Return cell value based on x,y coordinates

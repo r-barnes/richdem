@@ -305,8 +305,6 @@ class Array2D {
     _nshift     = {{0,-1,-width-1,-width,-width+1,1,width+1,width,width-1}};
   }
 
-
-
   /**
     @brief Create a raster with the same properties and dimensions as another
            raster. No data is copied between the two.
@@ -315,7 +313,7 @@ class Array2D {
     @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
+  Array2D(const U &other, const T& val=T()) : Array2D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;

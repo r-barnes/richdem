@@ -16,14 +16,23 @@ void FM_FairfieldLeymarieD4(const Array2D<E> &elevations, Array3D<float> &props)
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
+
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
 
     const E e    = elevations(x,y);
 
@@ -78,15 +87,24 @@ void FM_FairfieldLeymarieD8(
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
 
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
+    
     const E e    = elevations(x,y);
 
     int    greatest_n     = 0; //TODO: Use a constant

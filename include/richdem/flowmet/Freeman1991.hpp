@@ -20,14 +20,23 @@ void FM_Freeman(
   RDLOG_CONFIG<<"p = "<<xparam;
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
 
   #pragma omp parallel for collapse(2)
-  for(int y=1;y<elevations.height()-1;y++)
-  for(int x=1;x<elevations.width()-1;x++){
+  for(int y=0;y<elevations.height();y++)
+  for(int x=0;x<elevations.width();x++){
     ++progress;
+
+    if(elevations.isNoData(x,y)){
+      props(x,y,0) = NO_DATA_GEN;
+      continue;
+    }
+
+    if(elevations.isEdgeCell(x,y))
+      continue;
 
     const E e    = elevations(x,y);
 
