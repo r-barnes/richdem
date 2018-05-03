@@ -133,7 +133,7 @@ class Array3D {
     geotransform       = other.geotransform;
     metadata           = other.metadata;
     projection         = other.projection;
-    basename           = other.basename;
+    basename           = other.basename;    
     resize(other.width(), other.height(), val);
   }
 
