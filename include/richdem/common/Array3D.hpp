@@ -23,6 +23,7 @@
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
+#include "richdem/common/Array2D.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/version.hpp"
 #include "richdem/common/constants.hpp"
@@ -68,6 +69,13 @@ class Array3D {
   std::string projection;           ///< Projection of the raster
   std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
 
+ private:
+  template<typename> friend class Array2D;
+  template<typename> friend class Array3D;
+
+  ManagedVector<T> data;            ///< Holds the raster data in a 1D array
+                                    ///< this improves caching versus a 3D array
+
   xy_t view_width  = 0;              ///< Height of raster in cells
   xy_t view_height = 0;              ///< Width of raster in cells
 
@@ -77,13 +85,6 @@ class Array3D {
   xy_t view_xoff = 0;
   xy_t view_yoff = 0;
   ///@}
-
- private:
-  ManagedVector<T> data;            ///< Holds the raster data in a 1D array
-                                    ///< this improves caching versus a 3D array
-
-  xy_t view_width  = 0;                 ///< Height of raster in cells
-  xy_t view_height = 0;                 ///< Width of raster in cells
 
  public:
   Array3D() = default;
@@ -124,19 +125,7 @@ class Array3D {
     @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array3D(const Array3D<U> &other, const T& val=T()) : Array3D() {
-    resize(other.width(), other.height(), val);
-  }
-
-  /**
-    @brief Create a raster with the same properties and dimensions as another
-           raster. No data is copied between the two.
-
-    @param[in] other   Raster whose properties and dimensions should be copied
-    @param[in] val     Initial value of all the raster's cells.
-  */
-  template<class U>
-  Array3D(const Array3D<U> &other, const T& val=T()) : Array3D() {
+  Array3D(const U &other, const T& val=T()) : Array3D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;

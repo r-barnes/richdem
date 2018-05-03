@@ -10,12 +10,16 @@
 namespace richdem {
 
 template<class E>
-Array3D<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam){
+void FM_Holmgren(
+  const Array2D<E> &elevations,
+  Array3D<float> &props,
+  const double xparam
+){
   RDLOG_ALG_NAME<<"Holmgren (1994) Flow Accumulation (aka MFD, MD8)";
   RDLOG_CITATION<<"Holmgren, P., 1994. Multiple flow direction algorithms for runoff modelling in grid based elevation models: an empirical evaluation. Hydrological processes 8, 327–334.";
   RDLOG_CONFIG<<"x = "<<xparam;
 
-  Array3D<float> props(elevations,NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   constexpr double L1   = 0.5;
   constexpr double L2   = 0.354; //TODO: More decimal places
@@ -66,8 +70,6 @@ Array3D<float> FM_Holmgren(const Array2D<E> &elevations, const double xparam){
     }
   }
   progress.stop();
-
-  return props;
 }
 
 }

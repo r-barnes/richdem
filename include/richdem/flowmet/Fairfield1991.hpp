@@ -11,11 +11,11 @@
 namespace richdem {
 
 template<class E>
-Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
+void FM_FairfieldLeymarieD4(const Array2D<E> &elevations, Array3D<float> &props){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho4\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  Array3D<float> props(elevations,NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -65,17 +65,19 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
   progress.stop();
-
-  return props;
 }
 
 
+
 template<class E>
-Array3D<E> FM_FairfieldLeymarieD8(const Array2D<E> &elevations){
+void FM_FairfieldLeymarieD8(
+  const Array2D<E> &elevations, 
+  Array3D<float> &props
+){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho8\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -122,20 +124,22 @@ Array3D<E> FM_FairfieldLeymarieD8(const Array2D<E> &elevations){
     assert(elevations(x,y)>=elevations(x+dx[greatest_n],y+dy[greatest_n])); //Ensure flow goes downhill
   }
   progress.stop();
-
-  return props;
 }
 
-template<class E>
-Array3D<float> FM_Rho8(const Array2D<E> &elevations){
-  //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarieD8(elevations);
-}
+
 
 template<class E>
-Array3D<float> FM_Rho4(const Array2D<E> &elevations){
+void FM_Rho8(const Array2D<E> &elevations, Array3D<float> &props){
   //Algorithm headers are taken care of in FM_FairfieldLeymarie()
-  return FM_FairfieldLeymarieD4(elevations);
+  FM_FairfieldLeymarieD8(elevations, props);
+}
+
+
+
+template<class E>
+void FM_Rho4(const Array2D<E> &elevations, Array3D<float> &props){
+  //Algorithm headers are taken care of in FM_FairfieldLeymarie()
+  FM_FairfieldLeymarieD4(elevations, props);
 }
 
 }

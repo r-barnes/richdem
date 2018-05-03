@@ -21,6 +21,7 @@
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
+#include "richdem/common/Array3D.hpp"
 #include "richdem/common/logger.hpp"
 #include "richdem/common/version.hpp"
 #include "richdem/common/constants.hpp"
@@ -98,6 +99,7 @@ class Array2D {
 
  private:
   template<typename> friend class Array2D;
+  template<typename> friend class Array3D;
 
   std::array<int, 9> _nshift;       ///< Offset to neighbouring cells;
 

@@ -42,7 +42,8 @@ void FlowAccumulation(F func, const Array2D<E> &elevations, Array2D<A> &accum, A
   if(accum.width()!=elevations.width() || accum.height()!=elevations.height())
     throw std::runtime_error("Accumulation array must have same dimensions as elevations!");
 
-  const auto props = func(elevations, args...);
+  Array3D<float> props(elevations);
+  func(elevations, props, args...);
 
   //Create dependencies array
   RDLOG_PROGRESS<<"Creating dependencies array..."<<std::endl;

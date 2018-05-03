@@ -11,11 +11,14 @@ namespace richdem {
 
 //TODO: Add Marks et al (1984)
 template<class E>
-Array3D<float> FM_OCallaghanD4(const Array2D<E> &elevations){
+void FM_OCallaghanD4(
+  const Array2D<E> &elevations,
+  Array3D<float> &props
+){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) D4 Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
-  Array3D<float> props(elevations,NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -60,17 +63,18 @@ Array3D<float> FM_OCallaghanD4(const Array2D<E> &elevations){
     props(x,y,lowest_n) = 1;
   }
   progress.stop();
-
-  return props;
 }
 
 //TODO: Add Marks et al (1984)
 template<class E>
-Array3D<float> FM_OCallaghanD8(const Array2D<E> &elevations){
+void FM_OCallaghanD8(
+  const Array2D<E> &elevations,
+  Array3D<float> &props
+){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) D8 Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
-  Array3D<float> props(elevations,NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -112,19 +116,17 @@ Array3D<float> FM_OCallaghanD8(const Array2D<E> &elevations){
     props(x,y,lowest_n) = 1;
   }
   progress.stop();
-
-  return props;
 }
 
 
 template<class E>
-Array3D<float> FM_D8(const Array2D<E> &elevations){
-  return FM_OCallaghanD8(elevations);
+void FM_D8(const Array2D<E> &elevations, Array3D<float> &props){
+  FM_OCallaghanD8(elevations, props);
 }
 
 template<class E>
-Array3D<float> FM_D4(const Array2D<E> &elevations){
-  return FM_OCallaghanD4(elevations);
+void FM_D4(const Array2D<E> &elevations, Array3D<float> &props){
+  FM_OCallaghanD4(elevations, props);
 }
 
 }

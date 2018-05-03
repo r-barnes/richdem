@@ -27,8 +27,8 @@ def _RichDEMVersion():
 
 
 def _AddAnalysis(rda, analysis):
-  if type(rda) is not rdarray:
-    raise Exception("An rdarray is required!")
+  if type(rda) not in [rdarray,rd3array]:
+    raise Exception("An rdarray or rd3array is required!")
 
   metastr  = "\n{nowdate} | {verstr} | {analysis}".format(
     nowdate  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
@@ -176,6 +176,50 @@ class rdarray(np.ndarray):
     self.no_data   = wrapped.noData()
     #print("IS IT IN",("PROCESSING_HISTORY" in wrapped.metadata))
     #self.metadata += "\n"+wrapped.metadata["PROCESSING_HISTORY"].replace("\n","\t\n")
+
+
+
+class rd3array(np.ndarray):
+  def __new__(cls, array, meta_obj=None, order=None, **kwargs):
+    obj = np.asarray(array, dtype=np.float32, order=order).view(cls) 
+    
+    if meta_obj is not None:
+      obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     dict()))
+      obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None  ))
+      obj.projection   = copy.deepcopy(getattr(meta_obj, 'projection',   ""    ))
+      obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None  ))
+
+    return obj
+
+  def __array_finalize__(self, obj):
+    if obj is None: return
+    self.metadata     = copy.deepcopy(getattr(obj, 'metadata',     dict()))
+    self.projection   = copy.deepcopy(getattr(obj, 'projection',   ""    ))
+    self.geotransform = copy.deepcopy(getattr(obj, 'geotransform', None  ))
+
+  def wrap(self):
+    richdem_arrs = {
+      'float32': _richdem.Array3D_float
+    }
+    dtype = str(self.dtype)
+    if not dtype in richdem_arrs:
+      raise Exception("No equivalent RichDEM datatype.")
+    
+    rda = richdem_arrs[dtype](self)
+
+    if self.geotransform:
+      rda.geotransform = np.array(self.geotransform, dtype='float64')
+    else:
+      print("Warning! No geotransform defined. Choosing a standard one! (Top left cell's top let corner at <0,0>; cells are 1x1.)")
+      rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
+
+    return rda 
+
+  def copyFromWrapped(self, wrapped):
+    pass
+    #print("IS IT IN",("PROCESSING_HISTORY" in wrapped.metadata))
+    #self.metadata += "\n"+wrapped.metadata["PROCESSING_HISTORY"].replace("\n","\t\n")
+
 
 
 def LoadGDAL(filename, no_data=None):
@@ -471,6 +515,89 @@ def FlowAccumulation(
   accum.copyFromWrapped(accumw)
 
   return accum
+
+
+
+
+def FlowProportions(
+  dem,
+  method   = None,
+  exponent = None
+):
+  """Calculates flow proportions. A variety of methods are available.
+
+     Args:
+         dem      (rdarray): An elevation model
+         method   (str):     Flow accumulation method to use. (See below.)
+         exponent (float):   Some methods require an exponent; refer to the 
+                             relevant publications for details.
+
+     =================== ============================== ===========================
+     Method              Note                           Reference
+     =================== ============================== ===========================
+     Tarboton            Alias for Dinf.                `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Dinf                Alias for Tarboton.            `Taroboton (1997)              doi: 10.1029/96WR03137             <http://dx.doi.org/10.1029/96WR03137>`_
+     Quinn               Holmgren with exponent=1.      `Quinn et al. (1991)           doi: 10.1002/hyp.3360050106        <http://dx.doi.org/10.1002/hyp.3360050106>`_
+     Holmgren(E)         Generalization of Quinn.       `Holmgren (1994)               doi: 10.1002/hyp.3360080405        <http://dx.doi.org/10.1002/hyp.3360080405>`_
+     Freeman(E)          TODO                           `Freeman (1991)                doi: 10.1016/0098-3004(91)90048-I  <http://dx.doi.org/10.1016/0098-3004(91)90048-I>`_
+     FairfieldLeymarieD8 Alias for Rho8.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     FairfieldLeymarieD4 Alias for Rho4.                `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     Rho8                Alias for FairfieldLeymarieD8. `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     Rho4                Alias for FairfieldLeymarieD4. `Fairfield and Leymarie (1991) doi: 10.1029/90WR02658             <http://dx.doi.org/10.1029/90WR02658>`_
+     OCallaghanD8        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     OCallaghanD4        Alias for D8.                  `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     D8                  Alias for OCallaghanD8.        `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     D4                  Alias for OCallaghanD4.        `O'Callaghan and Mark (1984)   doi: 10.1016/S0734-189X(84)80011-0 <http://dx.doi.org/10.1016/S0734-189X(84)80011-0>`_
+     =================== ============================== ===========================
+
+     **Methods marked (E) require the exponent argument.**
+
+     Returns:
+         A flow proportion according to the desired method.
+  """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+  fprop_methods = {
+    "Tarboton":            _richdem.FM_Tarboton,
+    "Dinf":                _richdem.FM_Tarboton,
+    "Quinn":               _richdem.FM_Quinn,
+    "FairfieldLeymarieD8": _richdem.FM_FairfieldLeymarieD8,
+    "FairfieldLeymarieD4": _richdem.FM_FairfieldLeymarieD4,
+    "Rho8":                _richdem.FM_Rho8,
+    "Rho4":                _richdem.FM_Rho4,
+    "OCallaghanD8":        _richdem.FM_OCallaghanD8,
+    "OCallaghanD4":        _richdem.FM_OCallaghanD4,
+    "D8":                  _richdem.FM_D8,
+    "D4":                  _richdem.FM_D4
+  }
+
+  fprop_methods_exponent = {
+    "Freeman":           _richdem.FM_Freeman,
+    "Holmgren":          _richdem.FM_Holmgren
+  }
+
+  fprops  = rd3array(np.zeros(shape=dem.shape+(9,), dtype='float32'), meta_obj=dem)
+  fpropsw = fprops.wrap()
+
+  _AddAnalysis(fprops, "FlowProportions(dem, method={method}, exponent={exponent})".format(
+    method   = method,
+    exponent = exponent,
+  ))
+
+  if method in fprop_methods:
+    fprop_methods[method](dem.wrap(),fpropsw)
+  elif method in fprop_methods_exponent:
+    if exponent is None:
+      raise Exception('FlowProportions method "'+method+'" requires an exponent!')
+    fprop_methods_exponent[method](dem.wrap(),fpropsw,exponent)
+  else:
+    raise Exception("Invalid FlowProportions method. Valid methods are: " + ', '.join(list(fprop_methods.keys()) + list(fprop_methods_exponent.keys()) ))
+
+  fprops.copyFromWrapped(fpropsw)
+
+  return fprops
+
 
 
 def TerrainAttribute(

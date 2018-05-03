@@ -10,11 +10,14 @@
 namespace richdem {
 
 template<class elev_t>
-Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
+void FM_Tarboton(
+  const Array2D<elev_t> &elevations,
+  Array3D<float> &props
+){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
-  Array3D<float> props(elevations,NO_FLOW_GEN);
+  props.setAll(NO_FLOW_GEN);
 
   //TODO: Assumes that the width and height of grid cells are equal and scaled
   //to 1.
@@ -127,13 +130,11 @@ Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
     }
   }
   progress.stop();
-
-  return props;
 }
 
 template<class E>
-Array3D<float> FM_Dinfinity(const Array2D<E> &elevations){
-  return FM_Tarboton(elevations);
+void FM_Dinfinity(const Array2D<E> &elevations, Array3D<float> &props){
+  FM_Tarboton(elevations, props);
 }
 
 }
