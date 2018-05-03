@@ -25,6 +25,22 @@ absent or a "best effort" attempt has been made at implementation.
 
 
 
+Flow Coordinate System
+--------------------------------
+
+Internally, RichDEM refers to flow directions using a neighbourhood that appears
+as follows::
+
+    234
+    105
+    876
+
+
+Neighbouring cells are accessed by looping through the indices 1 through 8
+(inclusive) of the `dx[]` and `dy[]` arrays.
+
+
+
 Convergent and Divergent Metrics
 --------------------------------
 
@@ -379,3 +395,34 @@ nonetheless, they are different:
 
     quinn_freeman_diff = accum_quinn - accum_freeman
     rd.rdShow(quinn_freeman_diff, figsize=(8,5.5), axes=False, cmap='jet', ignore_colours=[0])
+
+
+
+Accessing Flow Proportions Directly
+===================================
+
+In higher-level languages the foregoing flow proportions can be access via the
+flow proportions command, such as follows:
+
+.. code-block:: python
+
+    bprops = rd.FlowProportions(dem=beau, method='D8')
+
+This command returns a matrix with the same width and height as the input, but
+an extra dimension which assigns each `(x,y)` cell 9 single-precision floating-
+point values.
+
+The zeroth of these values is used for storing status information about the cell
+as a whole. If the 0th value of the area is `0` then the cell produces flow; if
+it is `-1`, then the cell produces no flow; if it is `-2`, then the cell is a
+NoData cell. The following eight values indicate the proportion of the cells
+flow directed to the neighbour corresponding to the index of that value where
+the neighbours are defined as in `Flow Coordinate System`_.
+
+For instance, the values::
+
+    0 0.25 0.25 0.25 0.25 0 0 0 0
+
+direct 25% of a cell's flow to the northwest, north, northeast, and east.
+
+These values can be manipulated and used to generate custom flow accumulations.

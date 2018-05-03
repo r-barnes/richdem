@@ -94,3 +94,24 @@ mountain range were affecting weather:
     rd.FlowAccumulation(dem, method='D8', weights=accum, in_place=True)
 
     d8_fig = rd.rdShow(accum, zxmin=450, zxmax=550, zymin=550, zymax=450, figsize=(8,5.5), axes=False, cmap='jet')
+
+
+
+From Flow Proportions
+---------------------
+
+Flow accumulation can also be generated from raw flow proportions:
+
+.. plot::
+    :width: 800pt
+    :include-source:
+    :context: close-figs
+    :outname: flow_accum_from_props
+
+    props = rd.FlowProportions(dem, method='Freeman', exponent=1.1)
+
+    #30% of the flow moving along any route is absorbed
+    props[props>0] *= 0.7
+    accum = rd.FlowAccumFromProps(props=props)
+
+    rd.rdShow(accum, ignore_colours=[0], figsize=(8,5.5), axes=False, cmap='jet', zxmin=450, zxmax=550, zymin=550, zymax=450)
