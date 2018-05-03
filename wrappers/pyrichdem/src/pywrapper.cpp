@@ -78,8 +78,6 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("FM_D8",                  &FM_D8                  <T>, "TODO");
   m.def("FM_D4",                  &FM_D4                  <T>, "TODO");
 
-  m.def("FlowAccumulation",       &FlowAccumulation<T,double>, "TODO");
-
   py::class_<Array2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<typename Array2D<T>::xy_t, typename Array2D<T>::xy_t,T>())
@@ -188,6 +186,8 @@ PYBIND11_MODULE(_richdem, m) {
 
   m.def("rdHash",        &rdHash,        "Git hash of previous commit");
   m.def("rdCompileTime", &rdCompileTime, "Commit time of previous commit");
+
+  m.def("FlowAccumulation", &FlowAccumulation<double>, "TODO");
 
   py::class_<Array3D<float>>(m, "Array3D_float", py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
