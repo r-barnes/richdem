@@ -227,7 +227,20 @@ PYBIND11_MODULE(_richdem, m) {
       .def("width",     &Array3D<float>::width)
       .def("height",    &Array3D<float>::height)
       .def("empty",     &Array3D<float>::empty)
+      .def("noData",    &Array3D<float>::noData)
       
+      //TODO: Simplify by casting to double in Python
+      .def("setNoData", [](Array3D<float> &a, const float    ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const double   ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const int8_t   ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const int16_t  ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const int32_t  ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const int64_t  ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const uint8_t  ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const uint16_t ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const uint32_t ndval){ a.setNoData((float)ndval); })
+      .def("setNoData", [](Array3D<float> &a, const uint64_t ndval){ a.setNoData((float)ndval); })
+            
       .def_readwrite("geotransform", &Array3D<float>::geotransform)
       .def_readwrite("projection",   &Array3D<float>::projection)
       .def_readwrite("metadata",     &Array3D<float>::metadata)

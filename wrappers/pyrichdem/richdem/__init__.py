@@ -180,7 +180,7 @@ class rdarray(np.ndarray):
 
 
 class rd3array(np.ndarray):
-  def __new__(cls, array, meta_obj=None, order=None, **kwargs):
+  def __new__(cls, array, meta_obj=None, no_data=None, order=None, **kwargs):
     obj = np.asarray(array, dtype=np.float32, order=order).view(cls) 
     
     if meta_obj is not None:
@@ -189,11 +189,18 @@ class rd3array(np.ndarray):
       obj.projection   = copy.deepcopy(getattr(meta_obj, 'projection',   ""    ))
       obj.geotransform = copy.deepcopy(getattr(meta_obj, 'geotransform', None  ))
 
+    if no_data is not None:
+      obj.no_data = no_data
+
+    if no_data is None:
+      raise Exception("A no_data value must be specified!")
+
     return obj
 
   def __array_finalize__(self, obj):
     if obj is None: return
     self.metadata     = copy.deepcopy(getattr(obj, 'metadata',     dict()))
+    self.no_data      = copy.deepcopy(getattr(obj, 'no_data',      None  ))
     self.projection   = copy.deepcopy(getattr(obj, 'projection',   ""    ))
     self.geotransform = copy.deepcopy(getattr(obj, 'geotransform', None  ))
 
@@ -207,6 +214,12 @@ class rd3array(np.ndarray):
     
     rda = richdem_arrs[dtype](self)
 
+    if self.no_data is None:
+      print("Warning! no_data was None. Setting it to -9999!")
+      rda.setNoData(-9999)
+    else:
+      rda.setNoData(self.no_data)
+
     if self.geotransform:
       rda.geotransform = np.array(self.geotransform, dtype='float64')
     else:
@@ -216,7 +229,7 @@ class rd3array(np.ndarray):
     return rda 
 
   def copyFromWrapped(self, wrapped):
-    pass
+    self.no_data   = wrapped.noData()
     #print("IS IT IN",("PROCESSING_HISTORY" in wrapped.metadata))
     #self.metadata += "\n"+wrapped.metadata["PROCESSING_HISTORY"].replace("\n","\t\n")
 
@@ -577,7 +590,7 @@ def FlowProportions(
     "Holmgren":          _richdem.FM_Holmgren
   }
 
-  fprops  = rd3array(np.zeros(shape=dem.shape+(9,), dtype='float32'), meta_obj=dem)
+  fprops  = rd3array(np.zeros(shape=dem.shape+(9,), dtype='float32'), meta_obj=dem, no_data=-2)
   fpropsw = fprops.wrap()
 
   _AddAnalysis(fprops, "FlowProportions(dem, method={method}, exponent={exponent})".format(

@@ -84,6 +84,7 @@ void FM_OCallaghanD8(
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
   props.setAll(NO_FLOW_GEN);
+  props.setNoData(NO_DATA_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());

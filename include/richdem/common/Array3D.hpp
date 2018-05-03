@@ -219,7 +219,7 @@ class Array3D {
   */
   inline bool isNoData(i_t i) const {
     assert(0<=i && i<size());
-    return operator()(i,0)==no_data;
+    return getIN(i,0)==no_data;
   }
 
   /**
