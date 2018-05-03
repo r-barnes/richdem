@@ -14,7 +14,7 @@ Array3D<float> FM_Tarboton(const Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"Tarboton (1997) Flow Accumulation (aka D-Infinity, D∞)";
   RDLOG_CITATION<<"Tarboton, D.G., 1997. A new method for the determination of flow directions and upslope areas in grid digital elevation models. Water resources research 33, 309–319.";
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  Array3D<float> props(elevations,NO_FLOW_GEN);
 
   //TODO: Assumes that the width and height of grid cells are equal and scaled
   //to 1.

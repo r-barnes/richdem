@@ -15,7 +15,7 @@ Array3D<float> FM_FairfieldLeymarieD4(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"Fairfield (1991) \"Rho4\" Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  Array3D<float> props(elevations,NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());

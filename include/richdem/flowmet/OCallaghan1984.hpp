@@ -15,7 +15,7 @@ Array3D<float> FM_OCallaghanD4(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) D4 Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  Array3D<float> props(elevations,NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
@@ -70,7 +70,7 @@ Array3D<float> FM_OCallaghanD8(const Array2D<E> &elevations){
   RDLOG_ALG_NAME<<"O'Callaghan (1984)/Marks (1984) D8 Flow Accumulation";
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  Array3D<float> props(elevations,NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());

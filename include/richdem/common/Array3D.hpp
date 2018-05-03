@@ -62,12 +62,28 @@ class Array3D {
 
   static const i_t NO_I = std::numeric_limits<i_t>::max(); //TODO: What is this?
 
+  std::string filename;             ///< File, if any, from which the data was loaded
+  std::string basename;             ///< Filename without path or extension
+  std::vector<double> geotransform; ///< Geotransform of the raster
+  std::string projection;           ///< Projection of the raster
+  std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
+
+  xy_t view_width  = 0;              ///< Height of raster in cells
+  xy_t view_height = 0;              ///< Width of raster in cells
+
+  ///@{ A rectangular subregion of a larger raster can be extracted. These
+  ///   variables store the offsets of this subregion in case the subregion
+  ///   needs to be saved into a raster with other subregions
+  xy_t view_xoff = 0;
+  xy_t view_yoff = 0;
+  ///@}
+
  private:
   ManagedVector<T> data;            ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 3D array
 
-  xy_t _width  = 0;                 ///< Height of raster in cells
-  xy_t _height = 0;                 ///< Width of raster in cells
+  xy_t view_width  = 0;                 ///< Height of raster in cells
+  xy_t view_height = 0;                 ///< Width of raster in cells
 
  public:
   Array3D() = default;
@@ -96,8 +112,8 @@ class Array3D {
   */
   Array3D(T *data0, const xy_t width, const xy_t height) : Array3D() {
     data        = ManagedVector<T>(data0, 9*width*height);
-    _width  = width;
-    _height = height;
+    view_width  = width;
+    view_height = height;
   }
 
   /**
@@ -112,17 +128,37 @@ class Array3D {
     resize(other.width(), other.height(), val);
   }
 
+  /**
+    @brief Create a raster with the same properties and dimensions as another
+           raster. No data is copied between the two.
+
+    @param[in] other   Raster whose properties and dimensions should be copied
+    @param[in] val     Initial value of all the raster's cells.
+  */
+  template<class U>
+  Array3D(const Array3D<U> &other, const T& val=T()) : Array3D() {
+    view_width         = other.view_width;
+    view_height        = other.view_height;
+    view_xoff          = other.view_xoff;
+    view_yoff          = other.view_yoff;
+    geotransform       = other.geotransform;
+    metadata           = other.metadata;
+    projection         = other.projection;
+    basename           = other.basename;
+    resize(other.width(), other.height(), val);
+  }
+
   ///Returns a pointer to the internal data array
   T* getData() { return data.data(); }
 
   ///@brief Number of cells in the DEM
-  i_t size() const { return _width*_height; }
+  i_t size() const { return view_width*view_height; }
 
   ///Width of the raster
-  xy_t width() const { return _width; }
+  xy_t width() const { return view_width; }
 
   ///Height of the raster
-  xy_t height() const { return _height; }
+  xy_t height() const { return view_height; }
 
   ///Returns TRUE if no data is present in RAM
   bool empty() const { return data.empty(); }
@@ -142,7 +178,7 @@ class Array3D {
   */
   inline i_t xyToI(xy_t x, xy_t y, n_t n) const {
     assert(0<=n && n<=9);
-    return (i_t)y*9*(i_t)_width+9*(i_t)x+n;
+    return (i_t)y*9*(i_t)view_width+9*(i_t)x+n;
   }
 
   /**
@@ -167,7 +203,7 @@ class Array3D {
     @return TRUE if cell lies within the raster
   */
   inline bool inGrid(xy_t x, xy_t y) const {
-    return 0<=x && x<_width && 0<=y && y<_height;
+    return 0<=x && x<view_width && 0<=y && y<view_height;
   }
 
   /*
@@ -204,8 +240,8 @@ class Array3D {
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
     data.resize(9*width0*height0);
 
-    _width  = width0;
-    _height = height0;
+    view_width  = width0;
+    view_height = height0;
 
     setAll(val0);
   }

@@ -18,7 +18,7 @@ Array3D<float> FM_Freeman(
   RDLOG_CITATION<<"Freeman, T.G., 1991. Calculating catchment area with divergent flow based on a regular grid. Computers & Geosciences 17, 413–422.";
   RDLOG_CONFIG<<"p = "<<xparam;
 
-  Array3D<float> props(elevations.width(),elevations.height(),NO_FLOW_GEN);
+  Array3D<float> props(elevations,NO_FLOW_GEN);
 
   ProgressBar progress;
   progress.start(elevations.size());
