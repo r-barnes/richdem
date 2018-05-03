@@ -35,6 +35,8 @@
 
 namespace richdem {
 
+template<typename> class Array3D;
+
 std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
   if(metadata==NULL)
@@ -313,7 +315,27 @@ class Array2D {
     @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array2D(const U &other, const T& val=T()) : Array2D() {
+  Array2D(const Array2D<U> &other, const T& val=T()) : Array2D() {
+    view_width         = other.view_width;
+    view_height        = other.view_height;
+    view_xoff          = other.view_xoff;
+    view_yoff          = other.view_yoff;
+    geotransform       = other.geotransform;
+    metadata           = other.metadata;
+    projection         = other.projection;
+    basename           = other.basename;
+    resize(other.width(), other.height(), val);
+  }
+
+  /**
+    @brief Create a raster with the same properties and dimensions as another
+           raster. No data is copied between the two.
+
+    @param[in] other   Raster whose properties and dimensions should be copied
+    @param[in] val     Initial value of all the raster's cells.
+  */
+  template<class U>
+  Array2D(const Array3D<U> &other, const T& val=T()) : Array2D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;

@@ -32,6 +32,8 @@
 
 namespace richdem {
 
+template<typename> class Array2D;
+
 /**
   @brief  Class to hold and 2D rasters with neighbour information
   @author Richard Barnes (rbarnes@umn.edu)
@@ -127,7 +129,27 @@ class Array3D {
     @param[in] val     Initial value of all the raster's cells.
   */
   template<class U>
-  Array3D(const U &other, const T& val=T()) : Array3D() {
+  Array3D(const Array3D<U> &other, const T& val=T()) : Array3D() {
+    view_width         = other.view_width;
+    view_height        = other.view_height;
+    view_xoff          = other.view_xoff;
+    view_yoff          = other.view_yoff;
+    geotransform       = other.geotransform;
+    metadata           = other.metadata;
+    projection         = other.projection;
+    basename           = other.basename;    
+    resize(other.width(), other.height(), val);
+  }
+
+  /**
+    @brief Create a raster with the same properties and dimensions as another
+           raster. No data is copied between the two.
+
+    @param[in] other   Raster whose properties and dimensions should be copied
+    @param[in] val     Initial value of all the raster's cells.
+  */
+  template<class U>
+  Array3D(const Array2D<U> &other, const T& val=T()) : Array3D() {
     view_width         = other.view_width;
     view_height        = other.view_height;
     view_xoff          = other.view_xoff;
