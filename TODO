@@ -6,11 +6,7 @@ Output in D8 ArcGIS (Debasish Pal <debasish_pal@sutd.edu.sg>):
 Sorry Richard. I misunderstood. I would like to receive the format as in ArcGIS flow direction coding (1, 2, 4, 8, 16, 32, 64, 128 in clockwise direction)
 
 
-
-
-
 # Add two addtional methods.
-# MFD without diagonals (MFD-D4)
 # MFD with square root (Katy will send either a paper or derrivation to Richard)
 
 # change proportion ordering so that proportions are listed in math order of index
