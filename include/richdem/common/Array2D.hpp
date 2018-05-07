@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <limits>
 #include <ctime>         //Used for timestamping output files
+#include <cmath>
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
