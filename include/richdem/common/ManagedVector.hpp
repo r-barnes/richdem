@@ -14,7 +14,7 @@ class ManagedVector {
 
   std::unique_ptr<T[]> _data;
   bool   _owned = true;        ///< If this is true, we are responsible for clean-up of the data
-  size_t _size  = 0;           ///< Number of elements being managed
+  std::size_t _size  = 0;           ///< Number of elements being managed
 
  public:
   ///Creates an empty ManagedVector
@@ -24,10 +24,10 @@ class ManagedVector {
   ///
   ///@param[in] size         Number of elements to be created in the vector
   ///@param[in] default_val  Initial value of the elements
-  ManagedVector(size_t size, T default_val=T()){
+  ManagedVector(std::size_t size, T default_val=T()){
     _size = size;
     _data.reset(new T[size]);   //Create unique pointer to newly allocated memory
-    for(size_t i=0;i<size;i++)  //Initialize all members to default value
+    for(std::size_t i=0;i<size;i++)  //Initialize all members to default value
       _data[i] = default_val;
     //std::cerr<<"ManagedVector construct with owned data at "<<((void*)_data.get())<<std::endl;
   }
@@ -36,7 +36,7 @@ class ManagedVector {
   ///
   ///@param[in] data         Memory to wrap
   ///@param[in] size         Number of elements to wrap
-  ManagedVector(T* data, size_t size){
+  ManagedVector(T* data, std::size_t size){
     //std::cerr<<"ManagedVector construct with unowned data at "<<((void*)data0)<<std::endl;
     _data.reset(data);
     _size  = size;
@@ -49,7 +49,7 @@ class ManagedVector {
     //std::cerr<<"Copying ManagedVector from U"<<std::endl;
     _size = other.size();
      _data.reset(new T[other.size()]);
-    for(size_t i=0;i<other.size();i++)
+    for(std::size_t i=0;i<other.size();i++)
       _data[i] = other._data[i];    
   }
 
@@ -59,7 +59,7 @@ class ManagedVector {
     //std::cerr<<"Copying ManagedVector from T"<<std::endl;
     _size = other.size();
     _data.reset(new T[other.size()]);
-    for(size_t i=0;i<other.size();i++)
+    for(std::size_t i=0;i<other.size();i++)
       _data[i] = other._data[i];    
   }
 
@@ -132,7 +132,7 @@ class ManagedVector {
   ///Get the number of elements being managed
   ///
   ///@return The number of elements being managed
-  inline size_t size() const {
+  inline std::size_t size() const {
     return _size;
   }
 
@@ -144,7 +144,7 @@ class ManagedVector {
   }
 
   //TODO: Keep old memory?
-  void resize(size_t new_size) {
+  void resize(std::size_t new_size) {
     if(_size==new_size)
       return;
     if(!_owned)
@@ -159,11 +159,11 @@ class ManagedVector {
     _size = new_size;
   }
 
-  inline T& operator[](size_t i){
+  inline T& operator[](std::size_t i){
     return _data[i];
   }
 
-  inline const T& operator[](size_t i) const {
+  inline const T& operator[](std::size_t i) const {
     return _data[i];
   }  
 };
