@@ -400,7 +400,7 @@ class Array2D {
 
       GDALRasterBand *band = fin->GetRasterBand(1);
 
-        resize(view_width,view_height);
+      resize(view_width,view_height);
       auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
         if(temp!=CE_None)
           throw std::runtime_error("An error occured while trying to read '"+filename+"' into RAM with GDAL.");
