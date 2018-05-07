@@ -152,6 +152,7 @@ class ManagedVector {
 
     //auto oldmem = _data.get();
 
+    _data.reset(); //Clear old memory before allocating new memory
     _data.reset(new T[new_size]);
 
     //std::cerr<<"Resizing ManagedVector from "<<((void*)oldmem)<<" to "<<((void*)_data.get())<<std::endl;
