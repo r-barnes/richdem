@@ -64,9 +64,9 @@ class Array3D {
 
   //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
   //dimensions fit easily within an int32_t xy-address.
-  typedef int32_t   xy_t;            ///< xy-addressing data type
-  typedef std::size i_t;             ///< i-addressing data type
-  typedef uint8_t   n_t;             ///< neighbour addressing data type
+  typedef int32_t     xy_t;         ///< xy-addressing data type
+  typedef std::size_t i_t;          ///< i-addressing data type
+  typedef uint8_t     n_t;          ///< neighbour addressing data type
 
   static const i_t NO_I = std::numeric_limits<i_t>::max(); //TODO: What is this?
 
