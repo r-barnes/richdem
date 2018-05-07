@@ -18,6 +18,8 @@
 #ifndef _richdem_constants_hpp_
 #define _richdem_constants_hpp_
 
+#include <cstdint>
+
 namespace richdem {
 
 //Constant used to hold D8 flow directions
