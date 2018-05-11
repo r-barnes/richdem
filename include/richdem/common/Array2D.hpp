@@ -8,6 +8,7 @@
 #define _richdem_array_2d_hpp_
 
 #include "gdal.hpp"
+#include <array>
 #include <vector>
 #include <iostream>
 #include <fstream>
