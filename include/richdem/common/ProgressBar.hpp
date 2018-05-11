@@ -21,7 +21,6 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
-#include <sys/time.h>
 #include <stdexcept>
 #include "richdem/common/timer.hpp"
 
