@@ -7,7 +7,7 @@
 #ifndef _richdem_timer_
 #define _richdem_timer_
 
-#include <sys/time.h>
+#include <chrono>
 #include <stdexcept>
 
 namespace richdem {
@@ -17,16 +17,16 @@ namespace richdem {
 ///Such as how long it takes a given function to run, or how long I/O has taken.
 class Timer{
   private:
-    timeval start_time;                 ///< Last time the timer was started
-    double accumulated_time = 0;        ///< Accumulated running time since creation
-    bool   running          = false;    ///< True when the timer is running
+    typedef std::chrono::high_resolution_clock clock;
+    typedef std::chrono::duration<double, std::ratio<1> > second;
+
+    std::chrono::time_point<clock> start_time;  ///< Last time the timer was started
+    double accumulated_time = 0;                ///< Accumulated running time since creation
+    bool   running          = false;            ///< True when the timer is running
 
     ///Number of (fractional) seconds between two time objects
-    double timediff(timeval beginning, timeval end){
-      long seconds, useconds;
-      seconds  = end.tv_sec  - beginning.tv_sec;
-      useconds = end.tv_usec - beginning.tv_usec;
-      return seconds + useconds/1000000.0;
+    double timediff(const std::chrono::time_point<clock> &start, const std::chrono::time_point<clock> &end){
+      return static_cast<unsigned long int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
     }
   public:
     ///Creates a Timer which is not running and has no accumulated time
@@ -37,7 +37,7 @@ class Timer{
       if(running)
         throw std::runtime_error("Timer was already started!");
       running=true;
-      gettimeofday(&start_time, NULL);
+      start_time = clock::now();
     }
 
     ///Stop the timer. Throws an exception if timer was already stopped.
@@ -48,10 +48,10 @@ class Timer{
       if(!running)
         throw std::runtime_error("Timer was already stopped!");
       running=false;
-      timeval end_time;
-      gettimeofday(&end_time, NULL);
 
-      accumulated_time+=timediff(start_time,end_time);
+      const auto end_time = clock::now();
+
+      accumulated_time += timediff(start_time,end_time);
 
       return accumulated_time;
     }
@@ -73,8 +73,7 @@ class Timer{
     double lap(){
       if(!running)
         throw std::runtime_error("Timer was not started!");
-      timeval lap_time;
-      gettimeofday(&lap_time, NULL);
+      const auto lap_time = clock::now();
       return timediff(start_time,lap_time);
     }
 
