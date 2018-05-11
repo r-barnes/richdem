@@ -10,6 +10,7 @@
 #include <vector>
 #include <queue>
 #include <cmath>
+#include <functional>
 
 namespace richdem {
 

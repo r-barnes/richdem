@@ -49,17 +49,17 @@ std::map<std::string, std::string> ProcessMetadata(char **metadata){
     if(equals==std::string::npos){
       RDLOG_WARN<<"Skipping improper metadata string: '"<<metstr<<"'";
       continue;
-}
+    }
     std::string keystr = metstr.substr(0,equals);
     std::string valstr = metstr.substr(equals+1);
     if(ret.count(keystr)>0){
       RDLOG_WARN<<"Duplicate key '"<<keystr<<"' found in metadata. Only latter value will be kept.";
-}
+    }
     ret[keystr] = valstr;
   }
 
   return ret;
-  }
+}
 
 /**
   @brief  Class to hold and manipulate GDAL and native rasters

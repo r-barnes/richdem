@@ -1,0 +1,8 @@
+RichDEM v2.1.0
+==================================
+* Flow accumulation now accepts a weight field. Previously, flow accumulation
+  set the weight field to 1 by default. Now the user is assumed to have 
+  defined the weight field prior to its use.
+* Bugfix: rd.rdarray now accepts the `no_data` argument.
+* Various documentation updates and bug fixes.
+* Added `BreachDepressions()`
