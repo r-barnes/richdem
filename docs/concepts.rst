@@ -190,3 +190,11 @@ them. Thse are:
  - **D4**: The cells are arranged in a regular, rectilnear grid. Each cell
            connects with the cells to its north, south, east, and west (the
            cells up, down, left, and right of it).
+
+In C++, the foregoing topologies are accessed via the :code:`Topology`
+enumeration, similar to the following:
+
+.. code-block:: c++
+
+    FillDepressions<Topology::D8>(dem);
+    FillDepressions<Topology::D4>(dem);
