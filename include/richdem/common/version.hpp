@@ -32,13 +32,13 @@ namespace richdem {
 #endif
 
 ///Richdem vX.X.X
-const std::string program_name = "RichDEM v0.0.0";
+const std::string program_name = "RichDEM v2.2.0";
 
 ///Richard Barnes
 const std::string author_name  = "Richard Barnes";
 
-///Richard Barnes © 2016
-const std::string copyright    = "Richard Barnes © 2016";
+///Richard Barnes © 2018
+const std::string copyright    = "Richard Barnes © 2018";
 
 ///Richdem vX.X.X (hash=GIT HASH, compiled=COMPILATION DATE TIME)
 const std::string program_identifier = program_name + " (hash=" + git_hash + ", compiled="+compilation_datetime + ")";
