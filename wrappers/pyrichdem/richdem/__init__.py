@@ -323,7 +323,8 @@ def SaveGDAL(filename, rda):
 def FillDepressions(
   dem,
   epsilon  = False,
-  in_place = False
+  in_place = False,
+  topology = 'D8'
 ):
   """Fills all depressions in a DEM.
 
@@ -340,6 +341,9 @@ def FillDepressions(
   if type(dem) is not rdarray:
     raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
+  if topology not in ['D8','D4']:
+    raise Exception("Unknown topology!")
+
   if not in_place:
     dem = dem.copy()
 
@@ -348,9 +352,15 @@ def FillDepressions(
   demw = dem.wrap()
 
   if epsilon:
-    _richdem.rdPFepsilon(demw)
+    if topology=='D8':
+      _richdem.rdPFepsilonD8(demw)
+    elif topology=='D4':
+      _richdem.rdPFepsilonD4(demw)
   else:
-    _richdem.rdFillDepressions(demw)
+    if topology=='D8':
+      _richdem.rdFillDepressionsD8(demw)
+    elif topology=='D4':
+      _richdem.rdFillDepressionsD4(demw)
 
   dem.copyFromWrapped(demw)
 
@@ -361,7 +371,8 @@ def FillDepressions(
 
 def BreachDepressions(
   dem,
-  in_place = False
+  in_place = False,
+  topology = 'D8'
 ):
   """Breaches all depressions in a DEM.
 
@@ -376,6 +387,9 @@ def BreachDepressions(
   if type(dem) is not rdarray:
     raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
+  if topology not in ['D8','D4']:
+    raise Exception("Unknown topology!")
+
   if not in_place:
     dem = dem.copy()
 
@@ -383,7 +397,10 @@ def BreachDepressions(
 
   demw = dem.wrap()
 
-  _richdem.rdBreachDepressions(demw)
+  if topology=='D8':
+    _richdem.rdBreachDepressionsD8(demw)
+  elif topology=='D4':
+    _richdem.rdBreachDepressionsD4(demw)
 
   dem.copyFromWrapped(demw)
 

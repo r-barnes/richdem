@@ -176,3 +176,17 @@ whereas in C++, a copy must be made:
     #Fill a copy
     auto demcopy = dem; //TODO: Make sure this syntax is right
     richdem::FillDepressions(demcopy)
+
+
+Topology
+-----------------------------------
+
+RichDEM offers two topologies, though not all functions differentiate between
+them. Thse are:
+
+ - **D8**: The cells are arranged in a regular, rectilinear grid. Each cell
+           connects with each of its neighbouring cells.
+
+ - **D4**: The cells are arranged in a regular, rectilnear grid. Each cell
+           connects with the cells to its north, south, east, and west (the
+           cells up, down, left, and right of it).

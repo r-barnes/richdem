@@ -30,12 +30,15 @@ using namespace richdem;
 
 template<class T>
 void TemplatedWrapper(py::module &m, std::string tname){
-  m.def("rdFillDepressions",     &PriorityFlood_Zhou2016<T>,          "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
-  m.def("rdPFepsilon",           &PriorityFloodEpsilon_Barnes2014<T>, "Fill all depressions with epsilon."); //TODO
+  m.def("rdFillDepressionsD8",   &PriorityFlood_Zhou2016<T>,                "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
+  m.def("rdFillDepressionsD4",   &PriorityFlood_Barnes2014<Topology::D4,T>, "@@depressions/Zhou2016pf.hpp:Zhou2016@@"); //TODO
+  m.def("rdPFepsilonD8",         &PriorityFloodEpsilon_Barnes2014<Topology::D8,T>, "Fill all depressions with epsilon."); //TODO
+  m.def("rdPFepsilonD4",         &PriorityFloodEpsilon_Barnes2014<Topology::D4,T>, "Fill all depressions with epsilon."); //TODO
 
   m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
 
-  m.def("rdBreachDepressions",   &BreachDepressions<T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
+  m.def("rdBreachDepressionsD8",   &BreachDepressions<Topology::D8,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
+  m.def("rdBreachDepressionsD4",   &BreachDepressions<Topology::D4,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
 
   //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
 

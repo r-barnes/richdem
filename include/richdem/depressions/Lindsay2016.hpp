@@ -45,10 +45,15 @@ enum LindsayCellType {
     The correctness of this command is determined by inspection and simple unit 
     tests.
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
   RDLOG_ALG_NAME<<"Lindsay2016: Breach Depressions";
   RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
 
@@ -85,7 +90,7 @@ void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
     //Determine if this is an edge cell, gather information used to determine if
     //it is a pit cell
     elev_t lowest_neighbour = std::numeric_limits<elev_t>::max();    
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       const int nx = x+dx[n];
       const int ny = y+dy[n];
       
@@ -147,7 +152,7 @@ void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
     }
 
     //Looks for neighbours which are either unvisited or pits
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       const int nx = c.x+dx[n];
       const int ny = c.y+dy[n];
 
@@ -218,7 +223,7 @@ void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
     The correctness of this command is determined by inspection and simple unit 
     tests.
 */
-template <Topology topo, class elev_t>
+template <class elev_t>
 void Lindsay2016(
   Array2D<elev_t>  &dem,
   int         mode,
@@ -229,13 +234,8 @@ void Lindsay2016(
 ){
   RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions (EXPERIMENTAL!)";
   RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
-  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
-
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
 
   Array2D<uint32_t>     backlinks(dem, NO_BACK_LINK);
   Array2D<uint8_t>      visited(dem, false);
@@ -270,7 +270,7 @@ void Lindsay2016(
     //Determine if this is an edge cell, gather information used to determine if
     //it is a pit cell
     elev_t lowest_neighbour = std::numeric_limits<elev_t>::max();    
-    for(int n=1;n<=nmax;n++){
+    for(int n=1;n<=8;n++){
       const int nx = x+dx[n];
       const int ny = y+dy[n];
       
@@ -379,7 +379,7 @@ void Lindsay2016(
     }
 
     //Looks for neighbours which are either unvisited or pits
-    for(int n=1;n<=nmax;n++){
+    for(int n=1;n<=8;n++){
       const int nx = c.x+dx[n];
       const int ny = c.y+dy[n];
 

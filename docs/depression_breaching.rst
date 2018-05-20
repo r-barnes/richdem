@@ -70,7 +70,7 @@ Complete Breaching is available via the following commands:
 Language          Command
 ================= ==============================
 Python            `richdem.BreachDepressions()`
-C++               `richdem::BreachDepressions()`
+C++               `richdem::BreachDepressions<Topology>()`
 ================= ==============================
 
 +-------------------------------+--------------------------------------+

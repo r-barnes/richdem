@@ -34,7 +34,7 @@ int PerformAlgorithm(std::string outputname, std::string analysis, Array2D<T> el
     elevations.flipVert();
 
 
-  PriorityFlood_Barnes2014(elevations);
+  PriorityFlood_Barnes2014<Topology::D8>(elevations);
   
   elevations.printStamp(5);
 

@@ -68,7 +68,7 @@ Complete Filling is available via the following commands:
 Language          Command
 ================= ==============================
 Python            `richdem.FillDepressions()`
-C++               `richdem::FillDepression()`
+C++               `richdem::FillDepression<Topology>()`
 ================= ==============================
 
 +----------------+--------------------------------------+
@@ -126,7 +126,7 @@ from the depression's outlet: this is the effect of the epsilon.
 Language          Command
 ================= ============================================
 Python            `richdem.FillDepressions()`
-C++               `richdem::FillDepressionsEpsilon()`
+C++               `richdem::FillDepressionsEpsilon<Topology>()`
 ================= ============================================
 
 +-------------------+--------------------------------------------+

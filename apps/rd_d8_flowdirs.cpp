@@ -13,7 +13,7 @@ template<class T>
 int PerformAlgorithm(std::string output_prefix, std::string analysis, Array2D<T> elevations){
   elevations.loadData();
 
-  PriorityFlood_Barnes2014(elevations);
+  PriorityFlood_Barnes2014<Topology::D8>(elevations);
 
   Array2D<uint8_t> flowdirs;
 

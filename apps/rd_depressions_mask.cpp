@@ -13,7 +13,7 @@ int PerformAlgorithm(std::string output, std::string analysis, Array2D<T> elevat
 
   Array2D<uint8_t> mask(elevation);
 
-  pit_mask(elevation, mask);
+  pit_mask<Topology::D8>(elevation, mask);
 
   mask.saveGDAL(output, analysis);
 

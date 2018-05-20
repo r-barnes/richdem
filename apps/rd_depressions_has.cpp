@@ -11,7 +11,7 @@ template<class T>
 int PerformAlgorithm(std::string analysis, Array2D<T> elevation){
   elevation.loadData();
 
-  if(HasDepressions(elevation))
+  if(HasDepressions<Topology::D8>(elevation))
     std::cout<<"m Depressions found."<<std::endl;
   else
     std::cout<<"m No depressions found."<<std::endl;
