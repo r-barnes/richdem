@@ -334,6 +334,7 @@ def FillDepressions(
                             This ensures that there is always a local gradient.
          in_place (bool):   If True, the DEM is modified in place and there is
                             no return; otherwise, a new, altered DEM is returned.                                     
+         topology (string): A topology indicator
 
      Returns:
          DEM without depressions.
@@ -380,6 +381,7 @@ def BreachDepressions(
          dem     (rdarray): An elevation model
          in_place (bool):   If True, the DEM is modified in place and there is
                             no return; otherwise, a new, altered DEM is returned.                                     
+         topology (string): A topology indicator
 
      Returns:
          DEM without depressions.
