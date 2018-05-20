@@ -19,6 +19,8 @@
 #define _richdem_constants_hpp_
 
 #include <cstdint>
+#include <stdexcept>
+#include <string>
 
 namespace richdem {
 
@@ -36,8 +38,10 @@ const int D8_NORTH = 3;
 const int D8_EAST  = 5;
 const int D8_SOUTH = 7;
 
-const int d4x[9]   = {0, -1,  0, 1, 0}; ///< x offsets of D4 neighbours, from a central cell
-const int d4y[9]   = {0,  0, -1, 0, 1}; ///< y offsets of D4 neighbours, from a central cell
+const int *const d8x = dx;
+const int *const d8y = dy;
+const int d4x[5]   = {0, -1,  0, 1, 0}; ///< x offsets of D4 neighbours, from a central cell
+const int d4y[5]   = {0,  0, -1, 0, 1}; ///< y offsets of D4 neighbours, from a central cell
 const int D4_WEST  = 1;
 const int D4_NORTH = 2;
 const int D4_EAST  = 3;
@@ -81,6 +85,20 @@ const uint8_t GRID_LEFT   = 1; ///< Indicates a tile is on the LHS of a DEM
 const uint8_t GRID_TOP    = 2; ///< Indicates a tile is on the top of a DEM
 const uint8_t GRID_RIGHT  = 4; ///< Indicates a tile is on the RHS of a DEM
 const uint8_t GRID_BOTTOM = 8; ///< Indicates a tile is on the bottom of a DEM
+
+enum class Topology {
+  D8,
+  D4
+};
+
+std::string TopologyName(Topology topo){
+  switch(topo){
+    case Topology::D8: return "D8";
+    case Topology::D4: return "D4";
+    default:
+      throw std::runtime_error("Unrecognised topology!");
+  }
+}
 
 }
 
