@@ -67,19 +67,19 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("FA_OCallaghanD8",        &FA_OCallaghanD8       <T,double>, "TODO");
   m.def("FA_OCallaghanD4",        &FA_OCallaghanD4       <T,double>, "TODO");
 
-  m.def("FM_Tarboton",            &FM_Tarboton            <T>, "TODO");
-  m.def("FM_Dinfinity",           &FM_Dinfinity           <T>, "TODO");
-  m.def("FM_Holmgren",            &FM_Holmgren            <T>, "TODO");
-  m.def("FM_Quinn",               &FM_Quinn               <T>, "TODO");
-  m.def("FM_Freeman",             &FM_Freeman             <T>, "TODO");
-  m.def("FM_FairfieldLeymarieD8", &FM_FairfieldLeymarieD8 <T>, "TODO");
-  m.def("FM_FairfieldLeymarieD4", &FM_FairfieldLeymarieD4 <T>, "TODO");
-  m.def("FM_Rho8",                &FM_Rho8                <T>, "TODO");
-  m.def("FM_Rho4",                &FM_Rho4                <T>, "TODO");
-  m.def("FM_OCallaghanD8",        &FM_OCallaghanD8        <T>, "TODO");
-  m.def("FM_OCallaghanD4",        &FM_OCallaghanD4        <T>, "TODO");
-  m.def("FM_D8",                  &FM_D8                  <T>, "TODO");
-  m.def("FM_D4",                  &FM_D4                  <T>, "TODO");
+  m.def("FM_Tarboton",            &FM_Tarboton          <T>,              "TODO");
+  m.def("FM_Dinfinity",           &FM_Dinfinity         <T>,              "TODO");
+  m.def("FM_Holmgren",            &FM_Holmgren          <T>,              "TODO");
+  m.def("FM_Quinn",               &FM_Quinn             <T>,              "TODO");
+  m.def("FM_Freeman",             &FM_Freeman           <T>,              "TODO");
+  m.def("FM_FairfieldLeymarieD8", &FM_FairfieldLeymarie <Topology::D8,T>, "TODO");
+  m.def("FM_FairfieldLeymarieD4", &FM_FairfieldLeymarie <Topology::D4,T>, "TODO");
+  m.def("FM_Rho8",                &FM_Rho8              <T>,              "TODO");
+  m.def("FM_Rho4",                &FM_Rho4              <T>,              "TODO");
+  m.def("FM_OCallaghanD8",        &FM_OCallaghan        <Topology::D8,T>, "TODO");
+  m.def("FM_OCallaghanD4",        &FM_OCallaghan        <Topology::D4,T>, "TODO");
+  m.def("FM_D8",                  &FM_D8                <T>,              "TODO");
+  m.def("FM_D4",                  &FM_D4                <T>,              "TODO");
 
   py::class_<Array2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
