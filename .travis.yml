@@ -28,3 +28,4 @@ deploy:
   file: /io/wheelhouse/*
   skip_cleanup: true
   overwrite: true
+  python: 3.5
