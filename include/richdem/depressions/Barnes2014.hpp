@@ -40,13 +40,19 @@ namespace richdem {
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 bool HasDepressions(const Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   ProgressBar progress;
 
   RDLOG_ALG_NAME<<"HasDepressions (Based on Priority-Flood)";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -75,7 +81,7 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
     open.pop();
     ++progress;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
@@ -126,7 +132,7 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 void PriorityFlood_Original(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   uint64_t processed_cells = 0;
@@ -136,6 +142,12 @@ void PriorityFlood_Original(Array2D<elev_t> &elevations){
   RDLOG_ALG_NAME<<"A Priority-Flood (Original)";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
   RDLOG_MEM_USE<<"The priority queue will require approximately "
@@ -163,7 +175,7 @@ void PriorityFlood_Original(Array2D<elev_t> &elevations){
     open.pop();
     processed_cells++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
@@ -213,7 +225,7 @@ void PriorityFlood_Original(Array2D<elev_t> &elevations){
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
@@ -223,6 +235,11 @@ void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
 
   RDLOG_ALG_NAME << "Priority-Flood (Improved)";
   RDLOG_CITATION << "Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_CONFIG   <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
 
   RDLOG_PROGRESS << "Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -259,7 +276,7 @@ void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
     }
     processed_cells++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx=c.x+dx[n];
       int ny=c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
@@ -312,7 +329,7 @@ void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
@@ -324,6 +341,12 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
 
   RDLOG_ALG_NAME<<"Priority-Flood+Epsilon";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -361,7 +384,7 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
     }
     processed_cells++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx=c.x+dx[n];
       int ny=c.y+dy[n];
 
@@ -394,31 +417,31 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
 
 
 ///Priority-Flood+Epsilon is not available for integer data types
-template<>
+template<Topology topo>
 void PriorityFloodEpsilon_Barnes2014(Array2D<uint8_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
-template<>
+template<Topology topo>
 void PriorityFloodEpsilon_Barnes2014(Array2D<uint16_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
-template<>
+template<Topology topo>
 void PriorityFloodEpsilon_Barnes2014(Array2D<int16_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
-template<>
+template<Topology topo>
 void PriorityFloodEpsilon_Barnes2014(Array2D<uint32_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
-template<>
+template<Topology topo>
 void PriorityFloodEpsilon_Barnes2014(Array2D<int32_t> &elevations){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
@@ -563,7 +586,7 @@ void PriorityFloodFlowdirs_Barnes2014(const Array2D<elev_t> &elevations, Array2D
     The correctness of this command is determined by inspection. (TODO)
 */
 //TODO: Can I use a smaller data type?
-template <class elev_t>
+template <Topology topo, class elev_t>
 void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
   GridCellZ_pq<elev_t> open;
   std::queue<GridCellZ<elev_t> > pit;
@@ -573,7 +596,12 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
 
   RDLOG_ALG_NAME<<"Pit Mask";
   RDLOG_CITATION<<"Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"; //TODO
-  
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);  
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -612,7 +640,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
     }
     processed_cells++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx = c.x+dx[n];
       int ny = c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
@@ -677,7 +705,7 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template<class elev_t>
+template <Topology topo, class elev_t>
 void PriorityFloodWatersheds_Barnes2014(
   Array2D<elev_t> &elevations, Array2D<int32_t> &labels, bool alter_elevations
 ){
@@ -690,6 +718,12 @@ void PriorityFloodWatersheds_Barnes2014(
 
   RDLOG_ALG_NAME<<"Priority-Flood+Watershed Labels";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);  
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -737,7 +771,7 @@ void PriorityFloodWatersheds_Barnes2014(
     if(labels(c.x,c.y)==labels.noData() && elevations(c.x,c.y)!=elevations.noData())  //Implies a cell without a label which borders the edge of the DEM or a region of no_data
       labels(c.x,c.y)=clabel++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx=c.x+dx[n];
       int ny=c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
@@ -801,7 +835,7 @@ void PriorityFloodWatersheds_Barnes2014(
   @correctness
     The correctness of this command is determined by inspection. (TODO)
 */
-template <class elev_t>
+template <Topology topo, class elev_t>
 void PriorityFlood_Barnes2014_max_dep(
   Array2D<elev_t> &elevations,
   uint64_t max_dep_size
@@ -814,6 +848,12 @@ void PriorityFlood_Barnes2014_max_dep(
 
   RDLOG_ALG_NAME<<"\nPriority-Flood (Improved) Limited to Maximum Depression Area";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -860,7 +900,7 @@ void PriorityFlood_Barnes2014_max_dep(
     }
     processed_cells++;
 
-    for(int n=1;n<=8;n++){
+    for(int n=1;n<=nmax;n++){
       int nx=c.x+dx[n];
       int ny=c.y+dy[n];
       if(!elevations.inGrid(nx,ny)) continue;
