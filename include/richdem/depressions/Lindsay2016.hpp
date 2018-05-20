@@ -45,8 +45,8 @@ enum LindsayCellType {
     The correctness of this command is determined by inspection and simple unit 
     tests.
 */
-template<class T>
-void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
+template <class elev_t>
+void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
   RDLOG_ALG_NAME<<"Lindsay2016: Breach Depressions";
   RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
 
@@ -56,7 +56,7 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
   Array2D<uint8_t>      visited(dem, false);
   Array2D<uint8_t>      pits(dem, false);
   std::vector<uint32_t> flood_array;
-  GridCellZk_pq<T>      pq;
+  GridCellZk_pq<elev_t> pq;
   ProgressBar           progress;
   Timer                 overall;
 
@@ -84,7 +84,7 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
 
     //Determine if this is an edge cell, gather information used to determine if
     //it is a pit cell
-    T lowest_neighbour = std::numeric_limits<T>::max();    
+    elev_t lowest_neighbour = std::numeric_limits<elev_t>::max();    
     for(int n=1;n<=8;n++){
       const int nx = x+dx[n];
       const int ny = y+dy[n];
@@ -131,8 +131,8 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
     //This cell is a pit: let's consider doing some breaching
     if(pits(c.x,c.y)){
       //Locate a cell that is lower than the pit cell, or an edge cell
-      auto cc            = dem.xyToI(c.x,c.y);               //Current cell on the path
-      T    target_height = dem(c.x,c.y);                     //Depth to which the cell currently being considered should be carved
+      auto   cc            = dem.xyToI(c.x,c.y);               //Current cell on the path
+      elev_t target_height = dem(c.x,c.y);                     //Depth to which the cell currently being considered should be carved
 
       //Trace path back to a cell low enough for the path to drain into it, or
       //to an edge of the DEM
@@ -218,14 +218,14 @@ void CompleteBreaching_Lindsay2016(Array2D<T>  &dem){
     The correctness of this command is determined by inspection and simple unit 
     tests.
 */
-template<class T>
+template<class elev_t>
 void Lindsay2016(
-  Array2D<T>  &dem,
+  Array2D<elev_t>  &dem,
   int         mode,
   bool        eps_gradients,
   bool        fill_depressions,
   uint32_t    maxpathlen,
-  T           maxdepth
+  elev_t      maxdepth
 ){
   RDLOG_ALG_NAME<<"Lindsay2016: Breach/Fill Depressions (EXPERIMENTAL!)";
   RDLOG_CITATION<<"Lindsay, J.B., 2016. Efficient hybrid breaching-filling sink removal methods for flow path enforcement in digital elevation models: Efficient Hybrid Sink Removal Methods for Flow Path Enforcement. Hydrological Processes 30, 846--857. doi:10.1002/hyp.10648";
@@ -236,7 +236,7 @@ void Lindsay2016(
   Array2D<uint8_t>      visited(dem, false);
   Array2D<uint8_t>      pits(dem, false);
   std::vector<uint32_t> flood_array;
-  GridCellZk_pq<T>      pq;
+  GridCellZk_pq<elev_t> pq;
   ProgressBar           progress;
   Timer                 overall;
 
@@ -264,7 +264,7 @@ void Lindsay2016(
 
     //Determine if this is an edge cell, gather information used to determine if
     //it is a pit cell
-    T lowest_neighbour = std::numeric_limits<T>::max();    
+    elev_t lowest_neighbour = std::numeric_limits<elev_t>::max();    
     for(int n=1;n<=8;n++){
       const int nx = x+dx[n];
       const int ny = y+dy[n];
@@ -287,7 +287,7 @@ void Lindsay2016(
     //makes the breaching/tunneling procedures work better.
     if(dem(x,y)<lowest_neighbour){
       if(eps_gradients)
-        dem(x,y) = std::nextafter(lowest_neighbour, std::numeric_limits<T>::lowest());
+        dem(x,y) = std::nextafter(lowest_neighbour, std::numeric_limits<elev_t>::lowest());
       else
         dem(x,y) = lowest_neighbour;
     }
@@ -318,9 +318,9 @@ void Lindsay2016(
     if(pits(c.x,c.y)){
       //Locate a cell that is lower than the pit cell, or an edge cell
       uint32_t pathlen       = 0;                                
-      auto     cc            = dem.xyToI(c.x,c.y);               //Current cell on the path
-      T        pathdepth     = std::numeric_limits<T>::lowest(); //Maximum depth found along the path
-      T        target_height = dem(c.x,c.y);                     //Depth to which the cell currently being considered should be carved
+      auto     cc            = dem.xyToI(c.x,c.y);                    //Current cell on the path
+      elev_t   pathdepth     = std::numeric_limits<elev_t>::lowest(); //Maximum depth found along the path
+      elev_t   target_height = dem(c.x,c.y);                          //Depth to which the cell currently being considered should be carved
 
       if(mode==COMPLETE_BREACHING){
         //Trace path back to a cell low enough for the path to drain into it, or
@@ -329,17 +329,17 @@ void Lindsay2016(
           dem(cc)       = target_height;
           cc            = backlinks(cc);                                                  //Follow path back
           if(eps_gradients)
-            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+            target_height = std::nextafter(target_height,std::numeric_limits<elev_t>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
         }
       } else {
         //Trace path back to a cell low enough for the path to drain into it, or
         //to an edge of the DEM
         while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
-          pathdepth     = std::max(pathdepth, (T)(dem(cc)-target_height));                //Figure out deepest breach necessary on path //TODO: CHeck this for issues with int8_t subtraction overflow
+          pathdepth     = std::max(pathdepth, (elev_t)(dem(cc)-target_height));           //Figure out deepest breach necessary on path //TODO: CHeck this for issues with int8_t subtraction overflow
           cc            = backlinks(cc);                                                  //Follow path back
           if(eps_gradients)
-            target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
-          pathlen++;                                                                      //Make path longer
+            target_height = std::nextafter(target_height,std::numeric_limits<elev_t>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+          pathlen++;                                                                             //Make path longer
         }
 
         //Reset current cell address and height to the pit (start of path)
@@ -352,17 +352,17 @@ void Lindsay2016(
             dem(cc)       = target_height;
             cc            = backlinks(cc);                                                    //Follow path back
             if(eps_gradients)
-              target_height = std::nextafter(target_height,std::numeric_limits<T>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
+              target_height = std::nextafter(target_height,std::numeric_limits<elev_t>::lowest()); //Decrease target depth slightly for each cell on path to ensure drainage
           }
         } else if(mode==CONSTRAINED_BREACHING){ //TODO: Refine this with regards to the paper
-          T current_height = dem(cc);
+          elev_t current_height = dem(cc);
           while(cc!=NO_BACK_LINK && dem(cc)>=target_height){
             if(pathdepth<=maxdepth)
               dem(cc) = current_height;
             else
               dem(cc) -= pathdepth;
             if(eps_gradients)
-              current_height = std::nextafter(current_height,std::numeric_limits<T>::lowest());
+              current_height = std::nextafter(current_height,std::numeric_limits<elev_t>::lowest());
             cc             = backlinks(cc);
           }
         }
@@ -405,7 +405,7 @@ void Lindsay2016(
       auto parent = backlinks(f);
       if(dem(f)<=dem(parent)){
         if(eps_gradients)
-          dem(f) = std::nextafter(dem(parent),std::numeric_limits<T>::max());
+          dem(f) = std::nextafter(dem(parent),std::numeric_limits<elev_t>::max());
         else
           dem(f) = dem(parent);
       }
