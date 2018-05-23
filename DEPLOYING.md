@@ -28,7 +28,6 @@ Get RichDEM:
 
     git clone https://github.com/r-barnes/richdem.git
     mv richdem io
-    cd io
 
 Compile compile compile:
 
@@ -93,5 +92,5 @@ Compiling a source distribution
 Uploading packages to PyPI
 ==========================
 
-    twine upload dist/richdem-0.2.0.tar.gz
+    twine upload dist/richdem-0.3.0.tar.gz
     twine upload /z/richdem-0.2.0-cp*-manylinux*
