@@ -6,6 +6,9 @@ mkdir -p /io/wheelhouse
 #Ensure the build directory is empty
 rm -rf /io/wheelhouse/*
 
+#Make a source distribution
+/opt/python/cp36-cp36m/bin/python3.6 /io/wrappers/pyrichdem setup.py sdist -d /io/wheelhouse/
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install -r /io/wrappers/pyrichdem/requirements.txt
