@@ -1,4 +1,4 @@
-#if [[ "$TRAVIS_TAG" == v* ]]; then
+if [[ "$TRAVIS_TAG" == v* ]]; then
   echo "Installing deployment requirements."
   pip install twine wheel
   echo "Uploading to PyPI."
@@ -11,8 +11,8 @@
   #   echo "Creating a binary wheel distribution."
   #   python setup.py bdist_wheel
   # fi
-# else
-#   echo "Not deploying."
-#   echo "Tag is... $TRAVIS_TAG"
-#   echo "Branch name is... $TRAVIS_BRANCH"
-# fi
+else
+  echo "Not deploying."
+  echo "Tag is... $TRAVIS_TAG"
+  echo "Branch name is... $TRAVIS_BRANCH"
+fi
