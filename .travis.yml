@@ -18,7 +18,7 @@ install:
 script:
 - pwd
 - ls
-- docker run --rm -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD .ci/travis/build-wheels.sh
+- docker run --rm -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/.ci/travis/build-wheels.sh
 - ls wheelhouse/
 after_success:
 - pwd

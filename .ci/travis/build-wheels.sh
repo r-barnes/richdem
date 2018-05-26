@@ -7,7 +7,7 @@ mkdir -p /io/wheelhouse
 rm -rf /io/wheelhouse/*
 
 #Make a source distribution
-/opt/python/cp36-cp36m/bin/python3.6 /io/wrappers/pyrichdem setup.py sdist -d /io/wheelhouse/
+/opt/python/cp36-cp36m/bin/python3.6 /io/wrappers/pyrichdem/setup.py sdist -d /io/wheelhouse/
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
