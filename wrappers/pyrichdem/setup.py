@@ -1,4 +1,6 @@
+from collections import defaultdict
 import setuptools
+from setuptools.command.build_ext import build_ext as _build_ext
 import glob
 import datetime
 import subprocess
@@ -6,6 +8,24 @@ import re
 
 RICHDEM_COMPILE_TIME = None
 RICHDEM_GIT_HASH     = None
+
+#Compiler specific arguments
+BUILD_ARGS = {
+  'msvc': ['-std=c++11','-g','-fvisibility=hidden','-O3'],
+  'gcc':  ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas'],
+  'unix': ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas']
+}
+
+#Magic that hooks compiler specific arguments up with the compiler
+class build_ext_compiler_check(_build_ext):
+  def build_extensions(self):
+    compiler = self.compiler.compiler_type
+    print('COMPILER',compiler)
+    args     = BUILD_ARGS[compiler]
+    for ext in self.extensions:
+        ext.extra_compile_args = args
+    print('COMPILER ARGUMENTS',ext.extra_compile_args)
+    _build_ext.build_extensions(self)
 
 try:
   fin = open('lib/richdem/version.txt','r').readlines()
@@ -40,10 +60,9 @@ ext_modules = [
   setuptools.Extension(
     "_richdem",
     glob.glob('src/*.cpp') + ['lib/richdem/common/random.cpp', 'lib/richdem/richdem.cpp'],
-    include_dirs       = ['lib/'],
-    language           = 'c++',
-    extra_compile_args = ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas'], #Figure out if we can do '-flto'
-    define_macros      = [
+    include_dirs  = ['lib/'],
+    language      = 'c++',
+    define_macros = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
       ('RICHDEM_COMPILE_TIME',   RICHDEM_COMPILE_TIME),
       ('RICHDEM_GIT_HASH',       RICHDEM_GIT_HASH    ),
@@ -81,10 +100,11 @@ setuptools.setup(
     'rd_info=richdem.cli:RdInfo',
     'rd_compare=richdem.cli:RdCompare'
   ]},
-  ext_modules       = ext_modules,
-  keywords          = 'GIS terrain hydrology geomorphology raster',
-  #packages         = find_packages(exclude=['contrib', 'docs', 'tests*']),
-  install_requires  = [
+  ext_modules      = ext_modules,
+  cmdclass         = {'build_ext': build_ext_compiler_check},
+  keywords         = 'GIS terrain hydrology geomorphology raster',
+  #packages        = find_packages(exclude=['contrib', 'docs', 'tests*']),
+  install_requires = [
     "numpy>=1.7,<2; python_version > '3.4' or python_version < '3.0'",
     "numpy>=1.7,<1.12; python_version < '3.4' and python_version > '3.0'"
   ],
