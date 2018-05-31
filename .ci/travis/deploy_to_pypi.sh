@@ -1,4 +1,4 @@
-if [[ "$TRAVIS_TAG" == v* ]]; then
+# if [[ "$TRAVIS_TAG" == v* ]]; then
   echo "Testing PW=$bob"
   echo "Uploading to PyPI."
   twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*
@@ -10,8 +10,8 @@ if [[ "$TRAVIS_TAG" == v* ]]; then
   #   echo "Creating a binary wheel distribution."
   #   python setup.py bdist_wheel
   # fi
-else
-  echo "Not deploying."
-  echo "Tag is... $TRAVIS_TAG"
-  echo "Branch name is... $TRAVIS_BRANCH"
-fi
+# else
+#   echo "Not deploying."
+#   echo "Tag is... $TRAVIS_TAG"
+#   echo "Branch name is... $TRAVIS_BRANCH"
+# fi
