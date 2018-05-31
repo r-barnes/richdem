@@ -1,5 +1,6 @@
 if [[ "$TRAVIS_TAG" == v* ]]; then
   echo "Installing deployment requirements."
+  pip install pyOpenSSL ndg-httpsclient pyasn1 --user
   pip install twine wheel --user
   echo "Uploading to PyPI."
   twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*
