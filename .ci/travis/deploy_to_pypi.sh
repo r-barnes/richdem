@@ -1,4 +1,5 @@
 if [[ "$TRAVIS_TAG" == v* ]]; then
+  echo "Testing PW=$bob"
   echo "Uploading to PyPI."
   twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*
   echo "Done."
