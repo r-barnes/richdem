@@ -1,6 +1,6 @@
 if [[ "$TRAVIS_TAG" == v* ]]; then
   echo "Installing deployment requirements."
-  pip install twine wheel
+  pip install twine wheel --user
   echo "Uploading to PyPI."
   twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*
   echo "Done."
