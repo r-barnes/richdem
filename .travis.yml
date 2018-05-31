@@ -16,6 +16,8 @@ matrix:
     - docker
     env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686 PRE_CMD=linux32
 install:
+- pip install pyOpenSSL ndg-httpsclient pyasn1
+- pip install twine wheel
 - docker pull $DOCKER_IMAGE
 script:
 - pwd
