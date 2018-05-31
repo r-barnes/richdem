@@ -83,7 +83,7 @@ It can flood or breach depressions, as well as calculate flow accumulation, slop
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.3.0',
+  version           = '0.3.1',
   description       = 'High-Performance Terrain Analysis',
   long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
