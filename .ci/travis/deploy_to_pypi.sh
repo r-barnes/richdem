@@ -2,7 +2,7 @@
   echo "Testing PW=$bob"
   echo "Uploading to PyPI."
   twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*manylinux*whl
-  twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*.tar.gz
+  twine upload --skip-existing -u rbarnes -p$PYPI_PASSWORD wheelhouse/*.tar.gz
   echo "Done."
   # if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
   #   echo "Creating a source distribution."
