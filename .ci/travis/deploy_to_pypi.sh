@@ -1,7 +1,7 @@
 # if [[ "$TRAVIS_TAG" == v* ]]; then
   echo "Testing PW=$bob"
   echo "Uploading to PyPI."
-  twine upload -u rbarnes -p$PYPI_PASSWORD wheelhouse/*manylinux*whl
+  twine upload --skip-existing -u rbarnes -p$PYPI_PASSWORD wheelhouse/*manylinux*whl
   twine upload --skip-existing -u rbarnes -p$PYPI_PASSWORD wheelhouse/*.tar.gz
   echo "Done."
   # if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
