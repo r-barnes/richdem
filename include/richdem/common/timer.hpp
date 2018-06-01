@@ -26,7 +26,7 @@ class Timer{
 
     ///Number of (fractional) seconds between two time objects
     double timediff(const std::chrono::time_point<clock> &start, const std::chrono::time_point<clock> &end){
-      return static_cast<unsigned long int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+      return std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
     }
   public:
     ///Creates a Timer which is not running and has no accumulated time
