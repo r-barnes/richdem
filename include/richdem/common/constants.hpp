@@ -52,9 +52,6 @@ const int D4_SOUTH = 4;
 ///neighbour to the central cell.
 const int d8_inverse[9] = {0,5,6,7,8,1,2,3,4};
 
-///Arrows indicating flow directions
-const wchar_t fdarrows[9] = {L'·',L'←',L'↖',L'↑',L'↗',L'→',L'↘',L'↓',L'↙'};
-
 ///sqrt(2), used to generate distances from a central cell to its neighbours
 const double SQRT2 = 1.414213562373095048801688724209698078569671875376948;
 

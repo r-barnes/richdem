@@ -1,6 +1,9 @@
 *Switch Zhou 2016 to use nshift instead of nToI
 *Update internal citations in Parallel D8 and Parallel PF
 
+*Build for Conda:
+  * https://conda.io/docs/user-guide/tasks/build-packages/recipe.html
+  * https://conda-forge.org/
 
 *Implement Peckham flow metric
 *Add LICENSE notices to the top of source files

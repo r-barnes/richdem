@@ -27,32 +27,20 @@ class build_ext_compiler_check(_build_ext):
     print('COMPILER ARGUMENTS',ext.extra_compile_args)
     _build_ext.build_extensions(self)
 
-try:
-  fin = open('lib/richdem/version.txt','r').readlines()
-  fin = [x.strip().split("=") for x in fin]
-  for x in fin:
-    if x[0]=='hash':
-      RICHDEM_GIT_HASH = '"' + x[1] + '"'
-    elif x[0]=='date':
-      RICHDEM_COMPILE_TIME = '"' + x[1] + '"'
-except:
-  print("Warning! Could not find RichDEM version... falling back on git.")
-  pass
-
 if RICHDEM_GIT_HASH is None:
   try:
     shash = subprocess.Popen(["git log --pretty=format:'%h' -n 1"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
     sdate = subprocess.Popen(["git log -1 --pretty='%ci'"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
     if re.match(r'^[0-9a-z]+$', shash) and re.match(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.*$', sdate):
-      RICHDEM_COMPILE_TIME = '"' + sdate + '"'
-      RICHDEM_GIT_HASH     = '"' + shash + '"'
+      RICHDEM_COMPILE_TIME = sdate
+      RICHDEM_GIT_HASH     = shash
   except:
     print("Warning! Could not find RichDEM version. Software will still work, but reproducibility will be compromised.")
     pass
 
 if RICHDEM_GIT_HASH is None:
-  RICHDEM_COMPILE_TIME = "\"Unknown\""
-  RICHDEM_GIT_HASH     = "\"Unknown\""
+  RICHDEM_COMPILE_TIME = 'Unknown'
+  RICHDEM_GIT_HASH     = 'Unknown'
 
 print("Using RichDEM hash={0}, time={1}".format(RICHDEM_GIT_HASH, RICHDEM_COMPILE_TIME))
 
@@ -64,8 +52,8 @@ ext_modules = [
     language      = 'c++',
     define_macros = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
-      ('RICHDEM_COMPILE_TIME',   RICHDEM_COMPILE_TIME),
-      ('RICHDEM_GIT_HASH',       RICHDEM_GIT_HASH    ),
+      ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
+      ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
       ('RICHDEM_LOGGING',        None                )
     ]
   )
@@ -83,7 +71,7 @@ It can flood or breach depressions, as well as calculate flow accumulation, slop
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.3.0',
+  version           = '0.3.2',
   description       = 'High-Performance Terrain Analysis',
   long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
