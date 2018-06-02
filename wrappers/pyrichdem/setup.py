@@ -27,18 +27,6 @@ class build_ext_compiler_check(_build_ext):
     print('COMPILER ARGUMENTS',ext.extra_compile_args)
     _build_ext.build_extensions(self)
 
-try:
-  fin = open('lib/richdem/version.txt','r').readlines()
-  fin = [x.strip().split("=") for x in fin]
-  for x in fin:
-    if x[0]=='hash':
-      RICHDEM_GIT_HASH = '"' + x[1] + '"'
-    elif x[0]=='date':
-      RICHDEM_COMPILE_TIME = '"' + x[1] + '"'
-except:
-  print("Warning! Could not find RichDEM version... falling back on git.")
-  pass
-
 if RICHDEM_GIT_HASH is None:
   try:
     shash = subprocess.Popen(["git log --pretty=format:'%h' -n 1"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
