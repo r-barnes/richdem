@@ -52,8 +52,8 @@ ext_modules = [
     language      = 'c++',
     define_macros = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
-      ('RICHDEM_COMPILE_TIME',   '"'+RICHDEM_COMPILE_TIME+'"'),
-      ('RICHDEM_GIT_HASH',       '"'+RICHDEM_GIT_HASH+'"'    ),
+      ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
+      ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
       ('RICHDEM_LOGGING',        None                )
     ]
   )
