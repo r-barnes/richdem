@@ -1,3 +1,15 @@
+2018-06-03 (2.2.7)
+==================
+
+Fixes some compilation issues for Windows caused by MSVC not having M_PI by default.
+
+
+2018-06-02 (2.2.6)
+==================
+
+Fixes some compilation issues for Windows.
+
+
 2018-05-31 (2.2.5)
 ==================
 
