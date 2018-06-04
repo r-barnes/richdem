@@ -7,6 +7,8 @@
 #include "richdem/common/Array3D.hpp"
 #include "richdem/common/ProgressBar.hpp"
 
+#include <cmath>
+
 namespace richdem {
 
 template<class elev_t>

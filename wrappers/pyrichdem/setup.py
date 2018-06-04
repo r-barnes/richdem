@@ -54,7 +54,8 @@ ext_modules = [
       ('DOCTEST_CONFIG_DISABLE', None                ),
       ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
       ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
-      ('RICHDEM_LOGGING',        None                )
+      ('RICHDEM_LOGGING',        None                ),
+      ('_USE_MATH_DEFINES',      None) #To ensure that `#include <cmath>` imports `M_PI` in MSVC
     ]
   )
 ]
