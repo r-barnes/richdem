@@ -3,6 +3,7 @@ RichDEM
 
 [![ReadTheDocs](https://readthedocs.org/projects/richdem/badge/?version=latest)](https://richdem.readthedocs.io/)
 [![Travis](https://travis-ci.org/r-barnes/richdem.svg?branch=master)](https://travis-ci.org/r-barnes/richdem)
+[![DOI](https://zenodo.org/badge/7469158.svg)](https://zenodo.org/badge/latestdoi/7469158)
 
 Author: Richard Barnes (rbarnes@umn.edu)
 
