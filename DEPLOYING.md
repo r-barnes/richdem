@@ -94,3 +94,10 @@ Uploading packages to PyPI
 
     twine upload dist/richdem-0.3.0.tar.gz
     twine upload /z/richdem-0.2.0-cp*-manylinux*
+
+
+
+Create a Zenodo Release
+==========================
+
+Go [here](https://github.com/r-barnes/richdem/releases/new) and fill out the form for the new tag.
