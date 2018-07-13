@@ -109,9 +109,11 @@ def RdInfo():
 Parameters:
 rda      -- A dataset
 """)
-  parser.add_argument('rda',              type=str,                help='Elevation model')
-  parser.add_argument('-s','--show',      action='store_true',     help='Show the model')
-  parser.add_argument('--cmap',           type=str, default='jet', help='Colormap (Default: jet)')
+  parser.add_argument('rda',              type=str,                  help='Elevation model')
+  parser.add_argument('-s','--show',      action='store_true',       help='Show the model')
+  parser.add_argument('--cmap',           type=str,   default='jet', help='Colormap (Default: jet)')
+  parser.add_argument('--vmin',           type=float, default=None,  help='Colormap (Default: jet)')
+  parser.add_argument('--vmax',           type=float, default=None,  help='Colormap (Default: jet)')
   args = parser.parse_args()
 
   rda = rd.LoadGDAL(args.rda)
@@ -139,7 +141,7 @@ rda      -- A dataset
   print('-------------------')
 
   if args.show:
-    rd.rdShow(rda, cmap=args.cmap)
+    rd.rdShow(rda, cmap=args.cmap, vmin=args.vmin, vmax=args.vmax)
 
 def RdCompare():
   parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter, description="""RichDEM Dataset Comparison
