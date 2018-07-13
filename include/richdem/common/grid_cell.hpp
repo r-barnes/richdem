@@ -34,6 +34,7 @@ class GridCellZ : public GridCell {
   GridCellZ(int x, int y, elev_t z): GridCell(x,y), z(z) {}
   GridCellZ(){}
   //TODO: Add tests of isnan
+  bool isnan() const { return false; }
   bool operator> (const GridCellZ<elev_t>& a) const { return z>a.z; }
 };
 
@@ -45,6 +46,7 @@ class GridCellZ<double> : public GridCell {
   GridCellZ(int x, int y, double z): GridCell(x,y), z(z) {}
   GridCellZ(){}
   //TODO: Add tests of isnan
+  bool isnan() const { return std::isnan(z); }
   bool operator< (const GridCellZ<double>& a) const { return ( std::isnan(z) && !std::isnan(a.z)) || z< a.z; }
   bool operator> (const GridCellZ<double>& a) const { return (!std::isnan(z) &&  std::isnan(a.z)) || z> a.z; }
   bool operator>=(const GridCellZ<double>& a) const { return ( std::isnan(z) &&  std::isnan(a.z)) || (!std::isnan(z) &&  std::isnan(a.z)) || z>=a.z; }
@@ -62,6 +64,7 @@ class GridCellZ<float>: public GridCell {
   GridCellZ(){}
   //TODO: Add tests of isnan
   ///Compare cells based on elevation. (TODO: Distribute)
+  bool isnan() const { return std::isnan(z); }
   bool operator< (const GridCellZ<float>& a) const { return ( std::isnan(z) && !std::isnan(a.z)) || z< a.z; }
   bool operator> (const GridCellZ<float>& a) const { return (!std::isnan(z) &&  std::isnan(a.z)) || z> a.z; }
   bool operator>=(const GridCellZ<float>& a) const { return ( std::isnan(z) &&  std::isnan(a.z)) || (!std::isnan(z) &&  std::isnan(a.z)) || z>=a.z; }
@@ -79,8 +82,8 @@ class GridCellZk : public GridCellZ<elev_t> {
     GridCellZk(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
     GridCellZk(){}
     //TODO: Is it possible to do this relying on inheriting the std::isnan checks from the GridCellZ specialization?
-    bool operator< (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z< a.z || ( std::isnan(GridCellZ<elev_t>::z) && !std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k<a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k<a.k); }
-    bool operator> (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z> a.z || (!std::isnan(GridCellZ<elev_t>::z) &&  std::isnan(a.z)) || (GridCellZ<elev_t>::z==a.z && k>a.k) || (std::isnan(GridCellZ<elev_t>::z) && std::isnan(a.z) && k>a.k); }
+    bool operator< (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z< a.z || ( GridCellZ<elev_t>::isnan() && !a.isnan()) || (GridCellZ<elev_t>::z==a.z && k<a.k) || (GridCellZ<elev_t>::isnan() && a.isnan() && k<a.k); }
+    bool operator> (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z> a.z || (!GridCellZ<elev_t>::isnan() &&  a.isnan()) || (GridCellZ<elev_t>::z==a.z && k>a.k) || (GridCellZ<elev_t>::isnan() && a.isnan() && k>a.k); }
 };
 
 

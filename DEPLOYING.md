@@ -1,3 +1,8 @@
+1. Update CHANGELOG.md
+2. Bump version in `include/richdem/common/version.hpp`
+3. Bump version in `wrappers/pyrichdem/setup.py`
+
+
 Setting up a Docker environment
 ===============================
 

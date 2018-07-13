@@ -32,7 +32,7 @@ namespace richdem {
 #endif
 
 ///Richdem vX.X.X
-const std::string program_name = "RichDEM v2.2.0";
+const std::string program_name = "RichDEM v2.2.9";
 
 ///Richard Barnes
 const std::string author_name  = "Richard Barnes";

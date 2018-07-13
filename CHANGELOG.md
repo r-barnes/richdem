@@ -1,3 +1,9 @@
+2018-07-13 (2.2.9)
+==================
+
+Changed `isnan()` logic in `grid_cell.hpp` to facilitate MSVC compilation.
+
+
 2018-06-21 (2.2.8)
 ==================
 
