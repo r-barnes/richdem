@@ -1,6 +1,10 @@
 1. Update CHANGELOG.md
 2. Bump version in `include/richdem/common/version.hpp`
 3. Bump version in `wrappers/pyrichdem/setup.py`
+4. git commit
+5. git tag
+6. git push
+7. git push --tags
 
 
 Setting up a Docker environment
