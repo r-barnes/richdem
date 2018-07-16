@@ -4,7 +4,7 @@
 
   RichDEM uses the following D8 neighbourhood. This is used by the dx[] and dy[]
   variables, among many others.
-  
+
       234
       105
       876
@@ -88,7 +88,7 @@ enum class Topology {
   D4
 };
 
-std::string TopologyName(Topology topo){
+inline std::string TopologyName(Topology topo){
   switch(topo){
     case Topology::D8: return "D8";
     case Topology::D4: return "D4";

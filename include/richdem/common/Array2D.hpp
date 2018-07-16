@@ -39,7 +39,7 @@ namespace richdem {
 
 template<typename> class Array3D;
 
-std::map<std::string, std::string> ProcessMetadata(char **metadata){
+inline std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
   if(metadata==NULL)
     return ret;
@@ -94,7 +94,7 @@ class Array2D {
   std::string projection;           ///< Projection of the raster
   std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
 
-  //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
+  //Using uint32_t for i-addressing allows for rasters of ~65535^2. These
   //dimensions fit easily within an int32_t xy-address.
   typedef int32_t  xy_t;            ///< xy-addressing data type
   typedef uint32_t i_t;             ///< i-addressing data type
@@ -122,7 +122,7 @@ class Array2D {
   xy_t view_xoff = 0;
   xy_t view_yoff = 0;
   ///@}
-  
+
   ///If TRUE, loadData() loads data from the cache assuming  the Native format.
   ///Otherwise, it assumes it is loading from a GDAL file.
   bool from_cache;
@@ -381,9 +381,9 @@ class Array2D {
   }
 
   /**
-    @brief Loads data from disk into RAM. 
+    @brief Loads data from disk into RAM.
 
-    If dumpData() has been previously called, data is loaded from the cache; 
+    If dumpData() has been previously called, data is loaded from the cache;
     otherwise, it is loaded from a GDAL file. No data is loaded if data is
     already present in RAM.
   */
@@ -747,7 +747,7 @@ class Array2D {
 
     @param[in]   width0    New width of the raster
     @param[in]   height0   New height of the raster
-    @param[in]   val0      Value to set all the cells to. Defaults to the 
+    @param[in]   val0      Value to set all the cells to. Defaults to the
                           raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
@@ -790,7 +790,7 @@ class Array2D {
     RDLOG_DEBUG<<"Array2D::expand(width,height,val)";
 
     if(new_width==view_width && new_height==view_height)
-      return;    
+      return;
     if(!owned())
       throw std::runtime_error("RichDEM can only expand memory it owns!");
 
@@ -798,7 +798,7 @@ class Array2D {
       throw std::runtime_error("expand(): new_width<view_width");
     if(new_height<view_height)
       throw std::runtime_error("expand(): new_height<view_height");
-    
+
     xy_t old_width  = width();
     xy_t old_height = height();
 
@@ -895,8 +895,8 @@ class Array2D {
 
     @return A vector containing a copy of the top row of the raster
   */
-  std::vector<T> topRow() const {  
-    return getRowData(0);  
+  std::vector<T> topRow() const {
+    return getRowData(0);
   }
 
   /**
@@ -915,8 +915,8 @@ class Array2D {
 
     @return A vector containing a copy of the left column of the raster
   */
-  std::vector<T> leftColumn() const { 
-    return getColData(0); 
+  std::vector<T> leftColumn() const {
+    return getColData(0);
   }
 
   /**
@@ -926,7 +926,7 @@ class Array2D {
 
     @return A vector containing a copy of the right column of the raster
   */
-  std::vector<T> rightColumn() const { 
+  std::vector<T> rightColumn() const {
     return getColData(view_width-1);
   }
 
@@ -1089,7 +1089,7 @@ class Array2D {
 
     Since algorithms may have to flip rasters horizontally or vertically before
     manipulating them, it is important that all algorithms work on data in the
-    same orientation. This method, used in testing, helps a user ensure that 
+    same orientation. This method, used in testing, helps a user ensure that
     their algorithm is orientating data correctly.
 
     @param[in]  size   Output stamp will be size x size
