@@ -5,6 +5,9 @@
 5. git tag
 6. git push
 7. git push --tags
+8. Create a Python source distribution
+  - python3 setup.py sdist
+  - twine upload dist/richdem-0.3.0.tar.gz
 
 
 Setting up a Docker environment
