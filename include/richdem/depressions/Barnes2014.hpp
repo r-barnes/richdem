@@ -478,7 +478,7 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<int32_t> &elevations){
 */
 template <class elev_t>
 void PriorityFloodFlowdirs_Barnes2014(const Array2D<elev_t> &elevations, Array2D<d8_flowdir_t> &flowdirs){
-  GridCellZk_pq<elev_t> open;
+  GridCellZk_low_pq<elev_t> open;
   uint64_t processed_cells = 0;
   ProgressBar progress;
 

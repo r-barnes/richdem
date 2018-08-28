@@ -74,18 +74,27 @@ class GridCellZ<float>: public GridCell {
 };
 
 
-///@brief Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; used by \ref GridCellZk_pq.
+///@brief Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; used by \ref GridCellZk_pq to return cells in order of elevation from lowest to highest. If elevations are equal then the cell added first is popped from the priority queue.
 template<class elev_t>
-class GridCellZk : public GridCellZ<elev_t> {
+class GridCellZk_low : public GridCellZ<elev_t> {
   public:
     int k;           ///< Used to store an integer to make sorting stable
-    GridCellZk(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
-    GridCellZk(){}
+    GridCellZk_low(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
+    GridCellZk_low(){}
     //TODO: Is it possible to do this relying on inheriting the std::isnan checks from the GridCellZ specialization?
-    bool operator< (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z< a.z || ( GridCellZ<elev_t>::isnan() && !a.isnan()) || (GridCellZ<elev_t>::z==a.z && k<a.k) || (GridCellZ<elev_t>::isnan() && a.isnan() && k<a.k); }
-    bool operator> (const GridCellZk<elev_t>& a) const { return GridCellZ<elev_t>::z> a.z || (!GridCellZ<elev_t>::isnan() &&  a.isnan()) || (GridCellZ<elev_t>::z==a.z && k>a.k) || (GridCellZ<elev_t>::isnan() && a.isnan() && k>a.k); }
+    bool operator> (const GridCellZk_low<elev_t>& a) const { return GridCellZk_low<elev_t>::z> a.z || (!GridCellZk_low<elev_t>::isnan() &&  a.isnan()) || (GridCellZk_low<elev_t>::z==a.z && k>a.k) || (GridCellZk_low<elev_t>::isnan() && a.isnan() && k>a.k); }
 };
 
+///@brief Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; used by \ref GridCellZk_pq to return cells in order of elevation from lowest to highest. If elevations are equal then the cell added last is popped from the priority queue.
+template<class elev_t>
+class GridCellZk_high : public GridCellZ<elev_t> {
+  public:
+    int k;           ///< Used to store an integer to make sorting stable
+    GridCellZk_high(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
+    GridCellZk_high(){}
+    //TODO: Is it possible to do this relying on inheriting the std::isnan checks from the GridCellZ specialization?
+    bool operator> (const GridCellZk_high<elev_t>& a) const { return GridCellZk_high<elev_t>::z> a.z || (!GridCellZk_high<elev_t>::isnan() &&  a.isnan()) || (GridCellZk_high<elev_t>::z==a.z && k<a.k) || (GridCellZk_high<elev_t>::isnan() && a.isnan() && k<a.k); }
+};
 
 
 
@@ -95,17 +104,31 @@ template<typename elev_t>
 using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > >;
 
 
-///@brief A priority queue of GridCellZk, sorted by ascending height or, if heights are equal, by the order of insertion.
+///@brief A priority queue of GridCellZk, sorted by ascending height or, if heights are equal, by the order of insertion. "high" means that cells with a higher insertion number (inserted later) are returned first.
 template<typename T>
-class GridCellZk_pq : public std::priority_queue<GridCellZk<T>, std::vector< GridCellZk<T> >, std::greater<GridCellZk<T> > > {
+class GridCellZk_high_pq : public std::priority_queue<GridCellZk_high<T>, std::vector< GridCellZk_high<T> >, std::greater<GridCellZk_high<T> > > {
  private:
   uint64_t count = 0;
  public:
   void push(){ //TODO: Is there a way to stop compilation, but only if this function is used
-    throw std::runtime_error("push() to GridCellZk_pq is not allowed!");
+    throw std::runtime_error("push() to GridCellZk_high_pq is not allowed!");
   }
   void emplace(int x, int y, T z){
-    std::priority_queue<GridCellZk<T>, std::vector< GridCellZk<T> >, std::greater<GridCellZk<T> > >::emplace(x,y,z,++count);
+    std::priority_queue<GridCellZk_high<T>, std::vector< GridCellZk_high<T> >, std::greater<GridCellZk_high<T> > >::emplace(x,y,z,++count);
+  }
+};
+
+///@brief A priority queue of GridCellZk, sorted by ascending height or, if heights are equal, by the order of insertion. "low" means that cells with a lower insertion number (inserted earlier) are returned first.
+template<typename T>
+class GridCellZk_low_pq : public std::priority_queue<GridCellZk_low<T>, std::vector< GridCellZk_low<T> >, std::greater<GridCellZk_low<T> > > {
+ private:
+  uint64_t count = 0;
+ public:
+  void push(){ //TODO: Is there a way to stop compilation, but only if this function is used
+    throw std::runtime_error("push() to GridCellZk_low_pq is not allowed!");
+  }
+  void emplace(int x, int y, T z){
+    std::priority_queue<GridCellZk_low<T>, std::vector< GridCellZk_low<T> >, std::greater<GridCellZk_low<T> > >::emplace(x,y,z,++count);
   }
 };
 
