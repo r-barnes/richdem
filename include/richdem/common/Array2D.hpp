@@ -518,6 +518,7 @@ class Array2D {
     @return Returns the index coordinate i of (x,y)
   */
   inline i_t xyToI(xy_t x, xy_t y) const {
+    assert(0<=x && x<view_width && 0<=y && y<view_height);
     return (i_t)y*(i_t)view_width+(i_t)x;
   }
 
