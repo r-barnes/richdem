@@ -4,7 +4,7 @@
 
   RichDEM uses the following D8 neighbourhood. This is used by the dx[] and dy[]
   variables, among many others.
-
+  
       234
       105
       876

@@ -1,6 +1,6 @@
 /**
   @file
-  @brief Defines RichDEM version, git hash, compilation time. Used for
+  @brief Defines RichDEM version, git hash, compilation time. Used for 
          program/app headers and for processing history entries.
 
   Richard Barnes (rbarnes@umn.edu), 2015
