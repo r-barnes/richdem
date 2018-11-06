@@ -39,7 +39,7 @@ namespace richdem {
 
 template<typename> class Array3D;
 
-std::map<std::string, std::string> ProcessMetadata(char **metadata){
+inline std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
   if(metadata==NULL)
     return ret;

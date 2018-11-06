@@ -88,7 +88,7 @@ enum class Topology {
   D4
 };
 
-std::string TopologyName(Topology topo){
+inline std::string TopologyName(Topology topo){
   switch(topo){
     case Topology::D8: return "D8";
     case Topology::D4: return "D4";
