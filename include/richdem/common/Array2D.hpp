@@ -416,6 +416,8 @@ class Array2D {
   ///Returns a pointer to the internal data array
   T* getData() { return data.data(); }
 
+  const T* getData() const { return data.data(); }
+
   ///@brief Number of cells in the DEM
   i_t size() const { return view_width*view_height; }
 
