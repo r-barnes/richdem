@@ -96,6 +96,17 @@ class ManagedVector {
     return *this;
   }
 
+  //TODO: Seems like the foregoing should be sufficient, but it throws errors
+  //not to have the following
+  //Copy assignment operator
+  ManagedVector<T>& operator=(const ManagedVector<T>& other){
+    //std::cerr<<"ManagedVector copy assignment of "<<((void*)other._data.get())<<std::endl;
+    ManagedVector<T> tmp(other);  // re-use copy-constructor
+    *this = std::move(tmp);       // re-use move-assignment
+    return *this;
+  }
+
+
   /** Move assignment operator */
   template<class U>
   ManagedVector<T>& operator=(ManagedVector<U>&& other) noexcept {
