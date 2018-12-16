@@ -98,7 +98,6 @@ class GridCellZk_high : public GridCellZ<elev_t> {
 
 
 
-
 ///@brief A priority queue of GridCellZ, sorted by ascending height
 template<typename elev_t>
 using GridCellZ_pq = std::priority_queue<GridCellZ<elev_t>, std::vector<GridCellZ<elev_t> >, std::greater<GridCellZ<elev_t> > >;
@@ -110,9 +109,7 @@ class GridCellZk_high_pq : public std::priority_queue<GridCellZk_high<T>, std::v
  private:
   uint64_t count = 0;
  public:
-  void push(){ //TODO: Is there a way to stop compilation, but only if this function is used
-    throw std::runtime_error("push() to GridCellZk_high_pq is not allowed!");
-  }
+  void push() = delete;
   void emplace(int x, int y, T z){
     std::priority_queue<GridCellZk_high<T>, std::vector< GridCellZk_high<T> >, std::greater<GridCellZk_high<T> > >::emplace(x,y,z,++count);
   }
@@ -124,9 +121,7 @@ class GridCellZk_low_pq : public std::priority_queue<GridCellZk_low<T>, std::vec
  private:
   uint64_t count = 0;
  public:
-  void push(){ //TODO: Is there a way to stop compilation, but only if this function is used
-    throw std::runtime_error("push() to GridCellZk_low_pq is not allowed!");
-  }
+  void push() = delete;
   void emplace(int x, int y, T z){
     std::priority_queue<GridCellZk_low<T>, std::vector< GridCellZk_low<T> >, std::greater<GridCellZk_low<T> > >::emplace(x,y,z,++count);
   }
