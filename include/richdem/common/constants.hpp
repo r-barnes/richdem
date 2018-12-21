@@ -14,6 +14,11 @@
       32 64 128
       16  0   1
        8  4   2
+
+  D4 directions
+    2
+   103
+    4
 */
 #ifndef _richdem_constants_hpp_
 #define _richdem_constants_hpp_
@@ -26,6 +31,7 @@ namespace richdem {
 
 //Constant used to hold D8 flow directions
 typedef uint8_t d8_flowdir_t;
+typedef int8_t  flowdir_t;
 
 //D8 Neighbour Directions
 
@@ -52,6 +58,8 @@ const int D4_SOUTH = 4;
 ///neighbour to the central cell.
 const int d8_inverse[9] = {0,5,6,7,8,1,2,3,4};
 
+const int d4_inverse[5] = {0, 3, 4, 1, 2};
+
 ///sqrt(2), used to generate distances from a central cell to its neighbours
 const double SQRT2 = 1.414213562373095048801688724209698078569671875376948;
 
@@ -66,7 +74,7 @@ const uint8_t FLOWDIR_NO_DATA = 255;
 
 ///Value used to indicate that a cell does not have a defined flow direction
 //(i.e. that it has no local gradient)
-const d8_flowdir_t NO_FLOW = 0;
+const flowdir_t NO_FLOW = 0;
 
 ///Value used to indicate NoFlow in generic flow metric outputs
 const float NO_FLOW_GEN  = -1;
