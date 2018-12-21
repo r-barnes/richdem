@@ -204,6 +204,7 @@ class Array2D {
            being loaded from the cache, rather than the original file (if any).
   */
   //TODO: Should save metadata
+ public:
   void saveToCache(const std::string &filename){
     std::fstream fout;
 
@@ -236,6 +237,8 @@ class Array2D {
 
     out.write(reinterpret_cast<const char*>(_data.data()), size()*sizeof(T));
   }
+
+ private:
 
   ///TODO
   void loadNative(const std::string &filename, bool load_data=true){
