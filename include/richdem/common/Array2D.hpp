@@ -243,7 +243,9 @@ class Array2D {
   ///TODO
   void loadNative(const std::string &filename, bool load_data=true){
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
-    assert(fin.good());
+
+    if(!fin.good())
+      throw std::runtime_error("Failed to load native file '" + filename +"!");
 
     this->filename = filename;
     from_cache    = true;
