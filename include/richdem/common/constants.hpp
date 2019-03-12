@@ -105,6 +105,31 @@ inline std::string TopologyName(Topology topo){
   }
 }
 
+template<Topology topo>
+void TopologicalResolver(
+  const int*&    dx,
+  const int*&    dy,
+  const double*& dr,
+  const int*&    dinverse,
+  int&       neighbours
+){
+  if(topo==Topology::D4){
+    dx         = d4x;
+    dy         = d4y;
+    dr         = d4r;
+    dinverse   = d4_inverse;
+    neighbours = 4;
+  } else if(topo==Topology::D8){
+    dx         = d8x;
+    dy         = d8y;
+    dr         = d8r;
+    dinverse   = d8_inverse;
+    neighbours = 8;    
+  } else {
+    throw std::runtime_error("Unrecognised topology!");
+  }
+}
+
 }
 
 #endif
