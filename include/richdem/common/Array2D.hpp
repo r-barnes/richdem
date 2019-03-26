@@ -419,9 +419,9 @@ class Array2D {
   }
 
   ///Returns a pointer to the internal data array
-  T*       getData()       { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return data.data(); }
+  T*       getData()       { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return _data.data(); }
   ///Returns a constant pointer to the internal data array
-  const T* getData() const { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return data.data(); }
+  const T* getData() const { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return _data.data(); }
 
   ///Returns a pointer to the internal data array
   T*       data()       { return _data.data(); }
