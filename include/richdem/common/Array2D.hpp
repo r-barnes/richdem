@@ -499,7 +499,7 @@ class Array2D {
     //TODO: Warn if raster is empty?
     i_t count=0;
     for(unsigned int i=0;i<size();i++)
-      if(data[i]==val)
+      if(_data[i]==val)
         count++;
     return count;
   }
@@ -592,7 +592,7 @@ class Array2D {
     if(noData()!=o.noData())
       return false;
     for(unsigned int i=0;i<o.size();i++)
-      if(data[i]!=o.data[i])
+      if(_data[i]!=o._data[i])
         return false;
     return true;
   }
@@ -608,7 +608,7 @@ class Array2D {
   inline bool isNoData(xy_t x, xy_t y) const {
     assert(0<=x && x<view_width);
     assert(0<=y && y<view_height);
-    return data[xyToI(x,y)]==no_data;
+    return _data[xyToI(x,y)]==no_data;
   }
 
   /**
