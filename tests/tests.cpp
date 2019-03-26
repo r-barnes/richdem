@@ -3,6 +3,7 @@
 //#include "catch/catch.hpp"
 #include "doctest.h"
 #include "richdem/common/Array2D.hpp"
+#include "richdem/common/loaders.hpp"
 
 #include <richdem/richdem.hpp>
 using namespace richdem;
@@ -34,6 +35,19 @@ TEST_CASE("ManagedVector Resizing"){
   REQUIRE_THROWS(mvec.resize(40));
   REQUIRE_THROWS(mvec.resize(10));
   REQUIRE_NOTHROW(mvec.resize(30));
+}
+
+TEST_CASE("Test padding on load") {
+  Array2D<int> temp;
+  LoadGDAL("ones_block.dem", temp, 1, 1);
+  for(int y=0;y<temp.height();y++)
+  for(int x=0;x<temp.width();x++){
+    if((x==0 || y==0 || x==temp.width()-1 || y==temp.height()-1)){
+      REQUIRE(temp(x,y)==0);
+    } else {
+      REQUIRE(temp(x,y)==1);
+    }
+  }
 }
 
 TEST_CASE( "Array2D works" ) {

@@ -56,19 +56,35 @@ void LoadGDAL(
     part_height = total_height;
   view_height = part_height;
 
-  arr.resize(view_width+2*padx,view_height+2*pady);
-  auto temp = band->RasterIO( GF_Read, xOffset, yOffset, view_width, view_height, arr.data()+pady*view_width, view_width, view_height, NativeTypeToGDAL<T>(), 0, 0 );
+  T *buf;
+  std::vector<T> tempbuf;
+  if(padx==0 && pady==0){
+    arr.resize(view_width,view_height);
+    buf = arr.data();
+  } else {
+    tempbuf.resize(view_width*view_height);
+    arr.resize(view_width+2*padx,view_height+2*pady);
+    buf = tempbuf.data();
+  }
+
+  auto temp = band->RasterIO( GF_Read, xOffset, yOffset, view_width, view_height, buf, view_width, view_height, NativeTypeToGDAL<T>(), 0, 0 );
   if(temp!=CE_None)
     throw std::runtime_error("An error occured while trying to read '"+filename+"' into RAM with GDAL.");
 
-  if(padx>0){
-    for(int y=0;y<arr.height();y++){
-      for(int x=arr.width()-2*padx-1;x>=0;x--) //Shift cells to the right;
-        arr(x+padx,y) = arr(x,y);
-      for(unsigned int x=0;x<padx;x++)                  //Set halo pixels to 0
-        arr(x,y) = 0;
-    }
+  if(padx>0 || pady>0){
+    for(int y=0;y<view_height;y++)
+    for(int x=0;x<view_width;x++)
+      arr(x+padx,y+pady) = buf[y*view_width+x];
   }
+
+  // if(padx>0){
+  //   for(int y=0;y<arr.height();y++){
+  //     for(int x=arr.width()-2*padx-1;x>=0;x--) //Shift cells to the right;
+  //       arr(x+padx,y) = arr(x,y);
+  //     for(unsigned int x=padx+arr.width();x<arr.width();x++)         //Set halo pixels to 0
+  //       arr(x,y) = 0;
+  //   }
+  // }
 
   GDALClose(fin);
 
