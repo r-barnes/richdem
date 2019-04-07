@@ -307,7 +307,7 @@ class Array2D {
     @param[in] width   Width of the data
     @param[in] height  Height of the data
   */
-  Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
+  Array2D(T *data0, const uint64_t width, const uint64_t height) : Array2D() {
     data        = ManagedVector<T>(data0, width*height);
     view_width  = width;
     view_height = height;
@@ -763,7 +763,7 @@ class Array2D {
     @param[in]   val0      Value to set all the cells to. Defaults to the
                           raster's template type default value
   */
-  void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
+  void resize(const uint64_t width0, const uint64_t height0, const T& val0 = T()){
     _data.resize(width0*height0);
 
     _nshift     = {{0,-1,-width0-1,-width0,-width0+1,1,width0+1,width0,width0-1}};
@@ -799,7 +799,7 @@ class Array2D {
     @param[in] new_height New height of the raster. Must be >= the old height.
     @param[in] val        Value to set the new cells to
   */
-  void expand(xy_t new_width, xy_t new_height, const T val){
+  void expand(uint64_t new_width, uint64_t new_height, const T val){
     RDLOG_DEBUG<<"Array2D::expand(width,height,val)";
 
     if(new_width==view_width && new_height==view_height)
@@ -812,8 +812,8 @@ class Array2D {
     if(new_height<view_height)
       throw std::runtime_error("expand(): new_height<view_height");
 
-    xy_t old_width  = width();
-    xy_t old_height = height();
+    auto old_width  = width();
+    auto old_height = height();
 
     auto old_data = std::move(_data);   //This gets the pointer to the old data before it is replaced
 

@@ -47,7 +47,7 @@ void LoadGDAL(
   if(yOffset+part_height>=total_height)
     part_height = total_height-yOffset;
 
-  int view_width, view_height;
+  uint64_t view_width, view_height;
   if(part_width==0)
     part_width = total_width;
   view_width = part_width;
@@ -96,7 +96,7 @@ void LoadGDAL(
 
 
 template<class T>
-void SaveGDAL(const Array2D<T> &arr, const std::string &filename, const std::string &metadata_str="", int xoffset=0, int yoffset=0, const uint32_t padx=0, const uint32_t pady=0, bool compress=false){
+void SaveGDAL(const Array2D<T> &arr, const std::string &filename, const std::string &metadata_str="", uint64_t xoffset=0, uint64_t yoffset=0, const uint64_t padx=0, const uint64_t pady=0, bool compress=false){
   char **papszOptions = NULL;
   if(compress){
     papszOptions = CSLSetNameValue( papszOptions, "COMPRESS", "DEFLATE" );
@@ -184,7 +184,7 @@ void SaveGDAL(const Array2D<T> &arr, const std::string &filename, const std::str
   auto oheight = arr.height();
   std::vector<T> temp_buf;
   if(padx>0 || pady>0){
-    const int pwidth = arr.width();
+    const uint64_t pwidth = arr.width();
     owidth          -= 2*padx;
     oheight         -= 2*pady;
     temp_buf.resize(owidth*oheight);
