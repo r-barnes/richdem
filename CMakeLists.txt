@@ -1,10 +1,12 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.9)
 
 project (librichdem 
   VERSION 2.2.9 
   DESCRIPTION "High-performance terrain analysis"
   LANGUAGES CXX
 )
+
+find_package(OpenMP)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -29,6 +31,11 @@ target_compile_features(richdem
   PUBLIC
     cxx_auto_type
     cxx_std_11
+)
+
+target_link_libraries(richdem
+  PUBLIC
+    OpenMP::OpenMP_CXX
 )
 
 target_compile_options(richdem
