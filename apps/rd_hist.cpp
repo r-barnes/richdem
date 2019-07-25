@@ -1,8 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_map>
-#include "richdem/common/version.hpp"
-#include "richdem/common/Array2D.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/common/Array2D.hpp>
 using namespace richdem;
 
 template<class T>

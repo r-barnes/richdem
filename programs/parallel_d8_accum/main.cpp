@@ -11,13 +11,13 @@
 #include <limits>
 #include <fstream> //For reading layout files
 #include <sstream> //Used for parsing the <layout_file>
-#include "richdem/common/version.hpp"
-#include "richdem/common/Layoutfile.hpp"
-#include "richdem/common/communication.hpp"
-#include "richdem/common/memory.hpp"
-#include "richdem/common/timer.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/grid_cell.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/common/Layoutfile.hpp>
+#include <richdem/common/communication.hpp>
+#include <richdem/common/memory.hpp>
+#include <richdem/common/timer.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
 #include "perimeters.hpp"
 
 using namespace richdem;

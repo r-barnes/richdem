@@ -4,10 +4,10 @@
 #include <deque>
 #include <cstdint>
 #include <iostream>
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/grid_cell.hpp"
-#include "richdem/flowmet/d8_flowdirs.hpp"
-#include "richdem/common/logger.hpp"
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/flowmet/d8_flowdirs.hpp>
+#include <richdem/common/logger.hpp>
 
 namespace richdem {
 

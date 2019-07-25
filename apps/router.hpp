@@ -2,7 +2,7 @@
 #define _richdem_router_hpp_
 
 #include "gdal_priv.h"
-#include "richdem/common/Array2D.hpp"
+#include <richdem/common/Array2D.hpp>
 
 template<typename... Args>
 int PerformAlgorithm(std::string inputfile, Args... args){

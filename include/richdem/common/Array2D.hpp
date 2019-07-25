@@ -23,11 +23,11 @@
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
-#include "richdem/common/Array3D.hpp"
-#include "richdem/common/logger.hpp"
-#include "richdem/common/version.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ManagedVector.hpp"
+#include <richdem/common/Array3D.hpp>
+#include <richdem/common/logger.hpp>
+#include <richdem/common/version.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ManagedVector.hpp>
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION

@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include "richdem/common/version.hpp"
-#include "richdem/depressions/Barnes2014.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/flats/flat_resolution.hpp"
-#include "richdem/methods/d8_methods.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/depressions/Barnes2014.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/flats/flat_resolution.hpp>
+#include <richdem/methods/d8_methods.hpp>
 
 using namespace richdem;
 

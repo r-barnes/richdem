@@ -1,10 +1,10 @@
 #ifndef _richdem_terrain_attributes_hpp_
 #define _richdem_terrain_attributes_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ProgressBar.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ProgressBar.hpp>
 
 namespace richdem {
 

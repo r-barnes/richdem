@@ -1,6 +1,6 @@
 #include "PerlinNoise.h"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/version.hpp"
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/version.hpp>
 #include <iostream>
 
 int main(int argc, char **argv){
