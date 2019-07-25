@@ -7,9 +7,9 @@
 #ifndef _richdem_d8_flowdirs_hpp_
 #define _richdem_d8_flowdirs_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/ProgressBar.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/ProgressBar.hpp>
 
 namespace richdem {
 

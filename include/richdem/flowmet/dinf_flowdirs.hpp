@@ -11,9 +11,9 @@ described in Barnes (TODO).
 #ifndef _richdem_dinf_flowdirs_hpp_
 #define _richdem_dinf_flowdirs_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/ProgressBar.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/ProgressBar.hpp>
 
 namespace richdem {
 

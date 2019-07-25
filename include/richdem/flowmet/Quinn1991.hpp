@@ -1,9 +1,9 @@
 #ifndef _richdem_Quinn1991_hpp_
 #define _richdem_Quinn1991_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/Array3D.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/Array3D.hpp>
 #include <richdem/flowmet/Holmgren1994.hpp>
 
 namespace richdem {

@@ -12,11 +12,11 @@
 
 #include <cmath>
 #include <queue>
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ProgressBar.hpp"
-#include "richdem/common/grid_cell.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ProgressBar.hpp>
+#include <richdem/common/grid_cell.hpp>
 
 namespace richdem {
 

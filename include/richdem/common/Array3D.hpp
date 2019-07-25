@@ -23,11 +23,11 @@
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/logger.hpp"
-#include "richdem/common/version.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ManagedVector.hpp"
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/logger.hpp>
+#include <richdem/common/version.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ManagedVector.hpp>
 
 
 namespace richdem {

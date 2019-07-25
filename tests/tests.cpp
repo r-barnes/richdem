@@ -2,8 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 //#include "catch/catch.hpp"
 #include "doctest.h"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/loaders.hpp"
+#include <richdem/common/Array2D.hpp>
 
 #include <richdem/richdem.hpp>
 using namespace richdem;
@@ -93,7 +92,7 @@ TEST_CASE( "Array2D works" ) {
     arr.resize(3,5,4);
     REQUIRE( arr.width()  == 3  );
     REQUIRE( arr.height() == 5  );
-    REQUIRE( arr.size()   == 15 );  
+    REQUIRE( arr.size()   == 15 );
 
     REQUIRE( arr(2,1)==4 );
     REQUIRE( arr(2,2)==4 );
@@ -128,7 +127,7 @@ TEST_CASE("Checking flow accumulation") {
         REQUIRE( correct_ans == my_ans );
       }
     }
-  }  
+  }
 
 
 
@@ -246,14 +245,14 @@ TEST_CASE("Checking depression filling") {
     PriorityFlood_Wei2018(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("FillDepressions"){
     auto elevation = elevation_orig;
     FillDepressions<Topology::D8>(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("PriorityFlood_Barnes2014_max_dep"){
     auto elevation = elevation_orig;
@@ -302,7 +301,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth9999.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2)"){
     auto elevation = elevation_orig;
@@ -310,7 +309,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2, Fill Depressions)"){
     auto elevation = elevation_orig;
@@ -318,7 +317,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2-filldep.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=8)"){
     auto elevation = elevation_orig;

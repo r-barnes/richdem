@@ -1,11 +1,11 @@
 #ifndef _richdem_lindsay2016_hpp_
 #define _richdem_lindsay2016_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/grid_cell.hpp"
-#include "richdem/common/ProgressBar.hpp"
-#include "richdem/common/timer.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/ProgressBar.hpp>
+#include <richdem/common/timer.hpp>
 #include <limits>
 
 namespace richdem {

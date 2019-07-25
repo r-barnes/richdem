@@ -22,7 +22,7 @@
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
-#include "richdem/common/timer.hpp"
+#include <richdem/common/timer.hpp>
 
 namespace richdem {
 
