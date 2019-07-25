@@ -6,6 +6,10 @@ project (librichdem
   LANGUAGES CXX
 )
 
+# add_subdirectory(apps)
+# add_subdirectory(tests)
+
+find_package(GDAL)
 find_package(OpenMP)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -16,6 +20,7 @@ STRING(TIMESTAMP RICHDEM_TIMESTAMP UTC)
 
 add_library(richdem
   include/richdem/richdem.cpp
+  include/richdem/common/random.cpp
 )
 
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
@@ -43,3 +48,15 @@ target_compile_options(richdem
     -DRICHDEM_GIT_HASH="${RICHDEM_GIT_HASH}"
     -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
 )
+
+if(GDAL_FOUND)
+  target_link_libraries(richdem
+    PUBLIC
+      ${GDAL_LIBRARY}
+  )
+  target_include_directories(richdem
+    PUBLIC
+      ${GDAL_INCLUDE_DIR}
+  )
+  target_compile_options(richdem PUBLIC -DUSEGDAL)
+endif()

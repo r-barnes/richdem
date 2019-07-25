@@ -7,3 +7,4 @@ experiments/
 *.pyc
 a.out
 travis.log
+build/
