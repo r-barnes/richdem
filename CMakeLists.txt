@@ -6,17 +6,11 @@ project (librichdem
   LANGUAGES CXX
 )
 
-execute_process(
-  COMMAND git log -1 --format=%H
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC RICHDEM_GIT_HASH)
 
-STRING(TIMESTAMP TIMEZ UTC)
-
-add_definitions(-DRICHDEM_GIT_HASH=${GIT_COMMIT_HASH})
-add_definitions(-DRICHDEM_COMPILE_TIME=${GIT_COMMIT_HASH})
+STRING(TIMESTAMP RICHDEM_TIMESTAMP UTC)
 
 add_library(richdem
   include/richdem/richdem.cpp
@@ -35,4 +29,10 @@ target_compile_features(richdem
   PUBLIC
     cxx_auto_type
     cxx_std_11
+)
+
+target_compile_options(richdem
+  PUBLIC
+    -DRICHDEM_GIT_HASH="${RICHDEM_GIT_HASH}"
+    -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
 )
