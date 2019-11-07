@@ -307,8 +307,11 @@ class Array2D {
     @param[in] width   Width of the data
     @param[in] height  Height of the data
   */
-  Array2D(T *data0, const uint64_t width, const uint64_t height) : Array2D() {
-    data        = ManagedVector<T>(data0, width*height);
+  Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
+    assert(width>0);
+    assert(height>0);
+    assert(width<=std::numeric_limits<xy_t>::max()-2);
+    data        = ManagedVector<T>(data0, (uint64_t)width*(uint64_t)height);
     view_width  = width;
     view_height = height;
     _nshift     = {{0,-1,-width-1,-width,-width+1,1,width+1,width,width-1}};
@@ -763,8 +766,11 @@ class Array2D {
     @param[in]   val0      Value to set all the cells to. Defaults to the
                           raster's template type default value
   */
-  void resize(const uint64_t width0, const uint64_t height0, const T& val0 = T()){
-    _data.resize(width0*height0);
+  void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
+    assert(width0>=0);
+    assert(height0>=0);
+    assert(width0<=std::numeric_limits<xy_t>::max()-2);
+    _data.resize((uint64_t)width0*(uint64_t)height0);
 
     _nshift     = {{0,-1,-width0-1,-width0,-width0+1,1,width0+1,width0,width0-1}};
 
