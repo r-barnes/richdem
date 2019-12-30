@@ -627,6 +627,32 @@ class Array2D {
   }
 
   /**
+    @brief Whether or not a cell is NoData using x,y coordinates
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   Y-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isData(xy_t x, xy_t y) const {
+    assert(0<=x && x<view_width);
+    assert(0<=y && y<view_height);
+    return _data[xyToI(x,y)]!=no_data;
+  }
+
+  /**
+    @brief Whether or not a cell is NoData using i coordinates
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isData(i_t i) const {
+    assert(0<=i && i<size());
+    return _data[i]!=no_data;
+  }
+
+  /**
     @brief Flips the raster from top to bottom
   */
   void flipVert(){
