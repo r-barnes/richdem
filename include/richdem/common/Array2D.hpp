@@ -458,9 +458,9 @@ class Array2D {
   T min() const {
     T minval = std::numeric_limits<T>::max();
     for(unsigned int i=0;i<size();i++){
-      if(data[i]==no_data)
+      if(_data[i]==no_data)
         continue;
-      minval = std::min(minval,data[i]);
+      minval = std::min(minval,_data[i]);
     }
     return minval;
   }
@@ -469,9 +469,9 @@ class Array2D {
   T max() const {
     T maxval = std::numeric_limits<T>::min();
     for(unsigned int i=0;i<size();i++){
-      if(data[i]==no_data)
+      if(_data[i]==no_data)
         continue;
-      maxval = std::max(maxval,data[i]);
+      maxval = std::max(maxval,_data[i]);
     }
     return maxval;
   }
