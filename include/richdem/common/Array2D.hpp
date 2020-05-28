@@ -311,7 +311,7 @@ class Array2D {
     assert(width>0);
     assert(height>0);
     assert(width<=std::numeric_limits<xy_t>::max()-2);
-    data        = ManagedVector<T>(data0, (uint64_t)width*(uint64_t)height);
+    _data       = ManagedVector<T>(data0, (uint64_t)width*(uint64_t)height);
     view_width  = width;
     view_height = height;
     _nshift     = {{0,-1,-width-1,-width,-width+1,1,width+1,width,width-1}};
@@ -485,8 +485,8 @@ class Array2D {
   */
   void replace(const T oldval, const T newval){
     for(unsigned int i=0;i<size();i++)
-      if(data[i]==oldval)
-        data[i] = newval;
+      if(_data[i]==oldval)
+        _data[i] = newval;
   }
 
   /**
@@ -1265,7 +1265,7 @@ class Array2D {
   void scale(const double x) {
     for(i_t i=0;i<size();i++)
       if(_data[i]!=no_data)
-        data[i] *= x;
+        _data[i] *= x;
   }
 
   //TODO
