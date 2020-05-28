@@ -23,6 +23,10 @@ add_library(richdem
   include/richdem/common/random.cpp
 )
 
+if(NOT OpenMP_CXX_FOUND)
+  message(WARNING "Compiling without OpenMP!")
+endif()
+
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
 # set_target_properties(richdem PROPERTIES SOVERSION 2)
 
@@ -38,10 +42,9 @@ target_compile_features(richdem
     cxx_std_11
 )
 
-target_link_libraries(richdem
-  PUBLIC
-    OpenMP::OpenMP_CXX
-)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(richdem PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 target_compile_options(richdem
   PUBLIC
@@ -59,4 +62,6 @@ if(GDAL_FOUND)
       ${GDAL_INCLUDE_DIR}
   )
   target_compile_options(richdem PUBLIC -DUSEGDAL)
+else()
+  message(WARNING "Compiling without GDAL!")
 endif()
