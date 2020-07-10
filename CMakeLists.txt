@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.9)
 
-project (librichdem 
-  VERSION 2.2.9 
+project (librichdem
+  VERSION 2.2.9
   DESCRIPTION "High-performance terrain analysis"
   LANGUAGES CXX
 )
@@ -21,6 +21,7 @@ STRING(TIMESTAMP RICHDEM_TIMESTAMP UTC)
 add_library(richdem
   include/richdem/richdem.cpp
   include/richdem/common/random.cpp
+  include/richdem/src/gdal.cpp
 )
 
 if(NOT OpenMP_CXX_FOUND)
@@ -30,13 +31,13 @@ endif()
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
 # set_target_properties(richdem PROPERTIES SOVERSION 2)
 
-target_include_directories(richdem 
-  PUBLIC 
-    $<INSTALL_INTERFACE:include>    
+target_include_directories(richdem
+  PUBLIC
+    $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_compile_features(richdem 
+target_compile_features(richdem
   PUBLIC
     cxx_auto_type
     cxx_std_11
