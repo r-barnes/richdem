@@ -298,6 +298,35 @@ class Array2D {
   }
 
   /**
+    @brief Creates a raster from a nested initializer list
+
+    @param[in] values The raster
+
+    @example
+      Array2D<int> x = {{1,2,3},{4,5,6}}
+  */
+  Array2D(std::initializer_list<std::initializer_list<T>> values) {
+    const size_t height = values.size();
+    const size_t width = values.begin()->size();
+    for(const auto &x: values){
+      if(x.size()!=width)
+        throw std::runtime_error("All rows of the array must be the same width!");
+    }
+
+    size_t x=0;
+    size_t y=0;
+    for(const auto &row: values){
+      for(const auto &col: row){
+        operator()(x,y) = col;
+        x++;
+      }
+      y++;
+    }
+    (void)height; //Suppress unused variable warning with NDEBUG
+    assert(y==height);
+  }
+
+  /**
     @brief Wraps a flat array in an Array2D object.
 
     Wraps a flat array in an Array2D object. The Array2D does not take ownership
