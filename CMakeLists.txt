@@ -57,6 +57,7 @@ target_compile_options(richdem
 )
 
 if(GDAL_FOUND)
+  message(STATUS "Compiling RichDEM with GDAL.")
   target_link_libraries(richdem
     PUBLIC
       ${GDAL_LIBRARY}
@@ -67,5 +68,11 @@ if(GDAL_FOUND)
   )
   target_compile_options(richdem PUBLIC -DUSEGDAL)
 else()
-  message(WARNING "Compiling without GDAL!")
+  message(WARNING "Compiling RichDEM without GDAL!")
 endif()
+
+add_executable(unittests
+  tests/tests.cpp
+)
+target_link_libraries(unittests PRIVATE richdem)
+target_compile_features(unittests PRIVATE cxx_std_17)
