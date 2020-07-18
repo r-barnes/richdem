@@ -1,11 +1,12 @@
-#include "random.hpp"
-#include <cassert>
-#include <random>
-#include <cstdint>
+#include <richdem/common/random.hpp>
+
 #include <algorithm>
-#include <iostream>
+#include <cassert>
+#include <cstdint>
 #include <functional>
+#include <iostream>
 #include <limits>
+#include <random>
 #include <sstream>
 
 namespace richdem {

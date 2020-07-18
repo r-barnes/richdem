@@ -19,9 +19,12 @@ get_git_head_revision(GIT_REFSPEC RICHDEM_GIT_HASH)
 STRING(TIMESTAMP RICHDEM_TIMESTAMP UTC)
 
 add_library(richdem
-  include/richdem/richdem.cpp
-  include/richdem/common/random.cpp
-  include/richdem/src/gdal.cpp
+  src/richdem.cpp
+  src/random.cpp
+  src/gdal.cpp
+
+  src/terrain_generation/terrain_gen.cpp
+  src/terrain_generation/PerlinNoise.cpp
 )
 
 if(NOT OpenMP_CXX_FOUND)
