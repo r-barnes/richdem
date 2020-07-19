@@ -4,7 +4,7 @@
 
 #include "PerlinNoise.h"
 
-using namespace richdem;
+namespace richdem {
 
 Array2D<double> perlin(const int size){
   PerlinNoise pn;
@@ -15,4 +15,6 @@ Array2D<double> perlin(const int size){
     terrain(x,y) = pn.noise(10*x/(double)size,10*y/(double)size,0.8);
 
   return terrain;
+}
+
 }
