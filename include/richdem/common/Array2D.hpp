@@ -313,9 +313,12 @@ class Array2D {
         throw std::runtime_error("All rows of the array must be the same width!");
     }
 
+    resize(width, height);
+
     size_t x=0;
     size_t y=0;
     for(const auto &row: values){
+      x=0;
       for(const auto &col: row){
         operator()(x,y) = col;
         x++;

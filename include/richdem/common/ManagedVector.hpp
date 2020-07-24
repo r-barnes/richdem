@@ -50,7 +50,7 @@ class ManagedVector {
     _size = other.size();
      _data.reset(new T[other.size()]);
     for(std::size_t i=0;i<other.size();i++)
-      _data[i] = other._data[i];    
+      _data[i] = other._data[i];
   }
 
   //TODO: Should this clear old data?
@@ -60,7 +60,7 @@ class ManagedVector {
     _size = other.size();
     _data.reset(new T[other.size()]);
     for(std::size_t i=0;i<other.size();i++)
-      _data[i] = other._data[i];    
+      _data[i] = other._data[i];
   }
 
   //TODO: Should this clear old data?
@@ -82,7 +82,7 @@ class ManagedVector {
     }
     // if(_data.get()!=nullptr){
     //   std::cerr<<"ManagedVector freeing its data at "<<((void*)_data.get())<<std::endl;
-    // } else {  
+    // } else {
     //   std::cerr<<"ManagedVector destructing with no data..."<<std::endl;
     // }
   }
@@ -177,7 +177,7 @@ class ManagedVector {
 
   inline const T& operator[](std::size_t i) const {
     return _data[i];
-  }  
+  }
 };
 
 }

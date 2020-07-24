@@ -25,7 +25,7 @@ add_library(richdem
   src/random.cpp
   src/gdal.cpp
 
-  src/terrain_generation/terrain_gen.cpp
+  src/terrain_generation/terrain_generation.cpp
   src/terrain_generation/PerlinNoise.cpp
 )
 
@@ -73,8 +73,8 @@ else()
   message(WARNING "Compiling RichDEM without GDAL!")
 endif()
 
-add_executable(unittests
+add_executable(richdem_unittests
   tests/tests.cpp
 )
-target_link_libraries(unittests PRIVATE richdem)
-target_compile_features(unittests PRIVATE cxx_std_17)
+target_link_libraries(richdem_unittests PRIVATE richdem)
+target_compile_features(richdem_unittests PRIVATE cxx_std_17)

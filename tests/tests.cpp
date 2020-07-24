@@ -116,6 +116,21 @@ TEST_CASE( "Array2D works" ) {
     auto arr1 = arr0;
     arr0.clear();
   }
+
+  SUBCASE("Initializer list construction"){
+    const Array2D<float> arr = {
+      { 1, 2, 3},
+      { 4, 5, 6},
+      { 7, 8, 9},
+      {10,11,12}
+    };
+    CHECK(arr.width()==3);
+    CHECK(arr.height()==4);
+    CHECK(arr(0,0)==1);
+    CHECK(arr(2,0)==3);
+    CHECK(arr(0,2)==7);
+    CHECK(arr(2,3)==12);
+  }
 }
 
 
