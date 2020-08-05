@@ -23,11 +23,11 @@
 #include <unordered_set> //For printStamp
 #include <stdexcept>
 #include <map>
-#include "richdem/common/Array3D.hpp"
-#include "richdem/common/logger.hpp"
-#include "richdem/common/version.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ManagedVector.hpp"
+#include <richdem/common/Array3D.hpp>
+#include <richdem/common/logger.hpp>
+#include <richdem/common/version.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ManagedVector.hpp>
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -39,7 +39,7 @@ namespace richdem {
 
 template<typename> class Array3D;
 
-std::map<std::string, std::string> ProcessMetadata(char **metadata){
+inline std::map<std::string, std::string> ProcessMetadata(char **metadata){
   std::map<std::string, std::string> ret;
   if(metadata==NULL)
     return ret;
@@ -94,7 +94,7 @@ class Array2D {
   std::string projection;           ///< Projection of the raster
   std::map<std::string, std::string> metadata; ///< Raster's metadata in key-value pairs
 
-  //Using uint32_t for i-addressing allows for rasters of ~65535^2. These 
+  //Using uint32_t for i-addressing allows for rasters of ~65535^2. These
   //dimensions fit easily within an int32_t xy-address.
   typedef int32_t  xy_t;            ///< xy-addressing data type
   typedef uint32_t i_t;             ///< i-addressing data type
@@ -107,7 +107,7 @@ class Array2D {
 
   std::array<int, 9> _nshift;       ///< Offset to neighbouring cells;
 
-  ManagedVector<T> data;            ///< Holds the raster data in a 1D array
+  ManagedVector<T> _data;            ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
   T   no_data;                       ///< NoData value of the raster
@@ -122,7 +122,7 @@ class Array2D {
   xy_t view_xoff = 0;
   xy_t view_yoff = 0;
   ///@}
-  
+
   ///If TRUE, loadData() loads data from the cache assuming  the Native format.
   ///Otherwise, it assumes it is loading from a GDAL file.
   bool from_cache;
@@ -204,6 +204,7 @@ class Array2D {
            being loaded from the cache, rather than the original file (if any).
   */
   //TODO: Should save metadata
+ public:
   void saveToCache(const std::string &filename){
     std::fstream fout;
 
@@ -234,13 +235,17 @@ class Array2D {
     out.write(reinterpret_cast<const char*>(&projection_size), sizeof(std::string::size_type));
     out.write(reinterpret_cast<const char*>(projection.data()), projection.size()*sizeof(const char));
 
-    out.write(reinterpret_cast<const char*>(data.data()), size()*sizeof(T));
+    out.write(reinterpret_cast<const char*>(_data.data()), size()*sizeof(T));
   }
+
+ private:
 
   ///TODO
   void loadNative(const std::string &filename, bool load_data=true){
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
-    assert(fin.good());
+
+    if(!fin.good())
+      throw std::runtime_error("Failed to load native file '" + filename +"!");
 
     this->filename = filename;
     from_cache    = true;
@@ -269,7 +274,7 @@ class Array2D {
 
     if(load_data){
       resize(view_width,view_height);
-      in.read(reinterpret_cast<char*>(data.data()), size()*sizeof(T));
+      in.read(reinterpret_cast<char*>(_data.data()), size()*sizeof(T));
     }
   }
 
@@ -293,6 +298,38 @@ class Array2D {
   }
 
   /**
+    @brief Creates a raster from a nested initializer list
+
+    @param[in] values The raster
+
+    @example
+      Array2D<int> x = {{1,2,3},{4,5,6}}
+  */
+  Array2D(std::initializer_list<std::initializer_list<T>> values) {
+    const size_t height = values.size();
+    const size_t width = values.begin()->size();
+    for(const auto &x: values){
+      if(x.size()!=width)
+        throw std::runtime_error("All rows of the array must be the same width!");
+    }
+
+    resize(width, height);
+
+    size_t x=0;
+    size_t y=0;
+    for(const auto &row: values){
+      x=0;
+      for(const auto &col: row){
+        operator()(x,y) = col;
+        x++;
+      }
+      y++;
+    }
+    (void)height; //Suppress unused variable warning with NDEBUG
+    assert(y==height);
+  }
+
+  /**
     @brief Wraps a flat array in an Array2D object.
 
     Wraps a flat array in an Array2D object. The Array2D does not take ownership
@@ -303,7 +340,10 @@ class Array2D {
     @param[in] height  Height of the data
   */
   Array2D(T *data0, const xy_t width, const xy_t height) : Array2D() {
-    data        = ManagedVector<T>(data0, width*height);
+    assert(width>0);
+    assert(height>0);
+    assert(width<=std::numeric_limits<xy_t>::max()-2);
+    _data       = ManagedVector<T>(data0, (uint64_t)width*(uint64_t)height);
     view_width  = width;
     view_height = height;
     _nshift     = {{0,-1,-width-1,-width,-width+1,1,width+1,width,width-1}};
@@ -381,14 +421,14 @@ class Array2D {
   }
 
   /**
-    @brief Loads data from disk into RAM. 
+    @brief Loads data from disk into RAM.
 
-    If dumpData() has been previously called, data is loaded from the cache; 
+    If dumpData() has been previously called, data is loaded from the cache;
     otherwise, it is loaded from a GDAL file. No data is loaded if data is
     already present in RAM.
   */
   void loadData() {
-    if(!data.empty())
+    if(!_data.empty())
       throw std::runtime_error("Data already loaded!");
 
     if(from_cache){
@@ -402,9 +442,9 @@ class Array2D {
       GDALRasterBand *band = fin->GetRasterBand(1);
 
       resize(view_width,view_height);
-      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0 );
-        if(temp!=CE_None)
-          throw std::runtime_error("An error occured while trying to read '"+filename+"' into RAM with GDAL.");
+      auto temp = band->RasterIO( GF_Read, view_xoff, view_yoff, view_width, view_height, _data.data(), view_width, view_height, myGDALType(), 0, 0 );
+      if(temp!=CE_None)
+        throw std::runtime_error("An error occured while trying to read '"+filename+"' into RAM with GDAL.");
 
       GDALClose(fin);
       #else
@@ -414,7 +454,14 @@ class Array2D {
   }
 
   ///Returns a pointer to the internal data array
-  T* getData() { return data.data(); }
+  T*       getData()       { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return _data.data(); }
+  ///Returns a constant pointer to the internal data array
+  const T* getData() const { std::cerr<<"richdem::Array2D::getData() is deprecated. Use data() instead"<<std::endl; return _data.data(); }
+
+  ///Returns a pointer to the internal data array
+  T*       data()       { return _data.data(); }
+  ///Returns a constant pointer to the internal data array
+  const T* data() const { return _data.data(); }
 
   ///@brief Number of cells in the DEM
   i_t size() const { return view_width*view_height; }
@@ -432,7 +479,7 @@ class Array2D {
   xy_t viewYoff() const { return view_yoff; }
 
   ///Returns TRUE if no data is present in RAM
-  bool empty() const { return data.empty(); }
+  bool empty() const { return _data.empty(); }
 
   ///Returns the NoData value of the raster. Cells equal to this value sould
   ///generally not be used in calculations. But note that the isNoData() method
@@ -443,9 +490,9 @@ class Array2D {
   T min() const {
     T minval = std::numeric_limits<T>::max();
     for(unsigned int i=0;i<size();i++){
-      if(data[i]==no_data)
+      if(_data[i]==no_data)
         continue;
-      minval = std::min(minval,data[i]);
+      minval = std::min(minval,_data[i]);
     }
     return minval;
   }
@@ -454,9 +501,9 @@ class Array2D {
   T max() const {
     T maxval = std::numeric_limits<T>::min();
     for(unsigned int i=0;i<size();i++){
-      if(data[i]==no_data)
+      if(_data[i]==no_data)
         continue;
-      maxval = std::max(maxval,data[i]);
+      maxval = std::max(maxval,_data[i]);
     }
     return maxval;
   }
@@ -470,8 +517,8 @@ class Array2D {
   */
   void replace(const T oldval, const T newval){
     for(unsigned int i=0;i<size();i++)
-      if(data[i]==oldval)
-        data[i] = newval;
+      if(_data[i]==oldval)
+        _data[i] = newval;
   }
 
   /**
@@ -487,7 +534,7 @@ class Array2D {
     //TODO: Warn if raster is empty?
     i_t count=0;
     for(unsigned int i=0;i<size();i++)
-      if(data[i]==val)
+      if(_data[i]==val)
         count++;
     return count;
   }
@@ -518,6 +565,7 @@ class Array2D {
     @return Returns the index coordinate i of (x,y)
   */
   inline i_t xyToI(xy_t x, xy_t y) const {
+    assert(0<=x && x<view_width && 0<=y && y<view_height);
     return (i_t)y*(i_t)view_width+(i_t)x;
   }
 
@@ -579,7 +627,7 @@ class Array2D {
     if(noData()!=o.noData())
       return false;
     for(unsigned int i=0;i<o.size();i++)
-      if(data[i]!=o.data[i])
+      if(_data[i]!=o._data[i])
         return false;
     return true;
   }
@@ -595,7 +643,7 @@ class Array2D {
   inline bool isNoData(xy_t x, xy_t y) const {
     assert(0<=x && x<view_width);
     assert(0<=y && y<view_height);
-    return data[xyToI(x,y)]==no_data;
+    return _data[xyToI(x,y)]==no_data;
   }
 
   /**
@@ -607,7 +655,33 @@ class Array2D {
   */
   inline bool isNoData(i_t i) const {
     assert(0<=i && i<size());
-    return data[i]==no_data;
+    return _data[i]==no_data;
+  }
+
+  /**
+    @brief Whether or not a cell is NoData using x,y coordinates
+
+    @param[in]  x   X-coordinate of cell to test
+    @param[in]  y   Y-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isData(xy_t x, xy_t y) const {
+    assert(0<=x && x<view_width);
+    assert(0<=y && y<view_height);
+    return _data[xyToI(x,y)]!=no_data;
+  }
+
+  /**
+    @brief Whether or not a cell is NoData using i coordinates
+
+    @param[in]  i   i-coordinate of cell to test
+
+    @return Returns TRUE if the cell is NoData
+  */
+  inline bool isData(i_t i) const {
+    assert(0<=i && i<size());
+    return _data[i]!=no_data;
   }
 
   /**
@@ -616,7 +690,7 @@ class Array2D {
   void flipVert(){
     for(xy_t y=0;y<view_height/2;y++)
     for(xy_t x=0;x<view_width;x++)
-      std::swap(data[xyToI(x,y)], data[xyToI(x,view_height-1-y)]);
+      std::swap(_data[xyToI(x,y)], _data[xyToI(x,view_height-1-y)]);
   }
 
   /**
@@ -624,8 +698,8 @@ class Array2D {
   */
   void flipHorz(){
     for(xy_t y=0;y<view_height;y++){
-      T* start = &data[xyToI(0,y)];
-      T* end   = &data[xyToI(view_width,y)];
+      T* start = &_data[xyToI(0,y)];
+      T* end   = &_data[xyToI(view_width,y)];
       while(start<end){
         std::swap(*start,*end);
         start++;
@@ -642,7 +716,7 @@ class Array2D {
     std::vector<T> new_data(view_width*view_height);
     for(xy_t y=0;y<view_height;y++)
     for(xy_t x=0;x<view_width;x++)
-      std::swap(data[(i_t)x*(i_t)view_height+(i_t)y], data[xyToI(x,y)]);
+      std::swap(_data[(i_t)x*(i_t)view_height+(i_t)y], _data[xyToI(x,y)]);
     std::swap(view_width,view_height);
     //TODO: Offsets?
   }
@@ -739,7 +813,7 @@ class Array2D {
   */
   void setAll(const T val){
     for(i_t i=0;i<size();i++)
-      data[i] = val;
+      _data[i] = val;
   }
 
   /**
@@ -747,11 +821,14 @@ class Array2D {
 
     @param[in]   width0    New width of the raster
     @param[in]   height0   New height of the raster
-    @param[in]   val0      Value to set all the cells to. Defaults to the 
+    @param[in]   val0      Value to set all the cells to. Defaults to the
                           raster's template type default value
   */
   void resize(const xy_t width0, const xy_t height0, const T& val0 = T()){
-    data.resize(width0*height0);
+    assert(width0>=0);
+    assert(height0>=0);
+    assert(width0<=std::numeric_limits<xy_t>::max()-2);
+    _data.resize((uint64_t)width0*(uint64_t)height0);
 
     _nshift     = {{0,-1,-width0-1,-width0,-width0+1,1,width0+1,width0,width0-1}};
 
@@ -786,11 +863,11 @@ class Array2D {
     @param[in] new_height New height of the raster. Must be >= the old height.
     @param[in] val        Value to set the new cells to
   */
-  void expand(xy_t new_width, xy_t new_height, const T val){
+  void expand(uint64_t new_width, uint64_t new_height, const T val){
     RDLOG_DEBUG<<"Array2D::expand(width,height,val)";
 
     if(new_width==view_width && new_height==view_height)
-      return;    
+      return;
     if(!owned())
       throw std::runtime_error("RichDEM can only expand memory it owns!");
 
@@ -798,17 +875,17 @@ class Array2D {
       throw std::runtime_error("expand(): new_width<view_width");
     if(new_height<view_height)
       throw std::runtime_error("expand(): new_height<view_height");
-    
-    xy_t old_width  = width();
-    xy_t old_height = height();
 
-    auto old_data = std::move(data);   //This gets the pointer to the old data before it is replaced
+    auto old_width  = width();
+    auto old_height = height();
+
+    auto old_data = std::move(_data);   //This gets the pointer to the old data before it is replaced
 
     resize(new_width,new_height,val);
 
     for(xy_t y=0;y<old_height;y++)
     for(xy_t x=0;x<old_width;x++)
-      data[y*new_width+x] = old_data[y*old_width+x];
+      _data[y*new_width+x] = old_data[y*old_width+x];
   }
 
   /**
@@ -817,7 +894,7 @@ class Array2D {
   void countDataCells() const {
     num_data_cells = 0;
     for(unsigned int i=0;i<size();i++)
-      if(data[i]!=no_data)
+      if(_data[i]!=no_data)
         num_data_cells++;
   }
 
@@ -842,7 +919,7 @@ class Array2D {
   T& operator()(i_t i){
     assert(i>=0);
     assert(i<(i_t)view_width*view_height);
-    return data[i];
+    return _data[i];
   }
 
   /**
@@ -855,7 +932,7 @@ class Array2D {
   T operator()(i_t i) const {
     assert(i>=0);
     assert(i<(i_t)view_width*view_height);
-    return data[i];
+    return _data[i];
   }
 
   /**
@@ -871,7 +948,7 @@ class Array2D {
     assert(y>=0);
     assert(x<width());
     assert(y<height());
-    return data[xyToI(x,y)];
+    return _data[xyToI(x,y)];
   }
 
   /**
@@ -887,7 +964,7 @@ class Array2D {
     assert(y>=0);
     assert(x<width());
     assert(y<height());
-    return data[xyToI(x,y)];
+    return _data[xyToI(x,y)];
   }
 
   /**
@@ -895,8 +972,8 @@ class Array2D {
 
     @return A vector containing a copy of the top row of the raster
   */
-  std::vector<T> topRow() const {  
-    return getRowData(0);  
+  std::vector<T> topRow() const {
+    return getRowData(0);
   }
 
   /**
@@ -915,8 +992,8 @@ class Array2D {
 
     @return A vector containing a copy of the left column of the raster
   */
-  std::vector<T> leftColumn() const { 
-    return getColData(0); 
+  std::vector<T> leftColumn() const {
+    return getColData(0);
   }
 
   /**
@@ -926,7 +1003,7 @@ class Array2D {
 
     @return A vector containing a copy of the right column of the raster
   */
-  std::vector<T> rightColumn() const { 
+  std::vector<T> rightColumn() const {
     return getColData(view_width-1);
   }
 
@@ -938,7 +1015,7 @@ class Array2D {
   */
   void setRow(xy_t y, const T &val){
     for(xy_t x=0;x<view_width;x++)
-      data[xyToI(x,y)] = val;
+      _data[xyToI(x,y)] = val;
   }
 
   /**
@@ -949,7 +1026,7 @@ class Array2D {
   */
   void setCol(xy_t x, const T &val){
     for(xy_t y=0;y<view_height;y++)
-      data[xyToI(x,y)] = val;
+      _data[xyToI(x,y)] = val;
   }
 
   /**
@@ -960,7 +1037,7 @@ class Array2D {
     @return A vector containing a copy of the selected row
   */
   std::vector<T> getRowData(xy_t y) const {
-    return std::vector<T>(data.data()+xyToI(0,y),data.data()+xyToI(0,y)+view_width);
+    return std::vector<T>(_data.data()+xyToI(0,y),_data.data()+xyToI(0,y)+view_width);
   }
 
   /**
@@ -973,13 +1050,13 @@ class Array2D {
   std::vector<T> getColData(xy_t x) const {
     std::vector<T> temp(view_height);
     for(xy_t y=0;y<view_height;y++)
-      temp[y]=data[xyToI(x,y)];
+      temp[y]=_data[xyToI(x,y)];
     return temp;
   }
 
   ///Clears all raster data from RAM
   void clear(){
-    data = ManagedVector<T>();
+    _data = ManagedVector<T>();
   }
 
   /**
@@ -1069,7 +1146,7 @@ class Array2D {
       RDLOG_DEBUG<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3];
     #endif
 
-    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, data.data(), view_width, view_height, myGDALType(), 0, 0);
+    auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, _data.data(), view_width, view_height, myGDALType(), 0, 0);
     if(temp!=CE_None)
       throw std::runtime_error("Error writing file with saveGDAL()!");
 
@@ -1089,7 +1166,7 @@ class Array2D {
 
     Since algorithms may have to flip rasters horizontally or vertically before
     manipulating them, it is important that all algorithms work on data in the
-    same orientation. This method, used in testing, helps a user ensure that 
+    same orientation. This method, used in testing, helps a user ensure that
     their algorithm is orientating data correctly.
 
     @param[in]  size   Output stamp will be size x size
@@ -1115,7 +1192,7 @@ class Array2D {
 
       for(xy_t y=sy;y<symax;y++){
         for(xy_t x=sx;x<sxmax;x++)
-          std::cout<<std::setw(5)<<std::setprecision(3)<<(int)data[xyToI(x,y)]<<" ";
+          std::cout<<std::setw(5)<<std::setprecision(3)<<(int)_data[xyToI(x,y)]<<" ";
         std::cout<<"\n";
       }
     #endif
@@ -1144,7 +1221,7 @@ class Array2D {
       for(xy_t x=xmin;x<xmax;x++){
         if(color && x==x0 && y==y0)
           std::cout<<"\033[92m";
-        std::cout<<std::setw(5)<<(int)data[xyToI(x,y)]<<" ";
+        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
         if(color && x==x0 && y==y0)
           std::cout<<"\033[39m";
       }
@@ -1159,11 +1236,27 @@ class Array2D {
   */
   void printAll(const std::string msg="") const {
     if(!msg.empty())
+      std::cerr<<msg<<std::endl;
+
+    for(xy_t y=0;y<height();y++){
+      for(xy_t x=0;x<width();x++)
+        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
+      std::cout<<std::endl;
+    }
+  }
+
+  /**
+    @brief Prints the flat indices of the entire array
+
+    @param[in]     msg   Optional message to print above the block
+  */
+  void printAllIndices(const std::string msg="") const {
+    if(!msg.empty())
       std::cout<<msg<<std::endl;
 
     for(xy_t y=0;y<height();y++){
       for(xy_t x=0;x<width();x++)
-        std::cout<<std::setw(5)<<data[xyToI(x,y)]<<" ";
+        std::cout<<std::setw(5)<<xyToI(x,y)<<" ";
       std::cout<<std::endl;
     }
   }
@@ -1203,13 +1296,13 @@ class Array2D {
   */
   void scale(const double x) {
     for(i_t i=0;i<size();i++)
-      if(data[i]!=no_data)
-        data[i] *= x;
+      if(_data[i]!=no_data)
+        _data[i] *= x;
   }
 
   //TODO
   inline bool owned() const {
-    return data.owned();
+    return _data.owned();
   }
 };
 

@@ -1,4 +1,4 @@
-#include "richdem/common/Array2D.hpp"
+#include <richdem/common/Array2D.hpp>
 #include "perimeters.hpp"
 #include <iostream>
 #include <cassert>

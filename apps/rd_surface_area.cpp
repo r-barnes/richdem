@@ -2,10 +2,10 @@
 #include <string>
 #include <cstdlib>
 #include <iomanip>
-#include "richdem/common/version.hpp"
-#include "richdem/common/router.hpp"
-#include "richdem/misc/misc_methods.hpp"
-#include "richdem/common/Array2D.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/common/router.hpp>
+#include <richdem/misc/misc_methods.hpp>
+#include <richdem/common/Array2D.hpp>
 
 template<class T>
 int PerformAlgorithm(const double zscale, std::string analysis, Array2D<T> elevation){

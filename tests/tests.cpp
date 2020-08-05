@@ -2,14 +2,15 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 //#include "catch/catch.hpp"
 #include "doctest.h"
-#include "richdem/common/Array2D.hpp"
 
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/loaders.hpp>
 #include <richdem/richdem.hpp>
 using namespace richdem;
 
-#include <experimental/filesystem>
+#include <filesystem>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 using namespace richdem;
 
@@ -35,6 +36,21 @@ TEST_CASE("ManagedVector Resizing"){
   REQUIRE_THROWS(mvec.resize(10));
   REQUIRE_NOTHROW(mvec.resize(30));
 }
+
+#ifdef USEGDAL
+TEST_CASE("Test padding on load") {
+  Array2D<int> temp;
+  LoadGDAL("ones_block.dem", temp, 1, 1);
+  for(int y=0;y<temp.height();y++)
+  for(int x=0;x<temp.width();x++){
+    if((x==0 || y==0 || x==temp.width()-1 || y==temp.height()-1)){
+      REQUIRE(temp(x,y)==0);
+    } else {
+      REQUIRE(temp(x,y)==1);
+    }
+  }
+}
+#endif
 
 TEST_CASE( "Array2D works" ) {
 
@@ -79,7 +95,7 @@ TEST_CASE( "Array2D works" ) {
     arr.resize(3,5,4);
     REQUIRE( arr.width()  == 3  );
     REQUIRE( arr.height() == 5  );
-    REQUIRE( arr.size()   == 15 );  
+    REQUIRE( arr.size()   == 15 );
 
     REQUIRE( arr(2,1)==4 );
     REQUIRE( arr(2,2)==4 );
@@ -100,6 +116,21 @@ TEST_CASE( "Array2D works" ) {
     auto arr1 = arr0;
     arr0.clear();
   }
+
+  SUBCASE("Initializer list construction"){
+    const Array2D<float> arr = {
+      { 1, 2, 3},
+      { 4, 5, 6},
+      { 7, 8, 9},
+      {10,11,12}
+    };
+    CHECK(arr.width()==3);
+    CHECK(arr.height()==4);
+    CHECK(arr(0,0)==1);
+    CHECK(arr(2,0)==3);
+    CHECK(arr(0,2)==7);
+    CHECK(arr(2,3)==12);
+  }
 }
 
 
@@ -114,14 +145,14 @@ TEST_CASE("Checking flow accumulation") {
         REQUIRE( correct_ans == my_ans );
       }
     }
-  }  
+  }
 
 
 
 
 
 TEST_CASE("Checking GridCellZk_pq") {
-  GridCellZk_pq<int> pq;
+  GridCellZk_low_pq<int> pq;
 
   SUBCASE("Testing Elevation Ordering"){
     pq.emplace(0,0,0);
@@ -160,6 +191,46 @@ TEST_CASE("Checking GridCellZk_pq") {
   }
 }
 
+TEST_CASE("Checking GridCellZk_pq") {
+  GridCellZk_high_pq<int> pq;
+
+  SUBCASE("Testing Elevation Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,1);
+    pq.emplace(2,0,2);
+    pq.emplace(3,0,3);
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+
+  SUBCASE("Testing Insertion Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,0);
+    pq.emplace(2,0,0);
+    pq.emplace(3,0,0);
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+
+  SUBCASE("Testing Mixed Ordering"){
+    pq.emplace(0,0,0);
+    pq.emplace(1,0,1);
+    pq.emplace(2,0,1);
+    pq.emplace(3,0,2);
+    REQUIRE(pq.top().x==0); pq.pop();
+    REQUIRE(pq.top().x==2); pq.pop();
+    REQUIRE(pq.top().x==1); pq.pop();
+    REQUIRE(pq.top().x==3); pq.pop();
+    REQUIRE(pq.empty()==true);
+  }
+}
+
 
 TEST_CASE("Checking depression filling") {
   RDLOG_DEBUG<<"About to load depressions/testdem1.dem";
@@ -192,14 +263,14 @@ TEST_CASE("Checking depression filling") {
     PriorityFlood_Wei2018(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("FillDepressions"){
     auto elevation = elevation_orig;
     FillDepressions<Topology::D8>(elevation);
     Array2D<int> manually_flooded("depressions/testdem1.all.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("PriorityFlood_Barnes2014_max_dep"){
     auto elevation = elevation_orig;
@@ -248,7 +319,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth9999.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2)"){
     auto elevation = elevation_orig;
@@ -256,7 +327,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=2, Fill Depressions)"){
     auto elevation = elevation_orig;
@@ -264,7 +335,7 @@ TEST_CASE("Checking depression breaching") {
     elevation.printAll();
     Array2D<int> manually_flooded("breaching/testdem1.selective-len4-depth2-filldep.out");
     REQUIRE(elevation==manually_flooded);
-  }  
+  }
 
   SUBCASE("Lindsay2016 Selective Breaching (Length=4, Depth=8)"){
     auto elevation = elevation_orig;

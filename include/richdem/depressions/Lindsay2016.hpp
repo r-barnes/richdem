@@ -1,11 +1,11 @@
 #ifndef _richdem_lindsay2016_hpp_
 #define _richdem_lindsay2016_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/grid_cell.hpp"
-#include "richdem/common/ProgressBar.hpp"
-#include "richdem/common/timer.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/ProgressBar.hpp>
+#include <richdem/common/timer.hpp>
 #include <limits>
 
 namespace richdem {
@@ -57,13 +57,13 @@ void CompleteBreaching_Lindsay2016(Array2D<elev_t> &dem){
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
 
-  Array2D<uint32_t>     backlinks(dem, NO_BACK_LINK);
-  Array2D<uint8_t>      visited(dem, false);
-  Array2D<uint8_t>      pits(dem, false);
-  std::vector<uint32_t> flood_array;
-  GridCellZk_pq<elev_t> pq;
-  ProgressBar           progress;
-  Timer                 overall;
+  Array2D<uint32_t>         backlinks(dem, NO_BACK_LINK);
+  Array2D<uint8_t>          visited(dem, false);
+  Array2D<uint8_t>          pits(dem, false);
+  std::vector<uint32_t>     flood_array;
+  GridCellZk_low_pq<elev_t> pq;
+  ProgressBar               progress;
+  Timer                     overall;
 
   overall.start();
 
@@ -237,13 +237,13 @@ void Lindsay2016(
 
   const uint32_t NO_BACK_LINK = std::numeric_limits<uint32_t>::max();
 
-  Array2D<uint32_t>     backlinks(dem, NO_BACK_LINK);
-  Array2D<uint8_t>      visited(dem, false);
-  Array2D<uint8_t>      pits(dem, false);
-  std::vector<uint32_t> flood_array;
-  GridCellZk_pq<elev_t> pq;
-  ProgressBar           progress;
-  Timer                 overall;
+  Array2D<uint32_t>         backlinks(dem, NO_BACK_LINK);
+  Array2D<uint8_t>          visited(dem, false);
+  Array2D<uint8_t>          pits(dem, false);
+  std::vector<uint32_t>     flood_array;
+  GridCellZk_low_pq<elev_t> pq;
+  ProgressBar               progress;
+  Timer                     overall;
 
   overall.start();
 

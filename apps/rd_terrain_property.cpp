@@ -1,9 +1,9 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include "richdem/common/version.hpp"
-#include "richdem/methods/terrain_attributes.hpp"
-#include "richdem/common/Array2D.hpp"
+#include <richdem/common/version.hpp>
+#include <richdem/methods/terrain_attributes.hpp>
+#include <richdem/common/Array2D.hpp>
 using namespace richdem;
 
 template<class T>

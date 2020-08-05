@@ -14,9 +14,9 @@
 #include <queue>
 #include <stdexcept>
 #include <cassert>
-#include "richdem/common/Array2D.hpp"
-#include "richdem/common/constants.hpp"
-#include "richdem/common/ProgressBar.hpp"
+#include <richdem/common/Array2D.hpp>
+#include <richdem/common/constants.hpp>
+#include <richdem/common/ProgressBar.hpp>
 
 
 /**

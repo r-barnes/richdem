@@ -21,7 +21,7 @@
 #ifndef _richdem_layoutfile_hpp_
 #define _richdem_layoutfile_hpp_
 
-#include "richdem/common/logger.hpp"
+#include <richdem/common/logger.hpp>
 #include <string>
 #include <vector>
 #include <fstream>

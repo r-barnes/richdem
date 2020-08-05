@@ -1,5 +1,4 @@
-#ifndef _richdem_gdal_hpp_
-#define _richdem_gdal_hpp_
+#pragma once
 
 #ifdef USEGDAL
 
@@ -15,19 +14,7 @@ namespace richdem {
 
   @param[in]  filename   Filename of file whose type should be determined
 */
-GDALDataType peekGDALType(const std::string &filename) {
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL)
-    throw std::runtime_error("Unable to open file '"+filename+"'!");
-
-  GDALRasterBand *band   = fin->GetRasterBand(1);
-  GDALDataType data_type = band->GetRasterDataType();
-
-  GDALClose(fin);
-
-  return data_type;
-}
+GDALDataType peekGDALType(const std::string &filename);
 
 
 
@@ -83,24 +70,7 @@ void getGDALDimensions(
   int32_t &width,
   GDALDataType &dtype,
   double geotransform[6]
-){
-  GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL)
-    throw std::runtime_error("Could not open file '"+filename+"' to get dimensions.");
-
-  GDALRasterBand *band = fin->GetRasterBand(1);
-  
-  dtype = band->GetRasterDataType();
-
-  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None)
-    throw std::runtime_error("Error getting geotransform from '"+filename+"'.");
-
-  height  = band->GetYSize();
-  width   = band->GetXSize();
-
-  GDALClose(fin);
-}
+);
 
 
 
@@ -132,7 +102,5 @@ GDALDataType NativeTypeToGDAL() {
 }
 
 }
-
-#endif
 
 #endif

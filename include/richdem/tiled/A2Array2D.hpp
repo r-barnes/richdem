@@ -6,10 +6,10 @@
 #ifndef _a2array2d_hpp_
 #define _a2array2d_hpp_
 
-#include "richdem/common/logger.hpp"
-#include "richdem/common/Layoutfile.hpp"
-#include "richdem/common/Array2D.hpp"
-#include "richdem/tiled/lru.hpp"
+#include <richdem/common/logger.hpp>
+#include <richdem/common/Layoutfile.hpp>
+#include <richdem/common/Array2D.hpp>
+#include <richdem/tiled/lru.hpp>
 #include "gdal_priv.h"
 
 namespace richdem {
