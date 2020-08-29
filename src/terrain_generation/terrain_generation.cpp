@@ -6,8 +6,8 @@
 
 namespace richdem {
 
-Array2D<double> perlin(const int size){
-  PerlinNoise pn;
+Array2D<double> perlin(const int size, const uint32_t seed){
+  PerlinNoise pn(seed);
 
   Array2D<double> terrain(size,size);
   for(int y=0;y<size;y++)
