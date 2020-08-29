@@ -1232,15 +1232,17 @@ class Array2D {
   /**
     @brief Prints the entire array
 
-    @param[in]     msg   Optional message to print above the block
+    @param[in] msg       Optional message to print above the block
+    @param[in] fwidth    Field width to print to
+    @param[in] precision Precision (number of decimal digits) to print
   */
-  void printAll(const std::string msg="") const {
+  void printAll(const std::string msg="", const int fwidth=5, const int precision=0) const {
     if(!msg.empty())
       std::cerr<<msg<<std::endl;
 
     for(xy_t y=0;y<height();y++){
       for(xy_t x=0;x<width();x++)
-        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<_data[xyToI(x,y)]<<" ";
       std::cout<<std::endl;
     }
   }
