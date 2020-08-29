@@ -6,7 +6,7 @@
   much is left, and how long it is estimated to take. It accounts for
   multithreading by assuming uniform progress by all threads.
 
-  Define the global macro `NOPROGRESS` disables the progress bar, which may 
+  Define the global macro `NOPROGRESS` disables the progress bar, which may
   speed up the program.
 
   The progress bar looks like this:
@@ -104,6 +104,8 @@ class ProgressBar{
 
     ///Increment by one the work done and update the progress bar
     ProgressBar& operator++(){
+      if(omp_get_thread_num()!=0)
+        return *this;
       work_done++;
       update(work_done);
       return *this;
