@@ -37,6 +37,7 @@ TEST_CASE("ManagedVector Resizing"){
   REQUIRE_NOTHROW(mvec.resize(30));
 }
 
+#ifdef USEGDAL
 TEST_CASE("Test padding on load") {
   Array2D<int> temp;
   LoadGDAL("ones_block.dem", temp, 1, 1);
@@ -49,6 +50,7 @@ TEST_CASE("Test padding on load") {
     }
   }
 }
+#endif
 
 TEST_CASE( "Array2D works" ) {
 

@@ -12,6 +12,8 @@ project (librichdem
 find_package(GDAL)
 find_package(OpenMP)
 
+option(USE_GDAL "Whether or not to compile with GDAL.")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC RICHDEM_GIT_HASH)
@@ -56,7 +58,7 @@ target_compile_options(richdem
     -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
 )
 
-if(GDAL_FOUND)
+if(USE_GDAL AND GDAL_FOUND)
   message(STATUS "Compiling RichDEM with GDAL.")
   target_link_libraries(richdem
     PUBLIC
