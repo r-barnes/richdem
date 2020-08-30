@@ -110,7 +110,7 @@ class Array2D {
   ManagedVector<T> _data;            ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
-  T   no_data;                       ///< NoData value of the raster
+  T no_data = -1;                    ///< NoData value of the raster
   mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
   xy_t view_width  = 0;              ///< Height of raster in cells
