@@ -1,17 +1,15 @@
-//#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-//#include "catch/catch.hpp"
 #include "doctest.h"
 
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/loaders.hpp>
+#include <richdem/misc/misc_methods.hpp>
 #include <richdem/richdem.hpp>
-using namespace richdem;
 
 #include <filesystem>
+#include <queue>
 
 namespace fs = std::filesystem;
-
 using namespace richdem;
 
 TEST_CASE("ManagedVector Construction"){
@@ -372,4 +370,59 @@ TEST_CASE("Checking flow accumulation") {
   SUBCASE("FA_D8")                  {Array2D<double> accum(beauford); FA_D8                  (beauford, accum); }
   SUBCASE("FA_D4")                  {Array2D<double> accum(beauford); FA_D4                  (beauford, accum); }
 
+}
+
+
+
+TEST_CASE("BucketFill"){
+  SUBCASE("Middle"){
+    Array2D<int> check_raster = {
+      {1, 1, 1, 1, 1, 1, 1},
+      {1, 1, 2, 1, 1, 2, 1},
+      {1, 1, 2, 1, 2, 1, 1},
+      {1, 1, 2, 2, 1, 1, 1},
+      {1, 1, 1, 1, 1, 1, 1},
+    };
+
+    Array2D<int> set_raster(check_raster.width(), check_raster.height(), 0);
+
+    std::vector<size_t> q;
+    q.emplace_back(set_raster.xyToI(2,1));
+
+    BucketFill<Topology::D8>(check_raster, set_raster, 2, 4, q);
+
+    const Array2D<int> good_raster = {
+      {0, 0, 0, 0, 0, 0, 0},
+      {0, 0, 4, 0, 0, 4, 0},
+      {0, 0, 4, 0, 4, 0, 0},
+      {0, 0, 4, 4, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0, 0},
+    };
+
+    CHECK(set_raster==good_raster);
+  }
+
+  SUBCASE("Edges"){
+    Array2D<int> check_raster = {
+      {1, 1, 1, 1, 1, 2, 1},
+      {1, 1, 2, 1, 2, 1, 1},
+      {1, 1, 2, 1, 1, 2, 1},
+      {1, 1, 2, 2, 1, 1, 1},
+      {1, 2, 1, 1, 1, 1, 1},
+    };
+
+    Array2D<int> set_raster(check_raster.width(), check_raster.height(), 0);
+
+    BucketFillFromEdges<Topology::D8>(check_raster, set_raster, 2, 4);
+
+    const Array2D<int> good_raster = {
+      {0, 0, 0, 0, 0, 4, 0},
+      {0, 0, 4, 0, 4, 0, 0},
+      {0, 0, 4, 0, 0, 4, 0},
+      {0, 0, 4, 4, 0, 0, 0},
+      {0, 4, 0, 0, 0, 0, 0},
+    };
+
+    CHECK(set_raster==good_raster);
+  }
 }
