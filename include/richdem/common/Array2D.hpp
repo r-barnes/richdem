@@ -1214,13 +1214,15 @@ class Array2D {
   /**
     @brief Prints a square of cells centered at x,y. Useful for debugging.
 
-    @param[in]  radius   Output stamp will be 2*radius x 2*radius
-    @param[in]      x0   X-coordinate of block center
-    @param[in]      y0   Y-coordinate of block center
-    @param[in]   color   Print the (x,y) cell in colour?
-    @param[in]     msg   Optional message to print above the block
+    @param[in]    radius   Output stamp will be 2*radius x 2*radius
+    @param[in]        x0   X-coordinate of block center
+    @param[in]        y0   Y-coordinate of block center
+    @param[in]     color   Print the (x,y) cell in colour?
+    @param[in]       msg   Optional message to print above the block
+    @param[in]    fwidth   Field width in which to print each array value
+    @param[in] precision   Number of decimal digits to display
   */
-  void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
+  void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="", const int fwidth=5, const int precision=0) const {
     if(msg.size()!=0)
       std::cout<<msg<<std::endl;
 
@@ -1233,7 +1235,12 @@ class Array2D {
       for(xy_t x=xmin;x<xmax;x++){
         if(color && x==x0 && y==y0)
           std::cout<<"\033[92m";
-        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision);
+        if(std::is_same<T, flowdir_t>::value){
+          std::cout<<(int)_data[xyToI(x,y)]<<" ";
+        } else {
+          std::cout<<_data[xyToI(x,y)]<<" ";
+        }
         if(color && x==x0 && y==y0)
           std::cout<<"\033[39m";
       }
@@ -1253,8 +1260,14 @@ class Array2D {
       std::cerr<<msg<<std::endl;
 
     for(xy_t y=0;y<height();y++){
-      for(xy_t x=0;x<width();x++)
-        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<_data[xyToI(x,y)]<<" ";
+      for(xy_t x=0;x<width();x++){
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision);
+        if(std::is_same<T, flowdir_t>::value){
+          std::cout<<(int)_data[xyToI(x,y)]<<" ";
+        } else {
+          std::cout<<_data[xyToI(x,y)]<<" ";
+        }
+      }
       std::cout<<std::endl;
     }
   }
