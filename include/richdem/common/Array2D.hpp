@@ -626,7 +626,7 @@ class Array2D {
       return false;
     if(noData()!=o.noData())
       return false;
-    for(unsigned int i=0;i<o.size();i++)
+    for(auto i=i0();i<o.size();i++)
       if(_data[i]!=o._data[i])
         return false;
     return true;
@@ -1027,6 +1027,18 @@ class Array2D {
   void setCol(xy_t x, const T &val){
     for(xy_t y=0;y<view_height;y++)
       _data[xyToI(x,y)] = val;
+  }
+
+  /**
+    @brief Sets the edges of the array to a given value.
+
+    @param[in] val    The value to set the edges to
+  */
+  void setEdges(const T &val){
+    setRow(0,          val);
+    setRow(height()-1, val);
+    setCol(0,          val);
+    setCol(width()-1,  val);
   }
 
   /**
