@@ -1235,7 +1235,7 @@ class Array2D {
       for(xy_t x=xmin;x<xmax;x++){
         if(color && x==x0 && y==y0)
           std::cout<<"\033[92m";
-        std::cout<<std::setw(fwidth)<<std::setprecision(precision);
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<std::fixed;
         if(std::is_same<T, flowdir_t>::value){
           std::cout<<(int)_data[xyToI(x,y)]<<" ";
         } else {
@@ -1261,11 +1261,36 @@ class Array2D {
 
     for(xy_t y=0;y<height();y++){
       for(xy_t x=0;x<width();x++){
-        std::cout<<std::setw(fwidth)<<std::setprecision(precision);
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<std::fixed;
         if(std::is_same<T, flowdir_t>::value){
           std::cout<<(int)_data[xyToI(x,y)]<<" ";
         } else {
           std::cout<<_data[xyToI(x,y)]<<" ";
+        }
+      }
+      std::cout<<std::endl;
+    }
+  }
+
+  /**
+    @brief Prints the entire array as flow directions
+
+    @param[in] msg       Optional message to print above the block
+    @param[in] fwidth    Field width to print to
+    @param[in] precision Precision (number of decimal digits) to print
+  */
+  void printAllFlows(const std::string msg="", const int fwidth=5) const {
+    if(!msg.empty())
+      std::cerr<<msg<<std::endl;
+
+    for(xy_t y=0;y<height();y++){
+      for(xy_t x=0;x<width();x++){
+        const auto dir = _data[xyToI(x,y)];
+        std::cout<<std::setw(fwidth);
+        if(0<=dir && dir<=8){
+          std::cout<<(int)dir;
+        } else {
+          std::cout<<"?";
         }
       }
       std::cout<<std::endl;
