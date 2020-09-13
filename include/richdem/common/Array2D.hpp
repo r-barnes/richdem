@@ -1297,6 +1297,38 @@ class Array2D {
     }
   }
 
+
+  /**
+    @brief Prints a square of cells centered at x,y indicating the index of each
+
+    @param[in]    radius   Output stamp will be 2*radius x 2*radius
+    @param[in]        x0   X-coordinate of block center
+    @param[in]        y0   Y-coordinate of block center
+    @param[in]     color   Print the (x,y) cell in colour?
+    @param[in]       msg   Optional message to print above the block
+    @param[in]    fwidth   Field width in which to print each array value
+  */
+  void printBlockIndices(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="", const int fwidth=5) const {
+    if(msg.size()!=0)
+      std::cout<<msg<<std::endl;
+
+    xy_t xmin = std::max(0,x0-radius);
+    xy_t ymin = std::max(0,y0-radius);
+    xy_t xmax = std::min(width(),x0+radius);
+    xy_t ymax = std::min(height(),y0+radius);
+
+    for(xy_t y=ymin;y<ymax;y++){
+      for(xy_t x=xmin;x<xmax;x++){
+        if(color && x==x0 && y==y0)
+          std::cout<<"\033[92m";
+        std::cout<<std::setw(fwidth)<<xyToI(x,y)<<" ";
+        if(color && x==x0 && y==y0)
+          std::cout<<"\033[39m";
+      }
+      std::cout<<std::endl;
+    }
+  }
+
   /**
     @brief Prints the flat indices of the entire array
 
