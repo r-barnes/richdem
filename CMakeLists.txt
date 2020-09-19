@@ -6,7 +6,7 @@ project (librichdem
   LANGUAGES CXX
 )
 
-# add_subdirectory(apps)
+add_subdirectory(apps)
 # add_subdirectory(tests)
 
 find_package(GDAL)
@@ -68,14 +68,8 @@ endif()
 
 if(USE_GDAL AND GDAL_FOUND)
   message(STATUS "Compiling RichDEM with GDAL.")
-  target_link_libraries(richdem
-    PUBLIC
-      ${GDAL_LIBRARY}
-  )
-  target_include_directories(richdem
-    PUBLIC
-      ${GDAL_INCLUDE_DIR}
-  )
+  target_link_libraries(richdem PUBLIC ${GDAL_LIBRARY})
+  target_include_directories(richdem PUBLIC ${GDAL_INCLUDE_DIR})
   target_compile_options(richdem PUBLIC -DUSEGDAL)
 else()
   message(WARNING "Compiling RichDEM without GDAL!")

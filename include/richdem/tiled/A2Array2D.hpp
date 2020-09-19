@@ -9,6 +9,7 @@
 #include <richdem/common/logger.hpp>
 #include <richdem/common/Layoutfile.hpp>
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/gdal.hpp>
 #include <richdem/tiled/lru.hpp>
 #include "gdal_priv.h"
 
@@ -81,7 +82,7 @@ class A2Array2D {
     void lazySetAll(){
       if(do_set_all){
         do_set_all = false;
-        setAll(set_all_val);
+        Array2D<T>::setAll(set_all_val);
       }
     }
   };
