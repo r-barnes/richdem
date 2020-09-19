@@ -110,7 +110,7 @@ class Array2D {
   ManagedVector<T> _data;            ///< Holds the raster data in a 1D array
                                     ///< this improves caching versus a 2D array
 
-  T   no_data;                       ///< NoData value of the raster
+  T no_data = -1;                    ///< NoData value of the raster
   mutable i_t num_data_cells = NO_I; ///< Number of cells which are not NoData
 
   xy_t view_width  = 0;              ///< Height of raster in cells
@@ -626,7 +626,7 @@ class Array2D {
       return false;
     if(noData()!=o.noData())
       return false;
-    for(unsigned int i=0;i<o.size();i++)
+    for(auto i=i0();i<o.size();i++)
       if(_data[i]!=o._data[i])
         return false;
     return true;
@@ -1030,6 +1030,18 @@ class Array2D {
   }
 
   /**
+    @brief Sets the edges of the array to a given value.
+
+    @param[in] val    The value to set the edges to
+  */
+  void setEdges(const T &val){
+    setRow(0,          val);
+    setRow(height()-1, val);
+    setCol(0,          val);
+    setCol(width()-1,  val);
+  }
+
+  /**
     @brief Returns a copy of an arbitrary row of the raster
 
     @param[in]   y    The row to retrieve
@@ -1202,13 +1214,15 @@ class Array2D {
   /**
     @brief Prints a square of cells centered at x,y. Useful for debugging.
 
-    @param[in]  radius   Output stamp will be 2*radius x 2*radius
-    @param[in]      x0   X-coordinate of block center
-    @param[in]      y0   Y-coordinate of block center
-    @param[in]   color   Print the (x,y) cell in colour?
-    @param[in]     msg   Optional message to print above the block
+    @param[in]    radius   Output stamp will be 2*radius x 2*radius
+    @param[in]        x0   X-coordinate of block center
+    @param[in]        y0   Y-coordinate of block center
+    @param[in]     color   Print the (x,y) cell in colour?
+    @param[in]       msg   Optional message to print above the block
+    @param[in]    fwidth   Field width in which to print each array value
+    @param[in] precision   Number of decimal digits to display
   */
-  void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="") const {
+  void printBlock(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="", const int fwidth=5, const int precision=0) const {
     if(msg.size()!=0)
       std::cout<<msg<<std::endl;
 
@@ -1221,7 +1235,12 @@ class Array2D {
       for(xy_t x=xmin;x<xmax;x++){
         if(color && x==x0 && y==y0)
           std::cout<<"\033[92m";
-        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<std::fixed;
+        if(std::is_same<T, flowdir_t>::value){
+          std::cout<<(int)_data[xyToI(x,y)]<<" ";
+        } else {
+          std::cout<<_data[xyToI(x,y)]<<" ";
+        }
         if(color && x==x0 && y==y0)
           std::cout<<"\033[39m";
       }
@@ -1232,15 +1251,80 @@ class Array2D {
   /**
     @brief Prints the entire array
 
-    @param[in]     msg   Optional message to print above the block
+    @param[in] msg       Optional message to print above the block
+    @param[in] fwidth    Field width to print to
+    @param[in] precision Precision (number of decimal digits) to print
   */
-  void printAll(const std::string msg="") const {
+  void printAll(const std::string msg="", const int fwidth=5, const int precision=0) const {
     if(!msg.empty())
       std::cerr<<msg<<std::endl;
 
     for(xy_t y=0;y<height();y++){
-      for(xy_t x=0;x<width();x++)
-        std::cout<<std::setw(5)<<(int)_data[xyToI(x,y)]<<" ";
+      for(xy_t x=0;x<width();x++){
+        std::cout<<std::setw(fwidth)<<std::setprecision(precision)<<std::fixed;
+        if(std::is_same<T, flowdir_t>::value){
+          std::cout<<(int)_data[xyToI(x,y)]<<" ";
+        } else {
+          std::cout<<_data[xyToI(x,y)]<<" ";
+        }
+      }
+      std::cout<<std::endl;
+    }
+  }
+
+  /**
+    @brief Prints the entire array as flow directions
+
+    @param[in] msg       Optional message to print above the block
+    @param[in] fwidth    Field width to print to
+    @param[in] precision Precision (number of decimal digits) to print
+  */
+  void printAllFlows(const std::string msg="", const int fwidth=5) const {
+    if(!msg.empty())
+      std::cerr<<msg<<std::endl;
+
+    for(xy_t y=0;y<height();y++){
+      for(xy_t x=0;x<width();x++){
+        const auto dir = _data[xyToI(x,y)];
+        std::cout<<std::setw(fwidth);
+        if(0<=dir && dir<=8){
+          std::cout<<(int)dir;
+        } else {
+          std::cout<<"?";
+        }
+      }
+      std::cout<<std::endl;
+    }
+  }
+
+
+  /**
+    @brief Prints a square of cells centered at x,y indicating the index of each
+
+    @param[in]    radius   Output stamp will be 2*radius x 2*radius
+    @param[in]        x0   X-coordinate of block center
+    @param[in]        y0   Y-coordinate of block center
+    @param[in]     color   Print the (x,y) cell in colour?
+    @param[in]       msg   Optional message to print above the block
+    @param[in]    fwidth   Field width in which to print each array value
+  */
+  void printBlockIndices(const int radius, const xy_t x0, const xy_t y0, bool color=false, const std::string msg="", const int fwidth=5) const {
+    if(msg.size()!=0)
+      std::cout<<msg<<std::endl;
+
+    xy_t xmin = std::max(0,x0-radius);
+    xy_t ymin = std::max(0,y0-radius);
+    xy_t xmax = std::min(width(),x0+radius);
+    xy_t ymax = std::min(height(),y0+radius);
+
+    for(xy_t y=ymin;y<ymax;y++){
+      for(xy_t x=xmin;x<xmax;x++){
+        if(color && x==x0 && y==y0)
+          std::cout<<"\033[92m";
+        std::cout<<std::setw(fwidth)<<xyToI(x,y)<<" ";
+        if(color && x==x0 && y==y0)
+          std::cout<<"\033[39m";
+      }
       std::cout<<std::endl;
     }
   }

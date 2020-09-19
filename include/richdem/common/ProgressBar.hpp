@@ -6,8 +6,8 @@
   much is left, and how long it is estimated to take. It accounts for
   multithreading by assuming uniform progress by all threads.
 
-  Define the global macro `NOPROGRESS` disables the progress bar, which may 
-  speed up the program.
+  Define the global macro `RICHDEM_NO_PROGRESS` disables the progress bar, which
+  may speed up the program.
 
   The progress bar looks like this:
 
@@ -36,7 +36,7 @@ namespace richdem {
 
 ///@brief Manages a console-based progress bar to keep the user entertained.
 ///
-///Defining the global `NOPROGRESS` will
+///Defining the global `RICHDEM_NO_PROGRESS` will
 ///disable all progress operations, potentially speeding up a program. The look
 ///of the progress bar is shown in ProgressBar.hpp.
 class ProgressBar{
@@ -69,10 +69,10 @@ class ProgressBar{
 
     ///@brief Update the visible progress bar, but only if enough work has been done.
     ///
-    ///Define the global `NOPROGRESS` flag to prevent this from having an
-    ///effect. Doing so may speed up the program's execution.
+    ///Define the global `RICHDEM_NO_PROGRESS` flag to prevent this from having
+    ///an effect. Doing so may speed up the program's execution.
     void update(uint32_t work_done0){
-      #ifdef NOPROGRESS
+      #ifdef RICHDEM_NO_PROGRESS
         return;
       #endif
 
@@ -104,6 +104,8 @@ class ProgressBar{
 
     ///Increment by one the work done and update the progress bar
     ProgressBar& operator++(){
+      if(omp_get_thread_num()!=0)
+        return *this;
       work_done++;
       update(work_done);
       return *this;

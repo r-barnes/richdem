@@ -10,14 +10,16 @@
 #ifndef _richdem_dinf_methods_hpp_
 #define _richdem_dinf_methods_hpp_
 
-#include <cmath>
-#include <queue>
-#include <stdexcept>
-#include <cassert>
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/constants.hpp>
 #include <richdem/common/ProgressBar.hpp>
 
+#include <cassert>
+#include <cmath>
+#include <queue>
+#include <stdexcept>
+
+namespace richdem {
 
 /**
   @brief  Calculate the surface of a digital elevation model
@@ -50,7 +52,7 @@ double dem_surface_area(
   //fudge_factor", we clamp the calculated area to the actual area without
   //raising an error. If the calculated area is lower than the fudge_factor, we
   //raise an alarm.
-  const double fudge_factor = 1e-4; 
+  const double fudge_factor = 1e-4;
 
   //Using double as an accumulator here is important! Testing this algorithm
   //using the Boost Numeric Interval library should data such as follows:
@@ -121,11 +123,11 @@ double dem_surface_area(
           ndn_elev = zscale*elevations(x+dx[ndn],y+dy[ndn]);
         else
           ndn_elev = my_elev;
-   
+
         const double planar_dist_dn   = planar_diag_dist;            //Distance focal cell to diagonal neighbour
         const double planar_dist_ndn  = (dy[ndn] == 0)?xdist:ydist;  //Distance focal cell to non-diagonal neighbour
         const double planar_dist_bn   = (dy[ndn] == 0)?ydist:xdist;  //Distance between the neighbour cells
-        
+
         const double elev_diff_dn     = dn_elev -my_elev; //Elevation drop between focal and diagonal
         const double elev_diff_ndn    = ndn_elev-my_elev; //Elevation drop between focal and non-diagonal
         const double elev_diff_bn     = ndn_elev-dn_elev; //Elevation drop between neighbours
@@ -149,7 +151,7 @@ double dem_surface_area(
         if(cell_area+fudge_factor>=elevations.getCellArea())
           cell_area = elevations.getCellArea();
         else
-          throw std::runtime_error("A cell had a topographic surface area less than its planar surface area!");        
+          throw std::runtime_error("A cell had a topographic surface area less than its planar surface area!");
       }
 
       area += cell_area;
@@ -168,33 +170,21 @@ double dem_surface_area(
 
 
 
-
-
-
-
-
-
-
-
-
-
-/**
-  @brief  Calculates the perimeter of a digital elevation model
-  @author Richard Barnes (rbarnes@umn.edu)
-
-    Calculates the perimeter of a DEM in one of several ways:
-      * CELL_COUNT   - # of cells bordering edges or NoData cells
-      * SQUARE_EDGE  - Summation of all edges touch borders or NoData cells
-
-  @param[in]  &arr 
-
-  @return The surface area of the digital elevation model
-*/
 enum class PerimType {
   CELL_COUNT,    ///< Counts # of cells bordering DEM edges or NoData cells
   SQUARE_EDGE,   ///< Adds all cell edges bordering DEM edges or NoData cells
 };
 
+/**
+  @brief  Calculates the perimeter of a digital elevation model
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]  &arr
+  @param[in]  perim_type  A `PerimType` value indicating how to calculate the
+                          perimeter.
+
+  @return The perimeter of the digital elevation model
+*/
 template <class T>
 double Perimeter(
   const Array2D<T> &arr,
@@ -247,6 +237,101 @@ double Perimeter(
     return horizontal_edges*arr.getCellLengthX()+vertical_edges*arr.getCellLengthY();
   else
     throw std::runtime_error("Unrecognised PerimType!");
+}
+
+
+
+/**
+  @brief  Applies a bucket-fill paint operation to one raster based on another
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]      &check_raster  Raster whose values are checked for the BucketFill
+  @param[in,out]  &set_raster    Raster whose values are set by the BucketFill.
+                                 If `set_raster` already has `set_value`, then
+                                 the FloodFill won't progress over it. This
+                                 avoids needing a separate visisted raster.
+  @param[in]      check_value  Value in `check_raster` which indicates a value
+                               in `set_raster` should be set
+  @param[in]      set_value    Value that `set_raster` is set to
+  @param[in]      &seed        Vector of seed cells to seed the BucketFill
+*/
+template<Topology topo, class T, class U>
+void BucketFill(
+  const Array2D<T>    &check_raster,
+  Array2D<U>          &set_raster,
+  const T             &check_value,
+  const U             &set_value,
+  std::vector<size_t> &seeds
+){
+  if(check_raster.width()!=set_raster.width() || check_raster.height()!=set_raster.height()){
+    throw std::runtime_error("Rasters must have the same dimension for BucketFill!");
+  }
+
+  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
+  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
+  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+
+  while(!seeds.empty()){
+    const auto c = seeds.back();
+    seeds.pop_back();
+
+    if(check_raster(c)!=check_value || set_raster(c)==set_value){
+      continue;
+    }
+
+    set_raster(c) = set_value;
+
+    int cx,cy;
+    check_raster.iToxy(c,cx,cy);
+
+    for(int n=1;n<=nmax;n++){
+      if(!check_raster.inGrid(cx+dx[n],cy+dy[n]))
+        continue;
+
+      const auto ni = check_raster.xyToI(cx+dx[n], cy+dy[n]);
+
+      if(check_raster(ni)==check_value && set_raster(ni)!=set_value)
+        seeds.emplace_back(ni);
+    }
+  }
+}
+
+
+
+/**
+  @brief  Applies a bucket-fill paint operation to one raster based on another
+          starting from the edges.
+  @author Richard Barnes (rbarnes@umn.edu)
+
+  @param[in]      &check_raster  Raster whose values are checked for the BucketFill
+  @param[in,out]  &set_raster    Raster whose values are set by the BucketFill.
+                                 If `set_raster` already has `set_value`, then
+                                 the FloodFill won't progress over it. This
+                                 avoids needing a separate visisted raster.
+  @param[in]      check_value  Value in `check_raster` which indicates a value
+                               in `set_raster` should be set
+  @param[in]      set_value    Value that `set_raster` is set to
+*/
+template<Topology topo, class T, class U>
+void BucketFillFromEdges(
+  const Array2D<T>   &check_raster,
+  Array2D<U>         &set_raster,
+  const T            &check_value,
+  const U            &set_value
+){
+  std::vector<size_t> seeds;
+  seeds.reserve(2*check_raster.width()+2*check_raster.height());
+  for(int y=0;y<check_raster.height();y++){
+    seeds.emplace_back(check_raster.xyToI(0,y));
+    seeds.emplace_back(check_raster.xyToI(check_raster.width()-1,y));
+  }
+  for(int x=0;x<check_raster.width();x++){
+    seeds.emplace_back(check_raster.xyToI(x,0));
+    seeds.emplace_back(check_raster.xyToI(x,check_raster.height()-1));
+  }
+  BucketFill<topo>(check_raster, set_raster, check_value, set_value, seeds);
+}
+
 }
 
 #endif

@@ -4,7 +4,7 @@
 
   RichDEM uses the following D8 neighbourhood. This is used by the dx[] and dy[]
   variables, among many others.
-  
+
       234
       105
       876
@@ -127,7 +127,7 @@ void TopologicalResolver(
     dy         = d8y;
     dr         = d8r;
     dinverse   = d8_inverse;
-    neighbours = 8;    
+    neighbours = 8;
   } else {
     throw std::runtime_error("Unrecognised topology!");
   }

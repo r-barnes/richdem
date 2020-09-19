@@ -13,6 +13,7 @@ find_package(GDAL)
 find_package(OpenMP)
 
 option(USE_GDAL "Whether or not to compile with GDAL.")
+option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -57,6 +58,13 @@ target_compile_options(richdem
     -DRICHDEM_GIT_HASH="${RICHDEM_GIT_HASH}"
     -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
 )
+
+if(RICHDEM_NO_PROGRESS)
+  target_compile_options(richdem
+    PUBLIC
+      -DRICHDEM_NO_PROGRESS
+  )
+endif()
 
 if(USE_GDAL AND GDAL_FOUND)
   message(STATUS "Compiling RichDEM with GDAL.")
