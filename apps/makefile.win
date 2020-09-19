@@ -1,6 +1,0 @@
-export CXX=i686-w64-mingw32-g++
-export GDAL_LIBS=`../../richdem_windows/install/bin/gdal-config --libs` `../../richdem_windows/install/bin/gdal-config --dep-libs` -static-libgcc -static-libstdc++
-export GDAL_CFLAGS=`../../richdem_windows/install/bin/gdal-config --cflags`
-export CXXFLAGS=$(GDAL_CFLAGS) --std=c++11
-
-include makefile.vars
