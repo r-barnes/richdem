@@ -3,6 +3,7 @@
 
 #include "gdal_priv.h"
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/gdal.hpp>
 
 template<typename... Args>
 int PerformAlgorithm(std::string inputfile, Args... args){

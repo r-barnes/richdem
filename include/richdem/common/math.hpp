@@ -4,9 +4,11 @@
 #include <cmath>
 
 //TODO: Shim to make MSVC compile
+#ifdef _MSC_VER
 int fpclassify(uint64_t arg) {
   return FP_NORMAL;
 }
+#endif
 
 namespace richdem {
 

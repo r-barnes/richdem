@@ -2,6 +2,8 @@
 
 #ifdef USEGDAL
 
+namespace richdem {
+
 GDALDataType peekGDALType(const std::string &filename){
   GDALAllRegister();
   GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -39,6 +41,8 @@ void getGDALDimensions(
   width   = band->GetXSize();
 
   GDALClose(fin);
+}
+
 }
 
 #endif
