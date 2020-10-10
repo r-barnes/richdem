@@ -1,8 +1,12 @@
-#include <richdem/common/Array2D.hpp>
 #include "perimeters.hpp"
-#include <iostream>
+
+#include <richdem/common/Array2D.hpp>
+
 #include <cassert>
 #include <iomanip>
+#include <iostream>
+
+using namespace richdem;
 
 //g++ -O3 -o test.exe `gdal-config --cflags` `gdal-config --libs` test.cpp -lgdal --std=c++11
 

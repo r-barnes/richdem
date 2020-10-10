@@ -14,7 +14,7 @@ export XSEDE_MPI_LIBS=-L/opt/boost/intel/mvapich2_ib/lib/ -I/opt/boost/intel/mva
 .PHONY: clean
 
 compile: main.cpp
-	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_pf.exe main.cpp $(GDAL_LIBS) 
+	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_pf.exe main.cpp $(GDAL_LIBS)
 
 compile_with_compression:
 	$(MPICXX) $(CXXFLAGS) $(OPT_FLAGS) -o parallel_pf.exe -DWITH_COMPRESSION main.cpp $(GDAL_LIBS) $(COMPRESSION_LIBS)

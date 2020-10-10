@@ -1,16 +1,24 @@
 cmake_minimum_required (VERSION 3.9)
 
-project (librichdem
-  VERSION 2.2.9
+project(richdem
+  VERSION 2.2.10
   DESCRIPTION "High-performance terrain analysis"
   LANGUAGES CXX
 )
 
-add_subdirectory(apps)
-# add_subdirectory(tests)
-
 find_package(GDAL)
 find_package(OpenMP)
+find_package(MPI)
+
+add_subdirectory(apps)
+
+if(MPI_CXX_FOUND)
+  add_subdirectory(programs/parallel_priority_flood)
+  add_subdirectory(programs/parallel_d8_accum)
+else()
+  message(WARNING "MPI not found; will not compile parallel programs for large-scale datasets.")
+endif()
+# add_subdirectory(tests)
 
 option(USE_GDAL "Whether or not to compile with GDAL.")
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)

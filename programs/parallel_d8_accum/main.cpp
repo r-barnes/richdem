@@ -1,16 +1,9 @@
 //This algorithm is discussed in the manuscript:
-//    Barnes, R., 2017. Parallel non-divergent flow accumulation for trillion 
-//    cell digital elevation models on desktops or clusters. Environmental 
+//    Barnes, R., 2017. Parallel non-divergent flow accumulation for trillion
+//    cell digital elevation models on desktops or clusters. Environmental
 //    Modelling & Software 92, 202–212. doi:10.1016/j.envsoft.2017.02.022
-#include "gdal_priv.h"
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <stack>
-#include <vector>
-#include <limits>
-#include <fstream> //For reading layout files
-#include <sstream> //Used for parsing the <layout_file>
+#include "perimeters.hpp"
+
 #include <richdem/common/version.hpp>
 #include <richdem/common/Layoutfile.hpp>
 #include <richdem/common/communication.hpp>
@@ -18,7 +11,18 @@
 #include <richdem/common/timer.hpp>
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/grid_cell.hpp>
-#include "perimeters.hpp"
+
+#include <gdal_priv.h>
+
+#include <cstdint>
+#include <fstream> //For reading layout files
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <sstream> //Used for parsing the <layout_file>
+#include <stack>
+#include <string>
+#include <vector>
 
 using namespace richdem;
 
@@ -68,7 +72,7 @@ typedef double accum_t;
 //Valid flowdirs are in the range 0-8, inclusive. 0 is the center and 1-8,
 //inclusive, are the 8 cells around the central cell. An extra value is needed
 //to indicate NoData. Therefore, uint8_t is appropriate.
-typedef uint8_t flowdir_t;
+typedef uint8_t pd8_flowdir_t;
 
 //Links need to be able to hold values up to the length of the perimeter of a
 //tile of the DEM. uint16_t is therefore acceptable. It allows a perimeter of
@@ -139,7 +143,7 @@ class TileInfo{
     this->x          = x;
     this->y          = y;
     this->width      = width;
-    this->height     = height;   
+    this->height     = height;
     this->gridx      = gridx;
     this->gridy      = gridy;
     this->filename   = filename;
@@ -197,7 +201,7 @@ class Job1 {
  public:
   std::vector<link_t   >      links;
   std::vector<accum_t  >      accum;
-  std::vector<flowdir_t>      flowdirs;
+  std::vector<pd8_flowdir_t>  flowdirs;
   std::vector<accum_t  >      accum_in;     //Used by produce, here for convenience, not communicated, so not serialized.
   std::vector<p_dependency_t> dependencies; //Used by produce, here for convenience, not communicated, so not serialized.
   TimeInfo time_info;
@@ -209,7 +213,7 @@ class Job1 {
 
 template<class T> using Job1Grid    = std::vector< std::vector< Job1<T> > >;
 template<class T> using Job2        = std::vector<accum_t>;
-template<class T> using StorageType = std::map<std::pair<int,int>, std::pair< Array2D<flowdir_t>, Array2D<accum_t> > >;
+template<class T> using StorageType = std::map<std::pair<int,int>, std::pair< Array2D<pd8_flowdir_t>, Array2D<accum_t> > >;
 
 
 
@@ -245,7 +249,7 @@ class ConsumerSpecifics {
   Timer timer_calc;
 
  private:
-  Array2D<flowdir_t>  flowdirs;
+  Array2D<pd8_flowdir_t> flowdirs;
   Array2D<accum_t  >  accum;
   std::vector<link_t> links;
 
@@ -263,12 +267,11 @@ class ConsumerSpecifics {
 
   //After running this function on all the top and bottom edge cells, we can
   //quickly determine the ultimate destination of any initial cell.
-  template<class flowdir_t>
   void FollowPath(
     const int x0,                       //x-coordinate of initial cell
     const int y0,                       //y-coordinate of initial cell
     const TileInfo          &tile,      //Used to determine which tile we are in
-    const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+    const Array2D<pd8_flowdir_t> &flowdirs, //Flow directions matrix
     std::vector<link_t>      &links
   ){
     int x = x0;
@@ -341,7 +344,7 @@ class ConsumerSpecifics {
   void FollowPathAdd(
     int x,                              //Initial x-coordinate
     int y,                              //Initial y-coordinate
-    const Array2D<flowdir_t> &flowdirs, //Flow directions matrix
+    const Array2D<pd8_flowdir_t> &flowdirs, //Flow directions matrix
     Array2D<accum_t>         &accum,    //Output: Accumulation matrix
     const accum_t additional_accum      //Add this to every cell in the flow path
   ){
@@ -359,7 +362,7 @@ class ConsumerSpecifics {
 
       int n = flowdirs(x,y); //Get neighbour
       if(n==NO_FLOW)          //This cell doesn't flow to a neighbour
-        return;              
+        return;
 
       x += dx[n];
       y += dy[n];
@@ -368,11 +371,11 @@ class ConsumerSpecifics {
 
 
   void FlowAccumulation(
-    const Array2D<flowdir_t> &flowdirs,
+    const Array2D<pd8_flowdir_t> &flowdirs,
     Array2D<accum_t>         &accum
   ){
-    typedef Array2D<flowdir_t>::i_t i_t;
-    auto NO_I = Array2D<flowdir_t>::NO_I;
+    typedef Array2D<pd8_flowdir_t>::i_t i_t;
+    auto NO_I = Array2D<pd8_flowdir_t>::NO_I;
 
     //Each cell that flows points to a neighbouring cell. But not every cell
     //is pointed at. Cells which are not pointed at are the peaks from which
@@ -392,15 +395,15 @@ class ConsumerSpecifics {
     for(i_t i=0;i<flowdirs.size();i++){
       if(flowdirs.isNoData(i)){    //This cell is a no_data cell
         accum(i) = ACCUM_NO_DATA;
-        continue;                
-      }         
+        continue;
+      }
 
       int n = flowdirs(i);         //The neighbour this cell flows into
       if(n==NO_FLOW)               //This cell does not flow into a neighbour
         continue;
 
       auto ni = flowdirs.getN(i,n);
-        
+
       //Neighbour is not on the grid
       if(ni==NO_I)
         continue;
@@ -468,7 +471,7 @@ class ConsumerSpecifics {
     #endif
 
     timer_io.start();
-    flowdirs = Array2D<flowdir_t>(tile.filename, false, tile.x, tile.y, tile.width, tile.height);
+    flowdirs = Array2D<pd8_flowdir_t>(tile.filename, false, tile.x, tile.y, tile.width, tile.height);
 
     //TODO: Figure out a clever way to allow tiles of different widths/heights
     if(flowdirs.width()!=tile.width){
@@ -596,7 +599,7 @@ class ConsumerSpecifics {
 
   void LoadFromCache(const TileInfo &tile){
     timer_io.start();
-    flowdirs = Array2D<flowdir_t>(tile.retention+"-flowdirs.dat", true);
+    flowdirs = Array2D<pd8_flowdir_t>(tile.retention+"-flowdirs.dat", true);
     accum    = Array2D<accum_t  >(tile.retention+"-accum.dat",    true);
     timer_io.stop();
   }
@@ -684,7 +687,7 @@ class ProducerSpecifics {
         gnx += 1;
       else if(nx==-1)
         gnx -= 1;
-      
+
       if(ny==c.height)
         gny += 1;
       else if(ny==-1)
@@ -715,7 +718,7 @@ class ProducerSpecifics {
         nx = 0;
       else if(nx==-1)
         nx = nc.width-1;
-      
+
       if(ny==c.height)
         ny = 0;
       else if(ny==-1)
@@ -742,8 +745,8 @@ class ProducerSpecifics {
     //Set initial values for all dependencies to zero
     for(auto &row: jobs1)
     for(auto &this_job: row){
-      this_job.dependencies.resize(this_job.links.size(),0);      
-      this_job.accum_in.resize(this_job.links.size(),0);      
+      this_job.dependencies.resize(this_job.links.size(),0);
+      this_job.accum_in.resize(this_job.links.size(),0);
     }
 
     //TODO: Used for manuscript
@@ -768,7 +771,7 @@ class ProducerSpecifics {
         int gnx   = -1; //Next tile, x-coordinate
         int gny   = -1; //Next tile, y-coordinate
         DownstreamCell(jobs1, tiles, x, y, s, ns, gnx, gny);
-        if(ns==FLOW_NO_DOWNSTREAM || tiles.at(gny).at(gnx).nullTile) 
+        if(ns==FLOW_NO_DOWNSTREAM || tiles.at(gny).at(gnx).nullTile)
           continue;
 
         jobs1.at(gny).at(gnx).dependencies.at(ns)++;
@@ -849,7 +852,7 @@ class ProducerSpecifics {
 
       //This ensures that the dependency count is >=0 for both sign and unsigned
       //types.
-      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)!=(p_dependency_t)-1); 
+      assert(jobs1.at(gny).at(gnx).dependencies.at(ns)!=(p_dependency_t)-1);
     }
 
     std::cerr<<"m Perimeter cells processed = "<<processed_cells<<std::endl;
@@ -941,7 +944,7 @@ void Consumer(){
     } else if (the_job==JOB_FIRST){
       Timer timer_overall;
       timer_overall.start();
-      
+
       CommRecv(&tile, nullptr, 0);
 
       ConsumerSpecifics<T> consumer;
@@ -1075,7 +1078,7 @@ void Producer(TileGrid &tiles){
   //SEND OUT JOBS TO FINALIZE GLOBAL SOLUTION
 
   //Reset these two variables
-  jobs_out = 0; 
+  jobs_out = 0;
   msgs     = std::vector<msg_type>();
 
   for(int y=0;y<gridheight;y++)
@@ -1213,7 +1216,7 @@ void Preparer(
 
       std::string this_retention = retention;
       if(retention.find("%f")!=std::string::npos){
-        this_retention.replace(this_retention.find("%f"), 2, lf.getBasename());          
+        this_retention.replace(this_retention.find("%f"), 2, lf.getBasename());
       } else if(retention.find("%n")!=std::string::npos){
         this_retention.replace(this_retention.find("%n"), 2, lf.getGridLocName());
       } else if(retention[0]=='@') {
@@ -1225,7 +1228,7 @@ void Preparer(
 
       std::string this_output_name = output_name;
       if(output_name.find("%f")!=std::string::npos){
-        this_output_name.replace(this_output_name.find("%f"), 2, lf.getBasename());          
+        this_output_name.replace(this_output_name.find("%f"), 2, lf.getBasename());
       } else if(output_name.find("%n")!=std::string::npos){
         this_output_name.replace(this_output_name.find("%n"), 2, lf.getGridLocName());
       } else { //Should never happen

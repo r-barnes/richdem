@@ -1,5 +1,4 @@
-#ifndef __distpdf_zhou2016pf_hp__
-#define __distpdf_zhou2016pf_hp__
+#pragma once
 
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/constants.hpp>
@@ -79,8 +78,8 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
 
       if(labels(nx,ny)!=0)
-        continue;    
-      
+        continue;
+
       //The neighbour is unprocessed and higher than the central cell
       if(c.z<dem(nx,ny)){
         traceQueue.emplace(nx,ny,dem(nx,ny));
@@ -126,7 +125,7 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::que
       WatershedsMeet(labels(c.x,c.y),labels(nx,ny),dem(c.x,c.y),dem(nx,ny),my_graph);
 
       if(labels(nx,ny)!=0)
-        continue;    
+        continue;
 
       labels(nx,ny) = labels(c.x,c.y);
 
@@ -196,7 +195,7 @@ void Zhou2015Labels(
         ProcessPit_onepass(dem,labels,depressionQue,traceQueue,priorityQueue,my_graph);
       } else {          //Slope cell
         traceQueue.emplace(nx,ny,dem(nx,ny));
-      }     
+      }
       ProcessTraceQue_onepass(dem,labels,traceQueue,priorityQueue,my_graph);
     }
   }
@@ -216,7 +215,7 @@ void Zhou2015Labels(
 
   if( ((edge & GRID_LEFT)  && !flipH) || ((edge & GRID_RIGHT) && flipH) )
     for(int32_t y=0;y<labels.height();y++)
-      WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
+      WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);
 
   if( ((edge & GRID_RIGHT) && !flipH) || ((edge & GRID_LEFT)  && flipH) ){
     int right_col = labels.width()-1;
@@ -228,5 +227,3 @@ void Zhou2015Labels(
 }
 
 }
-
-#endif

@@ -8,6 +8,8 @@
 *Implement Peckham flow metric
 *Add LICENSE notices to the top of source files
 
+Shary's formulas from p. 18 of Digital Terrain Analysis in Soil Science and Geology in `books/geoscience`
+
 
 Output in D8 ArcGIS (Debasish Pal <debasish_pal@sutd.edu.sg>):
 Sorry Richard. I misunderstood. I would like to receive the format as in ArcGIS flow direction coding (1, 2, 4, 8, 16, 32, 64, 128 in clockwise direction)

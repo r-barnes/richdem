@@ -2,15 +2,10 @@
 //    Barnes, R., 2016. Parallel priority-flood depression filling for trillion
 //    cell digital elevation models on desktops or clusters. Computers &
 //    Geosciences 96, 56–68. doi:10.1016/j.cageo.2016.07.001
-#include "gdal_priv.h"
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <queue>
-#include <vector>
-#include <limits>
-#include <fstream> //For reading layout files
-#include <sstream> //Used for parsing the <layout_file>
+
+#include "Zhou2016pf.hpp"
+//#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
+
 #include <richdem/common/version.hpp>
 #include <richdem/common/Layoutfile.hpp>
 #include <richdem/common/communication.hpp>
@@ -18,8 +13,17 @@
 #include <richdem/common/timer.hpp>
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/grid_cell.hpp>
-#include "Zhou2016pf.hpp"
-//#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
+
+#include <gdal_priv.h>
+
+#include <fstream> //For reading layout files
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <queue>
+#include <sstream> //Used for parsing the <layout_file>
+#include <string>
+#include <vector>
 
 using namespace richdem;
 
@@ -99,7 +103,7 @@ class TileInfo{
     this->x          = x;
     this->y          = y;
     this->width      = width;
-    this->height     = height;   
+    this->height     = height;
     this->gridx      = gridx;
     this->gridy      = gridy;
     this->filename   = filename;
@@ -406,7 +410,7 @@ class ProducerSpecifics {
 
     const int gridheight = tiles.size();
     const int gridwidth  = tiles[0].size();
-    
+
     //Get a tile size so we can calculate the max label
     label_t maxlabel = 0;
     for(int y=0;y<gridheight;y++)
@@ -457,29 +461,29 @@ class ProducerSpecifics {
 
       if(y<gridheight-1 && !tiles[y+1][x].nullTile)
         HandleEdge(c.bot_elev,   jobs1[y+1][x].top_elev,   c.bot_label,   jobs1[y+1][x].top_label,   mastergraph, tiles[y][x].label_offset, tiles[y+1][x].label_offset);
-      
+
       if(x>0            && !tiles[y][x-1].nullTile)
         HandleEdge(c.left_elev,  jobs1[y][x-1].right_elev, c.left_label,  jobs1[y][x-1].right_label, mastergraph, tiles[y][x].label_offset, tiles[y][x-1].label_offset);
-      
+
       if(x<gridwidth-1  && !tiles[y][x+1].nullTile)
         HandleEdge(c.right_elev, jobs1[y][x+1].left_elev,  c.right_label, jobs1[y][x+1].left_label,  mastergraph, tiles[y][x].label_offset, tiles[y][x+1].label_offset);
 
 
       //I wish I had wrote it all in LISP.
       //Top left
-      if(y>0 && x>0                      && !tiles[y-1][x-1].nullTile)   
+      if(y>0 && x>0                      && !tiles[y-1][x-1].nullTile)
         HandleCorner(c.top_elev.front(), jobs1[y-1][x-1].bot_elev.back(),  c.top_label.front(), jobs1[y-1][x-1].bot_label.back(),  mastergraph, tiles[y][x].label_offset, tiles[y-1][x-1].label_offset);
-      
+
       //Bottom right
-      if(y<gridheight-1 && x<gridwidth-1 && !tiles[y+1][x+1].nullTile) 
+      if(y<gridheight-1 && x<gridwidth-1 && !tiles[y+1][x+1].nullTile)
         HandleCorner(c.bot_elev.back(),  jobs1[y+1][x+1].top_elev.front(), c.bot_label.back(),  jobs1[y+1][x+1].top_label.front(), mastergraph, tiles[y][x].label_offset, tiles[y+1][x+1].label_offset);
-      
+
       //Top right
-      if(y>0 && x<gridwidth-1            && !tiles[y-1][x+1].nullTile)            
+      if(y>0 && x<gridwidth-1            && !tiles[y-1][x+1].nullTile)
         HandleCorner(c.top_elev.back(),  jobs1[y-1][x+1].bot_elev.front(), c.top_label.back(),  jobs1[y-1][x+1].bot_label.front(), mastergraph, tiles[y][x].label_offset, tiles[y-1][x+1].label_offset);
-      
+
       //Bottom left
-      if(x>0 && y<gridheight-1           && !tiles[y+1][x-1].nullTile) 
+      if(x>0 && y<gridheight-1           && !tiles[y+1][x-1].nullTile)
         HandleCorner(c.bot_elev.front(), jobs1[y+1][x-1].top_elev.back(),  c.bot_label.front(), jobs1[y+1][x-1].top_label.back(),  mastergraph, tiles[y][x].label_offset, tiles[y+1][x-1].label_offset);
     }
     timer_mg_construct.stop();
@@ -618,7 +622,7 @@ void Consumer(){
     } else if (the_job==JOB_FIRST){
       Timer timer_overall;
       timer_overall.start();
-      
+
       CommRecv(&tile, nullptr, 0);
 
       ConsumerSpecifics<T> consumer;
@@ -759,7 +763,7 @@ void Producer(TileGrid &tiles){
   //SEND OUT JOBS TO FINALIZE GLOBAL SOLUTION
 
   //Reset these two variables
-  jobs_out = 0; 
+  jobs_out = 0;
   msgs     = std::vector<msg_type>();
 
   for(int y=0;y<gridheight;y++)
@@ -897,7 +901,7 @@ void Preparer(
 
       std::string this_retention = retention;
       if(retention.find("%f")!=std::string::npos){
-        this_retention.replace(this_retention.find("%f"), 2, lf.getBasename());          
+        this_retention.replace(this_retention.find("%f"), 2, lf.getBasename());
       } else if(retention.find("%n")!=std::string::npos){
         this_retention.replace(this_retention.find("%n"), 2, lf.getGridLocName());
       } else if(retention[0]=='@') {
@@ -909,7 +913,7 @@ void Preparer(
 
       std::string this_output_name = output_name;
       if(output_name.find("%f")!=std::string::npos){
-        this_output_name.replace(this_output_name.find("%f"), 2, lf.getBasename());          
+        this_output_name.replace(this_output_name.find("%f"), 2, lf.getBasename());
       } else if(output_name.find("%n")!=std::string::npos){
         this_output_name.replace(this_output_name.find("%n"), 2, lf.getGridLocName());
       } else { //Should never happen

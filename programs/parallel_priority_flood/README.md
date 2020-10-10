@@ -50,8 +50,8 @@ and correctness tests are available for download from a repository.
 Compilation
 -----------
 
-The program can be produced simply by running **make**. However, certain
-prerequisites are necessary for this to be successful.
+The program is compiled as part of the RichDEM. Please look at RichDEM's main
+README.md file for compilation instructions.
 
 For **compilation**, the following command will set you up on a Debian-based
 system:
@@ -177,7 +177,7 @@ contain directions for acquiring the datasets and example jobs for running them
 using SLURM.
 
 The `beauford` and `srtm_small` tests can be run using the `test.py` script.
-This script can be running using one of the following: 
+This script can be running using one of the following:
 
     ./test.py tests/beauford/beauford.tif
     ./test.py tests/srtm_small/srtm_small.layout

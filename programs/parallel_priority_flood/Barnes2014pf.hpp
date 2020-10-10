@@ -1,5 +1,4 @@
-#ifndef __distpdf_barnes2014pf_hp__
-#define __distpdf_barnes2014pf_hp__
+#pragma once
 
 #include "Array2D.hpp"
 #include "constants.hpp"
@@ -138,7 +137,7 @@ void PriorityFlood(
 
   if(edge & GRID_LEFT)
     for(int y=0;y<labels.height();y++)
-      WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);  
+      WatershedsMeet(labels(0,y),(label_t)1,dem(0,y),dem(0,y),my_graph);
 
   if(edge & GRID_RIGHT){
     int right_col = labels.width()-1;
@@ -148,5 +147,3 @@ void PriorityFlood(
 
   my_graph.resize(current_label);
 }
-
-#endif

@@ -42,7 +42,7 @@ An example BibTeX entry is:
       title        = {RichDEM: Terrain Analysis Software},
       author       = {Richard Barnes},
       year         = {2016},
-      url          = {http://github.com/r-barnes/richdem}, 
+      url          = {http://github.com/r-barnes/richdem},
     }
 
 This information will be updated as versioned releases become available.
@@ -58,6 +58,32 @@ character `C` and look like:
 A typical academic citation might read as follows:
 
  > We performed hydrological corrections on our DEM using the Zhou (2016) algorithm implemented in RichDEM (Barnes 2016).
+
+
+
+Compilation
+-------------------
+
+To compile, first acquire the source code:
+
+    git clone --recursive https://github.com/r-barnes/richdem
+
+Then compile using the standard `cmake` sequence:
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release ..               # Without GDAL
+    cmake -DCMAKE_BUILD_TYPE=Release -DUSE_GDAL=ON .. # With GDAL
+    make -j 6    # Adjust to use more or fewer processors
+
+RichDEM includes some programs to process extremely large digital elevation
+models, as well as for handling many DEM formats. Special prerequisites,
+automatically detected by cmake, are needed for these to compile: GDAL, MPI, and
+Boost. To install these on a Debian machine use:
+
+    sudo apt install openmpi-bin libgdal-dev libopenmpi-dev libboost-iostreams-dev
+
+
 
 As A Python Package
 -------------------
@@ -148,9 +174,9 @@ The design of RichDEM is guided by these principles:
 * **Algorithms will be available as libraries, whenever possible.** RichDEM is
   designed as a set of header-only C++ libraries, making it easy to include in
   your projects and easy to incorporate into other programming languages.
-  RichDEM also includes apps, which are simple wrappers around the algorithms, 
+  RichDEM also includes apps, which are simple wrappers around the algorithms,
   and a limited, but growing, set of algorithms which may have special
-  requirements, like MPI, that make them unsuitable as libraries. These are 
+  requirements, like MPI, that make them unsuitable as libraries. These are
   available as programs.
 
 * **Programs will have a command-line interface, not a GUI.** Command-line
@@ -167,7 +193,7 @@ The design of RichDEM is guided by these principles:
   design algorithms. The code contains extensive internal documentation which is
   DOxygen compatible.
 
-* **Programs and algorithms will provide useful feedback.** Progress bars will 
+* **Programs and algorithms will provide useful feedback.** Progress bars will
   appear if desired and the output will be optimized for machine parsing.
 
 * **Analyses will be reproducible.** Every time you run a RichDEM command that
@@ -223,7 +249,7 @@ making it easy to parse with a machine.
  * **d**: Debugging info
 
  * **E**: Indicates an error condition
- 
+
  * **i**: I/O: Amount of data loaded from disk
 
  * **m**: Miscallaneous counts
@@ -232,7 +258,7 @@ making it easy to parse with a machine.
 
  * **p**: Progress information: inform the user to keep calm because we're
           carrying on.
- 
+
  * **r**: Amount of RAM used
 
  * **t**: Timing information: How long stuff took

@@ -1,5 +1,8 @@
-#ifndef _richdem_perimeters_hpp_
-#define _richdem_perimeters_hpp_
+#pragma once
+
+#include <richdem/common/Array2D.hpp>
+
+#include <cassert>
 
 //TODO: Explain
 int xyToSerial(const int x, const int y, const int width, const int height){
@@ -13,7 +16,7 @@ int xyToSerial(const int x, const int y, const int width, const int height){
     return (width-1)+y;
 
   if(y==height-1)                  //Bottom-row
-    return (width-1)+(height)+x;   
+    return (width-1)+(height)+x;
 
   return 2*(width-1)+(height-1)+y; //Left-hand side
 }
@@ -49,12 +52,10 @@ void GridPerimToArray(const richdem::Array2D<U> &grid, std::vector<U> &vec){
 
   vec2copy = grid.getColData(grid.width()-1);        //Right
   vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end());
-  
+
   vec2copy = grid.getRowData(grid.height()-1);       //Bottom
   vec.insert(vec.end(),vec2copy.begin(),vec2copy.end()-1);
-  
+
   vec2copy = grid.getColData(0);                         //Left
   vec.insert(vec.end(),vec2copy.begin()+1,vec2copy.end()-1);
 }
-
-#endif
