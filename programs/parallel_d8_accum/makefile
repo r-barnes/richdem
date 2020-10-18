@@ -1,3 +1,4 @@
+#Note: This makefile is deprecated, please use cmake if possible
 export CXX=g++
 export MPICXX=mpic++
 export GDAL_LIBS=`gdal-config --libs`

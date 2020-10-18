@@ -6,13 +6,13 @@
 #include "Zhou2016pf.hpp"
 //#include "Barnes2014pf.hpp" //NOTE: Used only for timing tests
 
-#include <richdem/common/version.hpp>
-#include <richdem/common/Layoutfile.hpp>
+#include <richdem/common/Array2D.hpp>
 #include <richdem/common/communication.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/Layoutfile.hpp>
 #include <richdem/common/memory.hpp>
 #include <richdem/common/timer.hpp>
-#include <richdem/common/Array2D.hpp>
-#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/version.hpp>
 
 #include <gdal_priv.h>
 

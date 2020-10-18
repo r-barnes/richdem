@@ -1,3 +1,4 @@
+#Note: This makefile is deprecated, please use cmake if possible
 export OMPI_CXX=g++
 export CXX=g++
 export MPICXX=mpic++

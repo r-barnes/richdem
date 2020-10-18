@@ -4,13 +4,13 @@
 //    Modelling & Software 92, 202–212. doi:10.1016/j.envsoft.2017.02.022
 #include "perimeters.hpp"
 
-#include <richdem/common/version.hpp>
-#include <richdem/common/Layoutfile.hpp>
+#include <richdem/common/Array2D.hpp>
 #include <richdem/common/communication.hpp>
+#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/Layoutfile.hpp>
 #include <richdem/common/memory.hpp>
 #include <richdem/common/timer.hpp>
-#include <richdem/common/Array2D.hpp>
-#include <richdem/common/grid_cell.hpp>
+#include <richdem/common/version.hpp>
 
 #include <gdal_priv.h>
 
