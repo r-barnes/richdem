@@ -22,6 +22,7 @@ endif()
 
 option(USE_GDAL "Whether or not to compile with GDAL.")
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
+option(WITH_TESTS "Build unit test executable" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -83,8 +84,10 @@ else()
   message(WARNING "Compiling RichDEM without GDAL!")
 endif()
 
-add_executable(richdem_unittests
-  tests/tests.cpp
-)
-target_link_libraries(richdem_unittests PRIVATE richdem)
-target_compile_features(richdem_unittests PRIVATE cxx_std_17)
+if(WITH_TESTS)
+    add_executable(richdem_unittests
+    tests/tests.cpp
+    )
+    target_link_libraries(richdem_unittests PRIVATE richdem)
+    target_compile_features(richdem_unittests PRIVATE cxx_std_17)
+endif()
