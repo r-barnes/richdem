@@ -394,7 +394,7 @@ void TA_slope_percentage(
   Array2D<float>   &slopes,
   float zscale = 1.0f
 ){
-  RDLOG_ALG_NAME<<"Slope calculation (percenage)";
+  RDLOG_ALG_NAME<<"Slope calculation (percentage)";
   RDLOG_CITATION<<"Horn, B.K.P., 1981. Hill shading and the reflectance map. Proceedings of the IEEE 69, 14–47. doi:10.1109/PROC.1981.11918";
   TerrainProcessor(Terrain_Slope_Percent<T>, elevations, zscale, slopes);
 }
