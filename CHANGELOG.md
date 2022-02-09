@@ -1,3 +1,9 @@
+2022-02-09 (2.3.0)
+==================
+
+Drop PyBind11 in favour of using pypi's version
+Update to doctest v2.4.8
+
 2018-07-13 (2.2.9)
 ==================
 

@@ -6,6 +6,8 @@ import datetime
 import subprocess
 import re
 
+from pybind11.setup_helpers import Pybind11Extension
+
 RICHDEM_COMPILE_TIME = None
 RICHDEM_GIT_HASH     = None
 
@@ -45,19 +47,18 @@ if RICHDEM_GIT_HASH is None:
 print("Using RichDEM hash={0}, time={1}".format(RICHDEM_GIT_HASH, RICHDEM_COMPILE_TIME))
 
 ext_modules = [
-  setuptools.Extension(
-    "_richdem",
-    glob.glob('src/*.cpp') + ['lib/richdem/common/random.cpp', 'lib/richdem/richdem.cpp'],
-    include_dirs  = ['lib/'],
-    language      = 'c++',
-    define_macros = [
-      ('DOCTEST_CONFIG_DISABLE', None                ),
-      ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
-      ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
-      ('RICHDEM_LOGGING',        None                ),
-      ('_USE_MATH_DEFINES',      None) #To ensure that `#include <cmath>` imports `M_PI` in MSVC
-    ]
-  )
+    Pybind11Extension(
+      "_richdem",
+      glob.glob('src/*.cpp') + glob.glob('lib/richdem/*.cpp'),
+      include_dirs  = ['lib/'],
+      define_macros = [
+        ('DOCTEST_CONFIG_DISABLE', None                ),
+        ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
+        ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
+        ('RICHDEM_LOGGING',        None                ),
+        ('_USE_MATH_DEFINES',      None) #To ensure that `#include <cmath>` imports `M_PI` in MSVC
+      ]
+    ),
 ]
 
 long_description = """RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
@@ -104,7 +105,7 @@ setuptools.setup(
   #   ':python_version < "3.4"': [
   #     'numpy>=1.7,<1.12'
   #   ]
-  # },  
+  # },
   #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers
