@@ -9,3 +9,4 @@ a.out
 travis.log
 build/
 .vscode/
+.log

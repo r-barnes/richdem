@@ -1,15 +1,14 @@
-from collections import defaultdict
-import setuptools
-from setuptools.command.build_ext import build_ext as _build_ext
 import glob
-import datetime
-import subprocess
 import re
+import setuptools
+import subprocess
+from setuptools.command.build_ext import build_ext as _build_ext
+from typing import Optional
 
 from pybind11.setup_helpers import Pybind11Extension
 
-RICHDEM_COMPILE_TIME = None
-RICHDEM_GIT_HASH     = None
+richdem_compile_time: Optional[str] = None
+richdem_git_hash: Optional[str]     = None
 
 #Compiler specific arguments
 BUILD_ARGS = {
@@ -22,40 +21,40 @@ BUILD_ARGS = {
 class build_ext_compiler_check(_build_ext):
   def build_extensions(self):
     compiler = self.compiler.compiler_type
-    print('COMPILER',compiler)
+    print(f'COMPILER {compiler}')
     args     = BUILD_ARGS[compiler]
     for ext in self.extensions:
         ext.extra_compile_args = args
-    print('COMPILER ARGUMENTS',ext.extra_compile_args)
+        print(f'COMPILER ARGUMENTS: {ext.extra_compile_args}')
     _build_ext.build_extensions(self)
 
-if RICHDEM_GIT_HASH is None:
+if richdem_git_hash is None:
   try:
     shash = subprocess.Popen(["git log --pretty=format:'%h' -n 1"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
     sdate = subprocess.Popen(["git log -1 --pretty='%ci'"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
     if re.match(r'^[0-9a-z]+$', shash) and re.match(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.*$', sdate):
-      RICHDEM_COMPILE_TIME = sdate
-      RICHDEM_GIT_HASH     = shash
+      richdem_compile_time = sdate
+      richdem_git_hash     = shash
   except:
     print("Warning! Could not find RichDEM version. Software will still work, but reproducibility will be compromised.")
     pass
 
-if RICHDEM_GIT_HASH is None:
-  RICHDEM_COMPILE_TIME = 'Unknown'
-  RICHDEM_GIT_HASH     = 'Unknown'
+if richdem_git_hash is None:
+  richdem_compile_time = 'Unknown'
+  richdem_git_hash     = 'Unknown'
 
-print("Using RichDEM hash={0}, time={1}".format(RICHDEM_GIT_HASH, RICHDEM_COMPILE_TIME))
+print("Using RichDEM hash={0}, time={1}".format(richdem_git_hash, richdem_compile_time))
 
 ext_modules = [
     Pybind11Extension(
       "_richdem",
-      glob.glob('src/*.cpp') + glob.glob('lib/richdem/*.cpp'),
-      include_dirs  = ['lib/'],
+      sorted(glob.glob('src/*.cpp') + glob.glob('lib/richdem/src/**/*.cpp', recursive=True)),
+      include_dirs  = ['lib/richdem/include/'],
       define_macros = [
-        ('DOCTEST_CONFIG_DISABLE', None                ),
-        ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
-        ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
-        ('RICHDEM_LOGGING',        None                ),
+        ('DOCTEST_CONFIG_DISABLE', None),
+        ('RICHDEM_COMPILE_TIME',   f'"\\"{richdem_compile_time}\\""'),
+        ('RICHDEM_GIT_HASH',       f'"\\"{richdem_git_hash}\\""'    ),
+        ('RICHDEM_LOGGING',        None),
         ('_USE_MATH_DEFINES',      None) #To ensure that `#include <cmath>` imports `M_PI` in MSVC
       ]
     ),
@@ -73,7 +72,7 @@ It can flood or breach depressions, as well as calculate flow accumulation, slop
 #TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
-  version           = '0.3.4',
+  version           = '0.4.0',
   description       = 'High-Performance Terrain Analysis',
   long_description  = long_description,
   url               = 'https://github.com/r-barnes/richdem',
@@ -93,20 +92,10 @@ setuptools.setup(
   ext_modules      = ext_modules,
   cmdclass         = {'build_ext': build_ext_compiler_check},
   keywords         = 'GIS terrain hydrology geomorphology raster',
-  #packages        = find_packages(exclude=['contrib', 'docs', 'tests*']),
   install_requires = [
     "numpy>=1.7,<2; python_version > '3.4' or python_version < '3.0'",
     "numpy>=1.7,<1.12; python_version < '3.4' and python_version > '3.0'"
   ],
-  # extras_require    = {
-  #   ':python_version > "3.4"': [
-  #     'numpy>=1.7,<2'
-  #   ],
-  #   ':python_version < "3.4"': [
-  #     'numpy>=1.7,<1.12'
-  #   ]
-  # },
-  #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers
   classifiers      = [

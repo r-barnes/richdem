@@ -1,12 +1,13 @@
-import pkg_resources
-import datetime
 import copy
+import datetime
 import numpy as np
+import pkg_resources
 
 try:
   import _richdem
-except ImportError:
+except ImportError as e:
   print('COULD NOT LOAD RichDEM ENGINE! NOTHING WILL WORK!')
+  raise e
 
 try:
   from osgeo import gdal
@@ -90,7 +91,7 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
 
   if all_zoom:
     axins = inset_axes(ax, width=2, height=2, loc=zloc, borderpad=0) #, bbox_to_anchor=(0.9, -0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=0)
-    axins.set_xlim(xmin=zxmin,xmax=zxmax) 
+    axins.set_xlim(xmin=zxmin,xmax=zxmax)
     axins.set_ylim(ymin=zymin,ymax=zymax)
     plt.setp(axins.get_xticklabels(), visible=False)
     plt.setp(axins.get_yticklabels(), visible=False)
@@ -116,8 +117,8 @@ def rdShow(rda, ignore_colours=[], show=True, axes=True, cmap='gray', vmin=None,
 
 class rdarray(np.ndarray):
   def __new__(cls, array, meta_obj=None, no_data=None, dtype=None, order=None, **kwargs):
-    obj = np.asarray(array, dtype=dtype, order=order).view(cls) 
-    
+    obj = np.asarray(array, dtype=dtype, order=order).view(cls)
+
     if meta_obj is not None:
       obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     dict()))
       obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None  ))
@@ -155,7 +156,7 @@ class rdarray(np.ndarray):
     dtype = str(self.dtype)
     if not dtype in richdem_arrs:
       raise Exception("No equivalent RichDEM datatype.")
-    
+
     rda = richdem_arrs[dtype](self)
 
     if self.no_data is None:
@@ -170,7 +171,7 @@ class rdarray(np.ndarray):
       print("Warning! No geotransform defined. Choosing a standard one! (Top left cell's top let corner at <0,0>; cells are 1x1.)")
       rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
 
-    return rda 
+    return rda
 
   def copyFromWrapped(self, wrapped):
     self.no_data   = wrapped.noData()
@@ -181,8 +182,8 @@ class rdarray(np.ndarray):
 
 class rd3array(np.ndarray):
   def __new__(cls, array, meta_obj=None, no_data=None, order=None, **kwargs):
-    obj = np.asarray(array, dtype=np.float32, order=order).view(cls) 
-    
+    obj = np.asarray(array, dtype=np.float32, order=order).view(cls)
+
     if meta_obj is not None:
       obj.metadata     = copy.deepcopy(getattr(meta_obj, 'metadata',     dict()))
       obj.no_data      = copy.deepcopy(getattr(meta_obj, 'no_data',      None  ))
@@ -211,7 +212,7 @@ class rd3array(np.ndarray):
     dtype = str(self.dtype)
     if not dtype in richdem_arrs:
       raise Exception("No equivalent RichDEM datatype.")
-    
+
     rda = richdem_arrs[dtype](self)
 
     if self.no_data is None:
@@ -226,7 +227,7 @@ class rd3array(np.ndarray):
       print("Warning! No geotransform defined. Choosing a standard one! (Top left cell's top let corner at <0,0>; cells are 1x1.)")
       rda.geotransform = np.array([0,1,0,0,0,-1], dtype='float64')
 
-    return rda 
+    return rda
 
   def copyFromWrapped(self, wrapped):
     self.no_data   = wrapped.noData()
@@ -250,7 +251,7 @@ def LoadGDAL(filename, no_data=None):
 
      Returns:
          A RichDEM array
-  """  
+  """
   if not GDAL_AVAILABLE:
     raise Exception("richdem.LoadGDAL() requires GDAL.")
 
@@ -333,7 +334,7 @@ def FillDepressions(
          epsilon (float):   If True, an epsilon gradient is imposed to all flat regions.
                             This ensures that there is always a local gradient.
          in_place (bool):   If True, the DEM is modified in place and there is
-                            no return; otherwise, a new, altered DEM is returned.                                     
+                            no return; otherwise, a new, altered DEM is returned.
          topology (string): A topology indicator
 
      Returns:
@@ -380,7 +381,7 @@ def BreachDepressions(
      Args:
          dem     (rdarray): An elevation model
          in_place (bool):   If True, the DEM is modified in place and there is
-                            no return; otherwise, a new, altered DEM is returned.                                     
+                            no return; otherwise, a new, altered DEM is returned.
          topology (string): A topology indicator
 
      Returns:
@@ -420,7 +421,7 @@ def ResolveFlats(
      Args:
          dem          (rdarray):   An elevation model
          in_place (bool):   If True, the DEM is modified in place and there is
-                            no return; otherwise, a new, altered DEM is returned.         
+                            no return; otherwise, a new, altered DEM is returned.
 
      Returns:
          DEM modified such that all flats drain.
@@ -456,7 +457,7 @@ def FlowAccumulation(
      Args:
          dem      (rdarray): An elevation model
          method   (str):     Flow accumulation method to use. (See below.)
-         exponent (float):   Some methods require an exponent; refer to the 
+         exponent (float):   Some methods require an exponent; refer to the
                              relevant publications for details.
          weights  (rdarray): Flow accumulation weights to use. This is the
                              amount of flow generated by each cell. If this is
@@ -464,7 +465,7 @@ def FlowAccumulation(
                              flow.
          in_place (bool):    If True, then `weights` is modified in place. An
                              accumulation matrix is always returned, but it will
-                             just be a view of the modified data if `in_place` 
+                             just be a view of the modified data if `in_place`
                              is True.
 
      =================== ============================== ===========================
@@ -565,7 +566,7 @@ def FlowAccumFromProps(
                              flow.
          in_place (bool):    If True, then `weights` is modified in place. An
                              accumulation matrix is always returned, but it will
-                             just be a view of the modified data if `in_place` 
+                             just be a view of the modified data if `in_place`
                              is True.
 
      Returns:
@@ -612,7 +613,7 @@ def FlowProportions(
      Args:
          dem      (rdarray): An elevation model
          method   (str):     Flow accumulation method to use. (See below.)
-         exponent (float):   Some methods require an exponent; refer to the 
+         exponent (float):   Some methods require an exponent; refer to the
                              relevant publications for details.
 
      =================== ============================== ===========================
@@ -698,14 +699,14 @@ def TerrainAttribute(
      ======================= =========
      Method                  Reference
      ======================= =========
-     slope_riserun           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
-     slope_percentage        `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
-     slope_degrees           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
-     slope_radians           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
-     aspect                  `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_ 
-     curvature               `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
-     planform_curvature      `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
-     profile_curvature       `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_ 
+     slope_riserun           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_
+     slope_percentage        `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_
+     slope_degrees           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_
+     slope_radians           `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_
+     aspect                  `Horn (1981)                   doi: 10.1109/PROC.1981.11918 <http://dx.doi.org/10.1109/PROC.1981.11918>`_
+     curvature               `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_
+     planform_curvature      `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_
+     profile_curvature       `Zevenbergen and Thorne (1987) doi: 10.1002/esp.3290120107  <http://dx.doi.org/10.1002/esp.3290120107>`_
      ======================= =========
 
      Returns:
