@@ -12,7 +12,7 @@ enum LogFlag {
   CITATION,
   CONFIG,
   DEBUG,
-  ERROR,
+  ERROR_,
   MEM_USE,
   MISC,
   PROGRESS,
@@ -63,7 +63,7 @@ class StreamLogger {
 #define RDLOG_CITATION StreamLogger(LogFlag::CITATION, __FILE__, __func__, __LINE__)
 #define RDLOG_CONFIG   StreamLogger(LogFlag::CONFIG,   __FILE__, __func__, __LINE__)
 #define RDLOG_DEBUG    StreamLogger(LogFlag::DEBUG,    __FILE__, __func__, __LINE__)
-#define RDLOG_ERROR    StreamLogger(LogFlag::ERROR,    __FILE__, __func__, __LINE__)      
+#define RDLOG_ERROR    StreamLogger(LogFlag::ERROR_,   __FILE__, __func__, __LINE__)
 #define RDLOG_MEM_USE  StreamLogger(LogFlag::MEM_USE,  __FILE__, __func__, __LINE__)       
 #define RDLOG_MISC     StreamLogger(LogFlag::MISC,     __FILE__, __func__, __LINE__)       
 #define RDLOG_PROGRESS StreamLogger(LogFlag::PROGRESS, __FILE__, __func__, __LINE__)
