@@ -62,19 +62,33 @@ A typical academic citation might read as follows:
 
 
 Compilation
--------------------
+-----------
 
 To compile, first acquire the source code:
 
     git clone --recursive https://github.com/r-barnes/richdem
 
+You will need a C++ compiler, *cmake*, and, optionally, *libgdal*. If you are
+using *conda*, you can install these requirements in a new environment with
+the following commands:
+
+    $ conda create -n richdem
+    $ conda activate richdem
+    $ conda install --file=requirements.txt -c conda-forge
+
 Then compile using the standard `cmake` sequence:
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release ..               # Without GDAL
-    cmake -DCMAKE_BUILD_TYPE=Release -DUSE_GDAL=ON .. # With GDAL
-    make -j 6    # Adjust to use more or fewer processors
+    $ mkdir build
+    $ cd build
+    $ cmake -DCMAKE_BUILD_TYPE=Release -DUSE_GDAL=ON ..
+    $ make -j 6    # Adjust to use more or fewer processors
+
+If you do not want to build *richdem*  with *gdal*, exclude the `-DUSE_GDAL=ON`
+option. To install *richdem*:
+
+    $ cmake --install . --prefix /my/install/prefix
+
+If you are using *conda*, `/my/install/prefix` should be `$CONDA_PREFIX`.
 
 RichDEM includes some programs to process extremely large digital elevation
 models, as well as for handling many DEM formats. Special prerequisites,
@@ -88,17 +102,39 @@ Boost. To install these on a Debian machine use:
 As A Python Package
 -------------------
 
+### From source
+
+After installing the *richdem* library (as described above), you can build
+*richdem* as a Python package. To do this, you will of course need Python
+(3.7+), which you can install with *conda*,
+
+    $ conda install python
+
+You can now build the *richdem* Python package,
+
+    $ cd wrappers/pyrichdem
+    $ pip install -e .
+
+### From conda
+
+To install a pre-built version of *richdem* using *conda*,
+
+    $ conda install richdem -c conda-forge
+
+
+### From PyPI using pip
+
 Get the package with:
 
-    pip3 install richdem
+    $ pip install richdem
 
 And use:
 
-    import richdem
+    >>> import richdem
 
 The command:
 
-    help(richdem)
+    >>> help(richdem)
 
 provides all the relevant documentation.
 
