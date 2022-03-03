@@ -1,0 +1,2 @@
+[build-system]
+requires = ["pybind11", "numpy", "setuptools", "wheel"]

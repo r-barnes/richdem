@@ -1,4 +1,5 @@
 #include "PerlinNoise.h"
+#include <numeric>
 #include <iostream>
 #include <cmath>
 #include <random>

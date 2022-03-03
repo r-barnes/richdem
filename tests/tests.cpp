@@ -136,8 +136,8 @@ TEST_CASE("Checking flow accumulation") {
   for(auto p: fs::directory_iterator("flow_accum")){
     fs::path this_path = p.path();
     if(this_path.extension()==".d8"){
-        Array2D<d8_flowdir_t> fds(this_path, false);
-        Array2D<int32_t>   correct_ans(this_path.replace_extension("out"), false);
+        Array2D<d8_flowdir_t> fds(this_path.string(), false);
+        Array2D<int32_t>   correct_ans(this_path.replace_extension("out").string(), false);
         Array2D<int32_t>   my_ans;
         d8_flow_accum(fds,my_ans);
         REQUIRE( correct_ans == my_ans );
