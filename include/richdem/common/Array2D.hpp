@@ -917,7 +917,6 @@ class Array2D {
     @return The value of the cell identified by 'i'
   */
   T& operator()(i_t i){
-    assert(i>=0);
     assert(i<(i_t)view_width*view_height);
     return _data[i];
   }
@@ -930,7 +929,6 @@ class Array2D {
     @return The value of the cell identified by 'i'
   */
   T operator()(i_t i) const {
-    assert(i>=0);
     assert(i<(i_t)view_width*view_height);
     return _data[i];
   }

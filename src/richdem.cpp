@@ -34,6 +34,9 @@ std::map<LogFlag, std::string> log_flag_chars_end = {
 };
 
 void RDLOGfunc(LogFlag flag, const char* file, const char* func, unsigned line, std::string msg) {
+  (void)file; // Suppress unused variable warning
+  (void)func; // Suppress unused variable warning
+  (void)line; // Suppress unused variable warning
   std::cerr<<log_flag_chars_begin.at(flag)<<" "<<msg
   #ifdef RICHDEM_DEBUG
   <<" ("<<file<<" : "<<func<<" : "<<line<<")"

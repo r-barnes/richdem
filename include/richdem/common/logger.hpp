@@ -42,6 +42,7 @@ class StreamLogger {
 
   template<typename T>
   StreamLogger& operator<<(const T& t){
+    (void)t; // Suppress unused variable warning
     #ifdef RICHDEM_LOGGING
       ss << t;
     #endif
@@ -50,6 +51,7 @@ class StreamLogger {
 
   // std::endl and other iomanip:s.
   StreamLogger& operator<<(std::ostream&(*f)(std::ostream&)){
+    (void)f; // Suppress unused variable warning
     #ifdef RICHDEM_LOGGING
       f(ss);
     #endif
@@ -64,11 +66,11 @@ class StreamLogger {
 #define RDLOG_CONFIG   StreamLogger(LogFlag::CONFIG,   __FILE__, __func__, __LINE__)
 #define RDLOG_DEBUG    StreamLogger(LogFlag::DEBUG,    __FILE__, __func__, __LINE__)
 #define RDLOG_ERROR    StreamLogger(LogFlag::ERROR_,   __FILE__, __func__, __LINE__)
-#define RDLOG_MEM_USE  StreamLogger(LogFlag::MEM_USE,  __FILE__, __func__, __LINE__)       
-#define RDLOG_MISC     StreamLogger(LogFlag::MISC,     __FILE__, __func__, __LINE__)       
+#define RDLOG_MEM_USE  StreamLogger(LogFlag::MEM_USE,  __FILE__, __func__, __LINE__)
+#define RDLOG_MISC     StreamLogger(LogFlag::MISC,     __FILE__, __func__, __LINE__)
 #define RDLOG_PROGRESS StreamLogger(LogFlag::PROGRESS, __FILE__, __func__, __LINE__)
-#define RDLOG_TIME_USE StreamLogger(LogFlag::TIME_USE, __FILE__, __func__, __LINE__)        
-#define RDLOG_WARN     StreamLogger(LogFlag::WARN,     __FILE__, __func__, __LINE__)    
+#define RDLOG_TIME_USE StreamLogger(LogFlag::TIME_USE, __FILE__, __func__, __LINE__)
+#define RDLOG_WARN     StreamLogger(LogFlag::WARN,     __FILE__, __func__, __LINE__)
 
 }
 
