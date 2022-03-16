@@ -37,21 +37,21 @@ void TemplatedWrapper(py::module &m, std::string tname){
 
   m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
 
-  m.def("rdBreachDepressionsD8",   &BreachDepressions<Topology::D8,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
-  m.def("rdBreachDepressionsD4",   &BreachDepressions<Topology::D4,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
+  m.def("rdBreachDepressionsD8",   &BreachDepressions<Topology::D8,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO
+  m.def("rdBreachDepressionsD4",   &BreachDepressions<Topology::D4,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO
 
   //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
 
-  m.def("TA_SPI",                &TA_SPI<T, float, double>,       "TODO");         
-  m.def("TA_CTI",                &TA_CTI<T, float, double>,       "TODO");         
-  m.def("TA_slope_riserun",      &TA_slope_riserun     <T>,       "TODO");                   
-  m.def("TA_slope_percentage",   &TA_slope_percentage  <T>,       "TODO");                      
-  m.def("TA_slope_degrees",      &TA_slope_degrees     <T>,       "TODO");                   
-  m.def("TA_slope_radians",      &TA_slope_radians     <T>,       "TODO");                   
-  m.def("TA_aspect",             &TA_aspect            <T>,       "TODO");            
-  m.def("TA_curvature",          &TA_curvature         <T>,       "TODO");               
-  m.def("TA_planform_curvature", &TA_planform_curvature<T>,       "TODO");                        
-  m.def("TA_profile_curvature",  &TA_profile_curvature <T>,       "TODO");                       
+  m.def("TA_SPI",                &TA_SPI<T, float, double>,       "TODO");
+  m.def("TA_CTI",                &TA_CTI<T, float, double>,       "TODO");
+  m.def("TA_slope_riserun",      &TA_slope_riserun     <T>,       "TODO");
+  m.def("TA_slope_percentage",   &TA_slope_percentage  <T>,       "TODO");
+  m.def("TA_slope_degrees",      &TA_slope_degrees     <T>,       "TODO");
+  m.def("TA_slope_radians",      &TA_slope_radians     <T>,       "TODO");
+  m.def("TA_aspect",             &TA_aspect            <T>,       "TODO");
+  m.def("TA_curvature",          &TA_curvature         <T>,       "TODO");
+  m.def("TA_planform_curvature", &TA_planform_curvature<T>,       "TODO");
+  m.def("TA_profile_curvature",  &TA_profile_curvature <T>,       "TODO");
 
   m.def("FA_Tarboton",            &FA_Tarboton           <T,double>, "TODO");
   m.def("FA_Dinfinity",           &FA_Dinfinity          <T,double>, "TODO");
@@ -84,7 +84,7 @@ void TemplatedWrapper(py::module &m, std::string tname){
   py::class_<Array2D<T>>(m, ("Array2D_" + tname).c_str(), py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<typename Array2D<T>::xy_t, typename Array2D<T>::xy_t,T>())
-      
+
       // .def(py::init<const Array2D<float   >&, T>())
       // .def(py::init<const Array2D<double  >&, T>())
       // .def(py::init<const Array2D<int8_t  >&, T>())
@@ -121,7 +121,7 @@ void TemplatedWrapper(py::module &m, std::string tname){
       .def("noData",    &Array2D<T>::noData)
       .def("min",       &Array2D<T>::min)
       .def("max",       &Array2D<T>::max)
-      
+
       //TODO: Simplify by casting to double in Python
       .def("setNoData", [](Array2D<T> &a, const float    ndval){ a.setNoData((T)ndval); })
       .def("setNoData", [](Array2D<T> &a, const double   ndval){ a.setNoData((T)ndval); })
@@ -133,7 +133,7 @@ void TemplatedWrapper(py::module &m, std::string tname){
       .def("setNoData", [](Array2D<T> &a, const uint16_t ndval){ a.setNoData((T)ndval); })
       .def("setNoData", [](Array2D<T> &a, const uint32_t ndval){ a.setNoData((T)ndval); })
       .def("setNoData", [](Array2D<T> &a, const uint64_t ndval){ a.setNoData((T)ndval); })
-            
+
       .def_readwrite("geotransform", &Array2D<T>::geotransform)
       .def_readwrite("projection",   &Array2D<T>::projection)
       .def_readwrite("metadata",     &Array2D<T>::metadata)
@@ -195,7 +195,7 @@ PYBIND11_MODULE(_richdem, m) {
   py::class_<Array3D<float>>(m, "Array3D_float", py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<typename Array3D<float>::xy_t, typename Array3D<float>::xy_t,float>())
-      
+
       // .def(py::init<const Array2D<float   >&, T>())
       // .def(py::init<const Array2D<double  >&, T>())
       // .def(py::init<const Array2D<int8_t  >&, T>())
@@ -231,7 +231,7 @@ PYBIND11_MODULE(_richdem, m) {
       .def("height",    &Array3D<float>::height)
       .def("empty",     &Array3D<float>::empty)
       .def("noData",    &Array3D<float>::noData)
-      
+
       //TODO: Simplify by casting to double in Python
       .def("setNoData", [](Array3D<float> &a, const float    ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const double   ndval){ a.setNoData((float)ndval); })
@@ -243,7 +243,7 @@ PYBIND11_MODULE(_richdem, m) {
       .def("setNoData", [](Array3D<float> &a, const uint16_t ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const uint32_t ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const uint64_t ndval){ a.setNoData((float)ndval); })
-            
+
       .def_readwrite("geotransform", &Array3D<float>::geotransform)
       .def_readwrite("projection",   &Array3D<float>::projection)
       .def_readwrite("metadata",     &Array3D<float>::metadata)
