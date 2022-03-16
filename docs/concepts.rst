@@ -46,7 +46,8 @@ Geotransform
 -----------------------------------
 
 A **geotransform** is a six element array which determines where in a
-projection a RichDEM array's data is located, as well as the cell sizes.
+projection a RichDEM array's data is located, as well as the cell sizes. In
+python, the geotransform must be a 6 element tuple.
 
 Typically, the geotransform is an affine transform consisting of six
 coefficients which map pixel/line coordinates into a georeferenced space using
