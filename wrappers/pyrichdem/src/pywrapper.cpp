@@ -1,11 +1,14 @@
-#include <pybind11/pybind11.h>
 #include <richdem/depressions/depressions.hpp>
-#include <richdem/methods/terrain_attributes.hpp>
-#include <richdem/methods/flow_accumulation.hpp>
 #include <richdem/flats/flats.hpp>
+#include <richdem/methods/flow_accumulation.hpp>
+#include <richdem/methods/terrain_attributes.hpp>
+#include <richdem/terrain_generation.hpp>
+
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
+
 // #include "pybind11_array2d.hpp"
 #include <string>
 
@@ -277,4 +280,5 @@ PYBIND11_MODULE(_richdem, m) {
         }
       );
 
+  m.def("generate_perlin_terrain", &perlin, "Generate random terrain using perlin noise", py::arg("size"), py::arg("seed"));
 }

@@ -789,3 +789,16 @@ def TerrainAttribute(dem: rdarray, attrib: str, zscale: float = 1.0) -> rdarray:
     result.copyFromWrapped(resultw)
 
     return result
+
+def GeneratePerlinTerrain(size: int, seed: int) -> rdarray:
+    """Generates random terrain based on Perlin noise
+
+    Args:
+        size: Size of one edge of the terrain. The terrain will be a square.
+        seed: Random seed used to generate the terrain.
+
+    Returns:
+        A DEM
+    """
+
+    return _richdem.generate_perlin_terrain(size, seed)
