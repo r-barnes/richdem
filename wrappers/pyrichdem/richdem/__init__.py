@@ -1,7 +1,10 @@
 import copy
 import datetime
-import numpy as np
+from optparse import Option
 import pkg_resources
+from typing import Optional
+
+import numpy as np
 
 try:
     import _richdem
@@ -18,7 +21,7 @@ except:
     GDAL_AVAILABLE = False
 
 
-def _RichDEMVersion():
+def _RichDEMVersion() -> str:
     return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
         pyver=pkg_resources.require("richdem")[0].version,
         hash=_richdem.rdHash(),
@@ -268,7 +271,7 @@ class rd3array(np.ndarray):
         # self.metadata += "\n"+wrapped.metadata["PROCESSING_HISTORY"].replace("\n","\t\n")
 
 
-def LoadGDAL(filename, no_data=None):
+def LoadGDAL(filename: str, no_data: Optional[float] = None) -> rdarray:
     """Read a GDAL file.
 
     Opens any file GDAL can read, selects the first raster band, and loads it
@@ -332,7 +335,7 @@ def LoadGDAL(filename, no_data=None):
     return srcdata
 
 
-def SaveGDAL(filename, rda):
+def SaveGDAL(filename: str, rda: rdarray) -> None:
     """Save a GDAL file.
 
     Saves a RichDEM array to a data file in GeoTIFF format.
@@ -367,16 +370,16 @@ def SaveGDAL(filename, rda):
         data_set.SetMetadataItem(str(k), str(v))
 
 
-def FillDepressions(dem, epsilon=False, in_place=False, topology="D8"):
+def FillDepressions(dem: rdarray, epsilon: bool = False, in_place: bool = False, topology: str = "D8") -> Optional[rdarray]:
     """Fills all depressions in a DEM.
 
     Args:
-        dem     (rdarray): An elevation model
-        epsilon (float):   If True, an epsilon gradient is imposed to all flat regions.
-                           This ensures that there is always a local gradient.
-        in_place (bool):   If True, the DEM is modified in place and there is
-                           no return; otherwise, a new, altered DEM is returned.
-        topology (string): A topology indicator
+        dem:       An elevation model
+        epsilon:   If True, an epsilon gradient is imposed to all flat regions.
+                     This ensures that there is always a local gradient.
+        in_place:  If True, the DEM is modified in place and there is
+                     no return; otherwise, a new, altered DEM is returned.
+        topology:  A topology indicator
 
     Returns:
         DEM without depressions.
@@ -411,7 +414,7 @@ def FillDepressions(dem, epsilon=False, in_place=False, topology="D8"):
         return dem
 
 
-def BreachDepressions(dem, in_place=False, topology="D8"):
+def BreachDepressions(dem: rdarray, in_place: bool = False, topology: str = "D8") -> Optional[rdarray]:
     """Breaches all depressions in a DEM.
 
     Args:
@@ -447,7 +450,7 @@ def BreachDepressions(dem, in_place=False, topology="D8"):
         return dem
 
 
-def ResolveFlats(dem, in_place=False):
+def ResolveFlats(dem: rdarray, in_place: bool = False) -> Optional[rdarray]:
     """Attempts to resolve flats by imposing a local gradient
 
     Args:
@@ -478,7 +481,7 @@ def ResolveFlats(dem, in_place=False):
         return dem
 
 
-def FlowAccumulation(dem, method=None, exponent=None, weights=None, in_place=False):
+def FlowAccumulation(dem: rdarray, method: Optional[str] = None, exponent: Optional[float] = None, weights: Optional[rdarray] = None, in_place: bool = False) -> rdarray:
     """Calculates flow accumulation. A variety of methods are available.
 
     Args:
@@ -587,7 +590,7 @@ def FlowAccumulation(dem, method=None, exponent=None, weights=None, in_place=Fal
     return accum
 
 
-def FlowAccumFromProps(props, weights=None, in_place=False):
+def FlowAccumFromProps(props: rdarray, weights: Optional[rdarray] = None, in_place: bool = False) -> rdarray:
     """Calculates flow accumulation from flow proportions.
 
     Args:
@@ -638,7 +641,7 @@ def FlowAccumFromProps(props, weights=None, in_place=False):
     return accum
 
 
-def FlowProportions(dem, method=None, exponent=None):
+def FlowProportions(dem: rdarray, method: Optional[str] = None, exponent: Optional[float] = None) -> rdarray:
     """Calculates flow proportions. A variety of methods are available.
 
     Args:
@@ -726,7 +729,7 @@ def FlowProportions(dem, method=None, exponent=None):
     return fprops
 
 
-def TerrainAttribute(dem, attrib, zscale=1.0):
+def TerrainAttribute(dem: rdarray, attrib: str, zscale: float = 1.0) -> rdarray:
     """Calculates terrain attributes. A variety of methods are available.
 
     Args:
