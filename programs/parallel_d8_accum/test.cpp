@@ -8,7 +8,7 @@
 
 using namespace richdem;
 
-//g++ -O3 -o test.exe `gdal-config --cflags` `gdal-config --libs` test.cpp -lgdal --std=c++11
+//g++ -O3 -o test.exe `gdal-config --cflags` `gdal-config --libs` test.cpp -lgdal --std=c++17
 
 //Are all serials unique?
 //    ./test.exe | awk '{print $1}' | sort -n | uniq -c | sed 's/^\s*//' | sort -n -k 1

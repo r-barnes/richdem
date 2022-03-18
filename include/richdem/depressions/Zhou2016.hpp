@@ -39,8 +39,8 @@ void ProcessTraceQue_onepass(
         continue;
 
       if(labels(ni)!=0)
-        continue;    
-      
+        continue;
+
       //The neighbour is unprocessed and higher than the central cell
       if(dem(c)<dem(ni)){
         traceQueue.emplace(ni);
@@ -76,8 +76,7 @@ void ProcessPit_onepass(
   Array2D<elev_t> &dem,
   Array2D<label_t> &labels,
   std::queue<int> &depressionQue,
-  std::queue<int> &traceQueue,
-  std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue
+  std::queue<int> &traceQueue
 ){
   while (!depressionQue.empty()){
     auto c = depressionQue.front();
@@ -89,7 +88,7 @@ void ProcessPit_onepass(
         continue;
 
       if(labels(ni)!=0)
-        continue;    
+        continue;
 
       labels(ni) = labels(c);
 
@@ -179,10 +178,10 @@ void PriorityFlood_Zhou2016(
       if(dem(ni)<=c.first){ //Depression cell
         dem(ni) = c.first;
         depressionQue.emplace(ni);
-        ProcessPit_onepass(c.first,dem,labels,depressionQue,traceQueue,priorityQueue);
+        ProcessPit_onepass(c.first,dem,labels,depressionQue,traceQueue);
       } else {          //Slope cell
         traceQueue.emplace(ni);
-      }     
+      }
       ProcessTraceQue_onepass(dem,labels,traceQueue,priorityQueue);
     }
   }

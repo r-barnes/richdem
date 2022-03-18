@@ -35,6 +35,10 @@ class StreamLogger {
   StreamLogger(LogFlag flag0, const char* file0, const char* func0, unsigned line0) : flag(flag0), file(file0), func(func0), line(line0) {}
 
   ~StreamLogger() noexcept(false) {
+    (void)flag; // Suppress unused variable warning
+    (void)file; // Suppress unused variable warning
+    (void)func; // Suppress unused variable warning
+    (void)line; // Suppress unused variable warning
     #ifdef RICHDEM_LOGGING
       RDLOGfunc(flag, file, func, line, ss.str());
     #endif

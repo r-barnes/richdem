@@ -59,7 +59,7 @@ target_include_directories(richdem
 target_compile_features(richdem
   PUBLIC
     cxx_auto_type
-    cxx_std_11
+    cxx_std_17
 )
 
 if(OpenMP_CXX_FOUND)

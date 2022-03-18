@@ -7,27 +7,29 @@
 #ifndef _richdem_array_2d_hpp_
 #define _richdem_array_2d_hpp_
 
-#include "gdal.hpp"
-#include <array>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <cassert>
-#include <algorithm>
-#include <typeinfo>
-#include <stdexcept>
-#include <limits>
-#include <ctime>         //Used for timestamping output files
-#include <cmath>
-#include <unordered_set> //For printStamp
-#include <stdexcept>
-#include <map>
 #include <richdem/common/Array3D.hpp>
 #include <richdem/common/logger.hpp>
 #include <richdem/common/version.hpp>
 #include <richdem/common/constants.hpp>
 #include <richdem/common/ManagedVector.hpp>
+
+#include "gdal.hpp"
+
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cmath>
+#include <ctime>         //Used for timestamping output files
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <stdexcept>
+#include <stdexcept>
+#include <typeinfo>
+#include <unordered_set> //For printStamp
+#include <vector>
 
 //These enable compression in the loadNative() and saveNative() methods
 #ifdef WITH_COMPRESSION
@@ -212,8 +214,9 @@ class Array2D {
     this->filename = filename;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
-    if(!fout.good())
+    if(!fout.good()){
       throw std::logic_error("Failed to open cache file '"+filename+"'.");
+    }
 
     #ifdef WITH_COMPRESSION
       boost::iostreams::filtering_ostream out;
@@ -773,16 +776,16 @@ class Array2D {
 
   ///@brief Determines whether an (x,y) pair is in the top row of the DEM
   ///@return True, if the (x,y) pair is in the top row of the DEM; otherwise, false
-  bool isTopRow    (xy_t x, xy_t y) const { return y==0;          }
+  bool isTopRow    (xy_t /*x*/, xy_t y) const { return y==0;          }
   ///@brief Determines whether an (x,y) pair is in the bottom row of the DEM
   ///@return True, if the (x,y) pair is in the bottom row of the DEM; otherwise, false
-  bool isBottomRow (xy_t x, xy_t y) const { return y==height()-1; }
+  bool isBottomRow (xy_t /*x*/, xy_t y) const { return y==height()-1; }
   ///@brief Determines whether an (x,y) pair is in the left column of the DEM
   ///@return True, if the (x,y) pair is in the left column of the DEM; otherwise, false
-  bool isLeftCol   (xy_t x, xy_t y) const { return x==0;          }
+  bool isLeftCol   (xy_t x, xy_t /*y*/) const { return x==0;          }
   ///@brief Determines whether an (x,y) pair is in the right column of the DEM
   ///@return True, if the (x,y) pair is in the right column of the DEM; otherwise, false
-  bool isRightCol  (xy_t x, xy_t y) const { return x==width()-1;  }
+  bool isRightCol  (xy_t x, xy_t /*y*/) const { return x==width()-1;  }
 
   /**
     @brief Test whether a cell lies on the boundary of the raster
@@ -1184,6 +1187,8 @@ class Array2D {
 
   */
   void printStamp(int size, std::string msg="") const {
+    (void)size; // Suppress unused variable warning
+    (void)msg; // Suppress unused variable warning
     #ifdef SHOW_STAMPS
       const xy_t sx = width()/2;
       const xy_t sy = height()/2;
