@@ -267,9 +267,10 @@ void BucketFill(
     throw std::runtime_error("Rasters must have the same dimension for BucketFill!");
   }
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   while(!seeds.empty()){
     const auto c = seeds.back();

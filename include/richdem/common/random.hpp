@@ -3,6 +3,7 @@
 #ifndef _richdem_random_hpp_
 #define _richdem_random_hpp_
 
+#include <cstdint>
 #include <random>
 #include <string>
 
@@ -27,7 +28,7 @@ typedef std::mt19937 our_random_engine;
 our_random_engine& rand_engine();
 
 //Seeds the PRNG engines using entropy from the computer's random device
-void seed_rand(unsigned long seed);
+void seed_rand(uint64_t seed);
 
 //Returns an integer value on the closed interval [from,thru]
 //Thread-safe
@@ -43,7 +44,7 @@ double normal_rand(double mean, double stddev);
 
 template<class T>
 T uniform_bits(){
-  std::uniform_int_distribution<T> 
+  std::uniform_int_distribution<T>
     dist(std::numeric_limits<T>::lowest(),std::numeric_limits<T>::max());
   return dist( rand_engine() );
 }

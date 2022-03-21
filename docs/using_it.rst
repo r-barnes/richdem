@@ -91,10 +91,10 @@ Setting up compilation works like this:
 
 .. code-block:: bash
 
-    CXXFLAGS="--std=c++11 -g -O3 -Wall -Wno-unknown-pragmas -Irichdem/include"
+    CXXFLAGS="--std=c++17 -g -O3 -Wall -Wno-unknown-pragmas -Irichdem/include"
     CXXFLAGS="$CXXFLAGS -DRICHDEM_LOGGING"
 
-C++11 or higher is necessary to compile. Include other RichDEM flags as desired.
+C++17 or higher is necessary to compile. Include other RichDEM flags as desired.
 Note that the `-g` flag doesn't slow things down, though it does increase the
 size of your executable somewhat. It's inclusion is always recommended for
 anything other than distributed production code because it makes debugging much
@@ -142,4 +142,3 @@ The `programs` directory contains several programs which have not been converted
 to libraries. This is usually because their functionality is specific and they
 are unlikely to be useful as a library. Each directory contains a makefile and a
 readme explaining the purpose of the program.
-

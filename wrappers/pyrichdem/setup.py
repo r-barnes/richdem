@@ -13,9 +13,9 @@ richdem_git_hash: Optional[str] = None
 
 # Compiler specific arguments
 BUILD_ARGS = {
-    "msvc": ["-std=c++11", "-g", "-fvisibility=hidden", "-O3"],
-    "gcc": ["-std=c++11", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
-    "unix": ["-std=c++11", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
+    "msvc": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3"],
+    "gcc": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
+    "unix": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
 }
 
 library_dirs = []
