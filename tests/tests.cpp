@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
+#include <richdem/common/constants.hpp>
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/loaders.hpp>
 #include <richdem/misc/misc_methods.hpp>
@@ -424,5 +425,35 @@ TEST_CASE("BucketFill"){
     };
 
     CHECK(set_raster==good_raster);
+  }
+}
+
+TEST_CASE("DirectionsMatchExpectations"){
+  SUBCASE("D8"){
+    const auto dx_func = get_dx_for_topology<Topology::D8>();
+    const auto dx_good = {0, -1, -1,  0,  1, 1, 1, 0, -1};
+    CHECK(std::equal(dx_func.begin(), dx_func.end(), dx_good.begin()));
+
+    const auto dy_func = get_dy_for_topology<Topology::D8>();
+    const auto dy_good = {0,  0, -1, -1, -1, 0, 1, 1,  1};
+    CHECK(std::equal(dy_func.begin(), dy_func.end(), dy_good.begin()));
+
+    CHECK(!std::equal(dx_func.begin(), dx_func.end(), dy_func.begin()));
+
+    CHECK(get_nmax_for_topology<Topology::D8>() == 8);
+  }
+
+  SUBCASE("D4"){
+    const auto dx_func = get_dx_for_topology<Topology::D4>();
+    const auto dx_good =  {0, -1,  0, 1, 0};
+    CHECK(std::equal(dx_func.begin(), dx_func.end(), dx_good.begin()));
+
+    const auto dy_func = get_dy_for_topology<Topology::D4>();
+    const auto dy_good = {0,  0, -1, 0, 1};
+    CHECK(std::equal(dy_func.begin(), dy_func.end(), dy_good.begin()));
+
+    CHECK(!std::equal(dx_func.begin(), dx_func.end(), dy_func.begin()));
+
+    CHECK(get_nmax_for_topology<Topology::D4>() == 4);
   }
 }
