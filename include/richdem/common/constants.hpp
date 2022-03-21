@@ -114,9 +114,9 @@ constexpr auto get_dx_for_topology() {
 template<Topology topo>
 constexpr auto get_dy_for_topology() {
   if constexpr (topo==Topology::D8){
-    return d8x;
+    return d8y;
   } else if constexpr (topo==Topology::D4){
-    return d4x;
+    return d4y;
   } else {
     //static_assert(false, "Unknown topology!");
   }
