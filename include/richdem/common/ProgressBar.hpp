@@ -18,21 +18,18 @@
 #ifndef _richdem_progress_bar_hpp_
 #define _richdem_progress_bar_hpp_
 
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
 #include <richdem/common/timer.hpp>
 
-namespace richdem {
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
-///Macros used to disguise the fact that we do not have multithreading enabled.
 #ifdef _OPENMP
   #include <omp.h>
-#else
-  #define omp_get_thread_num()  0
-  #define omp_get_num_threads() 1
 #endif
+
+namespace richdem {
 
 ///@brief Manages a console-based progress bar to keep the user entertained.
 ///

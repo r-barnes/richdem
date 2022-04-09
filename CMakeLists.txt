@@ -7,7 +7,7 @@ project(richdem
 )
 
 find_package(GDAL)
-find_package(OpenMP)
+find_package(OpenMP REQUIRED)
 find_package(MPI)
 
 set(CMAKE_MACOSX_RPATH 1)
@@ -42,10 +42,6 @@ add_library(richdem
   src/terrain_generation/terrain_generation.cpp
   src/terrain_generation/PerlinNoise.cpp
 )
-
-if(NOT OpenMP_CXX_FOUND)
-  message(WARNING "Compiling without OpenMP!")
-endif()
 
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
 # set_target_properties(richdem PROPERTIES SOVERSION 2)

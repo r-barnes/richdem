@@ -7,18 +7,14 @@
 #include <random>
 #include <string>
 
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
+
 namespace richdem {
 
 ///Maximum number of threads this class should deal with
 #define PRNG_THREAD_MAX 32
-
-#ifdef _OPENMP
-  #include <omp.h>
-#else
-  #define omp_get_thread_num()  0
-  #define omp_get_num_threads() 1
-  #define omp_get_max_threads() 1
-#endif
 
 typedef std::string RandomEngineState;
 
