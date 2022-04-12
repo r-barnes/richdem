@@ -5,14 +5,14 @@
   Richard Barnes (rbarnes@umn.edu), 2015
 */
 //TODO: Curvature may be "Least Squares Fitted Plane" per http://gis.stackexchange.com/questions/37066/how-to-calculate-terrain-curvature
-#ifndef _richdem_d8_methods_hpp_
-#define _richdem_d8_methods_hpp_
+#pragma once
 
-#include <richdem/common/logger.hpp>
 #include <richdem/common/Array2D.hpp>
 #include <richdem/common/constants.hpp>
 #include <richdem/common/grid_cell.hpp>
+#include <richdem/common/logger.hpp>
 #include <richdem/common/ProgressBar.hpp>
+
 #include <queue>
 #include <stdexcept>
 
@@ -78,8 +78,8 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
       if(n==NO_FLOW)         //This cell does not flow into a neighbour
         continue;
 
-      int nx = x+dx[n];      //x-coordinate of the neighbour
-      int ny = y+dy[n];      //y-coordinate of the neighbour
+      int nx = x+d8x[n];      //x-coordinate of the neighbour
+      int ny = y+d8y[n];      //y-coordinate of the neighbour
 
       //Neighbour is not on the grid
       if(!flowdirs.inGrid(nx,ny))
@@ -115,8 +115,8 @@ void d8_flow_accum(const Array2D<T> &flowdirs, Array2D<U> &area){
     if(n==NO_FLOW)
       continue;
 
-    int nx=c.x+dx[n];
-    int ny=c.y+dy[n];
+    const int nx=c.x+d8x[n];
+    const int ny=c.y+d8y[n];
 
     if(!flowdirs.inGrid(nx,ny))
       continue;
@@ -220,26 +220,19 @@ void d8_upslope_cells(
     progress.update(ccount++);
 
     for(int n=1;n<=8;n++)
-      if(!flowdirs.inGrid(c.x+dx[n],c.y+dy[n]))
+      if(!flowdirs.inGrid(c.x+d8x[n],c.y+d8y[n]))
         continue;
-      else if(flowdirs(c.x+dx[n],c.y+dy[n])==NO_FLOW)
+      else if(flowdirs(c.x+d8x[n],c.y+d8y[n])==NO_FLOW)
         continue;
-      else if(flowdirs(c.x+dx[n],c.y+dy[n])==flowdirs.noData())
+      else if(flowdirs(c.x+d8x[n],c.y+d8y[n])==flowdirs.noData())
         continue;
-      else if(upslope_cells(c.x+dx[n],c.y+dy[n])==upslope_cells.noData() && n==d8_inverse[flowdirs(c.x+dx[n],c.y+dy[n])]){
-        expansion.push(GridCell(c.x+dx[n],c.y+dy[n]));
-        upslope_cells(c.x+dx[n],c.y+dy[n])=1;
+      else if(upslope_cells(c.x+d8x[n],c.y+d8y[n])==upslope_cells.noData() && n==d8_inverse[flowdirs(c.x+d8x[n],c.y+d8y[n])]){
+        expansion.push(GridCell(c.x+d8x[n],c.y+d8y[n]));
+        upslope_cells(c.x+d8x[n],c.y+d8y[n])=1;
       }
   }
   RDLOG_TIME_USE<<"Succeeded in "<<progress.stop();
   RDLOG_MISC<<"Found "<<ccount<<" up-slope cells."; //TODO
 }
 
-
-
-
-
-
 }
-
-#endif

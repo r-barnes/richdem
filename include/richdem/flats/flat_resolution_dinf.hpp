@@ -60,7 +60,7 @@ static float dinf_masked_FlowDir(
     rg=(af[nmax]*rmax+ac[nmax]*M_PI/2);
   } else {
     for(int n=1;n<=8;n++){  //TODO: I have a feeling this is potentially unsafe as it may create dependency loops. Does it? TODO: Switch this to dinf_dx
-      if(groups(x+dx[n],y+dy[n])==groups(x,y) && flat_resolution_mask(x+dx[n],y+dy[n])<flat_resolution_mask(x,y)){
+      if(groups(x+d8x[n],y+d8y[n])==groups(x,y) && flat_resolution_mask(x+d8x[n],y+d8y[n])<flat_resolution_mask(x,y)){
         rg=d8_to_dinf[n];
         break;
       }
@@ -71,8 +71,8 @@ static float dinf_masked_FlowDir(
 }
 
 void dinf_flow_flats(
-  const Array2D<int32_t> &flat_resolution_mask, 
-  const Array2D<int32_t> &groups, 
+  const Array2D<int32_t> &flat_resolution_mask,
+  const Array2D<int32_t> &groups,
   Array2D<float> &flowdirs
 ){
   ProgressBar progress;

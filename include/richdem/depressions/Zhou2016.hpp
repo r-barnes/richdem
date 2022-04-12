@@ -6,16 +6,16 @@
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
-#ifndef _richdem_zhou2016pf_hpp_
-#define _richdem_zhou2016pf_hpp_
+#pragma once
 
-#include <richdem/common/logger.hpp>
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/logger.hpp>
 #include <richdem/common/timer.hpp>
+
+#include <iostream>
+#include <map>
 #include <queue>
 #include <vector>
-#include <map>
-#include <iostream>
 
 namespace richdem {
 
@@ -34,7 +34,7 @@ void ProcessTraceQue_onepass(
 
     bool bInPQ = false;
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c, dx[n], dy[n]);
+      const int ni = dem.nToI(c, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
@@ -52,7 +52,7 @@ void ProcessTraceQue_onepass(
       if (!bInPQ) {
         bool isBoundary = true;
         for(int nn=1;nn<=8;nn++){
-          int nni = dem.nToI(ni, dx[n], dy[n]);
+          int nni = dem.nToI(ni, d8x[n], d8y[n]);
           if(nni==-1)
             continue;
 
@@ -83,7 +83,7 @@ void ProcessPit_onepass(
     depressionQue.pop();
 
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c, dx[n], dy[n]);
+      const int ni = dem.nToI(c, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
@@ -166,7 +166,7 @@ void PriorityFlood_Zhou2016(
     labels(c.second) = 10;
 
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c.second, dx[n], dy[n]);
+      const int ni = dem.nToI(c.second, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
@@ -191,5 +191,3 @@ void PriorityFlood_Zhou2016(
 }
 
 }
-
-#endif

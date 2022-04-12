@@ -27,8 +27,8 @@ static void InitPriorityQue(
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
       for (int n=1;n<=8; n++){
-        const auto nx = x+dx[n];
-        const auto ny = y+dy[n];
+        const auto nx = x+d8x[n];
+        const auto ny = y+d8y[n];
 
         if(!dem.inGrid(nx,ny))
           continue;
@@ -65,8 +65,8 @@ static void ProcessTraceQue(
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if(flag(nx,ny))
         continue;
 
@@ -77,8 +77,8 @@ static void ProcessTraceQue(
         //initialize all masks as false
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell n has a spill path or a lower spill outlet than node if n is a depression cell
         for(int k=1;k<=8; k++){
-          const auto nny = ny+dy[k];
-          const auto nnx = nx+dx[k];
+          const auto nny = ny+d8y[k];
+          const auto nnx = nx+d8x[k];
           if((Mask[nny-node.y+2][nnx-node.x+2]) ||
             (flag(nnx,nny) && dem(nnx,nny)<node.z)
             )
@@ -105,8 +105,8 @@ static void ProcessTraceQue(
 
     //first case
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if(flag(nx,ny))
         continue;
 
@@ -129,8 +129,8 @@ static void ProcessPit(
     auto node = depressionQue.front();
     depressionQue.pop();
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if (flag(nx,ny))
         continue;
 
@@ -172,8 +172,8 @@ void PriorityFlood_Wei2018(Array2D<T> &dem){
     priorityQueue.pop();
 
     for (int n=1;n<=8; n++){
-      auto ny = tmpNode.y+dy[n];
-      auto nx = tmpNode.x+dx[n];
+      auto ny = tmpNode.y+d8y[n];
+      auto nx = tmpNode.x+d8x[n];
 
       if(!dem.inGrid(nx,ny))
         continue;

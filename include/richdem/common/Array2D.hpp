@@ -4,8 +4,7 @@
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
-#ifndef _richdem_array_2d_hpp_
-#define _richdem_array_2d_hpp_
+#pragma once
 
 #include <richdem/common/Array3D.hpp>
 #include <richdem/common/logger.hpp>
@@ -131,12 +130,12 @@ class Array2D {
 
   #ifdef USEGDAL
   ///TODO
-  void loadGDAL(const std::string &filename, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true){
+  void loadGDAL(const std::string &input_filename, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true){
     assert(empty());
 
     from_cache = false;
 
-    this->filename = filename;
+    this->filename = input_filename;
 
     RDLOG_PROGRESS<<"Trying to open file '"<<filename<<"'...";
 
@@ -207,11 +206,11 @@ class Array2D {
   */
   //TODO: Should save metadata
  public:
-  void saveToCache(const std::string &filename){
+  void saveToCache(const std::string &cache_filename){
     std::fstream fout;
 
     from_cache     = true;
-    this->filename = filename;
+    this->filename = cache_filename;
 
     fout.open(filename, std::ios_base::binary | std::ios_base::out | std::ios::trunc);
     if(!fout.good()){
@@ -244,13 +243,13 @@ class Array2D {
  private:
 
   ///TODO
-  void loadNative(const std::string &filename, bool load_data=true){
-    std::ifstream fin(filename, std::ios::in | std::ios::binary);
+  void loadNative(const std::string &input_filename, bool load_data=true){
+    std::ifstream fin(input_filename, std::ios::in | std::ios::binary);
 
     if(!fin.good())
-      throw std::runtime_error("Failed to load native file '" + filename +"!");
+      throw std::runtime_error("Failed to load native file '" + input_filename +"!");
 
-    this->filename = filename;
+    this->filename = input_filename;
     from_cache    = true;
 
     #ifdef WITH_COMPRESSION
@@ -392,23 +391,23 @@ class Array2D {
     resize(other.width(), other.height(), val);
   }
 
-  Array2D(const std::string &filename) : Array2D(filename, false, 0,0,0,0, false, true) {}
+  Array2D(const std::string &input_filename) : Array2D(input_filename, false, 0,0,0,0, false, true) {}
 
   ///TODO
-  Array2D(const std::string &filename, bool native, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
+  Array2D(const std::string &input_filename, bool native, xy_t xOffset=0, xy_t yOffset=0, xy_t part_width=0, xy_t part_height=0, bool exact=false, bool load_data=true) : Array2D() {
     if(native){
-      loadNative(filename, load_data);
+      loadNative(input_filename, load_data);
     } else {
       #ifdef USEGDAL
-      loadGDAL(filename, xOffset, yOffset, part_width, part_height, exact, load_data);
+      loadGDAL(input_filename, xOffset, yOffset, part_width, part_height, exact, load_data);
       #else
         throw std::runtime_error("RichDEM was not compiled with GDAL!");
       #endif
     }
   }
 
-  void setCacheFilename(const std::string &filename){
-    this->filename = filename;
+  void setCacheFilename(const std::string &input_filename){
+    this->filename = input_filename;
   }
 
   /**
@@ -595,14 +594,14 @@ class Array2D {
            of the neighbour identified by n
 
     @param[in]  i   i-coordinate of cell whose neighbour needs to be identified
-    @param[in]  n   Neighbour to be identified
+    @param[in]  n   Neighbour to be identified (D8 system)
 
     @return i-coordinate of the neighbour. Usually referred to as 'ni'
   */
   i_t getN(i_t i, uint8_t n) const {
     assert(0<=n && n<=8);
-    xy_t x = i%view_width+(xy_t)dx[n];
-    xy_t y = i/view_width+(xy_t)dy[n];
+    xy_t x = i%view_width+(xy_t)d8x[n];
+    xy_t y = i/view_width+(xy_t)d8y[n];
     if(x<0 || y<0 || x>=view_width || y>=view_height)
       return NO_I;
     return xyToI(x,y);
@@ -611,7 +610,7 @@ class Array2D {
   /**
     @brief Return the offset of the neighbour cell identified by n
 
-    @param[in]  n   Neighbour for which offset should be retrieved
+    @param[in]  n   Neighbour for which offset should be retrieved (D8 system)
 
     @return Offset of the neighbour n
   */
@@ -1087,7 +1086,7 @@ class Array2D {
 
 
   #ifdef USEGDAL
-  void saveGDAL(const std::string &filename, const std::string &metadata_str="", xy_t xoffset=0, xy_t yoffset=0, bool compress=false){
+  void saveGDAL(const std::string &input_filename, const std::string &metadata_str="", xy_t xoffset=0, xy_t yoffset=0, bool compress=false){
     char **papszOptions = NULL;
     if(compress){
       papszOptions = CSLSetNameValue( papszOptions, "COMPRESS", "DEFLATE" );
@@ -1097,9 +1096,9 @@ class Array2D {
     GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(poDriver==NULL)
       throw std::runtime_error("Could not open GDAL driver!");
-    GDALDataset *fout    = poDriver->Create(filename.c_str(), width(), height(), 1, myGDALType(), papszOptions);
+    GDALDataset *fout    = poDriver->Create(input_filename.c_str(), width(), height(), 1, myGDALType(), papszOptions);
     if(fout==NULL)
-      throw std::runtime_error("Could not open file '"+filename+"' for GDAL save!");
+      throw std::runtime_error("Could not open file '"+input_filename+"' for GDAL save!");
 
     GDALRasterBand *oband = fout->GetRasterBand(1);
     oband->SetNoDataValue(no_data);
@@ -1156,7 +1155,7 @@ class Array2D {
       fout->SetProjection(projection.c_str());
 
     #ifdef DEBUG
-      RDLOG_DEBUG<<"Filename: "<<std::setw(20)<<filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3];
+      RDLOG_DEBUG<<"Filename: "<<std::setw(20)<<input_filename<<" Xoffset: "<<std::setw(6)<<xoffset<<" Yoffset: "<<std::setw(6)<<yoffset<<" Geotrans0: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[0]<<" Geotrans3: "<<std::setw(10)<<std::setprecision(10)<<std::fixed<<geotransform[3];
     #endif
 
     auto temp = oband->RasterIO(GF_Write, 0, 0, view_width, view_height, _data.data(), view_width, view_height, myGDALType(), 0, 0);
@@ -1394,5 +1393,3 @@ class Array2D {
 };
 
 }
-
-#endif

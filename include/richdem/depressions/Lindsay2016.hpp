@@ -272,8 +272,8 @@ void Lindsay2016(
     //it is a pit cell
     elev_t lowest_neighbour = std::numeric_limits<elev_t>::max();
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
 
       //No need for an inGrid check here because edge cells are filtered above
 
@@ -381,8 +381,8 @@ void Lindsay2016(
 
     //Looks for neighbours which are either unvisited or pits
     for(int n=1;n<=8;n++){
-      const int nx = c.x+dx[n];
-      const int ny = c.y+dy[n];
+      const int nx = c.x+d8x[n];
+      const int ny = c.y+d8y[n];
 
       if(!dem.inGrid(nx,ny))
         continue;

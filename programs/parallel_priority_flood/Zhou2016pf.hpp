@@ -23,8 +23,8 @@ label_t GetNewLabelZhou(
     return labels(x,y);
 
   for(int n=1;n<=8;n++){
-    int nx = x+dx[n];
-    int ny = y+dy[n];
+    int nx = x+d8x[n];
+    int ny = y+d8y[n];
     if(!dem.inGrid(nx,ny))
       continue;
     if(labels(nx,ny)!=0 && dem(nx,ny)<=dem(x,y))
@@ -69,8 +69,8 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
 
     bool bInPQ = false;
     for(int n=1;n<=8;n++){
-      int nx = c.x+dx[n];
-      int ny = c.y+dy[n];
+      int nx = c.x+d8x[n];
+      int ny = c.y+d8y[n];
 
       if(!dem.inGrid(nx,ny))
         continue;
@@ -91,8 +91,8 @@ void ProcessTraceQue_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std
       if (!bInPQ) {
         bool isBoundary = true;
         for(int nn=1;nn<=8;nn++){
-          int nnx = nx+dx[n];
-          int nny = ny+dy[n];
+          int nnx = nx+d8x[n];
+          int nny = ny+d8y[n];
           if(!dem.inGrid(nnx,nny))
             continue;
           if (labels(nnx,nny)!=0 && dem(nnx,nny)<dem(nx,ny)){
@@ -116,8 +116,8 @@ void ProcessPit_onepass(Array2D<elev_t> &dem, Array2D<label_t> &labels, std::que
     depressionQue.pop();
 
     for(int n=1;n<=8;n++){
-      int nx = c.x+dx[n];
-      int ny = c.y+dy[n];
+      int nx = c.x+d8x[n];
+      int ny = c.y+d8y[n];
 
       if(!dem.inGrid(nx,ny))
         continue;
@@ -176,8 +176,8 @@ void Zhou2015Labels(
     auto my_label = labels(c.x,c.y) = GetNewLabelZhou(c.x,c.y,current_label,edge,dem,labels);
 
     for(int n=1;n<=8;n++){
-      int nx = c.x+dx[n];
-      int ny = c.y+dy[n];
+      int nx = c.x+d8x[n];
+      int ny = c.y+d8y[n];
 
       if (!dem.inGrid(nx,ny))
         continue;

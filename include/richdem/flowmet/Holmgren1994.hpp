@@ -41,14 +41,14 @@ void FM_Holmgren(
 
     if(elevations.isEdgeCell(x,y))
       continue;
-    
+
     const E e = elevations(x,y);
 
     double C = 0;
 
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
 
       if(!elevations.inGrid(nx,ny))
         continue;

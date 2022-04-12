@@ -42,8 +42,8 @@ void FM_Freeman(
 
     double C = 0;
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
 
       if(!elevations.inGrid(nx,ny))
         continue;

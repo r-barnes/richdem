@@ -41,20 +41,19 @@ typedef int8_t  flowdir_t;
 //D8 Neighbour Directions
 
 //Facet                 0   1   2   3   4  5  6  7   8
-constexpr std::array<int, 9> dx = {0, -1, -1,  0,  1, 1, 1, 0, -1}; ///< x offsets of D8 neighbours, from a central cell
-constexpr std::array<int, 9> dy = {0,  0, -1, -1, -1, 0, 1, 1,  1}; ///< y offsets of D8 neighbours, from a central cell
+constexpr std::array<int, 9> d8x = {0, -1, -1,  0,  1, 1, 1, 0, -1}; ///< x offsets of D8 neighbours, from a central cell
+constexpr std::array<int, 9> d8y = {0,  0, -1, -1, -1, 0, 1, 1,  1}; ///< y offsets of D8 neighbours, from a central cell
 constexpr double d8r[9]  = {0,1,SQRT2,1,SQRT2,1,SQRT2,1,SQRT2};
-constexpr bool n_diag[9] = {0,  0,  1,  0,  1, 0, 1, 0,  1}; ///< True along diagonal directions, false along north, south, east, west
+constexpr std::array<bool, 9> n8_diag = {false,  false,  true,  false,  true, false, true, false,  true}; ///< True along diagonal directions, false along north, south, east, west
 constexpr int D8_WEST    = 1;
 constexpr int D8_NORTH   = 3;
 constexpr int D8_EAST    = 5;
 constexpr int D8_SOUTH   = 7;
 
-constexpr std::array<int, 9> d8x = dx;
-constexpr std::array<int, 9> d8y = dy;
 constexpr std::array<int, 5> d4x = {0, -1,  0, 1, 0}; ///< x offsets of D4 neighbours, from a central cell
 constexpr std::array<int, 5> d4y = {0,  0, -1, 0, 1}; ///< y offsets of D4 neighbours, from a central cell
 constexpr std::array<double, 5> d4r = {0, 1, 1, 1, 1};
+constexpr std::array<bool, 5> n4_diag = {false, false, false, false, false};
 constexpr int D4_WEST  = 1;
 constexpr int D4_NORTH = 2;
 constexpr int D4_EAST  = 3;
@@ -139,6 +138,17 @@ constexpr auto get_dinverse_for_topology() {
     return d8_inverse;
   } else if constexpr (topo==Topology::D4){
     return d4_inverse;
+  } else {
+    //static_assert(false, "Unknown topology!");
+  }
+}
+
+template<Topology topo>
+constexpr auto get_n_diag_for_topology() {
+  if constexpr (topo==Topology::D8){
+    return n8_diag;
+  } else if constexpr (topo==Topology::D4){
+    return n4_diag;
   } else {
     //static_assert(false, "Unknown topology!");
   }

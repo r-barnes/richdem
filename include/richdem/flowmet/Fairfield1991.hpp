@@ -15,6 +15,10 @@ void FM_FairfieldLeymarie(const Array2D<elev_t> &elevations, Array3D<float> &pro
   RDLOG_ALG_NAME<<"Fairfield (1991) Rho8/Rho4 Flow Accumulation";
   RDLOG_CITATION<<"Fairfield, J., Leymarie, P., 1991. Drainage networks from grid digital elevation models. Water resources research 27, 709–717.";
 
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
+
   props.setAll(NO_FLOW_GEN);
   props.setNoData(NO_DATA_GEN);
 
@@ -38,10 +42,7 @@ void FM_FairfieldLeymarie(const Array2D<elev_t> &elevations, Array3D<float> &pro
 
     int    greatest_n     = 0; //TODO: Use a constant
     double greatest_slope = 0;
-    for(int n=1;n<=8;n++){
-      if(topo==Topology::D4 && n_diag[n]) //Skip diagonals
-        continue;
-
+    for(int n=1;n<=nmax;n++){
       const int nx = x+dx[n];
       const int ny = y+dy[n];
 
@@ -56,9 +57,9 @@ void FM_FairfieldLeymarie(const Array2D<elev_t> &elevations, Array3D<float> &pro
         continue;
 
       double rho_slope = (e-ne);
-      if(topo==Topology::D8 && n_diag[n])
+      if(topo==Topology::D8 && n8_diag[n])
         rho_slope *= 1/(2-uniform_rand_real(0,1));
-      else if(topo==Topology::D4 && (n==D8_NORTH || n==D8_SOUTH))
+      else if(topo==Topology::D4 && (n==D4_NORTH || n==D4_SOUTH))
         rho_slope *= 1/(1/uniform_rand_real(0,1)-1);
 
       if(rho_slope>greatest_slope){

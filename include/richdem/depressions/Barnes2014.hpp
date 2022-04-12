@@ -532,8 +532,8 @@ void PriorityFloodFlowdirs_Barnes2014(const Array2D<elev_t> &elevations, Array2D
 
     for(int no=1;no<=8;no++){
       int n=d8_order[no];
-      int nx=c.x+dx[n];
-      int ny=c.y+dy[n];
+      int nx=c.x+d8x[n];
+      int ny=c.y+d8y[n];
       if(!elevations.inGrid(nx,ny))
         continue;
       if(closed(nx,ny))
