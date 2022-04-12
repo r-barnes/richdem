@@ -80,10 +80,10 @@ Then compile using the standard `cmake` sequence:
 
     $ mkdir build
     $ cd build
-    $ cmake -DCMAKE_BUILD_TYPE=Release -DUSE_GDAL=ON ..
+    $ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
     $ make -j 6    # Adjust to use more or fewer processors
 
-If you do not want to build *richdem*  with *gdal*, exclude the `-DUSE_GDAL=ON`
+If you do not want to build *richdem* with *gdal*, use the `-DUSE_GDAL=OFF`
 option. To install *richdem*:
 
     $ cmake --install . --prefix /my/install/prefix

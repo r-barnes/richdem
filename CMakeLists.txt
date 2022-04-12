@@ -6,6 +6,8 @@ project(richdem
   LANGUAGES CXX
 )
 
+cmake_policy(SET CMP0077 NEW)
+
 find_package(GDAL)
 find_package(OpenMP REQUIRED)
 find_package(MPI)
@@ -25,7 +27,7 @@ else()
 endif()
 add_subdirectory(tests)
 
-option(USE_GDAL "Whether or not to compile with GDAL.")
+option(USE_GDAL "Whether or not to compile with GDAL." ON)
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
