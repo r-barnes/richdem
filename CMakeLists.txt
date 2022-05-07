@@ -6,9 +6,16 @@ project(richdem
   LANGUAGES CXX
 )
 
+cmake_policy(SET CMP0077 NEW)
+
 find_package(GDAL)
-find_package(OpenMP)
+find_package(OpenMP REQUIRED)
 find_package(MPI)
+
+set(CMAKE_MACOSX_RPATH 1)
+set(BUILD_SHARED_LIBS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_subdirectory(apps)
 
@@ -18,9 +25,9 @@ if(MPI_CXX_FOUND)
 else()
   message(WARNING "MPI not found; will not compile parallel programs for large-scale datasets.")
 endif()
-# add_subdirectory(tests)
+add_subdirectory(tests)
 
-option(USE_GDAL "Whether or not to compile with GDAL.")
+option(USE_GDAL "Whether or not to compile with GDAL." ON)
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -38,10 +45,6 @@ add_library(richdem
   src/terrain_generation/PerlinNoise.cpp
 )
 
-if(NOT OpenMP_CXX_FOUND)
-  message(WARNING "Compiling without OpenMP!")
-endif()
-
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
 # set_target_properties(richdem PROPERTIES SOVERSION 2)
 
@@ -54,7 +57,7 @@ target_include_directories(richdem
 target_compile_features(richdem
   PUBLIC
     cxx_auto_type
-    cxx_std_11
+    cxx_std_17
 )
 
 if(OpenMP_CXX_FOUND)
@@ -88,3 +91,12 @@ add_executable(richdem_unittests
 )
 target_link_libraries(richdem_unittests PRIVATE richdem)
 target_compile_features(richdem_unittests PRIVATE cxx_std_17)
+
+
+install(
+  TARGETS richdem
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+  RUNTIME DESTINATION "bin"
+)
+install(DIRECTORY include/richdem DESTINATION include)

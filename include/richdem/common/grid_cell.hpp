@@ -15,24 +15,22 @@
 namespace richdem {
 
 /// Stores the (x,y) coordinates of a grid cell
-class GridCell {
- public:
+struct GridCell {
   int x; ///< Grid cell's x-coordinate
   int y; ///< Grid cell's y-coordinate
   /// Initiate the grid cell without coordinates; should generally be avoided
-  GridCell(){}
+  GridCell() = default;
   /// Initiate the grid cell to the coordinates (x0,y0)
-  GridCell(int x, int y):x(x),y(y){}
+  GridCell(int x0, int y0):x(x0),y(y0){}
 };
 
 
 ///@brief Stores the (x,y,z) coordinates of a grid cell; useful for priority sorting with \ref GridCellZ_pq.
 template<class elev_t>
-class GridCellZ : public GridCell {
- public:
+struct GridCellZ : public GridCell {
   elev_t z;         ///< Grid cell's z-coordinate
-  GridCellZ(int x, int y, elev_t z): GridCell(x,y), z(z) {}
-  GridCellZ(){}
+  GridCellZ() = default;
+  GridCellZ(int x0, int y0, elev_t z0): GridCell(x0,y0), z(z0) {}
   //TODO: Add tests of isnan
   bool isnan() const { return false; }
   bool operator> (const GridCellZ<elev_t>& a) const { return z>a.z; }
@@ -40,11 +38,10 @@ class GridCellZ : public GridCell {
 
 ///@brief An (x,y,z) cell with NaNs taken as infinitely small numbers.
 template<>
-class GridCellZ<double> : public GridCell {
- public:
+struct GridCellZ<double> : public GridCell {
   double z;         ///< Grid cell's z-coordinate
-  GridCellZ(int x, int y, double z): GridCell(x,y), z(z) {}
-  GridCellZ(){}
+  GridCellZ(int x0, int y0, double z0): GridCell(x0,y0), z(z0) {}
+  GridCellZ() = default;
   //TODO: Add tests of isnan
   bool isnan() const { return std::isnan(z); }
   bool operator< (const GridCellZ<double>& a) const { return ( std::isnan(z) && !std::isnan(a.z)) || z< a.z; }
@@ -57,11 +54,10 @@ class GridCellZ<double> : public GridCell {
 
 ///@brief An (x,y,z) cell with NaNs taken as infinitely small numbers.
 template<>
-class GridCellZ<float>: public GridCell {
- public:
+struct GridCellZ<float>: public GridCell {
   float z;         ///< Grid cell's z-coordinate
-  GridCellZ(int x, int y, float z): GridCell(x,y), z(z) {}
-  GridCellZ(){}
+  GridCellZ(int x0, int y0, float z0): GridCell(x0,y0), z(z0) {}
+  GridCellZ() = default;
   //TODO: Add tests of isnan
   ///Compare cells based on elevation. (TODO: Distribute)
   bool isnan() const { return std::isnan(z); }
@@ -76,21 +72,19 @@ class GridCellZ<float>: public GridCell {
 
 ///@brief Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; used by \ref GridCellZk_pq to return cells in order of elevation from lowest to highest. If elevations are equal then the cell added first is popped from the priority queue.
 template<class elev_t>
-class GridCellZk_low : public GridCellZ<elev_t> {
-  public:
+struct GridCellZk_low : public GridCellZ<elev_t> {
     int k;           ///< Used to store an integer to make sorting stable
-    GridCellZk_low(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
-    GridCellZk_low(){}
+    GridCellZk_low(int x0, int y0, elev_t z0, int k0): GridCellZ<elev_t>(x0,y0,z0), k(k0) {}
+    GridCellZk_low() = default;
     //TODO: Is it possible to do this relying on inheriting the std::isnan checks from the GridCellZ specialization?
     bool operator> (const GridCellZk_low<elev_t>& a) const { return GridCellZk_low<elev_t>::z> a.z || (!GridCellZk_low<elev_t>::isnan() &&  a.isnan()) || (GridCellZk_low<elev_t>::z==a.z && k>a.k) || (GridCellZk_low<elev_t>::isnan() && a.isnan() && k>a.k); }
 };
 
 ///@brief Stores the (x,y,z) coordinates of a grid cell and a priority indicator k; used by \ref GridCellZk_pq to return cells in order of elevation from lowest to highest. If elevations are equal then the cell added last is popped from the priority queue.
 template<class elev_t>
-class GridCellZk_high : public GridCellZ<elev_t> {
-  public:
+struct GridCellZk_high : public GridCellZ<elev_t> {
     int k;           ///< Used to store an integer to make sorting stable
-    GridCellZk_high(int x, int y, elev_t z, int k): GridCellZ<elev_t>(x,y,z), k(k) {}
+    GridCellZk_high(int x0, int y0, elev_t z0, int k0): GridCellZ<elev_t>(x0,y0,z0), k(k0) {}
     GridCellZk_high(){}
     //TODO: Is it possible to do this relying on inheriting the std::isnan checks from the GridCellZ specialization?
     bool operator> (const GridCellZk_high<elev_t>& a) const { return GridCellZk_high<elev_t>::z> a.z || (!GridCellZk_high<elev_t>::isnan() &&  a.isnan()) || (GridCellZk_high<elev_t>::z==a.z && k<a.k) || (GridCellZk_high<elev_t>::isnan() && a.isnan() && k<a.k); }

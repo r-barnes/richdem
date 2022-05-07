@@ -27,13 +27,13 @@ static void InitPriorityQue(
     if (dem.isNoData(x,y)) {
       flag(x,y)=true;
       for (int n=1;n<=8; n++){
-        const auto nx = x+dx[n];
-        const auto ny = y+dy[n];
+        const auto nx = x+d8x[n];
+        const auto ny = y+d8y[n];
 
         if(!dem.inGrid(nx,ny))
           continue;
 
-        if (flag(nx,ny)) 
+        if (flag(nx,ny))
           continue;
 
         if (!dem.isNoData(nx, ny)){
@@ -44,7 +44,7 @@ static void InitPriorityQue(
     } else if(dem.isEdgeCell(x,y)){
       //on the DEM border
       priorityQueue.emplace(x,y,dem(x,y));
-      flag(x,y)=true;          
+      flag(x,y)=true;
     }
   }
 }
@@ -65,8 +65,8 @@ static void ProcessTraceQue(
     traceQueue.pop();
     bool Mask[5][5]={{false},{false},{false},{false},{false}};
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if(flag(nx,ny))
         continue;
 
@@ -74,11 +74,11 @@ static void ProcessTraceQue(
         traceQueue.emplace(nx,ny, dem(nx,ny));
         flag(nx,ny)=true;
       } else {
-        //initialize all masks as false   
+        //initialize all masks as false
         bool have_spill_path_or_lower_spill_outlet=false; //whether cell n has a spill path or a lower spill outlet than node if n is a depression cell
         for(int k=1;k<=8; k++){
-          const auto nny = ny+dy[k];
-          const auto nnx = nx+dx[k];
+          const auto nny = ny+d8y[k];
+          const auto nnx = nx+d8x[k];
           if((Mask[nny-node.y+2][nnx-node.x+2]) ||
             (flag(nnx,nny) && dem(nnx,nny)<node.z)
             )
@@ -88,7 +88,7 @@ static void ProcessTraceQue(
             break;
           }
         }
-        
+
         if(!have_spill_path_or_lower_spill_outlet){
           if (n<indexThreshold) potentialQueue.push(node);
           else
@@ -105,14 +105,14 @@ static void ProcessTraceQue(
 
     //first case
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if(flag(nx,ny))
         continue;
 
       priorityQueue.push(node);
       break;
-    }   
+    }
   }
 }
 
@@ -120,20 +120,19 @@ static void ProcessTraceQue(
 
 template<class T>
 static void ProcessPit(
-  Array2D<T>& dem, 
-  Array2D<bool>& flag, 
+  Array2D<T>& dem,
+  Array2D<bool>& flag,
   std::queue<GridCellZ<T> >& depressionQue,
-  std::queue<GridCellZ<T> >& traceQueue,
-  GridCellZ_pq<T>& priorityQueue
+  std::queue<GridCellZ<T> >& traceQueue
 ){
   while (!depressionQue.empty()){
     auto node = depressionQue.front();
     depressionQue.pop();
     for (int n=1;n<=8; n++){
-      const auto nx = node.x+dx[n];
-      const auto ny = node.y+dy[n];
+      const auto nx = node.x+d8x[n];
+      const auto ny = node.y+d8y[n];
       if (flag(nx,ny))
-        continue;    
+        continue;
 
       const auto iSpill = dem(nx,ny);
       if (iSpill > node.z){ //slope cell
@@ -156,7 +155,7 @@ template<class T>
 void PriorityFlood_Wei2018(Array2D<T> &dem){
   std::queue<GridCellZ<T> > traceQueue;
   std::queue<GridCellZ<T> > depressionQue;
-  
+
   RDLOG_ALG_NAME<<"Priority-Flood (Wei2018 version)";
   RDLOG_CITATION<<"Wei, H., Zhou, G., Fu, S., 2018. Efficient Priority-Flood depression filling in raster digital elevation models. International Journal of Digital Earth 0, 1–13. https://doi.org/10.1080/17538947.2018.1429503";
 
@@ -167,17 +166,14 @@ void PriorityFlood_Wei2018(Array2D<T> &dem){
 
   GridCellZ_pq<T> priorityQueue;
 
-  int numberofall   = 0;
-  int numberofright = 0;
-
-  InitPriorityQue(dem,flag,priorityQueue); 
+  InitPriorityQue(dem,flag,priorityQueue);
   while (!priorityQueue.empty()){
     const auto tmpNode = priorityQueue.top();
     priorityQueue.pop();
 
     for (int n=1;n<=8; n++){
-      auto ny = tmpNode.y+dy[n];
-      auto nx = tmpNode.x+dx[n];
+      auto ny = tmpNode.y+d8y[n];
+      auto nx = tmpNode.x+d8x[n];
 
       if(!dem.inGrid(nx,ny))
         continue;
@@ -191,18 +187,18 @@ void PriorityFlood_Wei2018(Array2D<T> &dem){
         dem(nx,ny) = tmpNode.z;
         flag(nx,ny) = true;
         depressionQue.emplace(nx,ny,tmpNode.z);
-        ProcessPit(dem,flag,depressionQue,traceQueue,priorityQueue);
+        ProcessPit(dem,flag,depressionQue,traceQueue);
       } else {
         //slope cell
         flag(nx,ny) = true;
         traceQueue.emplace(nx,ny,iSpill);
-      }     
-      ProcessTraceQue(dem,flag,traceQueue,priorityQueue); 
+      }
+      ProcessTraceQue(dem,flag,traceQueue,priorityQueue);
     }
   }
 
   timer.stop();
-  RDLOG_TIME_USE<<"Wei2018 wall-time = "<<timer.accumulated()<<" s";  
+  RDLOG_TIME_USE<<"Wei2018 wall-time = "<<timer.accumulated()<<" s";
 }
 
 }

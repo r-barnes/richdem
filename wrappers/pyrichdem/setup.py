@@ -1,63 +1,102 @@
-from collections import defaultdict
-import setuptools
-from setuptools.command.build_ext import build_ext as _build_ext
-import glob
-import datetime
-import subprocess
+import os
 import re
+import subprocess
+import sys
+from typing import Optional
 
-RICHDEM_COMPILE_TIME = None
-RICHDEM_GIT_HASH     = None
+import setuptools
+from pybind11.setup_helpers import Pybind11Extension
+from setuptools.command.build_ext import build_ext as _build_ext
 
-#Compiler specific arguments
+richdem_compile_time: Optional[str] = None
+richdem_git_hash: Optional[str] = None
+
+# Compiler specific arguments
 BUILD_ARGS = {
-  'msvc': ['-std=c++11','-g','-fvisibility=hidden','-O3'],
-  'gcc':  ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas'],
-  'unix': ['-std=c++11','-g','-fvisibility=hidden','-O3','-Wno-unknown-pragmas']
+    "msvc": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3"],
+    "gcc": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
+    "unix": ["-std=c++17", "-g", "-fvisibility=hidden", "-O3", "-Wno-unknown-pragmas"],
 }
 
-#Magic that hooks compiler specific arguments up with the compiler
+library_dirs = []
+if sys.platform.startswith("win"):
+    library_dirs.extend(
+        [
+            os.path.join(sys.prefix, "Library", "lib"),
+            os.path.join(sys.prefix, "Library", "bin"),
+        ]
+    )
+
+# Magic that hooks compiler specific arguments up with the compiler
 class build_ext_compiler_check(_build_ext):
-  def build_extensions(self):
-    compiler = self.compiler.compiler_type
-    print('COMPILER',compiler)
-    args     = BUILD_ARGS[compiler]
-    for ext in self.extensions:
-        ext.extra_compile_args = args
-    print('COMPILER ARGUMENTS',ext.extra_compile_args)
-    _build_ext.build_extensions(self)
+    def build_extensions(self):
+        compiler = self.compiler.compiler_type
+        print(f"COMPILER {compiler}")
+        args = BUILD_ARGS[compiler]
+        for ext in self.extensions:
+            ext.extra_compile_args = args
+            print(f"COMPILER ARGUMENTS: {ext.extra_compile_args}")
+        _build_ext.build_extensions(self)
 
-if RICHDEM_GIT_HASH is None:
-  try:
-    shash = subprocess.Popen(["git log --pretty=format:'%h' -n 1"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
-    sdate = subprocess.Popen(["git log -1 --pretty='%ci'"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).stdout.readlines()[0].decode('utf8').strip()
-    if re.match(r'^[0-9a-z]+$', shash) and re.match(r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.*$', sdate):
-      RICHDEM_COMPILE_TIME = sdate
-      RICHDEM_GIT_HASH     = shash
-  except:
-    print("Warning! Could not find RichDEM version. Software will still work, but reproducibility will be compromised.")
-    pass
 
-if RICHDEM_GIT_HASH is None:
-  RICHDEM_COMPILE_TIME = 'Unknown'
-  RICHDEM_GIT_HASH     = 'Unknown'
+if richdem_git_hash is None:
+    try:
+        shash = (
+            subprocess.Popen(
+                ["git log --pretty=format:'%h' -n 1"],
+                shell=True,
+                stderr=subprocess.STDOUT,
+                stdout=subprocess.PIPE,
+            )
+            .stdout.readlines()[0]
+            .decode("utf8")
+            .strip()
+        )
+        sdate = (
+            subprocess.Popen(
+                ["git log -1 --pretty='%ci'"],
+                shell=True,
+                stderr=subprocess.STDOUT,
+                stdout=subprocess.PIPE,
+            )
+            .stdout.readlines()[0]
+            .decode("utf8")
+            .strip()
+        )
+        if re.match(r"^[0-9a-z]+$", shash) and re.match(
+            r"^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.*$", sdate
+        ):
+            richdem_compile_time = sdate
+            richdem_git_hash = shash
+    except:
+        print(
+            "Warning! Could not find RichDEM version. Software will still work, but reproducibility will be compromised."
+        )
 
-print("Using RichDEM hash={0}, time={1}".format(RICHDEM_GIT_HASH, RICHDEM_COMPILE_TIME))
+if richdem_git_hash is None:
+    richdem_compile_time = "Unknown"
+    richdem_git_hash = "Unknown"
+
+print("Using RichDEM hash={0}, time={1}".format(richdem_git_hash, richdem_compile_time))
 
 ext_modules = [
-  setuptools.Extension(
-    "_richdem",
-    glob.glob('src/*.cpp') + ['lib/richdem/common/random.cpp', 'lib/richdem/richdem.cpp'],
-    include_dirs  = ['lib/'],
-    language      = 'c++',
-    define_macros = [
-      ('DOCTEST_CONFIG_DISABLE', None                ),
-      ('RICHDEM_COMPILE_TIME',   '"\\"'+RICHDEM_COMPILE_TIME+'\\""'),
-      ('RICHDEM_GIT_HASH',       '"\\"'+RICHDEM_GIT_HASH+'\\""'    ),
-      ('RICHDEM_LOGGING',        None                ),
-      ('_USE_MATH_DEFINES',      None) #To ensure that `#include <cmath>` imports `M_PI` in MSVC
-    ]
-  )
+    Pybind11Extension(
+        "_richdem",
+        ["src/pywrapper.cpp"],
+        include_dirs=["lib/"],
+        library_dirs=library_dirs,
+        libraries=["richdem"],
+        define_macros=[
+            ("DOCTEST_CONFIG_DISABLE", None),
+            ("RICHDEM_COMPILE_TIME", f'"\\"{richdem_compile_time}\\""'),
+            ("RICHDEM_GIT_HASH", f'"\\"{richdem_git_hash}\\""'),
+            ("RICHDEM_LOGGING", None),
+            (
+                "_USE_MATH_DEFINES",
+                None,
+            ),  # To ensure that `#include <cmath>` imports `M_PI` in MSVC
+        ],
+    ),
 ]
 
 long_description = """RichDEM is a set of digital elevation model (DEM) hydrologic analysis tools.
@@ -69,7 +108,7 @@ RichDEM offers a variety of flow metrics, such as D8 and D-infinity.
 It can flood or breach depressions, as well as calculate flow accumulation, slopes, curvatures, &c."""
 
 
-#TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
+# TODO: https://packaging.python.org/tutorials/distributing-packages/#configuring-your-project
 setuptools.setup(
   name              = 'richdem',
   version           = '0.3.5',

@@ -103,7 +103,7 @@ double dem_surface_area(
         //As we walk around half of the time we'll misidentify the diagonal
         //neighbour, but we can fix that here by swapping the labels we just
         //gave the neighbours
-        if(!n_diag[dn])
+        if(!n8_diag[dn])
           std::swap(dn,ndn);
 
         const double my_elev = zscale*elevations(x,y);
@@ -112,21 +112,21 @@ double dem_surface_area(
         //this case, we pretend that they do exist and are at the same height as
         //the focal cell.
         double dn_elev;
-        if(elevations.inGrid(x+dx[dn],y+dy[dn]) && !elevations.isNoData(x+dx[dn],y+dy[dn]))
-          dn_elev = zscale*elevations(x+dx[dn],y+dy[dn]);
+        if(elevations.inGrid(x+d8x[dn],y+d8y[dn]) && !elevations.isNoData(x+d8x[dn],y+d8y[dn]))
+          dn_elev = zscale*elevations(x+d8x[dn],y+d8y[dn]);
         else
           dn_elev = my_elev;
 
         //Do the same for the other neighbour
         double ndn_elev;
-        if(elevations.inGrid(x+dx[ndn],y+dy[ndn]) && !elevations.isNoData(x+dx[ndn],y+dy[ndn]))
-          ndn_elev = zscale*elevations(x+dx[ndn],y+dy[ndn]);
+        if(elevations.inGrid(x+d8x[ndn],y+d8y[ndn]) && !elevations.isNoData(x+d8x[ndn],y+d8y[ndn]))
+          ndn_elev = zscale*elevations(x+d8x[ndn],y+d8y[ndn]);
         else
           ndn_elev = my_elev;
 
-        const double planar_dist_dn   = planar_diag_dist;            //Distance focal cell to diagonal neighbour
-        const double planar_dist_ndn  = (dy[ndn] == 0)?xdist:ydist;  //Distance focal cell to non-diagonal neighbour
-        const double planar_dist_bn   = (dy[ndn] == 0)?ydist:xdist;  //Distance between the neighbour cells
+        const double planar_dist_dn   = planar_diag_dist;             //Distance focal cell to diagonal neighbour
+        const double planar_dist_ndn  = (d8y[ndn] == 0)?xdist:ydist;  //Distance focal cell to non-diagonal neighbour
+        const double planar_dist_bn   = (d8y[ndn] == 0)?ydist:xdist;  //Distance between the neighbour cells
 
         const double elev_diff_dn     = dn_elev -my_elev; //Elevation drop between focal and diagonal
         const double elev_diff_ndn    = ndn_elev-my_elev; //Elevation drop between focal and non-diagonal
@@ -210,17 +210,17 @@ double Perimeter(
 
       if(perim_type==PerimType::CELL_COUNT){
         for(int n=1;n<=8;n++){
-          if(!arr.inGrid(x+dx[n],y+dy[n])){
+          if(!arr.inGrid(x+d8x[n],y+d8y[n])){
             cell_edges++;
             break;
           }
         }
       } else if(perim_type==PerimType::SQUARE_EDGE){
         for(int n=1;n<=8;n++){
-          if(!arr.inGrid(x+dx[n],y+dy[n]) || arr.isNoData(x+dx[n],y+dy[n])){
-            if(dx[n]==0) //Pointing at a cell above or below, so horizontal edge
+          if(!arr.inGrid(x+d8x[n],y+d8y[n]) || arr.isNoData(x+d8x[n],y+d8y[n])){
+            if(d8x[n]==0) //Pointing at a cell above or below, so horizontal edge
               horizontal_edges++;
-            else if(dy[n]==0) //Point at cell left or right, so vertical edge
+            else if(d8y[n]==0) //Point at cell left or right, so vertical edge
               vertical_edges++;
           }
         }
@@ -267,9 +267,10 @@ void BucketFill(
     throw std::runtime_error("Rasters must have the same dimension for BucketFill!");
   }
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   while(!seeds.empty()){
     const auto c = seeds.back();

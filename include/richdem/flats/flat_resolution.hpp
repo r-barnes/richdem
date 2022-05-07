@@ -51,8 +51,8 @@ static int d8_masked_FlowDir(
   //It is safe to do this without checking to see that (nx,ny) is within
   //the grid because we only call this function on interior cells
   for(int n=1;n<=8;n++){
-    int nx=x+dx[n];
-    int ny=y+dy[n];
+    int nx=x+d8x[n];
+    int ny=y+d8y[n];
     if( labels(nx,ny)!=labels(x,y))
       continue;
     if(  flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){
@@ -184,8 +184,8 @@ static void BuildAwayGradient(
     flat_mask(x,y)=loops;
     flat_height[labels(x,y)]=loops;
     for(int n=1;n<=8;n++){
-      int nx = x+dx[n];
-      int ny = y+dy[n];
+      int nx = x+d8x[n];
+      int ny = y+d8y[n];
       if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
@@ -284,8 +284,8 @@ static void BuildTowardsCombinedGradient(
       flat_mask(x,y)=2*loops;
 
     for(int n=1;n<=8;n++){
-      int nx = x+dx[n];
-      int ny = y+dy[n];
+      int nx = x+d8x[n];
+      int ny = y+d8y[n];
       if(labels.inGrid(nx,ny)
           && labels(nx,ny)==labels(x,y)
           && flowdirs(nx,ny)==NO_FLOW)
@@ -349,8 +349,8 @@ static void label_this(
       continue;
     labels(c.x,c.y)=label;
     for(int n=1;n<=8;n++)
-      if(labels.inGrid(c.x+dx[n],c.y+dy[n]))
-        to_fill.push(GridCell(c.x+dx[n],c.y+dy[n]));
+      if(labels.inGrid(c.x+d8x[n],c.y+d8y[n]))
+        to_fill.push(GridCell(c.x+d8x[n],c.y+d8y[n]));
   }
 }
 
@@ -397,8 +397,8 @@ static void find_flat_edges(
       if(flowdirs(x,y)==NO_FLOW)
         cells_without_flow++;
       for(int n=1;n<=8;n++){
-        int nx = x+dx[n];
-        int ny = y+dy[n];
+        int nx = x+d8x[n];
+        int ny = y+d8y[n];
 
         if(!flowdirs.inGrid(nx,ny)) continue;
         if(flowdirs(nx,ny)==flowdirs.noData()) continue;
@@ -502,7 +502,7 @@ void resolve_flats_barnes(
   RDLOG_MEM_USE<<"The flat height vector will require approximately "
                <<(group_number*((long)sizeof(int))/1024/1024)
                <<"MB of RAM.";
-        
+
   RDLOG_PROGRESS<<"Creating flat height vector...";
   std::vector<int> flat_height(group_number);
 
@@ -561,14 +561,14 @@ void d8_flats_alter_dem(
 
       bool higher[9];
       for(int n=1;n<=8;++n)
-        higher[n]=elevations(x,y)>elevations(x+dx[n],y+dy[n]);
+        higher[n]=elevations(x,y)>elevations(x+d8x[n],y+d8y[n]);
       //TODO: nextafterf is the floating point version; should use an
       //overloaded version instead to be able to handle both double and float
       for(int i=0;i<flat_mask(x,y);++i)
         elevations(x,y)=nextafterf(elevations(x,y),std::numeric_limits<U>::infinity());
       for(int n=1;n<=8;++n){
-        int nx=x+dx[n];
-        int ny=y+dy[n];
+        int nx=x+d8x[n];
+        int ny=y+d8y[n];
         if(labels(nx,ny)==labels(x,y))
           continue;
         if(elevations(x,y)<elevations(nx,ny))
@@ -592,7 +592,7 @@ void barnes_flat_resolution_d8(Array2D<T> &elevations, Array2D<U> &flowdirs, boo
 
   resolve_flats_barnes(elevations,flowdirs,flat_mask,labels);
 
-  if(alter){  
+  if(alter){
     //NOTE: If this value appears anywhere an error's occurred
     flowdirs.setAll(155); //TODO
     d8_flats_alter_dem(flat_mask, labels, elevations);

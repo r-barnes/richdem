@@ -6,9 +6,10 @@ namespace richdem {
 
 GDALDataType peekGDALType(const std::string &filename){
   GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL)
+  auto *const fin = static_cast<GDALDataset*>(GDALOpen(filename.c_str(), GA_ReadOnly));
+  if(fin==nullptr){
     throw std::runtime_error("Unable to open file '"+filename+"'!");
+  }
 
   GDALRasterBand *band   = fin->GetRasterBand(1);
   GDALDataType data_type = band->GetRasterDataType();
@@ -26,16 +27,18 @@ void getGDALDimensions(
   double geotransform[6]
 ){
   GDALAllRegister();
-  GDALDataset *fin = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
-  if(fin==NULL)
+  auto *const fin = static_cast<GDALDataset*>(GDALOpen(filename.c_str(), GA_ReadOnly));
+  if(fin==nullptr){
     throw std::runtime_error("Could not open file '"+filename+"' to get dimensions.");
+  }
 
   GDALRasterBand *band = fin->GetRasterBand(1);
 
   dtype = band->GetRasterDataType();
 
-  if(geotransform!=NULL && fin->GetGeoTransform(geotransform)!=CE_None)
+  if(geotransform!=nullptr && fin->GetGeoTransform(geotransform)!=CE_None){
     throw std::runtime_error("Error getting geotransform from '"+filename+"'.");
+  }
 
   height  = band->GetYSize();
   width   = band->GetXSize();

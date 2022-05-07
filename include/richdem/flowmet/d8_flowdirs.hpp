@@ -62,11 +62,11 @@ static int d8_FlowDir(const Array2D<T> &elevations, const int x, const int y){
   on the edges.*/
   for(int n=1;n<=8;n++)
     if(
-      elevations(x+dx[n],y+dy[n])<minimum_elevation
-      || (elevations(x+dx[n],y+dy[n])==minimum_elevation
+      elevations(x+d8x[n],y+d8y[n])<minimum_elevation
+      || (elevations(x+d8x[n],y+d8y[n])==minimum_elevation
             && flowdir>0 && flowdir%2==0 && n%2==1) //TODO: What is this modulus stuff for?
     ){
-      minimum_elevation=elevations(x+dx[n],y+dy[n]);
+      minimum_elevation=elevations(x+d8x[n],y+d8y[n]);
       flowdir=n;
     }
 

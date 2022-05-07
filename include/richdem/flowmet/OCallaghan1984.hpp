@@ -19,6 +19,10 @@ void FM_OCallaghan(
   RDLOG_CITATION<<"O'Callaghan, J.F., Mark, D.M., 1984. The Extraction of Drainage Networks from Digital Elevation Data. Computer vision, graphics, and image processing 28, 323--344.";
   RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
+
   props.setAll(NO_FLOW_GEN);
   props.setNoData(NO_DATA_GEN);
 
@@ -43,16 +47,14 @@ void FM_OCallaghan(
 
     int lowest_n      = 0;
     elev_t   lowest_n_elev = std::numeric_limits<elev_t>::max();
-    for(int n=1;n<=8;n++){
-      if(topo==Topology::D4 && n_diag[n])         //Skip diagonals
+    for(int n=1;n<=nmax;n++){
+      const int nx = x + dx[n];
+      const int ny = y + dy[n];
+
+      if(elevations.isNoData(nx, ny)) //TODO: Don't I want water to drain this way?
         continue;
 
-      const int ni = ci + elevations.nshift(n);
-
-      if(elevations.isNoData(ni)) //TODO: Don't I want water to drain this way?
-        continue;
-
-      const elev_t ne = elevations(ni);
+      const elev_t ne = elevations(nx, ny);
 
       if(ne>=e)
         continue;

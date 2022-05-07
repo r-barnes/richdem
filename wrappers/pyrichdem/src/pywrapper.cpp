@@ -1,6 +1,7 @@
 #include "pywrapper.hpp"
 
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 
@@ -46,7 +47,7 @@ PYBIND11_MODULE(_richdem, m) {
   py::class_<Array3D<float>>(m, "Array3D_float", py::buffer_protocol(), py::dynamic_attr())
       .def(py::init<>())
       .def(py::init<typename Array3D<float>::xy_t, typename Array3D<float>::xy_t,float>())
-      
+
       // .def(py::init<const Array2D<float   >&, T>())
       // .def(py::init<const Array2D<double  >&, T>())
       // .def(py::init<const Array2D<int8_t  >&, T>())
@@ -82,7 +83,7 @@ PYBIND11_MODULE(_richdem, m) {
       .def("height",    &Array3D<float>::height)
       .def("empty",     &Array3D<float>::empty)
       .def("noData",    &Array3D<float>::noData)
-      
+
       //TODO: Simplify by casting to double in Python
       .def("setNoData", [](Array3D<float> &a, const float    ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const double   ndval){ a.setNoData((float)ndval); })
@@ -94,7 +95,7 @@ PYBIND11_MODULE(_richdem, m) {
       .def("setNoData", [](Array3D<float> &a, const uint16_t ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const uint32_t ndval){ a.setNoData((float)ndval); })
       .def("setNoData", [](Array3D<float> &a, const uint64_t ndval){ a.setNoData((float)ndval); })
-            
+
       .def_readwrite("geotransform", &Array3D<float>::geotransform)
       .def_readwrite("projection",   &Array3D<float>::projection)
       .def_readwrite("metadata",     &Array3D<float>::metadata)
@@ -127,4 +128,6 @@ PYBIND11_MODULE(_richdem, m) {
           return a.getIN(i,n);
         }
       );
+
+  m.def("generate_perlin_terrain", &perlin, "Generate random terrain using perlin noise", py::arg("size"), py::arg("seed"));
 }

@@ -21,7 +21,7 @@ public:
 	// Get a noise value, for 2D images z can have any value
 	double noise(double x, double y, double z);
 private:
-	double fade(double t);
-	double lerp(double t, double a, double b);
-	double grad(int hash, double x, double y, double z);
+	static double fade(double t);
+	static double lerp(double t, double a, double b);
+	static double grad(int hash, double x, double y, double z);
 };

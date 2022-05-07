@@ -29,8 +29,8 @@ void FollowPath(
     if(flowdirs.isNoData(x,y) || n==NO_FLOW)
       return;
 
-    const int nx = x+dx[n]; //Get neighbour's x-coordinate.
-    const int ny = y+dy[n]; //Get neighbour's y-coordinate.
+    const int nx = x+d8x[n]; //Get neighbour's x-coordinate.
+    const int ny = y+d8y[n]; //Get neighbour's y-coordinate.
 
     if(!flowdirs.inGrid(nx,ny))
       return;
@@ -62,7 +62,7 @@ int PerformAlgorithm(Array2D<T> inp){
 
 int main(int argc, char **argv){
   std::string analysis = PrintRichdemHeader(argc,argv);
-  
+
   int32_t total_height;
   int32_t total_width;
   GDALDataType file_type;

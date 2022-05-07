@@ -6,16 +6,16 @@
 
   Richard Barnes (rbarnes@umn.edu), 2015
 */
-#ifndef _richdem_zhou2016pf_hpp_
-#define _richdem_zhou2016pf_hpp_
+#pragma once
 
-#include <richdem/common/logger.hpp>
 #include <richdem/common/Array2D.hpp>
+#include <richdem/common/logger.hpp>
 #include <richdem/common/timer.hpp>
+
+#include <iostream>
+#include <map>
 #include <queue>
 #include <vector>
-#include <map>
-#include <iostream>
 
 namespace richdem {
 
@@ -34,13 +34,13 @@ void ProcessTraceQue_onepass(
 
     bool bInPQ = false;
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c, dx[n], dy[n]);
+      const int ni = dem.nToI(c, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
       if(labels(ni)!=0)
-        continue;    
-      
+        continue;
+
       //The neighbour is unprocessed and higher than the central cell
       if(dem(c)<dem(ni)){
         traceQueue.emplace(ni);
@@ -52,7 +52,7 @@ void ProcessTraceQue_onepass(
       if (!bInPQ) {
         bool isBoundary = true;
         for(int nn=1;nn<=8;nn++){
-          int nni = dem.nToI(ni, dx[n], dy[n]);
+          int nni = dem.nToI(ni, d8x[n], d8y[n]);
           if(nni==-1)
             continue;
 
@@ -76,20 +76,19 @@ void ProcessPit_onepass(
   Array2D<elev_t> &dem,
   Array2D<label_t> &labels,
   std::queue<int> &depressionQue,
-  std::queue<int> &traceQueue,
-  std::priority_queue<std::pair<elev_t, int>, std::vector< std::pair<elev_t, int> >, std::greater< std::pair<elev_t, int> > > &priorityQueue
+  std::queue<int> &traceQueue
 ){
   while (!depressionQue.empty()){
     auto c = depressionQue.front();
     depressionQue.pop();
 
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c, dx[n], dy[n]);
+      const int ni = dem.nToI(c, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
       if(labels(ni)!=0)
-        continue;    
+        continue;
 
       labels(ni) = labels(c);
 
@@ -167,7 +166,7 @@ void PriorityFlood_Zhou2016(
     labels(c.second) = 10;
 
     for(int n=1;n<=8;n++){
-      int ni = dem.nToI(c.second, dx[n], dy[n]);
+      const int ni = dem.nToI(c.second, d8x[n], d8y[n]);
       if(ni==-1)
         continue;
 
@@ -179,10 +178,10 @@ void PriorityFlood_Zhou2016(
       if(dem(ni)<=c.first){ //Depression cell
         dem(ni) = c.first;
         depressionQue.emplace(ni);
-        ProcessPit_onepass(c.first,dem,labels,depressionQue,traceQueue,priorityQueue);
+        ProcessPit_onepass(c.first,dem,labels,depressionQue,traceQueue);
       } else {          //Slope cell
         traceQueue.emplace(ni);
-      }     
+      }
       ProcessTraceQue_onepass(dem,labels,traceQueue,priorityQueue);
     }
   }
@@ -192,5 +191,3 @@ void PriorityFlood_Zhou2016(
 }
 
 }
-
-#endif

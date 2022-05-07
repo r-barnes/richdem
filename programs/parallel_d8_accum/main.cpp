@@ -302,8 +302,8 @@ class ConsumerSpecifics {
       }
 
       //Flow direction was valid. Where does it lead?
-      const int nx = x+dx[n]; //Get neighbour's x-coordinate.
-      const int ny = y+dy[n]; //Get neighbour's y-coordinate.
+      const int nx = x+d8x[n]; //Get neighbour's x-coordinate.
+      const int ny = y+d8y[n]; //Get neighbour's y-coordinate.
 
       //The neighbour cell is off one of the sides of the tile. Therefore, its
       //flow may be passed on to a neighbouring tile. Thus, we need to link this
@@ -364,8 +364,8 @@ class ConsumerSpecifics {
       if(n==NO_FLOW)          //This cell doesn't flow to a neighbour
         return;
 
-      x += dx[n];
-      y += dy[n];
+      x += d8x[n];
+      y += d8y[n];
     }
   }
 
@@ -676,8 +676,8 @@ class ProducerSpecifics {
       serialToXY(s,x,y,c.width,c.height);
 
       const int nfd = j.flowdirs.at(s);
-      int nx        = x+dx[nfd];
-      int ny        = y+dy[nfd];
+      int nx        = x+d8x[nfd];
+      int ny        = y+d8y[nfd];
 
       //Since this is a FLOW_EXTERNAL, this cell must point off of the grid
       assert(nx==-1 || ny==-1 || nx==c.width || ny==c.height);

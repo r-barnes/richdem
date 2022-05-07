@@ -49,9 +49,10 @@ bool HasDepressions(const Array2D<elev_t> &elevations){
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -144,9 +145,10 @@ void PriorityFlood_Original(Array2D<elev_t> &elevations){
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
 
@@ -237,9 +239,10 @@ void PriorityFlood_Barnes2014(Array2D<elev_t> &elevations){
   RDLOG_CITATION << "Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_CONFIG   <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS << "Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -343,9 +346,10 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -528,8 +532,8 @@ void PriorityFloodFlowdirs_Barnes2014(const Array2D<elev_t> &elevations, Array2D
 
     for(int no=1;no<=8;no++){
       int n=d8_order[no];
-      int nx=c.x+dx[n];
-      int ny=c.y+dy[n];
+      int nx=c.x+d8x[n];
+      int ny=c.y+d8y[n];
       if(!elevations.inGrid(nx,ny))
         continue;
       if(closed(nx,ny))
@@ -596,11 +600,12 @@ void pit_mask(const Array2D<elev_t> &elevations, Array2D<uint8_t> &pit_mask){
 
   RDLOG_ALG_NAME<<"Pit Mask";
   RDLOG_CITATION<<"Barnes, R. 2016. RichDEM: Terrain Analysis Software. http://github.com/r-barnes/richdem"; //TODO
-  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);  
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -718,11 +723,12 @@ void PriorityFloodWatersheds_Barnes2014(
 
   RDLOG_ALG_NAME<<"Priority-Flood+Watershed Labels";
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
-  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);  
+  RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -815,7 +821,7 @@ void PriorityFloodWatersheds_Barnes2014(
     are higher than a pit being filled are added to the priority queue. In this
     way, pits are filled without incurring the expense of the priority queue.
 
-    When a depression is encountered this command measures its size before 
+    When a depression is encountered this command measures its size before
     filling it. Only small depressions are filled.
 
   @param[in,out]  &elevations   A grid of cell elevations
@@ -850,9 +856,10 @@ void PriorityFlood_Barnes2014_max_dep(
   RDLOG_CITATION<<"Barnes, R., Lehman, C., Mulla, D., 2014. Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models. Computers & Geosciences 62, 117–127. doi:10.1016/j.cageo.2013.04.024";
   RDLOG_CONFIG  <<"topology = "<<TopologyName(topo);
 
-  const int *const dx   = topo == Topology::D8?d8x:topo==Topology::D4?d4x:NULL;
-  const int *const dy   = topo == Topology::D8?d8y:topo==Topology::D4?d4y:NULL;
-  const int        nmax = topo == Topology::D8?  8:topo==Topology::D4?  4:   0;
+  static_assert(topo==Topology::D8 || topo==Topology::D4);
+  constexpr auto dx = get_dx_for_topology<topo>();
+  constexpr auto dy = get_dy_for_topology<topo>();
+  constexpr auto nmax = get_nmax_for_topology<topo>();
 
   RDLOG_PROGRESS<<"Setting up boolean flood array matrix...";
   Array2D<int8_t> closed(elevations.width(),elevations.height(),false);
@@ -885,7 +892,7 @@ void PriorityFlood_Barnes2014_max_dep(
     GridCellZ<elev_t> c;
     if(pit.size()>0){                       //There are cells inside a depression which should be processed
       c=pit.front();                        //Get next cell of the depression
-      pit.pop();                      
+      pit.pop();
       dep_cells.push_back(c);               //Add cell to list of cells in depression
     } else {                                //We're not in a depression
       c=open.top();                         //Get next highest cell

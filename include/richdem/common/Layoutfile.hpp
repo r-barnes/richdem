@@ -35,7 +35,7 @@ namespace richdem {
 //Define operating system appropriate directory separators
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
   #define RICHDEM_SLASH_CHAR "/"
-#elif defined(__WIN32__)
+#elif defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
   #define RICHDEM_SLASH_CHAR "\\"
 #endif
 
