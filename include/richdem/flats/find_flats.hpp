@@ -15,7 +15,7 @@ namespace richdem {
   @brief  Finds flats: cells with no local gradient
   @author Richard Barnes (rbarnes@umn.edu)
 
-  TODO
+  Assumes a D8 topology
 
   @param[in]  &elevations     An elevation field
   @param[in]  &flats          An array of flat indicators (post-conditions)
@@ -54,8 +54,8 @@ void FindFlats(
     flats(x,y) = IS_A_FLAT;
 
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
       if(elevations(nx,ny)<elevations(x,y) || elevations.isNoData(nx,ny)){
         flats(x,y) = NOT_A_FLAT;
         break;

@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.9)
 
 project(richdem
-  VERSION 2.2.10
+  VERSION 2.2.11
   DESCRIPTION "High-performance terrain analysis"
   LANGUAGES CXX
 )

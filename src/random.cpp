@@ -12,9 +12,17 @@
 
 namespace richdem {
 
+static int rd_get_thread_num(){
+  #ifdef _OPENMP
+    return omp_get_thread_num();
+  #else
+    return 0;
+  #endif
+}
+
 our_random_engine& rand_engine(){
   static std::array<our_random_engine, PRNG_THREAD_MAX> e;
-  return e[omp_get_thread_num()];
+  return e[rd_get_thread_num()];
 }
 
 
@@ -31,7 +39,7 @@ void seed_rand(uint64_t seed){
       std::seed_seq q(std::begin(seed_data), std::end(seed_data));
       rand_engine().seed(q);
     } else {
-      rand_engine().seed( seed*omp_get_thread_num() );
+      rand_engine().seed( seed*rd_get_thread_num() );
     }
   }
 }
@@ -40,21 +48,21 @@ void seed_rand(uint64_t seed){
 int uniform_rand_int(int from, int thru){
   static std::array<std::uniform_int_distribution<>, PRNG_THREAD_MAX> d;
   using parm_t = std::uniform_int_distribution<>::param_type;
-  return d[omp_get_thread_num()]( rand_engine(), parm_t{from, thru} );
+  return d[rd_get_thread_num()]( rand_engine(), parm_t{from, thru} );
 }
 
 
 double uniform_rand_real(double from, double thru){
   static std::array<std::uniform_real_distribution<>, PRNG_THREAD_MAX> d;
   using parm_t = std::uniform_real_distribution<>::param_type;
-  return d[omp_get_thread_num()]( rand_engine(), parm_t{from, thru} );
+  return d[rd_get_thread_num()]( rand_engine(), parm_t{from, thru} );
 }
 
 
 double normal_rand(double mean, double stddev){
   static std::array<std::normal_distribution<double>, PRNG_THREAD_MAX> d;
   using parm_t = std::normal_distribution<double>::param_type;
-  return d[omp_get_thread_num()]( rand_engine(), parm_t{mean, stddev} );
+  return d[rd_get_thread_num()]( rand_engine(), parm_t{mean, stddev} );
 }
 
 RandomEngineState SaveRandomState(){

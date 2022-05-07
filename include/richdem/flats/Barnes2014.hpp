@@ -93,8 +93,8 @@ static void BuildAwayGradient(
     flat_mask(c.x,c.y)           = loops;
     flat_height[labels(c.x,c.y)] = loops;
     for(int n=1;n<=8;n++){
-      const int nx = c.x+dx[n];
-      const int ny = c.y+dy[n];
+      const int nx = c.x+d8x[n];
+      const int ny = c.y+d8y[n];
       if(
            labels.inGrid(nx,ny)
         && labels(nx,ny)==labels(c.x,c.y)
@@ -194,8 +194,8 @@ static void BuildTowardsCombinedGradient(
       flat_mask(c.x,c.y)=2*loops;
 
     for(int n=1;n<=8;n++){
-      const int nx = c.x+dx[n];
-      const int ny = c.y+dy[n];
+      const int nx = c.x+d8x[n];
+      const int ny = c.y+d8y[n];
       if(
            labels.inGrid(nx,ny)
         && labels(nx,ny)==labels(c.x,c.y)
@@ -271,8 +271,8 @@ static void LabelFlat(
 
     //Consider this cell's neighbours
     for(int n=1;n<=8;n++){
-      const int nx = c.x+dx[n];
-      const int ny = c.y+dy[n];
+      const int nx = c.x+d8x[n];
+      const int ny = c.y+d8y[n];
       if(labels.inGrid(nx,ny)) //TODO: Should probably avoid adding cells that cannot be part of the flat. This'll likely speed things up.
         to_fill.emplace(nx,ny);
     }
@@ -287,6 +287,8 @@ static void LabelFlat(
 
   Cells adjacent to lower and higher terrain are identified and
   added to the appropriate queue
+
+  Assumes a D8 topology
 
   @param[out] &low_edges  Queue for storing cells adjacent to lower terrain
   @param[out] &high_edges Queue for storing cells adjacent to higher terrain
@@ -329,8 +331,8 @@ static void FindFlatEdges(
       continue;
 
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
 
       if(!flats.inGrid(nx,ny))
         continue;
@@ -473,6 +475,8 @@ void GetFlatMask(
   This alters elevations within the DEM so that flats which have been
   resolved using GetFlatMask() will drain.
 
+  Assumes a D8 topology
+
   @param[in]     &flat_mask   A mask from GetFlatMask()
   @param[in]     &labels      A grouping from GetFlatMask()
   @param[in,out] &elevations  2D array of elevations
@@ -517,7 +521,7 @@ void ResolveFlatsEpsilon_Barnes2014(
     //the focal cell has been raised too high.
     bool lower[9];
     for(int n=1;n<=8;++n)
-      lower[n] = elevations(x,y)<elevations(x+dx[n],y+dy[n]);
+      lower[n] = elevations(x,y)<elevations(x+d8x[n],y+d8y[n]);
 
     //Raise the focal cell by the appropriate number of increments
     for(int i=0;i<flat_mask(x,y);++i)
@@ -526,8 +530,8 @@ void ResolveFlatsEpsilon_Barnes2014(
     //Check the surrounding cells to see if we are inappropriately higher than
     //any of them
     for(int n=1;n<=8;++n){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
       //This neighbour is part of the flat, so it does not matter if we are
       //higher than it
       if(labels(nx,ny)==labels(x,y))
@@ -565,6 +569,8 @@ void ResolveFlatsEpsilon_Barnes2014(
   using GetFlatMask().
 
   Uses the helper function D8MaskedFlowdir()
+
+  Assumes a D8 topology
 
   @param[in]  &flat_mask      A mask from GetFlatMask()
   @param[in]  &labels         The labels output from GetFlatMask()
@@ -614,8 +620,8 @@ void ResolveFlatsFlowdirs_Barnes2014(
     //It is safe to do this without checking to see that (nx,ny) is within
     //the grid because we only call this function on interior cells
     for(int n=1;n<=8;n++){
-      const int nx = x+dx[n];
-      const int ny = y+dy[n];
+      const int nx = x+d8x[n];
+      const int ny = y+d8y[n];
       if( labels(nx,ny)!=labels(ci))
         continue;
       if( flat_mask(nx,ny)<minimum_elevation || (flat_mask(nx,ny)==minimum_elevation && flowdir>0 && flowdir%2==0 && n%2==1) ){

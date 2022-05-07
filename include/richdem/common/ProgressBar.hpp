@@ -50,6 +50,22 @@ class ProgressBar{
       std::cerr<<"\r\033[2K"<<std::flush;
     }
 
+    int num_threads() const {
+      #ifdef _OPENMP
+        return omp_get_num_threads();
+      #else
+        return 1;
+      #endif
+    }
+
+    int thread_num() const {
+      #ifdef _OPENMP
+        return omp_get_thread_num();
+      #else
+        return 1;
+      #endif      
+    }
+
   public:
     ///@brief Start/reset the progress bar.
     ///@param total_work  The amount of work to be completed, usually specified in cells.
@@ -73,7 +89,7 @@ class ProgressBar{
         return;
       #endif
 
-      if(omp_get_thread_num()!=0)
+      if(thread_num()!=0)
         return;
 
       work_done = work_done0;
@@ -83,7 +99,7 @@ class ProgressBar{
 
       next_update += call_diff;
 
-      uint16_t percent = (uint8_t)(work_done*omp_get_num_threads()*100/total_work_);
+      uint16_t percent = (uint8_t)(work_done*num_threads()*100/total_work_);
       if(percent>100)
         percent=100;
       if(percent==old_percent)
@@ -96,12 +112,12 @@ class ProgressBar{
                <<percent<<"% - "
                <<std::fixed<<std::setprecision(1)<<timer.lap()/percent*(100-percent)
                <<"s - "
-               <<omp_get_num_threads()<< " threads)"<<std::flush;
+               <<num_threads()<< " threads)"<<std::flush;
     }
 
     ///Increment by one the work done and update the progress bar
     ProgressBar& operator++(){
-      if(omp_get_thread_num()!=0)
+      if(thread_num()!=0)
         return *this;
       work_done++;
       update(work_done);
