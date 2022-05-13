@@ -31,14 +31,14 @@ typedef uint32_t dh_label_t;
 typedef uint32_t flat_c_idx;
 
 //Some special valuess
-const dh_label_t NO_PARENT = std::numeric_limits<dh_label_t>::max();
-const dh_label_t NO_VALUE  = std::numeric_limits<dh_label_t>::max();
+constexpr dh_label_t NO_PARENT = std::numeric_limits<dh_label_t>::max();
+constexpr dh_label_t NO_VALUE  = std::numeric_limits<dh_label_t>::max();
 
 //This class holds information about a depression. Its pit cell and outlet cell
-//(in flat-index form) as well as the elevations of these cells. It also notes                                                   //what is flat-index form?
+//(in flat-index form) as well as the elevations of these cells. It also notes
 //the depression's parent. The parent of the depression is the outlet through
 //which it must flow in order to reach the ocean. If a depression has more than
-//one outlet at the same level one of them is arbitrarily chosen; hopefully this                                                  //so, everything should have a parent except for the ocean, right?
+//one outlet at the same level one of them is arbitrarily chosen; hopefully this
 //happens only rarely in natural environments.
 template<class elev_t>
 struct Depression {
@@ -141,7 +141,7 @@ struct Outlet {
   //determine if we've already found an outlet for a depression. We'll look at
   //outlets from lowest to highest, so if an outlet already exists for a
   //depression, it is that depression's lowest outlet.
-  bool operator==(const Outlet &o) const {                                                                                              //so beyond just checking, is this somehow preventing it from being recorded if one already exists? How does this work?
+  bool operator==(const Outlet &o) const {
     //Outlets are the same if they link two depressions, regardless of the
     //depressions' labels storage order within this class.
     return depa==o.depa && depb==o.depb;
@@ -164,25 +164,16 @@ struct OutletHash {
 };
 
 
-
-//The regular mod function allows negative numbers to stay negative. This mod
-//function wraps negative numbers around. For instance, if a=-1 and n=100, then
-//the result is 99.
-int ModFloor(int a, int n) {
-  return ((a % n) + n) % n;
-}
-
-
 template<class elev_t>
 using PriorityQueue = radix_heap::pair_radix_heap<elev_t,uint64_t>;
 // using PriorityQueue = GridCellZk_high_pq<elev_t> pq;
 
 
 //Cell is not part of a depression
-const dh_label_t NO_DEP = std::numeric_limits<dh_label_t>::max();
+constexpr dh_label_t NO_DEP = std::numeric_limits<dh_label_t>::max();
 //Cell is part of the ocean and a place from which we begin searching for
 //depressions.
-const dh_label_t OCEAN  = 0;
+constexpr dh_label_t OCEAN  = 0;
 
 template<typename elev_t>
 using DepressionHierarchy = std::vector<Depression<elev_t>>;
@@ -252,7 +243,7 @@ std::ostream& operator<<(std::ostream &out, const DepressionHierarchy<elev_t> &d
 //
 //@param  dem   - 2D array of elevations. May be in any data format.
 //
-//@return label - A label indiciate which depression the cell belongs to.
+//@return label - A label indicating which depression the cell belongs to.
 //                The indicated label is always the leaf of the depression
 //                hierarchy, or the OCEAN.
 //
@@ -370,7 +361,6 @@ DepressionHierarchy<elev_t> GetDepressionHierarchy(
     bool has_lower     = false;    //Pretend we have no lower neighbours
     for(int n=1;n<=neighbours;n++){ //Check out our neighbours
       //Use offset to get neighbour x coordinate, wrapping as needed
-      // const int nx = ModFloor(x+dx[n],dem.width());
       const int nx = x+dx[n];
       //Use offset to get neighbour y coordinate
       const int ny = y+dy[n];
@@ -476,10 +466,9 @@ DepressionHierarchy<elev_t> GetDepressionHierarchy(
       auto &newdep      = depressions.emplace_back(); //Add the next flat (increases size by 1)
       newdep.pit_cell   = dem.xyToI(cx,cy);           //Make a note of the pit cell's location
       newdep.pit_elev   = celev;                      //Make a note of the pit cell's elevation
-      newdep.dep_label  = clabel;                     //I am storing the label in the object so that I can find it later and call up the number of cells and volume (better way of doing this?) -- I have since realised I can use the index in the depressions array. So perhaps the label is no longer needed?
+      newdep.dep_label  = clabel;                     //Make a note of the depression's label //TODO: It might be possible to remove this variable entirely
       label(ci)         = clabel;                     //Update cell with new label
     } else {
-
       //Cell has already been assigned to a depression. In this case, one of two
       //things is true. (1) This cell is on the frontier of our search, in which
       //case the cell has neighbours which have not yet been seen. (2) This cell
@@ -489,12 +478,8 @@ DepressionHierarchy<elev_t> GetDepressionHierarchy(
       //However, it is harmless to check on them again.
     }
 
-    //TODO: Update the appropriate depression's cell_count and dep_vol variables                        I did this in the else if above, and then in the if and the else below. I add a cell to the count whenever it is added to the depression and add its elevation to the total elevations.
-    //here.                                                                                             Then I calculate the total volume only when we find an outlet (Good way to test this? Print values of volumes only of those that make the outlet queue? I get some negative values sometimes so I may have done something wrong, but what if it's an 'outlet' at the highest point of the depression?)
-
     //Consider the cell's neighbours
     for(int n=1;n<=neighbours;n++){
-      // const int nx = ModFloor(cx+dx[n],dem.width()); //Get neighbour's x-coordinate using an offset and wrapping
       const int nx = cx + dx[n];                      //Get neighbour's y-coordinate using an offset
       const int ny = cy + dy[n];                      //Get neighbour's y-coordinate using an offset
       if(!dem.inGrid(nx,ny))                          //Is this cell in the grid?
@@ -720,7 +705,7 @@ DepressionHierarchy<elev_t> GetDepressionHierarchy(
       //resize!
       const auto depa_pitcell_temp = depa.pit_cell;
 
-      auto &newdep     = depressions.emplace_back();                                                                       //is it right to create a new depression for the metadepression like this?
+      auto &newdep     = depressions.emplace_back();
       newdep.lchild    = depa_set;
       newdep.rchild    = depb_set;
       newdep.dep_label = newlabel;

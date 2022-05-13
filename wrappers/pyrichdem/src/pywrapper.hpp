@@ -1,3 +1,5 @@
+#pragma once
+
 #include <richdem/depressions/depressions.hpp>
 #include <richdem/flats/flats.hpp>
 #include <richdem/methods/flow_accumulation.hpp>

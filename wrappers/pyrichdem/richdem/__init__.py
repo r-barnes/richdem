@@ -2,15 +2,18 @@ import copy
 import datetime
 from optparse import Option
 import pkg_resources
-from typing import Optional
+from typing import Any, Final, List, Optional, Tuple, Union
 
 import numpy as np
+import sys
 
 try:
     import _richdem
 except ImportError as e:
     print("COULD NOT LOAD RichDEM ENGINE! NOTHING WILL WORK!")
     raise e
+
+from _richdem import depression_hierarchy
 
 try:
     from osgeo import gdal
@@ -20,6 +23,7 @@ try:
 except:
     GDAL_AVAILABLE = False
 
+STANDARD_GEOTRANSFORM: Final[np.ndarray] = np.array([0, 1, 0, 0, 0, -1])
 
 def _RichDEMVersion() -> str:
     return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
@@ -29,8 +33,8 @@ def _RichDEMVersion() -> str:
     )
 
 
-def _AddAnalysis(rda, analysis):
-    if type(rda) not in [rdarray, rd3array]:
+def _AddAnalysis(rda: "rdarray", analysis: str) -> None:
+    if type(rda) not in {rdarray, rd3array}:
         raise Exception("An rdarray or rd3array is required!")
 
     metastr = "\n{nowdate} | {verstr} | {analysis}".format(
@@ -47,24 +51,24 @@ def _AddAnalysis(rda, analysis):
 
 
 def rdShow(
-    rda,
+    rda: "rdarray",
     ignore_colours=[],
-    show=True,
-    axes=True,
-    cmap="gray",
-    vmin=None,
-    vmax=None,
-    xmin=None,
-    xmax=None,
-    ymin=None,
-    ymax=None,
-    zxmin=None,
-    zxmax=None,
-    zymin=None,
-    zymax=None,
-    figsize=(4, 4),
-    zcolor="red",
-    zloc=1,
+    show: bool = True,
+    axes: bool = True,
+    cmap: str = "gray",
+    vmin: Optional[int] = None,
+    vmax: Optional[int] = None,
+    xmin: Optional[int] = None,
+    xmax: Optional[int] = None,
+    ymin: Optional[int] = None,
+    ymax: Optional[int] = None,
+    zxmin: Optional[int] = None,
+    zxmax: Optional[int] = None,
+    zymin: Optional[int] = None,
+    zymax: Optional[int] = None,
+    figsize: Tuple[int, int] = (4, 4),
+    zcolor: str = "red",
+    zloc: int = 1,
 ):
     if type(rda) is np.ndarray:
         rda = rdarray(rda)
@@ -148,8 +152,8 @@ def rdShow(
 
 class rdarray(np.ndarray):
     def __new__(
-        cls, array, meta_obj=None, no_data=None, dtype=None, order=None, **kwargs
-    ):
+        cls, array, meta_obj=None, no_data: Optional[Union[float, int]]=None, dtype=None, order=None, **kwargs: Any
+    ) -> "rdarray":
         obj = np.asarray(array, dtype=dtype, order=order).view(cls)
 
         if meta_obj is not None:
@@ -189,7 +193,7 @@ class rdarray(np.ndarray):
         }
         dtype = str(self.dtype)
         if dtype not in richdem_arrs:
-            raise Exception("No equivalent RichDEM datatype.")
+            raise Exception(f"No equivalent RichDEM datatype to '{dtype}'.")
 
         rda = richdem_arrs[dtype](self)
 
@@ -199,7 +203,7 @@ class rdarray(np.ndarray):
         else:
             rda.setNoData(self.no_data)
 
-        if self.geotransform:
+        if self.geotransform is not None:
             rda.geotransform = np.array(self.geotransform, dtype="float64")
         else:
             print(
@@ -216,7 +220,7 @@ class rdarray(np.ndarray):
 
 
 class rd3array(np.ndarray):
-    def __new__(cls, array, meta_obj=None, no_data=None, order=None, **kwargs):
+    def __new__(cls, array, meta_obj=None, no_data=None, order=None, **kwargs: Any) -> "rd3array":
         obj = np.asarray(array, dtype=np.float32, order=order).view(cls)
 
         if meta_obj is not None:
@@ -329,7 +333,7 @@ def LoadGDAL(filename: str, no_data: Optional[float] = None) -> rdarray:
         srcdata.metadata[k] = v
 
     _AddAnalysis(
-        srcdata, "LoadGDAL(filename={0}, no_data={1})".format(filename, no_data)
+        srcdata, f"LoadGDAL(filename={filename}, no_data={no_data})"
     )
 
     return srcdata
@@ -393,7 +397,7 @@ def FillDepressions(dem: rdarray, epsilon: bool = False, in_place: bool = False,
     if not in_place:
         dem = dem.copy()
 
-    _AddAnalysis(dem, "FillDepressions(dem, epsilon={0})".format(epsilon))
+    _AddAnalysis(dem, f"FillDepressions(dem, epsilon={epsilon})")
 
     demw = dem.wrap()
 
@@ -467,9 +471,7 @@ def ResolveFlats(dem: rdarray, in_place: bool = False) -> Optional[rdarray]:
     if not in_place:
         dem = dem.copy()
 
-    _AddAnalysis(
-        dem, "ResolveFlats(dem, in_place={in_place})".format(in_place=in_place)
-    )
+    _AddAnalysis(dem, f"ResolveFlats(dem, in_place={in_place})")
 
     demw = dem.wrap()
 
@@ -702,10 +704,7 @@ def FlowProportions(dem: rdarray, method: Optional[str] = None, exponent: Option
 
     _AddAnalysis(
         fprops,
-        "FlowProportions(dem, method={method}, exponent={exponent})".format(
-            method=method,
-            exponent=exponent,
-        ),
+        f"FlowProportions(dem, method={method}, exponent={exponent})",
     )
 
     if method in fprop_methods:
@@ -781,7 +780,8 @@ def TerrainAttribute(dem: rdarray, attrib: str, zscale: float = 1.0) -> rdarray:
     resultw = result.wrap()
 
     _AddAnalysis(
-        result, "TerrainAttribute(dem, attrib={0}, zscale={1})".format(attrib, zscale)
+        result,
+        f"TerrainAttribute(dem, attrib={attrib}, zscale={zscale})"
     )
 
     terrain_attribs[attrib](dem.wrap(), resultw, zscale)
@@ -800,5 +800,41 @@ def GeneratePerlinTerrain(size: int, seed: int) -> rdarray:
     Returns:
         A DEM
     """
+    dem = rdarray(np.zeros(shape=(size, size), dtype="float64"), no_data=-9999)
+    dem.geotransform = STANDARD_GEOTRANSFORM
+    demw = dem.wrap()
+    _richdem.generate_perlin_terrain(demw, seed)
+    _AddAnalysis(dem, f"GeneratePerlinTerrain(size={size}, seed={seed})")
+    dem.copyFromWrapped(demw)
+    return dem
 
-    return _richdem.generate_perlin_terrain(size, seed)
+def get_depression_hierarchy(dem: rdarray, labels: rdarray) -> Tuple[List[depression_hierarchy.Depression], rdarray]:
+    """Fills all depressions in a DEM.
+
+    Args:
+        dem:       An elevation model
+        labels:    Should have `OCEAN` for cells representing the "ocean" (the
+                   place to which depressions drain) and `NO_DEP` for all other
+                   cells.
+
+    Returns:
+        label:  Modified in-place to contain a label indicating which depression
+                the cell belongs to. The indicated label is always the leaf of
+                the depression hierarchy, or the OCEAN.
+
+        flowdirs:  A value [0,7] indicated which direction water from the cell
+                   flows in order to go "downhill". All cells have a flow
+                   direction (even flats) except for pit cells.
+    """
+    if type(dem) is not rdarray:
+        raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+    demw = dem.wrap()
+    labelsw = labels.wrap()
+
+    flowdirs = rdarray(_richdem.NO_FLOW * np.ones(dem.shape, dtype=np.int8), no_data=-9999, geotransform=STANDARD_GEOTRANSFORM)
+    flowdirsw = flowdirs.wrap()
+
+    dhret = depression_hierarchy.get_depression_hierarchy(demw, labelsw, flowdirsw)
+
+    return dhret, flowdirs
