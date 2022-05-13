@@ -90,7 +90,7 @@ ext_modules = [
             ("DOCTEST_CONFIG_DISABLE", None),
             ("RICHDEM_COMPILE_TIME", f'"\\"{richdem_compile_time}\\""'),
             ("RICHDEM_GIT_HASH", f'"\\"{richdem_git_hash}\\""'),
-            ("RICHDEM_LOGGING", None),
+            # ("RICHDEM_LOGGING", None),
             (
                 "_USE_MATH_DEFINES",
                 None,
@@ -143,7 +143,7 @@ setuptools.setup(
   #   ':python_version < "3.4"': [
   #     'numpy>=1.7,<1.12'
   #   ]
-  # },  
+  # },
   #python_requires  = ' >= 2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
 
   #TODO: https://pypi.python.org/pypi?%3Aaction=list_classifiers

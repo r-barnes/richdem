@@ -10,3 +10,4 @@ travis.log
 build/
 .vscode/
 .log
+*.so

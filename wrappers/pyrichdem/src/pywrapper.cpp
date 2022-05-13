@@ -1,5 +1,7 @@
 #include "pywrapper.hpp"
 
+#include <richdem/depressions/depression_hierarchy.hpp>
+
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
@@ -13,6 +15,8 @@ using namespace richdem;
 
 PYBIND11_MODULE(_richdem, m) {
   m.doc() = "Internal library used by pyRichDEM for calculations";
+
+  m.attr("NO_FLOW") = &richdem::NO_FLOW;
 
   //py::bind_vector<std::vector<double>>(m, "VecDouble");
   py::bind_map<std::map<std::string, std::string>>(m, "MapStringString");
@@ -129,5 +133,35 @@ PYBIND11_MODULE(_richdem, m) {
         }
       );
 
-  m.def("generate_perlin_terrain", &perlin, "Generate random terrain using perlin noise", py::arg("size"), py::arg("seed"));
+  m.def("generate_perlin_terrain", &richdem::generate_perlin_terrain, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
+
+  py::module_ dephier_module = m.def_submodule("depression_hierarchy", "Depression Hierarchies");
+
+  dephier_module.attr("NO_PARENT") = &dephier::NO_PARENT;
+  dephier_module.attr("NO_VALUE") = &dephier::NO_VALUE;
+  dephier_module.attr("NO_DEP") = &dephier::NO_DEP;
+  dephier_module.attr("OCEAN") = &dephier::OCEAN;
+
+  // Depression Hierarchy
+  py::class_<dephier::Depression<double>>(dephier_module, "Depression")
+    .def(py::init<>())
+    .def_readwrite("pit_cell",        &dephier::Depression<double>::pit_cell, "Flat index of the pit cell, the lowest cell in the depression. If more than one cell shares this lowest elevation, then one is arbitrarily chosen.")
+    .def_readwrite("out_cell",        &dephier::Depression<double>::out_cell, "Flat index of the outlet cell. If there is more than one outlet cell at this cell's elevation, then one is arbitrarily chosen.")
+    .def_readwrite("parent",          &dephier::Depression<double>::parent, "Parent depression. If both this depression and its neighbour fill up, this parent depression is the one which will contain the overflow.")
+    .def_readwrite("odep",            &dephier::Depression<double>::odep, "Outlet depression. The metadepression into which this one overflows. Usually its neighbour depression, but sometimes the ocean.")
+    .def_readwrite("geolink",         &dephier::Depression<double>::geolink, "When a metadepression overflows it does so into the metadepression indicated by `odep`. However, odep must flood from the bottom up. Therefore, we keep track of the `geolink`, which indicates what leaf depression the overflow is initially routed into.")
+    .def_readwrite("pit_elev",        &dephier::Depression<double>::pit_elev, "Elevation of the pit cell. Since the pit cell has the lowest elevation of any cell in the depression, we initialize this to infinity.")
+    .def_readwrite("out_elev",        &dephier::Depression<double>::out_elev, "Elevation of the outlet cell. Since the outlet cell has the lowest elevation of any path leading from a depression, we initialize this to infinity.")
+    .def_readwrite("lchild",          &dephier::Depression<double>::lchild, "The depressions form a binary tree. Each depression has two child depressions: one left and one right.")
+    .def_readwrite("rchild",          &dephier::Depression<double>::rchild, "The depressions form a binary tree. Each depression has two child depressions: one left and one right.")
+    .def_readwrite("ocean_parent",    &dephier::Depression<double>::ocean_parent, "Indicates whether the parent link is to either the ocean or a depression that links to the ocean.")
+    .def_readwrite("ocean_linked",    &dephier::Depression<double>::ocean_linked, "Indicates depressions which link to the ocean through this depression, but are not subdepressions. That is, these ocean-linked depressions may be at the top of high cliffs and spilling into this depression.")
+    .def_readwrite("dep_label",       &dephier::Depression<double>::dep_label, "The label of the depression, for calling it up again.")
+    .def_readwrite("cell_count",      &dephier::Depression<double>::cell_count, "Number of cells contained within the depression and its children.")
+    .def_readwrite("dep_vol",         &dephier::Depression<double>::dep_vol, "Volume of the depression and its children. Used in the Water Level Equation (see below).")
+    .def_readwrite("water_vol",       &dephier::Depression<double>::water_vol, "Water currently contained within the depression. Used in the Water Level Equation (see below).")
+    .def_readwrite("total_elevation", &dephier::Depression<double>::total_elevation, "Total elevation of cells contained with the depression and its children.")
+  ; //Ends the class definition above
+
+  dephier_module.def("get_depression_hierarchy", &dephier::GetDepressionHierarchy<double, Topology::D8>, "Calculate the hierarchy of depressions. Takes as input a digital elevation model and a set of labels. The labels should have `OCEAN` for cells");
 }

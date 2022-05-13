@@ -4,6 +4,6 @@
 
 namespace richdem {
 
-Array2D<double> perlin(const int size, const uint32_t seed);
+void generate_perlin_terrain(Array2D<double>& arr, const uint32_t seed);
 
 }
