@@ -9,5 +9,5 @@ a.out
 travis.log
 build/
 .vscode/
-.log
+*.log
 *.so
