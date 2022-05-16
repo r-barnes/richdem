@@ -1,6 +1,7 @@
 #include "pywrapper.hpp"
 
 #include <richdem/depressions/depression_hierarchy.hpp>
+#include <richdem/depressions/fill_spill_merge.hpp>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -164,4 +165,14 @@ PYBIND11_MODULE(_richdem, m) {
   ; //Ends the class definition above
 
   dephier_module.def("get_depression_hierarchy", &dephier::GetDepressionHierarchy<double, Topology::D8>, "Calculate the hierarchy of depressions. Takes as input a digital elevation model and a set of labels. The labels should have `OCEAN` for cells");
+  dephier_module.def(
+    "fill_spill_merge",
+    &dephier::FillSpillMerge<double, double>,
+    "Perform Fill-Spill-Merge on a given landscape and its associated depression hierarchy and water table depths",
+    py::arg("topo"),
+    py::arg("labels"),
+    py::arg("flowdirs"),
+    py::arg("deps"),
+    py::arg("wtd")
+  );
 }

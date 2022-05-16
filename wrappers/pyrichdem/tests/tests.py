@@ -22,13 +22,8 @@ class py_richdem_tests(unittest.TestCase):
     self.assertEqual(d.total_elevation, 0)
 
   def test_generate_a_depression_hierarchy(self) -> None:
-    dem = rd.GeneratePerlinTerrain(20, 20)
+    dem = rd.generate_perlin_terrain(20, 20)
     # A labels array where all the edge cells are in the ocean and all the
     # interior cells are not yet assigned to a depression
-    labels = rd.rdarray(
-      dephier.OCEAN*np.ones(dem.shape, dtype = np.uint32),
-      no_data=-9999,
-      geotransform=rd.STANDARD_GEOTRANSFORM
-    )
-    labels[1:-1,1:-1] = dephier.NO_DEP
+    labels = rd.get_new_depression_hierarchy_labels(dem.shape)
     dh, flowdirs = rd.get_depression_hierarchy(dem, labels)
