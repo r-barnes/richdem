@@ -88,6 +88,8 @@ endif()
 
 add_executable(richdem_unittests
   tests/tests.cpp
+  tests/test_main.cpp
+  tests/fsm_tests.cpp
 )
 target_link_libraries(richdem_unittests PRIVATE richdem)
 target_compile_features(richdem_unittests PRIVATE cxx_std_17)
