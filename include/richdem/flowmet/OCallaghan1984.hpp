@@ -42,7 +42,6 @@ void FM_OCallaghan(
     if(elevations.isEdgeCell(x,y))
       continue;
 
-    const int ci = elevations.xyToI(x,y);
     const elev_t   e  = elevations(x,y);
 
     int lowest_n      = 0;
