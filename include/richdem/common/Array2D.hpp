@@ -355,6 +355,8 @@ class Array2D {
     @brief Create a raster with the same properties and dimensions as another
            raster. No data is copied between the two.
 
+    @deprecated Use make_from_template instead.
+
     @param[in] other   Raster whose properties and dimensions should be copied
     @param[in] val     Initial value of all the raster's cells.
   */
@@ -369,6 +371,28 @@ class Array2D {
     projection         = other.projection;
     basename           = other.basename;
     resize(other.width(), other.height(), val);
+  }
+
+  /**
+    @brief Create a raster with the same properties and dimensions as another
+           raster. No data is copied between the two.
+
+    @param[in] other   Raster whose properties and dimensions should be copied
+    @param[in] val     Initial value of all the raster's cells.
+  */
+  template<class U>
+  static Array2D<T> make_from_template(const Array2D<U> &other, const T& val=T()){
+    Array2D newarr;
+    newarr.view_width         = other.view_width;
+    newarr.view_height        = other.view_height;
+    newarr.view_xoff          = other.view_xoff;
+    newarr.view_yoff          = other.view_yoff;
+    newarr.geotransform       = other.geotransform;
+    newarr.metadata           = other.metadata;
+    newarr.projection         = other.projection;
+    newarr.basename           = other.basename;
+    newarr.resize(other.width(), other.height(), val);
+    return newarr;
   }
 
   /**
