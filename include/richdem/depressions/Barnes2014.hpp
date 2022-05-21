@@ -422,31 +422,31 @@ void PriorityFloodEpsilon_Barnes2014(Array2D<elev_t> &elevations){
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<Topology topo>
-void PriorityFloodEpsilon_Barnes2014(Array2D<uint8_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint8_t>& /*elevations*/){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<Topology topo>
-void PriorityFloodEpsilon_Barnes2014(Array2D<uint16_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint16_t>& /*elevations*/){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<Topology topo>
-void PriorityFloodEpsilon_Barnes2014(Array2D<int16_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<int16_t>& /*elevations*/){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<Topology topo>
-void PriorityFloodEpsilon_Barnes2014(Array2D<uint32_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<uint32_t>& /*elevations*/){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
 ///Priority-Flood+Epsilon is not available for integer data types
 template<Topology topo>
-void PriorityFloodEpsilon_Barnes2014(Array2D<int32_t> &elevations){
+void PriorityFloodEpsilon_Barnes2014(Array2D<int32_t>& /*elevations*/){
   throw std::runtime_error("Priority-Flood+Epsilon is only available for floating-point data types!");
 }
 
