@@ -5,6 +5,7 @@
 #include <richdem/methods/flow_accumulation.hpp>
 #include <richdem/methods/terrain_attributes.hpp>
 #include <richdem/terrain_generation.hpp>
+#include <richdem/methods/upslope_cells.hpp>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -79,6 +80,21 @@ void TemplatedFunctionsWrapper(pybind11::module &m, std::string tname){
   m.def("FM_OCallaghanD4",        &FM_OCallaghan        <Topology::D4,T>, "TODO");
   m.def("FM_D8",                  &FM_D8                <T>,              "TODO");
   m.def("FM_D4",                  &FM_D4                <T>,              "TODO");
+
+  m.def("UC_mask_props",          &UC_mask_props        <T,uint8_t>,         "TODO");
+  // TODO: make this work for different datatypes. Do we just make a big list?
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <float   ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <double  ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <int8_t  ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <int16_t ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <int32_t ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <int64_t ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <uint8_t ,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <uint16_t,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <uint32_t,T,uint8_t>, "TODO");
+  m.def("UC_mask_mflow",          &UC_mask_mflow        <uint64_t,T,uint8_t>, "TODO");
+  m.def("UC_line_props",          &UC_line_props        <uint8_t>,         "TODO");
+  m.def("UC_line_mflow",          &UC_line_mflow        <T,uint8_t>,         "TODO");
 }
 
 

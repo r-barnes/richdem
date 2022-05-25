@@ -897,3 +897,66 @@ def fill_spill_merge(dem: rdarray, labels: rdarray, flowdirs: rdarray, deps: Lis
     wtdw = wtd.wrap()
 
     dhret = depression_hierarchy.fill_spill_merge(demw, labelsw, flowdirsw, deps, wtdw)
+
+def UpslopeCells(
+  dem,
+  x0: int = None,
+  y0: int = None,
+  x1: int = None,
+  y1: int = None,
+  mask: rdarray = None,
+  method: str = None
+):
+  """
+  Delineates a catchment, based on input points, or a true/false raster.
+
+  Args: 
+    dem       (rdarray): A digital elevation model
+    x0        (int):     x coordinate of first point
+    y0        (int):     y coordinate of first point
+    x1        (int):     x coordinate of second point
+    y1        (int):     y coordinate of second point
+    init_mask (rdarray): Mask array with nonzero values for input cells
+    method    (string):  The method to use. Can be "mflow", "D8" or any flow metric, such as "Dinf"
+  """
+  if type(dem) is not rdarray:
+    raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+  result = rdarray(np.zeros(shape=dem.shape,dtype="uint8"),meta_obj=dem,no_data=0)
+  resultw = result.wrap()
+
+  if method == "mflow":
+    demw = dem.wrap()
+    if x0 is not None and y0 is not None and x1 is not None and y1 is not None:
+      _richdem.UC_line_mflow(x0,y0,x1,y1,demw,resultw)
+    elif x0 is not None and y0 is not None:
+      _richdem.UC_line_mflow(x0,y0,x0,y0,demw,resultw)
+    elif mask is not None:
+      maskw = mask.wrap()
+      _richdem.UC_mask_mflow(maskw,demw,resultw)
+  else:
+    propsw = FlowProportions(dem,method).wrap()
+    if x0 is not None and y0 is not None and x1 is not None and y1 is not None:
+      _richdem.UC_line_props(x0,y0,x1,y1,propsw,resultw)
+    elif x0 is not None and y0 is not None:
+      _richdem.UC_line_props(x0,y0,x0,y0,propsw,resultw)
+    elif mask is not None:
+      maskw = mask.wrap()
+      _richdem.UC_mask_props(maskw,propsw,resultw)
+
+  #   init_maskw = init_mask.wrap()
+  #   initqueue = _richdem.InitQueueFromMask(demw,init_maskw)
+  # elif x0 is not None and y0 is not None and x1 is not None and y1 is not None:
+  #   initqueue = _richdem.InitQueueFromLinePoints(x0,y0,x1,y1,demw)
+  # elif x0 is not None and y0 is not None:
+  #   initqueue = _richdem.InitQueueFromLinePoints(x0,y0,x0,y0,demw)
+
+  # if a method is specified, calculate proportions
+  if method == "mflow":
+    method = "Quinn" #TODO: make this specialized
+  # else:
+
+  result.copyFromWrapped(resultw)
+
+  return result
+

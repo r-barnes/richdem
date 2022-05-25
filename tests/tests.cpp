@@ -5,6 +5,8 @@
 #include <richdem/common/loaders.hpp>
 #include <richdem/misc/misc_methods.hpp>
 #include <richdem/richdem.hpp>
+#include <richdem/methods/upslope_cells_functions.hpp>
+#include <richdem/methods/upslope_cells.hpp>
 
 #include <filesystem>
 #include <queue>
@@ -456,3 +458,182 @@ TEST_CASE("DirectionsMatchExpectations"){
     CHECK(get_nmax_for_topology<Topology::D4>() == 4);
   }
 }
+TEST_CASE("Checking Catchment Delineation Generic"){
+  SUBCASE("mask"){
+    SUBCASE("single"){
+    Array2D<uint8_t> mask = {
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 1, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+    };
+    mask.setNoData(0);
+    Array2D<uint8_t> upslope(mask,0);
+
+    std::queue<GridCell> q_expected;
+    q_expected.emplace(2,2);
+    const Array2D<uint8_t> upslope_e = {
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 2, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+    };
+
+    std::queue<GridCell> q = queue_from_mask(mask, upslope);
+    std::cout<< mask.noData() << std::endl;
+    CHECK(q.front().x == q_expected.front().x);
+    CHECK(q.front().y == q_expected.front().y);
+    CHECK(q.size() == 1);
+    CHECK(upslope(2,2) == 2);
+    }
+    SUBCASE("multi"){
+    Array2D<uint8_t> mask = {
+      {0, 0, 0, 0, 0, 0},
+      {0, 1, 0, 0, 0, 0},
+      {0, 0, 1, 0, 0, 0},
+      {0, 1, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+    };
+    mask.setNoData(0);
+    Array2D<uint8_t> upslope(mask,0);
+
+    std::queue<GridCell> q_expected;
+    q_expected.emplace(1,1);
+    q_expected.emplace(1,3);
+    q_expected.emplace(2,2);
+
+    const Array2D<uint8_t> upslope_e = {
+      {0, 0, 0, 0, 0, 0},
+      {0, 2, 0, 0, 0, 0},
+      {0, 0, 2, 0, 0, 0},
+      {0, 2, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0, 0},
+    };
+
+    std::queue q = queue_from_mask(mask, upslope);
+    CHECK(q.size() == 3);
+    CHECK(q == q_expected);
+    CHECK(upslope == upslope_e);
+    }
+    // TODO: make more tests?
+  }
+
+  SUBCASE("line"){
+    SUBCASE("horizontal"){
+      int x0=0;
+      int y0=0;
+      int x1=2;
+      int y1=0;
+
+      std::queue<GridCell> q_expected;
+      q_expected.emplace(0,0);
+      q_expected.emplace(1,0);
+      q_expected.emplace(2,0);
+
+      Array2D<uint8_t> upslope_e = {
+        {2, 2, 2},
+        {0, 0, 0},
+        {0, 0, 0},
+      };
+      upslope_e.setNoData(0);
+      Array2D<uint8_t> upslope(upslope_e,0);
+      upslope.setNoData(0);
+
+      std::queue<GridCell> q = queue_from_linepoints(x0,y0,x1,y1,upslope);
+
+      CHECK(upslope == upslope_e);
+      CHECK(q == q_expected);
+    }
+    //TODO: add more tests. definately for slope>1, so that swapping is
+    //routinely tested. (I now did it by inspection, and it works)
+  }
+
+  Array2D<int> dem = {
+    {1,2,3,4,5},
+    {1,2,3,4,5},
+    {1,2,3,4,5},
+    {1,2,3,4,5},
+    {1,2,3,4,5},
+  };
+  dem.setNoData(0);
+
+  SUBCASE("mflow"){
+    
+    Array2D<uint8_t> result(dem,0);
+    std::queue<GridCell> expansion;
+    expansion.emplace(0,2);
+
+    Array2D<uint8_t> expected = {
+      {0, 0, 1, 1, 1},
+      {0, 1, 1, 1, 1},
+      {0, 1, 1, 1, 1},
+      {0, 1, 1, 1, 1},
+      {0, 0, 1, 1, 1}
+    };
+    result.setNoData(0);
+    expected.setNoData(0); //the function sets nodata to 0
+
+    upslope_cells_mflow<Topology::D8>(expansion, dem, result);
+    CHECK(result == expected);
+  }
+
+  SUBCASE("props (take quinn)"){
+    //more methods is not necessary
+    Array2D<uint8_t> result(dem,0);
+    result.setNoData(0);
+    std::queue<GridCell> expansion;
+    expansion.emplace(0,2);
+
+    //construct the proportions array
+    Array3D<float> props(dem);
+    FM_Quinn(dem,props);
+
+    Array2D<uint8_t> expected = {
+      {0, 0, 0, 0, 0},
+      {0, 1, 1, 1, 0},
+      {0, 1, 1, 1, 0},
+      {0, 1, 1, 1, 0},
+      {0, 0, 0, 0, 0}      // TODO: maybe add edge cells if they are higher? is slightly complex though, cuz Array3D does not support that...
+    };                     // so flow always goes off the edge of the grid, hence the 0s.
+    expected.setNoData(0); //the function sets nodata to 0
+
+    upslope_cells_props<Topology::D8>(expansion, props, result);
+    CHECK(result == expected);
+  }
+}
+
+TEST_CASE("Checking upslope cells") {
+  for(auto p: fs::directory_iterator("upslope_cells")){
+    fs::path this_path = p.path();
+    if(this_path.extension()==".dem"){
+        Array2D<int>     dem      (this_path,                            false);
+        Array2D<uint8_t> mask     (this_path.replace_extension("mask"),  false);
+        Array2D<int32_t> ans_mflow(this_path.replace_extension("mflow"), false);
+        Array2D<int32_t> ans_quinn(this_path.replace_extension("quinn"), false);
+        Array2D<int32_t> ans_d8   (this_path.replace_extension("d8"),    false);
+        Array2D<int32_t> result;
+        Array3D<float>   props(dem);
+
+        UC_mask_mflow(mask,dem,result);
+        CHECK(result == ans_mflow);
+        result.printAll("mflow result");
+        ans_mflow.printAll("expected result");
+
+        FM_Quinn(dem, props);
+        UC_mask_props(mask,props,result);
+        CHECK(result == ans_quinn);
+        result.printAll("Quinn upslope result");
+        ans_quinn.printAll("expected result");
+
+        FM_D8(dem, props);
+        UC_mask_props(mask,props,result);
+        CHECK(result == ans_d8);
+        result.printAll("D8 upslope result");
+        ans_d8.printAll("expected result");
+
+
+      }
+    }
+  }
