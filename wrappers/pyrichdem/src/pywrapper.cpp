@@ -36,6 +36,8 @@ void TemplatedWrapper(py::module &m, std::string tname){
   m.def("rdPFepsilonD4",         &PriorityFloodEpsilon_Barnes2014<Topology::D4,T>, "Fill all depressions with epsilon."); //TODO
 
   m.def("rdResolveFlatsEpsilon", &ResolveFlatsEpsilon<T>,         "TODO");
+  m.def("rdLabelWatershedsD8",     &PriorityFloodWatersheds_Barnes2014 <Topology::D8,T>,          "Fill depressions and label watersheds"); //TODO?
+  m.def("rdLabelWatershedsD4",     &PriorityFloodWatersheds_Barnes2014 <Topology::D4,T>,          "Fill depressions and label watersheds"); //TODO?
 
   m.def("rdBreachDepressionsD8",   &BreachDepressions<Topology::D8,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  
   m.def("rdBreachDepressionsD4",   &BreachDepressions<Topology::D4,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO  

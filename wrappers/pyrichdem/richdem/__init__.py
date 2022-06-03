@@ -740,3 +740,32 @@ def TerrainAttribute(
   result.copyFromWrapped(resultw)
 
   return result
+
+def LabelWaterSheds(dem: rdarray, fill_deps: bool = False, topology: str="D8"):
+  """Depression filling algorithm that also labels watersheds
+  
+  Args:
+    dem       (rdarray): An elevation model
+    fill_deps (bool):    if True, fill depressions. This will alter the dem.
+    topology  (string):  Topology. Either the default ``D8``, or ``D4``.
+  
+  Returns:
+    A raster with labels for each cell indicating its membership in a
+    given watershed. Cells bearing common labels drain to common points.
+  """
+  
+  demw = dem.wrap()
+  result  = rdarray(np.zeros(shape=dem.shape, dtype='int32'), meta_obj=dem, no_data=-1)
+  resultw = result.wrap()
+
+  if topology == "D8":
+    _richdem.rdLabelWatershedsD8(demw, resultw, fill_deps)
+  elif topology == "D4":
+    _richdem.rdLabelWatershedsD8(demw, resultw, fill_deps)
+  else:
+    raise Exception("Topology must be either 'D8' or 'D4'. Not: " + topology)
+
+
+  result.copyFromWrapped(resultw)
+
+  return result
