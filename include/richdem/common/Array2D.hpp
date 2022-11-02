@@ -525,7 +525,7 @@ class Array2D {
 
   ///Finds the maximum value of the raster, ignoring NoData cells
   T max() const {
-    T maxval = std::numeric_limits<T>::min();
+    T maxval = std::numeric_limits<T>::lowest();
     for(unsigned int i=0;i<size();i++){
       if(_data[i]==no_data)
         continue;
