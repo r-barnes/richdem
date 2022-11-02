@@ -557,7 +557,6 @@ class Array2D {
             is not loaded in RAM.
   */
   i_t countval(const T val) const {
-    //TODO: Warn if raster is empty?
     i_t count=0;
     for(unsigned int i=0;i<size();i++)
       if(_data[i]==val)
