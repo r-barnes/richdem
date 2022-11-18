@@ -1,10 +1,9 @@
 import copy
 import datetime
 import pkg_resources
-from typing import Any, Final, List, Iterable, Optional, Tuple, Union
+from typing import Any, Dict, Final, List, Iterable, Optional, Tuple, Union
 
 import numpy as np
-import sys
 
 try:
     import _richdem
@@ -115,6 +114,10 @@ def rdShow(
     ax.set_ylim(ymin=ymin, ymax=ymax)
 
     if all_zoom:
+        assert zxmin is not None
+        assert zxmax is not None
+        assert zymin is not None
+        assert zymax is not None
         axins = inset_axes(
             ax, width=2, height=2, loc=zloc, borderpad=0
         )  # , bbox_to_anchor=(0.9, -0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=0)
@@ -529,7 +532,7 @@ def FlowAccumulation(dem: rdarray, method: Optional[str] = None, exponent: Optio
     if type(dem) is not rdarray:
         raise Exception("A richdem.rdarray or numpy.ndarray is required!")
 
-    facc_methods = {
+    facc_methods: Dict[str, Any] = {
         "Tarboton": _richdem.FA_Tarboton,
         "Dinf": _richdem.FA_Tarboton,
         "Quinn": _richdem.FA_Quinn,
@@ -543,7 +546,7 @@ def FlowAccumulation(dem: rdarray, method: Optional[str] = None, exponent: Optio
         "D4": _richdem.FA_D4,
     }
 
-    facc_methods_exponent = {
+    facc_methods_exponent: Dict[str, Any] = {
         "Freeman": _richdem.FA_Freeman,
         "Holmgren": _richdem.FA_Holmgren,
     }
@@ -579,7 +582,7 @@ def FlowAccumulation(dem: rdarray, method: Optional[str] = None, exponent: Optio
     elif method in facc_methods_exponent:
         if exponent is None:
             raise Exception(
-                'FlowAccumulation method "' + method + '" requires an exponent!'
+                f'FlowAccumulation method "{method}" requires an exponent!'
             )
         facc_methods_exponent[method](dem.wrap(), accumw, exponent)
     else:
