@@ -189,7 +189,7 @@ readme explaining the purpose of the program.
 Documentation
 -------------
 
-Documentation is available at [richdem.com](http://richdem.com/doc/index.html).
+Documentation is available at [richdem.com](https://richdem.com/).
 The documentation is auto-generated from the many `README.md` files throughout
 the codebase and the extensive comments in the source code.
 
