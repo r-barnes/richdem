@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required(VERSION 3.9)
 
 project(richdem
   VERSION 2.2.11
@@ -25,10 +25,12 @@ if(MPI_CXX_FOUND)
 else()
   message(WARNING "MPI not found; will not compile parallel programs for large-scale datasets.")
 endif()
+
 add_subdirectory(tests)
 
 option(USE_GDAL "Whether or not to compile with GDAL." ON)
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
+option(RICHDEM_LOGGING, "Whether or not to print the logs" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -47,17 +49,16 @@ add_library(richdem
 
 # set_target_properties(richdem PROPERTIES VERSION ${PROJECT_VERSION})
 # set_target_properties(richdem PROPERTIES SOVERSION 2)
-
 target_include_directories(richdem
   PUBLIC
-    $<INSTALL_INTERFACE:include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 target_compile_features(richdem
   PUBLIC
-    cxx_auto_type
-    cxx_std_17
+  cxx_auto_type
+  cxx_std_17
 )
 
 if(OpenMP_CXX_FOUND)
@@ -66,15 +67,19 @@ endif()
 
 target_compile_options(richdem
   PUBLIC
-    -DRICHDEM_GIT_HASH="${RICHDEM_GIT_HASH}"
-    -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
+  -DRICHDEM_GIT_HASH="${RICHDEM_GIT_HASH}"
+  -DRICHDEM_COMPILE_TIME="${RICHDEM_TIMESTAMP}"
 )
 
 if(RICHDEM_NO_PROGRESS)
   target_compile_options(richdem
     PUBLIC
-      -DRICHDEM_NO_PROGRESS
+    -DRICHDEM_NO_PROGRESS
   )
+endif()
+
+if(RICHDEM_LOGGING)
+  target_compile_options(richdem PUBLIC -DRICHDEM_LOGGING)
 endif()
 
 if(USE_GDAL AND GDAL_FOUND)
@@ -93,7 +98,6 @@ add_executable(richdem_unittests
 )
 target_link_libraries(richdem_unittests PRIVATE richdem)
 target_compile_features(richdem_unittests PRIVATE cxx_std_17)
-
 
 install(
   TARGETS richdem
