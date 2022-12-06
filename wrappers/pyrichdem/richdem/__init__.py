@@ -14,12 +14,15 @@ except ImportError as e:
 from _richdem import depression_hierarchy
 
 try:
-    from osgeo import gdal
-
-    gdal.UseExceptions()
+    import rasterio as rio
     GDAL_AVAILABLE = True
-except:
-    GDAL_AVAILABLE = False
+except ModuleNotFoundError:
+    try:
+        from osgeo import gdal
+        gdal.UseExceptions()
+        GDAL_AVAILABLE = True
+    except Exception:
+        GDAL_AVAILABLE = False
 
 STANDARD_GEOTRANSFORM: Final[np.ndarray] = np.array([0, 1, 0, 0, 0, -1])
 
@@ -298,49 +301,82 @@ def LoadGDAL(filename: str, no_data: Optional[float] = None) -> rdarray:
     if not GDAL_AVAILABLE:
         raise Exception("richdem.LoadGDAL() requires GDAL.")
 
-    allowed_types = {
-        gdal.GDT_Byte,
-        gdal.GDT_Int16,
-        gdal.GDT_Int32,
-        gdal.GDT_UInt16,
-        gdal.GDT_UInt32,
-        gdal.GDT_Float32,
-        gdal.GDT_Float64,
-    }
+    msg_error_no_data = "The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry."
+    msg_error_dtype = "This datatype is not supported. Please file a bug report on RichDEM."
+    try:
+        allowed_types = {
+            np.byte,
+            np.int16,
+            np.int32,
+            np.uint16,
+            np.uint32,
+            np.float32,
+            np.float64,
+        }
 
-    # Read in data
-    src_ds = gdal.Open(filename)
-    srcband = src_ds.GetRasterBand(1)
+        with rio.open(filename) as src_ds:
+            srcband = src_ds.read(1)
 
-    if no_data is None:
-        no_data = srcband.GetNoDataValue()
+            if no_data is None:
+                no_data = src_ds.nodata
+                if no_data is None:
+                    raise Exception(msg_error_no_data)
+
+            srcdata = rdarray(srcband, no_data=no_data)
+
+            # Note : do not use `scrband.dtype in allowed_types` 
+            # (it will not work with np.dtype["blah"])
+            if not any(x == srcband.dtype for x in allowed_types):
+                raise Exception(msg_error_dtype)
+
+            srcdata.projection = src_ds.crs
+            srcdata.geotransform = src_ds.transform
+
+            srcdata.metadata = dict()
+            for k, v in src_ds.tags().items():
+                srcdata.metadata[k] = v
+
+    except NameError:
+        allowed_types = {
+            gdal.GDT_Byte,
+            gdal.GDT_Int16,
+            gdal.GDT_Int32,
+            gdal.GDT_UInt16,
+            gdal.GDT_UInt32,
+            gdal.GDT_Float32,
+            gdal.GDT_Float64,
+        }
+
+        # Read in data
+        src_ds = gdal.Open(filename)
+        srcband = src_ds.GetRasterBand(1)
+
         if no_data is None:
-            raise Exception(
-                "The source data did not have a NoData value. Please use the no_data argument to specify one. If should not be equal to any of the actual data values. If you are using all possible data values, then the situation is pretty hopeless - sorry."
-            )
+            no_data = srcband.GetNoDataValue()
+            if no_data is None:
+                raise Exception(msg_error_no_data)
 
-    srcdata = rdarray(srcband.ReadAsArray(), no_data=no_data)
+        srcdata = rdarray(srcband.ReadAsArray(), no_data=no_data)
 
-    # raster_srs = osr.SpatialReference()
-    # raster_srs.ImportFromWkt(raster.GetProjectionRef())
+        # raster_srs = osr.SpatialReference()
+        # raster_srs.ImportFromWkt(raster.GetProjectionRef())
 
-    if srcband.DataType not in allowed_types:
-        raise Exception(
-            "This datatype is not supported. Please file a bug report on RichDEM."
+        if srcband.DataType not in allowed_types:
+            raise Exception(msg_error_dtype)
+
+        srcdata.projection = src_ds.GetProjectionRef()
+        srcdata.geotransform = src_ds.GetGeoTransform()
+
+        srcdata.metadata = dict()
+        for k, v in src_ds.GetMetadata().items():
+            srcdata.metadata[k] = v
+    
+    finally:
+        _AddAnalysis(
+            srcdata, f"LoadGDAL(filename={filename}, no_data={no_data})"
         )
 
-    srcdata.projection = src_ds.GetProjectionRef()
-    srcdata.geotransform = src_ds.GetGeoTransform()
-
-    srcdata.metadata = dict()
-    for k, v in src_ds.GetMetadata().items():
-        srcdata.metadata[k] = v
-
-    _AddAnalysis(
-        srcdata, f"LoadGDAL(filename={filename}, no_data={no_data})"
-    )
-
-    return srcdata
+        return srcdata
 
 
 def SaveGDAL(filename: str, rda: rdarray) -> None:
@@ -364,18 +400,35 @@ def SaveGDAL(filename: str, rda: rdarray) -> None:
     if not GDAL_AVAILABLE:
         raise Exception("richdem.SaveGDAL() requires GDAL.")
 
-    driver = gdal.GetDriverByName("GTiff")
-    data_type = gdal.GDT_Float32  # TODO
-    data_set = driver.Create(
-        filename, xsize=rda.shape[1], ysize=rda.shape[0], bands=1, eType=data_type
-    )
-    data_set.SetGeoTransform(rda.geotransform)
-    data_set.SetProjection(rda.projection)
-    band = data_set.GetRasterBand(1)
-    band.SetNoDataValue(rda.no_data)
-    band.WriteArray(np.array(rda))
-    for k, v in rda.metadata.items():
-        data_set.SetMetadataItem(str(k), str(v))
+    try:
+        with rio.open(
+                filename,
+                "w",
+                width=rda.shape[1],
+                height=rda.shape[0],
+                count=1,
+                dtype=np.float32,
+                crs=rda.projection,
+                transform=rda.geotransform,
+                nodata=rda.no_data
+        ) as f:
+            metadata = {str(x): str(y) for x, y in rda.metadata.items()}
+            f.write(np.array(rda), 1)
+            f.update_tags(**metadata)
+    
+    except NameError:
+        driver = gdal.GetDriverByName("GTiff")
+        data_type = gdal.GDT_Float32  # TODO
+        data_set = driver.Create(
+            filename, xsize=rda.shape[1], ysize=rda.shape[0], bands=1, eType=data_type
+        )
+        data_set.SetGeoTransform(rda.geotransform)
+        data_set.SetProjection(rda.projection)
+        band = data_set.GetRasterBand(1)
+        band.SetNoDataValue(rda.no_data)
+        band.WriteArray(np.array(rda))
+        for k, v in rda.metadata.items():
+            data_set.SetMetadataItem(str(k), str(v))
 
 
 def FillDepressions(dem: rdarray, epsilon: bool = False, in_place: bool = False, topology: str = "D8") -> Optional[rdarray]:
