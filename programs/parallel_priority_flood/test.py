@@ -15,11 +15,12 @@ import subprocess
 import time
 import argparse
 import multiprocessing
+from typing import List, Tuple
 from osgeo import gdal
 
 VERBOSE = False
 
-def doRaw(cmd):
+def doRaw(cmd: str) -> Tuple[List[str], int]:
   if VERBOSE:
     print('      '+cmd)
   p      = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -31,7 +32,7 @@ def doRaw(cmd):
     print('')
   return output, err
 
-def FileInfo(filename):
+def FileInfo(filename: str):
   """Returns the NoData value and data type of the specified file"""
   src_ds  = gdal.Open( filename )
   srcband = src_ds.GetRasterBand(1)
@@ -45,7 +46,7 @@ def FillAndTest(
   n,
   many_or_one,
   strat,
-  inpfile,
+  inpfile: str,
   width  = -1,
   height = -1
 ):
@@ -117,7 +118,7 @@ def FillAndTest(
     print("Expected: '{0}'".format('Computed Min/Max=0.000,0.000'))
 
 
-def is_valid_file(parser, arg):
+def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
   if not os.path.exists(arg):
     parser.error("Input file '{0}' does not exist!".format(arg))
   else:
@@ -144,7 +145,7 @@ def main():
   if not os.path.exists('auth_gen.exe'):
     print("You need to run 'make auth_gen' before you can test things.")
     sys.exit(-1)
-    
+
 
   print('Ensuring directory "temp" exists')
   if not os.path.exists('temp'):

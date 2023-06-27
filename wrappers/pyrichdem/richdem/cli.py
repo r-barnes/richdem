@@ -7,7 +7,7 @@ from argparse import RawTextHelpFormatter
 import numpy as np
 
 
-def DepressionFilling():
+def DepressionFilling() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter, description="RichDEM Depression Filling"
     )
@@ -31,7 +31,7 @@ def DepressionFilling():
     rd.SaveGDAL(args.outname, dem)
 
 
-def BreachDepressions():
+def BreachDepressions() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description="""RichDEM Depression Breaching""",
@@ -50,7 +50,7 @@ def BreachDepressions():
     rd.SaveGDAL(args.outname, dem)
 
 
-def FlowAccumulation():
+def FlowAccumulation() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description="""RichDEM Flow Accumulation
@@ -94,7 +94,7 @@ Methods marked (E) require the exponent argument.
     rd.SaveGDAL(args.outname, accum)
 
 
-def TerrainAttribute():
+def TerrainAttribute() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description="""RichDEM Terrain Attribute
@@ -140,7 +140,7 @@ profile_curvature
     rd.SaveGDAL(args.outname, tattrib)
 
 
-def RdInfo():
+def RdInfo() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description="""RichDEM Dataset Information
@@ -190,7 +190,7 @@ rda      -- A dataset
         rd.rdShow(rda, cmap=args.cmap, vmin=args.vmin, vmax=args.vmax)
 
 
-def RdCompare():
+def RdCompare() -> None:
     parser = argparse.ArgumentParser(
         formatter_class=RawTextHelpFormatter,
         description="""RichDEM Dataset Comparison
@@ -216,10 +216,10 @@ rda      -- A dataset
         print("Projection differs")
 
     if np.any(np.isnan(ds1)):
-        print("NaN in '{0}'".format(filename))
+        print("NaN in '{0}'".format(args.rda1))
 
     if np.any(np.isnan(ds2)):
-        print("NaN in '{0}'".format(filename))
+        print("NaN in '{0}'".format(args.rda2))
 
     diff = np.array(ds1 - ds2)
 

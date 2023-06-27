@@ -19,7 +19,7 @@ from osgeo import gdal
 
 VERBOSE = False
 
-def doRaw(cmd):
+def doRaw(cmd: str):
   if VERBOSE:
     print('      '+cmd)
   p      = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -31,7 +31,7 @@ def doRaw(cmd):
     print('')
   return output, err
 
-def FileInfo(filename):
+def FileInfo(filename: str):
   """Returns the NoData value and data type of the specified file"""
   src_ds  = gdal.Open( filename )
   srcband = src_ds.GetRasterBand(1)
@@ -45,7 +45,7 @@ def FillAndTest(
   n,
   many_or_one,
   strat,
-  inpfile,
+  inpfile: str,
   width  = -1,
   height = -1
 ):
@@ -118,7 +118,7 @@ def FillAndTest(
     print("Expected: '{0}'".format('Computed Min/Max=0.000,0.000'))
 
 
-def is_valid_file(parser, arg):
+def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
   if not os.path.exists(arg):
     parser.error("Input file '{0}' does not exist!".format(arg))
   else:
@@ -145,7 +145,7 @@ def main():
   if not os.path.exists('../../apps/rd_flow_accumulation.exe'):
     print("The RichDEM flow accumulation app is missing!")
     sys.exit(-1)
-    
+
 
   print('Ensuring directory "temp" exists')
   if not os.path.exists('temp'):
