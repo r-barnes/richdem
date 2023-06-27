@@ -20,8 +20,13 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
+
+#ifdef USE_ABSL
+#include <absl/container/flat_hash_map.h>
+#else
+#include <unordered_map>
+#endif
 
 namespace richdem::dephier {
 
@@ -264,7 +269,11 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // This keeps track of the outlets we find. Each pair of depressions can only
   // be linked once and the lowest link found between them is the one which is
   // retained.
+#ifdef USE_ABSL
+  using outletdb_t = absl::flat_hash_map<OutletLink, Outlet<elev_t>>;
+#else
   using outletdb_t = std::unordered_map<OutletLink, Outlet<elev_t>, OutletLinkHash<elev_t>>;
+#endif
 
   outletdb_t outlet_database;
 

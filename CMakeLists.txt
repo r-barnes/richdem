@@ -8,6 +8,7 @@ project(richdem
 
 cmake_policy(SET CMP0077 NEW)
 
+find_package(absl)
 find_package(GDAL)
 find_package(OpenMP REQUIRED)
 find_package(MPI)
@@ -89,6 +90,14 @@ if(USE_GDAL AND GDAL_FOUND)
   target_compile_options(richdem PUBLIC -DUSEGDAL)
 else()
   message(WARNING "Compiling RichDEM without GDAL!")
+endif()
+
+if(absl_FOUND)
+  message(STATUS "Compiling RichDEM with Abseil (absl).")
+  target_link_libraries(richdem PUBLIC absl::flat_hash_map)
+  target_compile_options(richdem PUBLIC -DUSE_ABSL)
+else()
+  message(WARNING "Compiling RichDEM without Abseil (absl)! Try: apt install libabsl-dev")
 endif()
 
 add_executable(richdem_unittests
