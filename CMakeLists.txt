@@ -29,6 +29,7 @@ add_subdirectory(tests)
 
 option(USE_GDAL "Whether or not to compile with GDAL." ON)
 option(RICHDEM_NO_PROGRESS "Whether or not to show progress bars." OFF)
+option(RICHDEM_LOGGING "Whether or not to compile with logging enabled." OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -75,6 +76,10 @@ if(RICHDEM_NO_PROGRESS)
     PUBLIC
       -DRICHDEM_NO_PROGRESS
   )
+endif()
+
+if(RICHDEM_LOGGING)
+  target_compile_options(richdem PUBLIC -DRICHDEM_LOGGING)
 endif()
 
 if(USE_GDAL AND GDAL_FOUND)

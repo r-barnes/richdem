@@ -7,7 +7,7 @@
 
 namespace richdem {
 
-enum LogFlag {
+enum class LogFlag {
   ALG_NAME,
   CITATION,
   CONFIG,
@@ -21,7 +21,7 @@ enum LogFlag {
 };
 
 #ifdef RICHDEM_LOGGING
-void RDLOGfunc(LogFlag flag, const char* file, const char* func, unsigned line, std::string msg);
+void RDLOGfunc(const LogFlag flag, const char* file, const char* func, unsigned line, const std::string& msg);
 #endif
 
 class StreamLogger {

@@ -280,7 +280,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
 
 #pragma omp declare reduction(merge : std::vector<flat_c_idx> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
-  RDLOG_PROGRESS << "p Adding ocean cells to priority-queue...";
+  RDLOG_PROGRESS << "Adding ocean cells to priority-queue...";
   // We assume the user has already specified a few ocean cells from which to
   // begin looking for depressions. We add all of these ocean cells to the
   // priority queue now.
@@ -326,7 +326,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
     oceandep.dep_label = 0;
   }
 
-  RDLOG_PROGRESS << "p Finding pit cells...";
+  RDLOG_PROGRESS << "Finding pit cells...";
 
   // Here we find the pit cells of internally-draining regions. We define these
   // to be cells without any downstream neighbours. Note that this means we will
@@ -365,7 +365,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
       }
     }
   progress.stop();
-  RDLOG_TIME_USE << "t Pit cells found in = " << progress.time_it_took() << " s";
+  RDLOG_TIME_USE << "Pit cells found in = " << progress.time_it_took() << " s";
 
   // Since the above runs in parallel, the ordering of the seed cells is
   // nondeterministic. Let's fix that.
@@ -425,7 +425,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // cells are of the same elevation then we visit the one added last (most
   // recently) first.
 
-  RDLOG_PROGRESS << "p Searching for outlets...";
+  RDLOG_PROGRESS << "Searching for outlets...";
 
   progress.start(dem.size());
   while (!pq.empty()) {
@@ -533,7 +533,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
     }
   }
   progress.stop();
-  RDLOG_TIME_USE << "t Outlets found in = " << progress.time_it_took() << " s";
+  RDLOG_TIME_USE << "Outlets found in = " << progress.time_it_took() << " s";
 
   // At this point every cell is associated with the label of a depression. Each
   // depression contains the cells lower than its outlet elevation as well as all
@@ -604,7 +604,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // needed.
   DisjointDenseIntSet djset(depressions.size());
 
-  RDLOG_PROGRESS << "p Constructing hierarchy from outlets...";
+  RDLOG_PROGRESS << "Constructing hierarchy from outlets...";
 
   // Visit outlets in order of elevation from lowest to highest. If two outlets
   // are at the same elevation, choose one arbitrarily.
@@ -704,7 +704,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   }
   progress.stop();
 
-  RDLOG_TIME_USE << "t Time to construct Depression Hierarchy = " << timer_dephier.stop() << " s";
+  RDLOG_TIME_USE << "Time to construct Depression Hierarchy = " << timer_dephier.stop() << " s";
 
   // At this point we have a 2D array in which each cell is labeled. This label
   // corresponds to either the root node (the ocean) or a leaf node of a binary
@@ -720,8 +720,8 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
 
   CalculateTotalVolumes(depressions);
 
-  RDLOG_TIME_USE << "t Time to calculate volumes = " << timer_volumes.stop() << " s";
-  RDLOG_TIME_USE << "t Total time in depression hierarchy calculations = " << timer_overall.stop() << " s";
+  RDLOG_TIME_USE << "Time to calculate volumes = " << timer_volumes.stop() << " s";
+  RDLOG_TIME_USE << "Total time in depression hierarchy calculations = " << timer_overall.stop() << " s";
 
   return depressions;
 }
@@ -733,7 +733,7 @@ void CalculateMarginalVolumes(
     const Array2D<dh_label_t>& label) {
   ProgressBar progress;
 
-  RDLOG_PROGRESS << "p Calculating depression marginal volumes...";
+  RDLOG_PROGRESS << "Calculating depression marginal volumes...";
 
   // Get the marginal depression cell counts and total elevations
   progress.start(dem.size());
@@ -771,7 +771,7 @@ template <class elev_t>
 void CalculateTotalVolumes(DepressionHierarchy<elev_t>& deps) {
   ProgressBar progress;
 
-  RDLOG_PROGRESS << "p Calculating depression total volumes...";
+  RDLOG_PROGRESS << "Calculating depression total volumes...";
   // Calculate total depression volumes and cell counts
   progress.start(deps.size());
   for (size_t d = 0; d < deps.size(); d++) {
