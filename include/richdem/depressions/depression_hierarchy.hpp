@@ -148,7 +148,7 @@ struct Outlet {
 // that every item they contain be reducible to a numerical "key". We provide
 // such a key for outlets here.
 template <class elev_t>
-struct OutletHash {
+struct OutletLinkHash {
   std::size_t operator()(const OutletLink& out) const {
     // Since depa and depb are sorted on construction, we don't have to worry
     // about which order the invoking code called them in and our hash function
@@ -267,7 +267,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // This keeps track of the outlets we find. Each pair of depressions can only
   // be linked once and the lowest link found between them is the one which is
   // retained.
-  typedef std::unordered_map<OutletLink, Outlet<elev_t>, OutletHash<elev_t>> outletdb_t;
+  typedef std::unordered_map<OutletLink, Outlet<elev_t>, OutletLinkHash<elev_t>> outletdb_t;
   outletdb_t outlet_database;
 
   // Places to seed depression growth from. These vectors are used to make the
@@ -507,7 +507,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
         // increasing elevation, we can still add a link between depressions that
         // is not as low as it could be. This can happen at saddle points, for
         // instance, consider the cells A-H and their corresponding elevations.
-        // Cells in parantheses are in a neighbouring depression
+        // Cells in parentheses are in a neighbouring depression
         //     (B) (C) (D)   (256) (197) (329)
         //      A   X   E     228    X    319
         //      H   G   F     255   184   254
