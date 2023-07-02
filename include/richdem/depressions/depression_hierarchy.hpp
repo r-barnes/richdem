@@ -746,11 +746,34 @@ void CalculateMarginalVolumes(
       const auto my_elev = dem(i);
       auto clabel        = label(i);
 
-      while (clabel != OCEAN && my_elev > deps.at(clabel).out_elev)
-        clabel = deps[clabel].parent;
+      // This cell contributes volume to some depression or meta-depression.
+      // Let's find out which. To do so, we start with the leaf depression the
+      // cell is part of. If it's not contained by that depression, we look at
+      // the meta-depression and work our way up until we find a depression in
+      // the hierarchy whose outlet elevation is higher than the cell's
+      // elevation. If at any point we pass through an oceanlink, our search
+      // terminates: any water falling on the cell will ultimately end up in the
+      // ocean and the cell is not contained by any depression.
+      while (clabel != OCEAN && my_elev > deps.at(clabel).out_elev) {
+        if (deps[clabel].ocean_parent){
+          // There is no meta-depression: the next depression in the hierarchy
+          // is downhill of the one we started in. Therefore, our marginal
+          // volume is contributed to the ocean.
+          clabel = OCEAN;
+          break;
+        }
 
-      if (clabel == OCEAN)
+        // We weren't contained in this depression, try its parent (the
+        // meta-depression)
+        clabel = deps[clabel].parent;
+      }
+
+      // This cell was the above the outlet of all the metadepressions that
+      // could contain it, so its flow goes to the ocean. Therefore, we ignore
+      // it because it doesn't contribute marginal volume to any depression.
+      if(clabel == OCEAN){
         continue;
+      }
 
       cell_counts[clabel]++;
       total_elevations[clabel] += dem(i);
