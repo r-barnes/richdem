@@ -100,14 +100,11 @@ struct Depression {
 
 // The OutletLink is used as a key for a hashtable which stores information about
 // the outlets.
-struct OutletLink {
-  dh_label_t depa;
-  dh_label_t depb;
-  OutletLink() = default;
-  OutletLink(dh_label_t depa0, dh_label_t depb0) : depa(depa0), depb(depb0) {}
-  // This is used to compare two outlets. The outlets are the same regardless of
-  // the order in which they store depressions
-  bool operator==(const OutletLink& o) const { return depa == o.depa && depb == o.depb; }
+struct OutletLink : std::pair<dh_label_t, dh_label_t> {
+  dh_label_t& depa = std::pair<dh_label_t, dh_label_t>::first;
+  dh_label_t& depb = std::pair<dh_label_t, dh_label_t>::second;
+  OutletLink(dh_label_t a, dh_label_t b) :
+    std::pair<dh_label_t, dh_label_t>((a<b)?a:b, (a<b)?b:a) {}
 };
 
 // The outlet class stores, again, the depressions being linked as well as
@@ -267,7 +264,8 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // This keeps track of the outlets we find. Each pair of depressions can only
   // be linked once and the lowest link found between them is the one which is
   // retained.
-  typedef std::unordered_map<OutletLink, Outlet<elev_t>, OutletLinkHash<elev_t>> outletdb_t;
+  using outletdb_t = std::unordered_map<OutletLink, Outlet<elev_t>, OutletLinkHash<elev_t>>;
+
   outletdb_t outlet_database;
 
   // Places to seed depression growth from. These vectors are used to make the
