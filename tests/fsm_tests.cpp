@@ -226,6 +226,7 @@ void MoveWaterIntoPitsRepeatedly(const int count, const int min_size, const int 
 
     MoveWaterIntoPits<double,double>(dem, labels, flowdirs, deps2, wtd);
 
+    CHECK_EQ(deps1.size(), deps2.size());
     for(size_t i=1;i<deps1.size();i++){
       CHECK_EQ(deps1.at(i).water_vol, deps2.at(i).water_vol);
     }
