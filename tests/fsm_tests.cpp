@@ -79,33 +79,33 @@ Array2D<double> random_integer_terrain(std::mt19937_64 &gen, const int min_size,
 
 
 TEST_CASE("Depression volume"){
-  CHECK(DepressionVolume(2, 5, 10)==0);
-  CHECK(DepressionVolume(3, 5, 10)==5);
-  CHECK(DepressionVolume(4, 5, 10)==10);
+  CHECK_EQ(DepressionVolume(2, 5, 10), 0);
+  CHECK_EQ(DepressionVolume(3, 5, 10), 5);
+  CHECK_EQ(DepressionVolume(4, 5, 10), 10);
 }
 
 TEST_CASE("Determine water level"){
   SUBCASE("Depression volume exactly equals water volume"){
     double sill_wtd = -2;
     const auto water_level = DetermineWaterLevel(sill_wtd, 10, 4, 5, 10);
-    CHECK(sill_wtd==-2);
-    CHECK(water_level==4); //Water elevation equals the sill elevation
+    CHECK_EQ(sill_wtd, -2);
+    CHECK_EQ(water_level, 4); //Water elevation equals the sill elevation
   }
 
   SUBCASE("Water volume is less than the depression volume"){
     double sill_wtd = -2;
     const auto water_level = DetermineWaterLevel(sill_wtd, 8, 4, 5, 10);
-    CHECK(sill_wtd==-2);
-    CHECK(water_level==18/5.0); //Water elevation equals the sill elevation
+    CHECK_EQ(sill_wtd, -2);
+    CHECK_EQ(water_level, 18/5.0); //Water elevation equals the sill elevation
   }
 
   SUBCASE("Water volume is greater than the depression volume"){
     double sill_wtd = -2;
     const auto water_level = DetermineWaterLevel(sill_wtd, 12, 4, 5, 10);
-    CHECK(sill_wtd==0);
+    CHECK_EQ(sill_wtd, 0);
     //Water elevation equals the sill elevation since the sill absorbs all
     //excess
-    CHECK(water_level==4);
+    CHECK_EQ(water_level, 4);
   }
 }
 
@@ -168,19 +168,19 @@ TEST_CASE("MoveWaterIntoPits 1"){
 
   CHECK(ArrayValuesAllEqual(wtd,0.0));
 
-  CHECK(DH.at(0).water_vol==64);
-  CHECK(DH.at(1).water_vol==30);
-  CHECK(DH.at(2).water_vol== 6);
+  CHECK_EQ(DH.at(0).water_vol, 64);
+  CHECK_EQ(DH.at(1).water_vol, 30);
+  CHECK_EQ(DH.at(2).water_vol,  6);
 
-  CHECK(DH.at(0).parent==NO_VALUE);
-  CHECK(DH.at(1).parent==3);
-  CHECK(DH.at(2).parent==3);
-  CHECK(DH.at(3).parent==0);
+  CHECK_EQ(DH.at(0).parent, NO_VALUE);
+  CHECK_EQ(DH.at(1).parent, 3);
+  CHECK_EQ(DH.at(2).parent, 3);
+  CHECK_EQ(DH.at(3).parent, 0);
 
   CHECK(std::isnan(DH.at(0).dep_vol));
-  CHECK(DH.at(1).dep_vol== 73);
-  CHECK(DH.at(2).dep_vol==  2);
-  CHECK(DH.at(3).dep_vol==111);
+  CHECK_EQ(DH.at(1).dep_vol,  73);
+  CHECK_EQ(DH.at(2).dep_vol,   2);
+  CHECK_EQ(DH.at(3).dep_vol, 111);
 }
 //TODO: Add second test case with more tests and clearer outlets
 
@@ -227,7 +227,7 @@ void MoveWaterIntoPitsRepeatedly(const int count, const int min_size, const int 
     MoveWaterIntoPits<double,double>(dem, labels, flowdirs, deps2, wtd);
 
     for(size_t i=1;i<deps1.size();i++){
-      CHECK(deps1.at(i).water_vol==deps2.at(i).water_vol);
+      CHECK_EQ(deps1.at(i).water_vol, deps2.at(i).water_vol);
     }
   }
 }
@@ -323,7 +323,7 @@ TEST_CASE("FillDepressions"){
     const auto wtd_good = wtd;
     const double water_vol = 0;
     FillDepressions(pit_cell, out_cell, dep_labels, water_vol, topo, label, wtd);
-    CHECK(wtd==wtd_good);
+    CHECK_EQ(wtd, wtd_good);
   }
 
   SUBCASE("Standard Case"){
