@@ -36,6 +36,7 @@ int main(int argc, char **argv){
   std::cout<<"m Surface water file  = "<<surface_water_filename<<std::endl;
   std::cout<<"m Ocean level         = "<<ocean_level           <<std::endl;
 
+  std::cout<<"p Reading topography..."<<std::endl;
   rd::Timer timer_io;
   timer_io.start();
   rd::Array2D<double> topo(topography_filename);
@@ -60,6 +61,7 @@ int main(int argc, char **argv){
 
   //Label the ocean cells. This is a precondition for using
   //`GetDepressionHierarchy()`.
+  std::cout<<"p Performing bucket fill..."<<std::endl;
   rd::BucketFillFromEdges<rd::Topology::D8>(topo, label, ocean_level, dh::OCEAN);
 
   //Make NoData cells also ocean cells. Ocean has no water on it to begin with.
@@ -76,8 +78,10 @@ int main(int argc, char **argv){
 
   //Generate flow directions, label all the depressions, and get the hierarchy
   //connecting them
+  std::cout<<"p Getting depression hierarchy..."<<std::endl;
   auto deps = dh::GetDepressionHierarchy<double,rd::Topology::D8>(topo, label, flowdirs);
 
+  std::cout<<"p Performing FillSpillMerge..."<<std::endl;
   dh::FillSpillMerge(topo, label, flowdirs, deps, wtd);
 
   timer_calc.stop();
