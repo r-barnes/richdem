@@ -724,6 +724,71 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   return depressions;
 }
 
+// Accelerates marginal volume calculations by caching previous DH lookups
+template <class elev_t>
+struct CachingOutletChecker {
+  // The previous cell we looked at was part of this leaf depression
+  dh_label_t previous_leaf_label = NO_DEP;
+
+  // This is a record of the elevation of each outlet we passed and the
+  // metadepression associated with it during the previous cell's marginal
+  // volume calculation. If the cell we're currently looking at was part of the
+  // same leaf depression as the previous cell then the same set of outlets will
+  // apply. We cache them here to avoid having to revisit them in the DH.
+  //
+  // This is faster for two reasons:
+  //  1. This outlets vector is more cache friendly.
+  //  2. We can start our search for an appropriate outlet deeper in the DH; we
+  //     don't have to start back at the leaf depression.
+  std::vector<std::pair<elev_t, dh_label_t>> outlets;
+
+  void reset(const dh_label_t leaf_label){
+    previous_leaf_label = leaf_label;
+    // Clearing allows us to reuse memory, which is faster than rebuilding the
+    // object
+    outlets.clear();
+  }
+
+  /// Remember that this metadepression had an outlet at this elevation
+  void operator()(const dh_label_t this_label, const elev_t this_elev){
+    outlets.emplace_back(this_elev, this_label);
+  }
+
+  // But it contributed to the marginal volume of this depression
+  // dh_label_t previous_mv_label = NO_DEP;
+  // This is the outlet just below the MV depression. Maybe the next cell will
+  // be contained in it if it's lower than the previous cell.
+  // elev_t previous_lower_outlet = std::numeric_limits<elev_t>::max();
+  // This is the outlet of the MV depression. If the next cell is higher than
+  // the outlet we need to keep looking.
+  // elev_t previous_upper_outlet = std::numeric_limits<elev_t>::max();
+
+
+  /// Which metadepression is the best one to start looking for an outlet in
+  /// given that the cell we're currently looking at has this \p leaf_label and
+  /// \p this_elev ?
+  dh_label_t find_start(const dh_label_t leaf_label, const elev_t this_elev){
+    // Cells are part of different leaf depressions, so we have to search the
+    // whole DH to find where the marginal volume (MV) should go
+    if(previous_leaf_label != leaf_label){
+      reset(leaf_label);
+      return leaf_label;
+    }
+
+    // Search until we find a depression that contains this cell
+    while (!outlets.empty() && this_elev <= outlets.back().first) {
+      outlets.pop_back();
+    }
+
+    if(!outlets.empty()){
+      return outlets.back().second;
+    }
+
+    reset(leaf_label);
+    return leaf_label;
+  }
+};
+
 template <class elev_t>
 void CalculateMarginalVolumes(
     DepressionHierarchy<elev_t>& deps,
@@ -739,12 +804,17 @@ void CalculateMarginalVolumes(
   {
     std::vector<uint32_t> cell_counts(deps.size(), 0);
     std::vector<double> total_elevations(deps.size(), 0);
+    CachingOutletChecker<elev_t> coc;
 
 #pragma omp for
     for (unsigned int i = 0; i < dem.size(); i++) {
       ++progress;
       const auto my_elev = dem(i);
       auto clabel        = label(i);
+
+      // Choose a good place in the DH to start looking for our containing
+      // metadepression
+      clabel = coc.find_start(clabel, my_elev);
 
       // This cell contributes volume to some depression or meta-depression.
       // Let's find out which. To do so, we start with the leaf depression the
@@ -754,11 +824,19 @@ void CalculateMarginalVolumes(
       // elevation. If at any point we pass through an oceanlink, our search
       // terminates: any water falling on the cell will ultimately end up in the
       // ocean and the cell is not contained by any depression.
-      while (clabel != OCEAN && my_elev > deps.at(clabel).out_elev) {
+      while (clabel != OCEAN) {
+        const auto this_out_elev = deps.at(clabel).out_elev;
+        coc(clabel, this_out_elev);
+
+        // Stop: we found a depression that contains us
+        if (my_elev <= this_out_elev){
+          break;
+        }
+
+        // There is no meta-depression: the next depression in the hierarchy is
+        // downhill of the one we started in. Therefore, our marginal volume is
+        // contributed to the ocean.
         if (deps[clabel].ocean_parent){
-          // There is no meta-depression: the next depression in the hierarchy
-          // is downhill of the one we started in. Therefore, our marginal
-          // volume is contributed to the ocean.
           clabel = OCEAN;
           break;
         }
