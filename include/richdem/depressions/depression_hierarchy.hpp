@@ -807,9 +807,9 @@ void LastLayer(Array2D<dh_label_t>& label, const Array2D<elev_t>& dem, const Dep
     for (int x = 0; x < label.width(); x++) {
       auto mylabel = label(x, y);
       while (true) {
-        if (dem(x, y) >= depressions.at(mylabel).out_elev)
+        if (dem(x, y) >= depressions.at(mylabel).out_elev) {
           mylabel = depressions.at(mylabel).parent;
-        else {
+        } else {
           if (mylabel != 0)
             mylabel = -3;
           break;
