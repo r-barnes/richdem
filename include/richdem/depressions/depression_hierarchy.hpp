@@ -763,7 +763,7 @@ void CalculateMarginalVolumes(
     }
   }
   progress.stop();
-  RDLOG_TIME_USE << "Time to calculate marginal volumes = " << progress.time_it_took() << " s" << std::endl;
+  RDLOG_TIME_USE << "Time to calculate marginal volumes = " << progress.time_it_took() << " s";
 }
 
 template <class elev_t>
@@ -795,7 +795,7 @@ void CalculateTotalVolumes(DepressionHierarchy<elev_t>& deps) {
     assert(dep.lchild == NO_VALUE || fp_le(deps.at(dep.lchild).dep_vol + deps.at(dep.rchild).dep_vol, dep.dep_vol));
   }
   progress.stop();
-  RDLOG_TIME_USE << "Time to calculate total volumes = " << progress.time_it_took() << " s" << std::endl;
+  RDLOG_TIME_USE << "Time to calculate total volumes = " << progress.time_it_took() << " s";
 }
 
 // Utility function for doing various relabelings based on the depression
