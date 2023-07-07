@@ -97,18 +97,6 @@ struct Depression {
 // many inlets. All of the outlets and inlets taken together form a graph which
 // we can traverse to determine which way water flows. This class keeps track of
 // which cell links two depressions, as well as the elevation of that cell.
-
-// The OutletLink is used as a key for a hashtable which stores information about
-// the outlets.
-struct OutletLink : std::pair<dh_label_t, dh_label_t> {
-  dh_label_t& depa = std::pair<dh_label_t, dh_label_t>::first;
-  dh_label_t& depb = std::pair<dh_label_t, dh_label_t>::second;
-  OutletLink(dh_label_t a, dh_label_t b) :
-    std::pair<dh_label_t, dh_label_t>((a<b)?a:b, (a<b)?b:a) {}
-};
-
-// The outlet class stores, again, the depressions being linked as well as
-// information about the link
 template <class elev_t>
 struct Outlet {
   dh_label_t depa;                 // Depression A
@@ -139,20 +127,23 @@ struct Outlet {
     // depressions' labels storage order within this class.
     return depa == o.depa && depb == o.depb;
   }
-};
 
-// We'll initially keep track of outlets using a hash table. Hash tables require
-// that every item they contain be reducible to a numerical "key". We provide
-// such a key for outlets here.
-template <class elev_t>
-struct OutletLinkHash {
-  std::size_t operator()(const OutletLink& out) const {
-    // Since depa and depb are sorted on construction, we don't have to worry
-    // about which order the invoking code called them in and our hash function
-    // doesn't need to be symmetric with respect to depa and depb.
+  static std::size_t hash(dh_label_t a, dh_label_t b) {
+    // This hash function depends on the data type of `dh_label_t` being
+    // `uint32_t` so that we can bit-shift without having to convert and without
+    // losing bits
+    static_assert(std::is_same_v<dh_label_t, uint32_t>);
 
-    // Boost hash combine function: https://stackoverflow.com/a/27952689/752843
-    return out.depa ^ (out.depb + 0x9e3779b9 + (out.depa << 6) + (out.depa >> 2));
+    // Create a preferred ordering so the hash is always the same irrespective
+    // of the input order
+    if (a > b) {
+      std::swap(a, b);
+    }
+
+    // A simple bit-shift is sufficient to make a "hash" of the two integers:
+    // each link between depressions will be assigned a unique 64-bit unsigned
+    // integer.
+    return (static_cast<uint64_t>(a) << 32) | static_cast<uint64_t>(b);
   }
 };
 
@@ -264,7 +255,7 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
   // This keeps track of the outlets we find. Each pair of depressions can only
   // be linked once and the lowest link found between them is the one which is
   // retained.
-  using outletdb_t = std::unordered_map<OutletLink, Outlet<elev_t>, OutletLinkHash<elev_t>>;
+  using outletdb_t = std::unordered_map<uint64_t, Outlet<elev_t>>;
 
   outletdb_t outlet_database;
 
@@ -517,15 +508,15 @@ GetDepressionHierarchy(const Array2D<elev_t>& dem, Array2D<dh_label_t>& label, A
         // sees Cell C, which is in the same depression as B, and has to update
         // the outlet information between the two depressions.
 
-        const OutletLink olink(clabel, nlabel);      // Create outlet link (order of clabel and nlabel doesn't matter)
-        if (outlet_database.count(olink) != 0) {     // Determine if the outlet is already present
-          auto& outlet = outlet_database.at(olink);  // It was. Use the outlet link to get the outlet information
+        const auto ohash = Outlet<elev_t>::hash(clabel, nlabel);
+        if (outlet_database.count(ohash) != 0) {     // Determine if the outlet is already present
+          auto& outlet = outlet_database.at(ohash);  // It was. Use the outlet link to get the outlet information
           if (outlet.out_elev > out_elev) {          // Is the previously stored link higher than the new one?
             outlet.out_cell = out_cell;              // Yes. So update the link with new outlet cell
             outlet.out_elev = out_elev;              // Also, update the outlet's elevation
           }
         } else {  // No preexisting link found; create a new one
-          outlet_database[olink] = Outlet<elev_t>(clabel, nlabel, out_cell, out_elev);
+          outlet_database[ohash] = Outlet<elev_t>(clabel, nlabel, out_cell, out_elev);
         }
       }
     }
