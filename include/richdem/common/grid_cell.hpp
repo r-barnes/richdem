@@ -22,6 +22,7 @@ struct GridCell {
   GridCell() = default;
   /// Initiate the grid cell to the coordinates (x0,y0)
   GridCell(int x0, int y0):x(x0),y(y0){}
+  bool operator == (const GridCell &a) const {return x == a.x && y == a.y;}
 };
 
 
