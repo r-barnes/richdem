@@ -1,6 +1,6 @@
 import copy
 import datetime
-import pkg_resources
+from importlib.metadata import version, PackageNotFoundError
 from typing import Any, Dict, Final, List, Iterable, Optional, Tuple, Union
 
 import numpy as np
@@ -30,8 +30,12 @@ msg_error_no_data: Final[str] = "The source data did not have a NoData value. Pl
 msg_error_dtype: Final[str] = "This datatype is not supported. Please file a bug report on RichDEM."
 
 def _RichDEMVersion() -> str:
+    try:
+        pyver = version("richdem")
+    except PackageNotFoundError:
+        pyver = "unknown"
     return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
-        pyver=pkg_resources.require("richdem")[0].version,
+        pyver=pyver,
         hash=_richdem.rdHash(),
         compdate=_richdem.rdCompileTime(),
     )
