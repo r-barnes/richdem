@@ -1,6 +1,6 @@
 import copy
 import datetime
-import pkg_resources
+from importlib.metadata import version
 from typing import Any, Dict, Final, List, Iterable, Optional, Tuple, Union
 
 import numpy as np
@@ -31,7 +31,7 @@ msg_error_dtype: Final[str] = "This datatype is not supported. Please file a bug
 
 def _RichDEMVersion() -> str:
     return "RichDEM (Python {pyver}) (hash={hash}, hashdate={compdate})".format(
-        pyver=pkg_resources.require("richdem")[0].version,
+        pyver=version("richdem"),
         hash=_richdem.rdHash(),
         compdate=_richdem.rdCompileTime(),
     )
