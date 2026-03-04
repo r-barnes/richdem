@@ -1,1 +1,5 @@
 recursive-include lib *
+recursive-include src *.cpp *.hpp
+include pyproject.toml
+include LICENSE.txt
+include README.md

@@ -138,7 +138,7 @@ PYBIND11_MODULE(_richdem, m) {
         }
       );
 
-  m.def("generate_perlin_terrain", &richdem::generate_perlin_terrain, "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
+  m.def("generate_perlin_terrain", static_cast<void(*)(Array2D<double>&, const uint32_t)>(&richdem::generate_perlin_terrain), "Generate random terrain using perlin noise", py::arg("array"), py::arg("seed"));
 
   py::module_ dephier_module = m.def_submodule("depression_hierarchy", "Depression Hierarchies");
 

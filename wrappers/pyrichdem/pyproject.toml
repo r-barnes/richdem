@@ -1,2 +1,57 @@
 [build-system]
-requires = ["pybind11", "numpy", "setuptools", "wheel"]
+requires = ["setuptools>=69", "pybind11>=2.12", "numpy>=2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "richdem"
+version = "2.2.0"
+description = "High-Performance Terrain Analysis"
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.10"
+authors = [
+    {name = "Richard Barnes", email = "rbarnes@umn.edu"},
+]
+keywords = ["GIS", "terrain", "hydrology", "geomorphology", "raster"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+gdal = ["rasterio"]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/r-barnes/richdem"
+Repository = "https://github.com/r-barnes/richdem"
+Issues = "https://github.com/r-barnes/richdem/issues"
+
+[project.scripts]
+rd_depression_filling = "richdem.cli:DepressionFilling"
+rd_breach_depressions = "richdem.cli:BreachDepressions"
+rd_flow_accumulation = "richdem.cli:FlowAccumulation"
+rd_terrain_attribute = "richdem.cli:TerrainAttribute"
+rd_info = "richdem.cli:RdInfo"
+rd_compare = "richdem.cli:RdCompare"
+
+[tool.setuptools.packages.find]
+include = ["richdem*"]

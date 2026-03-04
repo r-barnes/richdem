@@ -14,14 +14,14 @@ dephier, flowdirs = rd.get_depression_hierarchy(dem, labels)
 
 # Array to hold the water depth
 water_depth = rd.rdarray(
-  np.zeros(dem.shape), no_data=-9999, geotransform=rd.STANDARD_GEOTRANSFORM
+    np.zeros(dem.shape), no_data=-9999, geotransform=rd.STANDARD_GEOTRANSFORM
 )
 
 # A simple model of progressively adding water and redistributing it
 for t in range(10):
-  # Make it rain uniformly across the landscape
-  water_depth += 0.01
-  # Use Fill-Spill-Merge to redistribute water into depressions
-  rd.fill_spill_merge(dem, labels, flowdirs, dephier, water_depth)
-  # Display the output for inspection
-  rd.rdShow(water_depth, vmin=0, vmax=0.175)
+    # Make it rain uniformly across the landscape
+    water_depth += 0.01
+    # Use Fill-Spill-Merge to redistribute water into depressions
+    rd.fill_spill_merge(dem, labels, flowdirs, dephier, water_depth)
+    # Display the output for inspection
+    rd.rdShow(water_depth, vmin=0, vmax=0.175)
