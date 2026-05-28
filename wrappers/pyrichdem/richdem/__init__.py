@@ -16,7 +16,7 @@ from _richdem import depression_hierarchy, convert_arc_flowdirs_to_richdem_d8, f
 try:
     import rasterio as rio
     GDAL_AVAILABLE = True
-except ModuleNotFoundError:
+except (ImportError, ModuleNotFoundError):
     try:
         from osgeo import gdal
         gdal.UseExceptions()
@@ -527,6 +527,42 @@ def BreachDepressions(dem: rdarray, in_place: bool = False, topology: str = "D8"
         return dem
 
 
+def BreachDepressionsEps(dem: rdarray, in_place: bool = False) -> Optional[rdarray]:
+    """Breach depressions using Lindsay2016 with epsilon gradients.
+
+    Identical to :func:`BreachDepressions` except that each pit cell is
+    shallowed to ``std::nextafter(lowest_neighbour, -infinity)`` rather than
+    exactly to ``lowest_neighbour``.  This guarantees a strictly descending
+    path from every pit to the nearest outlet, which matters for algorithms
+    that require strict monotonicity.
+
+    Only D8 topology is supported (Lindsay2016 does not have a D4 variant).
+
+    Args:
+        dem (rdarray): An elevation model.
+        in_place (bool): If True the DEM is modified in place and nothing is
+                         returned; otherwise a new altered DEM is returned.
+
+    Returns:
+        DEM with depressions breached using epsilon gradients, or None if
+        ``in_place=True``.
+    """
+    if type(dem) is not rdarray:
+        raise Exception("A richdem.rdarray or numpy.ndarray is required!")
+
+    if not in_place:
+        dem = dem.copy()
+
+    _AddAnalysis(dem, "BreachDepressionsEps(dem)")
+
+    demw = dem.wrap()
+    _richdem.rdBreachDepressionsEpsD8(demw)
+    dem.copyFromWrapped(demw)
+
+    if not in_place:
+        return dem
+
+
 def ResolveFlats(dem: rdarray, in_place: bool = False) -> Optional[rdarray]:
     """Attempts to resolve flats by imposing a local gradient
 
@@ -973,6 +1009,7 @@ def fill_spill_merge(dem: rdarray, labels: rdarray, flowdirs: rdarray, deps: Lis
 
 __all__ = (
     "BreachDepressions",
+    "BreachDepressionsEps",
     "convert_arc_flowdirs_to_richdem_d8",
     "fill_spill_merge"
     "FillDepressions",

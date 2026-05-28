@@ -39,7 +39,14 @@ void TemplatedFunctionsWrapper(pybind11::module &m, std::string tname){
   m.def("rdBreachDepressionsD8",   &BreachDepressions<Topology::D8,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO
   m.def("rdBreachDepressionsD4",   &BreachDepressions<Topology::D4,T>,               "@@depressions/Lindsay2016.hpp:Lindsay2016@@"); //TODO
 
-  //m.def("rdBreach",              [](Array2D<T> &dem, const int mode, bool fill_depressions){&Lindsay2016<T>(dem,mode,fill_depressions);}, "TODO");
+  // Lindsay2016 with eps_gradients=true: pit shallowed to std::nextafter(lowest_neighbour, -inf)
+  // rather than exactly to lowest_neighbour, guaranteeing a strictly descending path.
+  // Only D8 topology is supported by Lindsay2016.
+  m.def("rdBreachDepressionsEpsD8", [](Array2D<T> &dem){
+    Lindsay2016<T>(dem, COMPLETE_BREACHING, /*eps_gradients=*/true, /*fill_depressions=*/false,
+                   std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<T>::max());
+  }, "Breach depressions (Lindsay2016, eps_gradients=true): pit raised to just below lowest neighbour. D8 only.");
 
   m.def("TA_SPI",                &TA_SPI<T, float, double>,       "TODO");
   m.def("TA_CTI",                &TA_CTI<T, float, double>,       "TODO");
