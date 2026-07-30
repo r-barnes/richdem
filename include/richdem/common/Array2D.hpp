@@ -315,7 +315,14 @@ class Array2D {
  public:
   Array2D(){
     #ifdef USEGDAL
-    GDALAllRegister();
+    // Register GDAL drivers exactly once per process. GDALAllRegister() mutates a global driver
+    // registry and is NOT thread-safe, so calling it on every Array2D construction races when
+    // Array2D objects are built concurrently on multiple threads -> intermittent heap corruption
+    // (observed as `malloc(): unaligned tcache chunk detected`). A function-local static is
+    // initialized once, thread-safely (C++11 [stmt.dcl]/4), which is all GDALAllRegister() needs;
+    // it also drops the redundant per-construction re-registration cost.
+    static const bool gdal_registered = [](){ GDALAllRegister(); return true; }();
+    (void)gdal_registered;
     #endif
   }
 
